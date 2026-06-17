@@ -4,8 +4,11 @@
 // JWT, Serilog, Swagger, etc. are added in later sessions.
 
 using DotNetEnv;
+using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 using Taskpilot.API.Data;
+using Taskpilot.API.Services;
+using Taskpilot.API.Validators.Auth;
 
 // Load secrets from the local .env file into environment variables BEFORE the
 // configuration is built. TraversePath() walks up the folder tree, so the file
@@ -36,8 +39,19 @@ if (string.IsNullOrWhiteSpace(connectionString))
 builder.Services.AddDbContext<TaskpilotDbContext>(options =>
     options.UseNpgsql(connectionString));
 
-// Later sessions will add: FluentValidation, AutoMapper,
-// JWT authentication, SignalR, MassTransit, Redis, etc.
+// Add MVC controllers (the project started as minimal API, so this is required
+// for attribute-routed controllers like AuthController to be discovered).
+builder.Services.AddControllers();
+
+// Register all FluentValidation validators found in the assembly that contains
+// RegisterValidator, so they can be injected (e.g. IValidator<RegisterDto>).
+builder.Services.AddValidatorsFromAssemblyContaining<RegisterValidator>();
+
+// Register application services. Scoped = one instance per HTTP request.
+builder.Services.AddScoped<IAuthService, AuthService>();
+
+// Later sessions will add: AutoMapper, JWT authentication,
+// SignalR, MassTransit, Redis, etc.
 
 // Build the application from the configured services.
 var app = builder.Build();
@@ -49,6 +63,9 @@ app.MapGet("/", () => "Taskpilot API is running");
 
 // Health-check endpoint for monitoring (returns status and server time in UTC).
 app.MapGet("/health", () => Results.Ok(new { status = "ok", timeUtc = DateTime.UtcNow }));
+
+// Map attribute-routed controllers (e.g. POST /api/auth/register).
+app.MapControllers();
 
 // Run the application (starts listening for HTTP requests).
 app.Run();

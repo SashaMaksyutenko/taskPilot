@@ -19,4 +19,14 @@ public interface IAuthService
     /// (for example when the email is already in use).
     /// </returns>
     Task<Result<Guid>> RegisterAsync(RegisterDto dto);
+
+    /// <summary>
+    /// Authenticates a user by email and password and, on success, issues a JWT.
+    /// </summary>
+    /// <param name="dto">Validated login data (email, password).</param>
+    /// <returns>
+    /// A successful result with the access token and user info, or a failed
+    /// result with a generic message when the credentials are invalid.
+    /// </returns>
+    Task<Result<AuthResponseDto>> LoginAsync(LoginDto dto);
 }

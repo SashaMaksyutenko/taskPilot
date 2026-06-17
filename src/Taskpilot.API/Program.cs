@@ -6,6 +6,7 @@
 using DotNetEnv;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
+using Taskpilot.API.Configuration;
 using Taskpilot.API.Data;
 using Taskpilot.API.Services;
 using Taskpilot.API.Validators.Auth;
@@ -47,10 +48,15 @@ builder.Services.AddControllers();
 // RegisterValidator, so they can be injected (e.g. IValidator<RegisterDto>).
 builder.Services.AddValidatorsFromAssemblyContaining<RegisterValidator>();
 
+// Bind JWT settings from the "Jwt" config section (populated from .env: Jwt__*).
+builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("Jwt"));
+
 // Register application services. Scoped = one instance per HTTP request.
 builder.Services.AddScoped<IAuthService, AuthService>();
+// Token generation is stateless, so a singleton is fine.
+builder.Services.AddSingleton<ITokenService, TokenService>();
 
-// Later sessions will add: AutoMapper, JWT authentication,
+// Later sessions will add: AutoMapper, JWT authentication middleware,
 // SignalR, MassTransit, Redis, etc.
 
 // Build the application from the configured services.

@@ -9,6 +9,7 @@ using FluentValidation;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
 using Taskpilot.API.Configuration;
 using Taskpilot.API.Data;
 using Taskpilot.API.Services;
@@ -83,6 +84,35 @@ builder.Services
 // Enables [Authorize] attributes on controllers/actions.
 builder.Services.AddAuthorization();
 
+// Swagger / OpenAPI: interactive API docs and a test UI at /swagger.
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen(options =>
+{
+    options.SwaggerDoc("v1", new OpenApiInfo { Title = "Taskpilot API", Version = "v1" });
+
+    // Add a "Bearer" auth scheme so protected endpoints (e.g. /me) can be tested
+    // by pasting a JWT access token into the Swagger "Authorize" dialog.
+    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT",
+        In = ParameterLocation.Header,
+        Description = "Paste only the JWT access token (Swagger adds the 'Bearer ' prefix)."
+    });
+    options.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "Bearer" }
+            },
+            Array.Empty<string>()
+        }
+    });
+});
+
 // Register application services. Scoped = one instance per HTTP request.
 builder.Services.AddScoped<IAuthService, AuthService>();
 // Token generation is stateless, so a singleton is fine.
@@ -94,6 +124,18 @@ builder.Services.AddSingleton<ITokenService, TokenService>();
 var app = builder.Build();
 
 // --- HTTP pipeline (middleware) ---
+
+// Expose Swagger UI in Development only (browse and test endpoints at /swagger).
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI(options =>
+    {
+        options.SwaggerEndpoint("/swagger/v1/swagger.json", "Taskpilot API v1");
+        // Serve the UI at the app root so http://localhost:<port>/ opens Swagger.
+        options.RoutePrefix = "swagger";
+    });
+}
 
 // Root endpoint: simple liveness response.
 app.MapGet("/", () => "Taskpilot API is running");

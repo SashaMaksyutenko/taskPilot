@@ -3,9 +3,12 @@
 // Current scope: base skeleton + database connection (EF Core + PostgreSQL).
 // JWT, Serilog, Swagger, etc. are added in later sessions.
 
+using System.Text;
 using DotNetEnv;
 using FluentValidation;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using Taskpilot.API.Configuration;
 using Taskpilot.API.Data;
 using Taskpilot.API.Services;
@@ -51,13 +54,41 @@ builder.Services.AddValidatorsFromAssemblyContaining<RegisterValidator>();
 // Bind JWT settings from the "Jwt" config section (populated from .env: Jwt__*).
 builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("Jwt"));
 
+// Read the JWT settings now so we can configure token validation below.
+var jwtSettings = builder.Configuration.GetSection("Jwt").Get<JwtSettings>()
+    ?? throw new InvalidOperationException("JWT settings are not configured. Set Jwt__* in .env.");
+
+// Configure JWT bearer authentication: incoming "Authorization: Bearer <token>"
+// headers are validated against the same key/issuer/audience used to issue tokens.
+builder.Services
+    .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        // Keep original claim names (e.g. "sub") instead of remapping them.
+        options.MapInboundClaims = false;
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidIssuer = jwtSettings.Issuer,
+            ValidateAudience = true,
+            ValidAudience = jwtSettings.Audience,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.Key)),
+            // No tolerance window: a token is invalid the moment it expires.
+            ClockSkew = TimeSpan.Zero
+        };
+    });
+
+// Enables [Authorize] attributes on controllers/actions.
+builder.Services.AddAuthorization();
+
 // Register application services. Scoped = one instance per HTTP request.
 builder.Services.AddScoped<IAuthService, AuthService>();
 // Token generation is stateless, so a singleton is fine.
 builder.Services.AddSingleton<ITokenService, TokenService>();
 
-// Later sessions will add: AutoMapper, JWT authentication middleware,
-// SignalR, MassTransit, Redis, etc.
+// Later sessions will add: AutoMapper, SignalR, MassTransit, Redis, etc.
 
 // Build the application from the configured services.
 var app = builder.Build();
@@ -69,6 +100,10 @@ app.MapGet("/", () => "Taskpilot API is running");
 
 // Health-check endpoint for monitoring (returns status and server time in UTC).
 app.MapGet("/health", () => Results.Ok(new { status = "ok", timeUtc = DateTime.UtcNow }));
+
+// Authentication must run before authorization so the user identity is known.
+app.UseAuthentication();
+app.UseAuthorization();
 
 // Map attribute-routed controllers (e.g. POST /api/auth/register).
 app.MapControllers();

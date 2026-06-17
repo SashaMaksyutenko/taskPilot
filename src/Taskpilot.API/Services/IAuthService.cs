@@ -40,4 +40,11 @@ public interface IAuthService
     /// token is missing, expired or already revoked.
     /// </returns>
     Task<Result<AuthResponseDto>> RefreshAsync(string refreshToken);
+
+    /// <summary>
+    /// Returns the public profile of the user with the given id.
+    /// </summary>
+    /// <param name="userId">Id taken from the authenticated JWT.</param>
+    /// <returns>Success with the user profile, or failure when the user no longer exists.</returns>
+    Task<Result<UserDto>> GetCurrentUserAsync(Guid userId);
 }

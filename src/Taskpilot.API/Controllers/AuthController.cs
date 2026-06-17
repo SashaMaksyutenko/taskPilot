@@ -1,4 +1,7 @@
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using FluentValidation;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Taskpilot.API.DTOs.Auth;
 using Taskpilot.API.Services;
@@ -142,6 +145,36 @@ public class AuthController : ControllerBase
         }
 
         _logger.LogInformation("Refresh successful via endpoint. UserId: {UserId}", result.Value!.UserId);
+        return Ok(result.Value);
+    }
+
+    /// <summary>
+    /// Returns the profile of the currently authenticated user.
+    /// Requires a valid JWT access token in the Authorization header.
+    /// </summary>
+    /// <returns>
+    /// 200 OK with the user profile;
+    /// 401 Unauthorized when no/invalid token is provided;
+    /// 404 Not Found when the user no longer exists.
+    /// </returns>
+    [Authorize]
+    [HttpGet("me")]
+    public async Task<IActionResult> Me()
+    {
+        // The user id is stored in the "sub" claim of the JWT.
+        var sub = User.FindFirstValue(JwtRegisteredClaimNames.Sub);
+        if (!Guid.TryParse(sub, out var userId))
+        {
+            _logger.LogWarning("Me endpoint: token has no valid 'sub' claim.");
+            return Unauthorized();
+        }
+
+        var result = await _authService.GetCurrentUserAsync(userId);
+        if (!result.Succeeded)
+        {
+            return NotFound(new { error = result.Error });
+        }
+
         return Ok(result.Value);
     }
 }

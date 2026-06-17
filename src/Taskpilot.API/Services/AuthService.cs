@@ -204,6 +204,45 @@ public class AuthService : IAuthService
     }
 
     /// <summary>
+    /// Returns the public profile of a user by id (read-only).
+    /// </summary>
+    /// <param name="userId">Id of the user (taken from the authenticated token).</param>
+    /// <returns>Success with the profile, or failure when the user is missing.</returns>
+    public async Task<Result<UserDto>> GetCurrentUserAsync(Guid userId)
+    {
+        _logger.LogInformation("GetCurrentUserAsync started. UserId: {UserId}", userId);
+
+        try
+        {
+            // AsNoTracking: read-only query, no change tracking (faster).
+            var user = await _context.Users
+                .AsNoTracking()
+                .FirstOrDefaultAsync(u => u.Id == userId);
+
+            if (user is null)
+            {
+                _logger.LogWarning("Current user not found. UserId: {UserId}", userId);
+                return Result<UserDto>.Fail("User not found.");
+            }
+
+            return Result<UserDto>.Ok(new UserDto
+            {
+                Id = user.Id,
+                Name = user.Name,
+                Email = user.Email,
+                Role = user.Role.ToString(),
+                IsActive = user.IsActive,
+                CreatedAt = user.CreatedAt
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Unexpected error while loading current user. UserId: {UserId}", userId);
+            return Result<UserDto>.Fail("An unexpected error occurred.");
+        }
+    }
+
+    /// <summary>
     /// Creates a new refresh-token entity for a user with a random value and a 7-day expiry.
     /// </summary>
     private RefreshToken CreateRefreshToken(Guid userId) => new()

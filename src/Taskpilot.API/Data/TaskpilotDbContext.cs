@@ -26,6 +26,15 @@ public class TaskpilotDbContext : DbContext
     /// <summary>Refresh tokens table. Each row is one <see cref="RefreshToken"/>.</summary>
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
 
+    /// <summary>Chat conversations (direct and group).</summary>
+    public DbSet<Conversation> Conversations => Set<Conversation>();
+
+    /// <summary>Conversation membership (which user is in which conversation).</summary>
+    public DbSet<ConversationParticipant> ConversationParticipants => Set<ConversationParticipant>();
+
+    /// <summary>Chat messages.</summary>
+    public DbSet<Message> Messages => Set<Message>();
+
     /// <summary>
     /// Налаштування моделі (Fluent API): обмеження, індекси, перетворення типів.
     /// Викликається EF Core під час побудови моделі та генерації міграцій.
@@ -86,6 +95,69 @@ public class TaskpilotDbContext : DbContext
                   .WithMany()
                   .HasForeignKey(rt => rt.UserId)
                   .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // Conversation entity configuration
+        modelBuilder.Entity<Conversation>(entity =>
+        {
+            entity.HasKey(c => c.Id);
+
+            // Store the type as a readable string ("Direct"/"Group").
+            entity.Property(c => c.Type)
+                  .HasConversion<string>()
+                  .HasMaxLength(20)
+                  .IsRequired();
+
+            // Name is optional (only group chats have one).
+            entity.Property(c => c.Name)
+                  .HasMaxLength(150);
+        });
+
+        // ConversationParticipant entity configuration
+        modelBuilder.Entity<ConversationParticipant>(entity =>
+        {
+            entity.HasKey(p => p.Id);
+
+            // A user can appear in a conversation only once.
+            entity.HasIndex(p => new { p.ConversationId, p.UserId })
+                  .IsUnique();
+
+            // Removing a conversation removes its membership rows.
+            entity.HasOne(p => p.Conversation)
+                  .WithMany(c => c.Participants)
+                  .HasForeignKey(p => p.ConversationId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            // Restrict on the user side to avoid multiple cascade paths to Users.
+            entity.HasOne(p => p.User)
+                  .WithMany()
+                  .HasForeignKey(p => p.UserId)
+                  .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        // Message entity configuration
+        modelBuilder.Entity<Message>(entity =>
+        {
+            entity.HasKey(m => m.Id);
+
+            entity.Property(m => m.Content)
+                  .IsRequired()
+                  .HasMaxLength(4000);
+
+            // Fast lookup of a conversation's messages in chronological order.
+            entity.HasIndex(m => new { m.ConversationId, m.CreatedAt });
+
+            // Deleting a conversation removes its messages.
+            entity.HasOne(m => m.Conversation)
+                  .WithMany(c => c.Messages)
+                  .HasForeignKey(m => m.ConversationId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            // Restrict on the sender side to avoid multiple cascade paths to Users.
+            entity.HasOne(m => m.Sender)
+                  .WithMany()
+                  .HasForeignKey(m => m.SenderId)
+                  .OnDelete(DeleteBehavior.Restrict);
         });
     }
 }

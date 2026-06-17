@@ -1,0 +1,26 @@
+# ---- .NET / C# ----
+bin/
+obj/
+*.user
+.vs/
+
+# ---- Node / React ----
+node_modules/
+dist/
+.next/
+
+# ---- Environment & secrets ----
+# appsettings.json містить ключі, паролі, рядки підключення — НЕ комітимо
+.env
+.env.local
+appsettings.json
+appsettings.*.json
+!appsettings.Example.json
+
+# ---- Logs ----
+logs/
+*.log
+
+# ---- OS ----
+Thumbs.db
+.DS_Store

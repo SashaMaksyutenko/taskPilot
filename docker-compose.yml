@@ -1,0 +1,44 @@
+# docker-compose.yml
+# Локальна інфраструктура для розробки Taskpilot:
+#   - PostgreSQL : основна база даних
+#   - Redis      : кеш + presence (online/offline статуси)
+#   - RabbitMQ   : черга повідомлень між API та NotificationService
+# Запуск:   docker-compose up -d
+# Зупинка:  docker-compose down
+
+services:
+  # ---- База даних PostgreSQL ----
+  postgres:
+    image: postgres:16
+    container_name: taskpilot-postgres
+    environment:
+      POSTGRES_DB: taskpilot
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      # Зберігаємо дані БД між перезапусками контейнера
+      - postgres_data:/var/lib/postgresql/data
+
+  # ---- Кеш Redis ----
+  redis:
+    image: redis:7
+    container_name: taskpilot-redis
+    ports:
+      - "6379:6379"
+
+  # ---- Брокер черг RabbitMQ (з веб-панеллю керування) ----
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: taskpilot-rabbitmq
+    ports:
+      - "5672:5672"     # порт для застосунків (AMQP)
+      - "15672:15672"   # веб-панель: http://localhost:15672 (guest/guest)
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+
+# Іменований том для постійного зберігання даних PostgreSQL
+volumes:
+  postgres_data:

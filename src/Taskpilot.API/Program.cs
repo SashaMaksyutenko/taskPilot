@@ -44,6 +44,17 @@ if (string.IsNullOrWhiteSpace(connectionString))
 builder.Services.AddDbContext<TaskpilotDbContext>(options =>
     options.UseNpgsql(connectionString));
 
+// CORS: allow the React dev frontend (http://localhost:5173) to call this API
+// from the browser. In production this origin should come from configuration.
+const string FrontendCorsPolicy = "frontend";
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy(FrontendCorsPolicy, policy =>
+        policy.WithOrigins("http://localhost:5173")
+              .AllowAnyHeader()
+              .AllowAnyMethod());
+});
+
 // Add MVC controllers (the project started as minimal API, so this is required
 // for attribute-routed controllers like AuthController to be discovered).
 builder.Services.AddControllers();
@@ -142,6 +153,9 @@ app.MapGet("/", () => "Taskpilot API is running");
 
 // Health-check endpoint for monitoring (returns status and server time in UTC).
 app.MapGet("/health", () => Results.Ok(new { status = "ok", timeUtc = DateTime.UtcNow }));
+
+// CORS must run before authentication/authorization and endpoint routing.
+app.UseCors(FrontendCorsPolicy);
 
 // Authentication must run before authorization so the user identity is known.
 app.UseAuthentication();

@@ -1,0 +1,29 @@
+<!-- TaskPilot — повний логотип (іконка-чеклист + назва + слоган) -->
+<!-- Кольори бренду: navy #1E2A44, yellow #F6BE2C. Масштабований векторний формат. -->
+<svg width="280" height="210" viewBox="0 0 280 210" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="TaskPilot — Organize. Achieve. Repeat.">
+  <!-- ===== Іконка: документ-чеклист із загнутим кутом ===== -->
+  <g transform="translate(89,14) scale(1.6)" stroke-linejoin="round" stroke-linecap="round">
+    <!-- Тіло сторінки (білий лист з темно-синім контуром) -->
+    <path d="M19 6 H43 L54 17 V56 Q54 58 52 58 H19 Q17 58 17 56 V8 Q17 6 19 6 Z"
+          fill="#FFFFFF" stroke="#1E2A44" stroke-width="3.4"/>
+    <!-- Загнутий жовтий кут -->
+    <path d="M43 6 L54 17 H43 Z" fill="#F6BE2C" stroke="#1E2A44" stroke-width="3.4"/>
+    <!-- Рядок 1: жовта галочка + лінія -->
+    <path d="M22 28 l3 3 l5 -6" stroke="#F6BE2C" stroke-width="3.2"/>
+    <path d="M34 29 H47" stroke="#1E2A44" stroke-width="3.2"/>
+    <!-- Рядок 2: лінія -->
+    <path d="M22 39 H47" stroke="#1E2A44" stroke-width="3.2"/>
+    <!-- Рядок 3: коротша лінія -->
+    <path d="M22 48 H41" stroke="#1E2A44" stroke-width="3.2"/>
+  </g>
+
+  <!-- ===== Назва бренду ===== -->
+  <text x="140" y="165" text-anchor="middle"
+        font-family="Inter, 'Segoe UI', Arial, sans-serif" font-size="40" font-weight="700"
+        fill="#1E2A44" letter-spacing="0.5">TaskPilot</text>
+
+  <!-- ===== Слоган ===== -->
+  <text x="140" y="190" text-anchor="middle"
+        font-family="Inter, 'Segoe UI', Arial, sans-serif" font-size="11.5" font-weight="600"
+        fill="#1E2A44" letter-spacing="3.5">ORGANIZE.&#160;&#160;ACHIEVE.&#160;&#160;REPEAT.</text>
+</svg>

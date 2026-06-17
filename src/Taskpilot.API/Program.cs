@@ -1,13 +1,25 @@
 // Program.cs — точка входу застосунку Taskpilot.API.
 // Тут конфігурується веб-хост, сервіси (DI) та HTTP-конвеєр (middleware).
-// На цьому етапі лише базовий каркас: підключення сервісів і ендпоінти
-// (база даних, JWT, Serilog, Swagger тощо додаються в наступних сесіях).
+// На цьому етапі: базовий каркас + підключення бази даних (EF Core + PostgreSQL).
+// JWT, Serilog, Swagger тощо додаються в наступних сесіях.
+
+using Microsoft.EntityFrameworkCore;
+using Taskpilot.API.Data;
 
 // Створюємо будівник застосунку: читає appsettings.json, змінні середовища, аргументи
 var builder = WebApplication.CreateBuilder(args);
 
 // --- Реєстрація сервісів (Dependency Injection) ---
-// Сюди в наступних сесіях додамо: DbContext, FluentValidation, AutoMapper,
+
+// Рядок підключення до PostgreSQL береться з appsettings.json (секція ConnectionStrings)
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+
+// Реєструємо контекст БД EF Core з провайдером Npgsql (PostgreSQL).
+// AddDbContext додає TaskpilotDbContext у контейнер DI з часом життя Scoped (один на запит).
+builder.Services.AddDbContext<TaskpilotDbContext>(options =>
+    options.UseNpgsql(connectionString));
+
+// Сюди в наступних сесіях додамо: FluentValidation, AutoMapper,
 // автентифікацію JWT, SignalR, MassTransit, Redis тощо.
 
 // Збираємо застосунок із налаштованих сервісів

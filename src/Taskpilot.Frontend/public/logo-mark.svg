@@ -1,0 +1,17 @@
+<!-- TaskPilot — лише знак (іконка документа-чеклиста) для favicon / навбару -->
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="TaskPilot">
+  <g stroke-linejoin="round" stroke-linecap="round">
+    <!-- Тіло сторінки -->
+    <path d="M19 6 H43 L54 17 V56 Q54 58 52 58 H19 Q17 58 17 56 V8 Q17 6 19 6 Z"
+          fill="#FFFFFF" stroke="#1E2A44" stroke-width="3.4"/>
+    <!-- Загнутий жовтий кут -->
+    <path d="M43 6 L54 17 H43 Z" fill="#F6BE2C" stroke="#1E2A44" stroke-width="3.4"/>
+    <!-- Рядок 1: жовта галочка + лінія -->
+    <path d="M22 28 l3 3 l5 -6" stroke="#F6BE2C" stroke-width="3.2"/>
+    <path d="M34 29 H47" stroke="#1E2A44" stroke-width="3.2"/>
+    <!-- Рядок 2 -->
+    <path d="M22 39 H47" stroke="#1E2A44" stroke-width="3.2"/>
+    <!-- Рядок 3 -->
+    <path d="M22 48 H41" stroke="#1E2A44" stroke-width="3.2"/>
+  </g>
+</svg>

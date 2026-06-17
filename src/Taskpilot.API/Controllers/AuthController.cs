@@ -16,6 +16,7 @@ public class AuthController : ControllerBase
 {
     private readonly IAuthService _authService;
     private readonly IValidator<RegisterDto> _registerValidator;
+    private readonly IValidator<LoginDto> _loginValidator;
     private readonly ILogger<AuthController> _logger;
 
     /// <summary>
@@ -24,10 +25,12 @@ public class AuthController : ControllerBase
     public AuthController(
         IAuthService authService,
         IValidator<RegisterDto> registerValidator,
+        IValidator<LoginDto> loginValidator,
         ILogger<AuthController> logger)
     {
         _authService = authService;
         _registerValidator = registerValidator;
+        _loginValidator = loginValidator;
         _logger = logger;
     }
 
@@ -69,5 +72,44 @@ public class AuthController : ControllerBase
         _logger.LogInformation("User registered via endpoint. UserId: {UserId}", result.Value);
         // 201 Created with the new user's id.
         return StatusCode(StatusCodes.Status201Created, new { id = result.Value });
+    }
+
+    /// <summary>
+    /// Authenticates a user and returns a JWT access token.
+    /// </summary>
+    /// <param name="dto">Login data (email, password).</param>
+    /// <returns>
+    /// 200 OK with the access token and user info on success;
+    /// 400 Bad Request when validation fails;
+    /// 401 Unauthorized when the credentials are invalid.
+    /// </returns>
+    [HttpPost("login")]
+    public async Task<IActionResult> Login([FromBody] LoginDto dto)
+    {
+        // Log entry (email only — never log the password).
+        _logger.LogInformation("Login endpoint called. Email: {Email}", dto.Email);
+
+        // Validate the payload before touching authentication logic.
+        var validation = await _loginValidator.ValidateAsync(dto);
+        if (!validation.IsValid)
+        {
+            _logger.LogWarning("Login validation failed. Email: {Email}", dto.Email);
+            var errors = validation.Errors
+                .Select(e => new { field = e.PropertyName, message = e.ErrorMessage });
+            return BadRequest(new { errors });
+        }
+
+        // Delegate to the service (lookup, password check, token generation).
+        var result = await _authService.LoginAsync(dto);
+        if (!result.Succeeded)
+        {
+            // Invalid credentials / disabled account -> 401 Unauthorized.
+            _logger.LogWarning("Login failed. Email: {Email}. Reason: {Error}", dto.Email, result.Error);
+            return Unauthorized(new { error = result.Error });
+        }
+
+        _logger.LogInformation("Login successful via endpoint. UserId: {UserId}", result.Value!.UserId);
+        // 200 OK with the access token and user info.
+        return Ok(result.Value);
     }
 }

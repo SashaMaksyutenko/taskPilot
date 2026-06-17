@@ -17,4 +17,7 @@ public class JwtSettings
 
     /// <summary>Access-token lifetime in minutes. Defaults to 15 per security policy.</summary>
     public int AccessTokenMinutes { get; set; } = 15;
+
+    /// <summary>Refresh-token lifetime in days. Defaults to 7 per security policy.</summary>
+    public int RefreshTokenDays { get; set; } = 7;
 }

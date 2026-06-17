@@ -13,6 +13,12 @@ public class AuthResponseDto
     /// <summary>UTC time when the access token expires.</summary>
     public DateTime ExpiresAtUtc { get; set; }
 
+    /// <summary>Long-lived refresh token used to obtain new access tokens.</summary>
+    public string RefreshToken { get; set; } = string.Empty;
+
+    /// <summary>UTC time when the refresh token expires.</summary>
+    public DateTime RefreshTokenExpiresAtUtc { get; set; }
+
     /// <summary>Id of the authenticated user.</summary>
     public Guid UserId { get; set; }
 

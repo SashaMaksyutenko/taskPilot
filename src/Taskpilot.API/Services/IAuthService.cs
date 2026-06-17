@@ -29,4 +29,15 @@ public interface IAuthService
     /// result with a generic message when the credentials are invalid.
     /// </returns>
     Task<Result<AuthResponseDto>> LoginAsync(LoginDto dto);
+
+    /// <summary>
+    /// Exchanges a valid refresh token for a new access token and a rotated
+    /// refresh token (the used one is revoked).
+    /// </summary>
+    /// <param name="refreshToken">The refresh token previously issued to the client.</param>
+    /// <returns>
+    /// A successful result with fresh tokens, or a failed result when the refresh
+    /// token is missing, expired or already revoked.
+    /// </returns>
+    Task<Result<AuthResponseDto>> RefreshAsync(string refreshToken);
 }

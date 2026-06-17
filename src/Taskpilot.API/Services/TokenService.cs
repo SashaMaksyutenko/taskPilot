@@ -1,6 +1,8 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
+using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Taskpilot.API.Configuration;
@@ -61,5 +63,17 @@ public class TokenService : ITokenService
         // Serialize the token to its compact string form.
         var tokenString = new JwtSecurityTokenHandler().WriteToken(token);
         return (tokenString, expiresAtUtc);
+    }
+
+    /// <summary>
+    /// Generates a cryptographically random refresh token (64 bytes, URL-safe Base64).
+    /// </summary>
+    /// <returns>A random, opaque token string.</returns>
+    public string GenerateRefreshToken()
+    {
+        // 64 random bytes give plenty of entropy to make guessing infeasible.
+        var bytes = RandomNumberGenerator.GetBytes(64);
+        // Base64Url avoids '+', '/' and '=' so the token is safe in URLs/headers.
+        return WebEncoders.Base64UrlEncode(bytes);
     }
 }

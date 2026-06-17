@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Taskpilot.API.Data;
@@ -11,9 +12,11 @@ using Taskpilot.API.Data;
 namespace Taskpilot.API.Data.Migrations
 {
     [DbContext(typeof(TaskpilotDbContext))]
-    partial class TaskpilotDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260617160028_AddRefreshTokens")]
+    partial class AddRefreshTokens
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

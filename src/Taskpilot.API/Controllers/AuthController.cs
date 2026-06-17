@@ -112,4 +112,36 @@ public class AuthController : ControllerBase
         // 200 OK with the access token and user info.
         return Ok(result.Value);
     }
+
+    /// <summary>
+    /// Exchanges a valid refresh token for a new access token and a rotated refresh token.
+    /// </summary>
+    /// <param name="dto">Request body containing the refresh token.</param>
+    /// <returns>
+    /// 200 OK with fresh tokens on success;
+    /// 400 Bad Request when the refresh token is missing;
+    /// 401 Unauthorized when the refresh token is invalid, expired or revoked.
+    /// </returns>
+    [HttpPost("refresh")]
+    public async Task<IActionResult> Refresh([FromBody] RefreshTokenDto dto)
+    {
+        _logger.LogInformation("Refresh endpoint called.");
+
+        // The token is a single required field — a quick guard is enough here.
+        if (string.IsNullOrWhiteSpace(dto.RefreshToken))
+        {
+            _logger.LogWarning("Refresh rejected: refresh token is missing.");
+            return BadRequest(new { error = "Refresh token is required." });
+        }
+
+        var result = await _authService.RefreshAsync(dto.RefreshToken);
+        if (!result.Succeeded)
+        {
+            _logger.LogWarning("Refresh failed. Reason: {Error}", result.Error);
+            return Unauthorized(new { error = result.Error });
+        }
+
+        _logger.LogInformation("Refresh successful via endpoint. UserId: {UserId}", result.Value!.UserId);
+        return Ok(result.Value);
+    }
 }

@@ -17,6 +17,9 @@ appsettings.json
 appsettings.*.json
 !appsettings.Example.json
 
+# ---- Uploaded files (stored on disk, not in git) ----
+uploads/
+
 # ---- Logs ----
 logs/
 *.log

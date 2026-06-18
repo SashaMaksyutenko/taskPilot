@@ -149,6 +149,7 @@ builder.Services.AddSignalR();
 // Register application services. Scoped = one instance per HTTP request.
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IChatService, ChatService>();
+builder.Services.AddScoped<IFileService, FileService>();
 // Token generation is stateless, so a singleton is fine.
 builder.Services.AddSingleton<ITokenService, TokenService>();
 

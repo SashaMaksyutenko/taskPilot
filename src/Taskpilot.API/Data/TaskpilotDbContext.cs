@@ -35,6 +35,9 @@ public class TaskpilotDbContext : DbContext
     /// <summary>Chat messages.</summary>
     public DbSet<Message> Messages => Set<Message>();
 
+    /// <summary>Uploaded file metadata.</summary>
+    public DbSet<FileAttachment> FileAttachments => Set<FileAttachment>();
+
     /// <summary>
     /// Налаштування моделі (Fluent API): обмеження, індекси, перетворення типів.
     /// Викликається EF Core під час побудови моделі та генерації міграцій.
@@ -157,6 +160,22 @@ public class TaskpilotDbContext : DbContext
             entity.HasOne(m => m.Sender)
                   .WithMany()
                   .HasForeignKey(m => m.SenderId)
+                  .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        // FileAttachment entity configuration
+        modelBuilder.Entity<FileAttachment>(entity =>
+        {
+            entity.HasKey(f => f.Id);
+
+            entity.Property(f => f.FileName).IsRequired().HasMaxLength(260);
+            entity.Property(f => f.StoredName).IsRequired().HasMaxLength(100);
+            entity.Property(f => f.ContentType).IsRequired().HasMaxLength(150);
+
+            // Keep files even if the uploader is removed (restrict).
+            entity.HasOne(f => f.Uploader)
+                  .WithMany()
+                  .HasForeignKey(f => f.UploaderId)
                   .OnDelete(DeleteBehavior.Restrict);
         });
     }

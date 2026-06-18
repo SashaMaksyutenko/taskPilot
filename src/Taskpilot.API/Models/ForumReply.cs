@@ -41,4 +41,7 @@ public class ForumReply
 
     /// <summary>UTC time the reply was last edited; null if never.</summary>
     public DateTime? UpdatedAt { get; set; }
+
+    /// <summary>Votes cast on this reply.</summary>
+    public ICollection<ForumVote> Votes { get; set; } = new List<ForumVote>();
 }

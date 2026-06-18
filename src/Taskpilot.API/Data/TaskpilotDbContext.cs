@@ -44,6 +44,9 @@ public class TaskpilotDbContext : DbContext
     /// <summary>Forum replies.</summary>
     public DbSet<ForumReply> ForumReplies => Set<ForumReply>();
 
+    /// <summary>Votes on forum replies.</summary>
+    public DbSet<ForumVote> ForumVotes => Set<ForumVote>();
+
     /// <summary>
     /// Налаштування моделі (Fluent API): обмеження, індекси, перетворення типів.
     /// Викликається EF Core під час побудови моделі та генерації міграцій.
@@ -228,6 +231,27 @@ public class TaskpilotDbContext : DbContext
             entity.HasOne(r => r.ParentReply)
                   .WithMany()
                   .HasForeignKey(r => r.ParentReplyId)
+                  .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        // ForumVote entity configuration
+        modelBuilder.Entity<ForumVote>(entity =>
+        {
+            entity.HasKey(v => v.Id);
+
+            // One vote per user per reply.
+            entity.HasIndex(v => new { v.ReplyId, v.UserId }).IsUnique();
+
+            // Deleting a reply removes its votes.
+            entity.HasOne(v => v.Reply)
+                  .WithMany(r => r.Votes)
+                  .HasForeignKey(v => v.ReplyId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            // Restrict on the user side to avoid multiple cascade paths to Users.
+            entity.HasOne(v => v.User)
+                  .WithMany()
+                  .HasForeignKey(v => v.UserId)
                   .OnDelete(DeleteBehavior.Restrict);
         });
     }

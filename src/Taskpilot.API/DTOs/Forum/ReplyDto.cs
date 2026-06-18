@@ -10,6 +10,13 @@ public class ReplyDto
     public string Body { get; set; } = string.Empty;
     public Guid? ParentReplyId { get; set; }
     public bool IsSolution { get; set; }
+
+    /// <summary>Total score (sum of up/down votes).</summary>
+    public int Score { get; set; }
+
+    /// <summary>The current user's vote on this reply: -1, 0 or +1.</summary>
+    public int MyVote { get; set; }
+
     public DateTime CreatedAt { get; set; }
     public DateTime? UpdatedAt { get; set; }
 }

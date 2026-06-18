@@ -40,7 +40,10 @@ public class ForumController : BaseApiController
     [HttpGet("topics/{topicId:guid}")]
     public async Task<IActionResult> GetTopic(Guid topicId)
     {
-        var result = await _forumService.GetTopicAsync(topicId);
+        var userId = CurrentUserId();
+        if (userId is null) return Unauthorized();
+
+        var result = await _forumService.GetTopicAsync(topicId, userId.Value);
         return result.Succeeded
             ? Ok(result.Value)
             : NotFound(new { error = result.Error });
@@ -83,6 +86,32 @@ public class ForumController : BaseApiController
         var result = await _forumService.AddReplyAsync(userId.Value, dto);
         return result.Succeeded
             ? StatusCode(StatusCodes.Status201Created, result.Value)
+            : BadRequest(new { error = result.Error });
+    }
+
+    /// <summary>Upvotes or downvotes a reply (value +1 or -1; same value again removes it).</summary>
+    [HttpPost("replies/{replyId:guid}/vote")]
+    public async Task<IActionResult> Vote(Guid replyId, [FromBody] VoteDto dto)
+    {
+        var userId = CurrentUserId();
+        if (userId is null) return Unauthorized();
+
+        var result = await _forumService.VoteReplyAsync(userId.Value, replyId, dto.Value);
+        return result.Succeeded
+            ? Ok(result.Value)
+            : BadRequest(new { error = result.Error });
+    }
+
+    /// <summary>Marks a reply as the accepted solution (topic author only).</summary>
+    [HttpPost("replies/{replyId:guid}/solution")]
+    public async Task<IActionResult> MarkSolution(Guid replyId)
+    {
+        var userId = CurrentUserId();
+        if (userId is null) return Unauthorized();
+
+        var result = await _forumService.MarkSolutionAsync(userId.Value, replyId);
+        return result.Succeeded
+            ? Ok(new { message = "Solution marked." })
             : BadRequest(new { error = result.Error });
     }
 }

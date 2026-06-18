@@ -47,6 +47,12 @@ public class TaskpilotDbContext : DbContext
     /// <summary>Votes on forum replies.</summary>
     public DbSet<ForumVote> ForumVotes => Set<ForumVote>();
 
+    /// <summary>Public marketplace tasks.</summary>
+    public DbSet<MarketplaceTask> MarketplaceTasks => Set<MarketplaceTask>();
+
+    /// <summary>Applications to marketplace tasks.</summary>
+    public DbSet<TaskApplication> TaskApplications => Set<TaskApplication>();
+
     /// <summary>
     /// Налаштування моделі (Fluent API): обмеження, індекси, перетворення типів.
     /// Викликається EF Core під час побудови моделі та генерації міграцій.
@@ -252,6 +258,66 @@ public class TaskpilotDbContext : DbContext
             entity.HasOne(v => v.User)
                   .WithMany()
                   .HasForeignKey(v => v.UserId)
+                  .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        // MarketplaceTask entity configuration
+        modelBuilder.Entity<MarketplaceTask>(entity =>
+        {
+            entity.HasKey(t => t.Id);
+
+            entity.Property(t => t.Title).IsRequired().HasMaxLength(200);
+            entity.Property(t => t.Description).IsRequired().HasMaxLength(10000);
+            entity.Property(t => t.RequiredSkills).HasMaxLength(500);
+            // Money: fixed precision instead of the provider default.
+            entity.Property(t => t.Budget).HasPrecision(18, 2);
+
+            // Store status as a readable string.
+            entity.Property(t => t.Status)
+                  .HasConversion<string>()
+                  .HasMaxLength(20)
+                  .IsRequired();
+
+            entity.HasIndex(t => t.CreatedAt);
+
+            // Poster and (optional) assignee are restricted to avoid cascade paths to Users.
+            entity.HasOne(t => t.Poster)
+                  .WithMany()
+                  .HasForeignKey(t => t.PosterId)
+                  .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(t => t.Assignee)
+                  .WithMany()
+                  .HasForeignKey(t => t.AssigneeId)
+                  .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        // TaskApplication entity configuration
+        modelBuilder.Entity<TaskApplication>(entity =>
+        {
+            entity.HasKey(a => a.Id);
+
+            entity.Property(a => a.CoverLetter).IsRequired().HasMaxLength(2000);
+            entity.Property(a => a.ProposedRate).HasPrecision(18, 2);
+
+            entity.Property(a => a.Status)
+                  .HasConversion<string>()
+                  .HasMaxLength(20)
+                  .IsRequired();
+
+            // A developer can apply to a task only once.
+            entity.HasIndex(a => new { a.TaskId, a.ApplicantId }).IsUnique();
+
+            // Deleting a task removes its applications.
+            entity.HasOne(a => a.Task)
+                  .WithMany(t => t.Applications)
+                  .HasForeignKey(a => a.TaskId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            // Restrict on the applicant side to avoid multiple cascade paths to Users.
+            entity.HasOne(a => a.Applicant)
+                  .WithMany()
+                  .HasForeignKey(a => a.ApplicantId)
                   .OnDelete(DeleteBehavior.Restrict);
         });
     }

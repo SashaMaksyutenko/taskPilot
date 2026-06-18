@@ -25,4 +25,7 @@ public interface IChatService
 
     /// <summary>Posts a new message to a conversation the user belongs to.</summary>
     Task<Result<MessageDto>> SendMessageAsync(Guid senderId, SendMessageDto dto);
+
+    /// <summary>Checks whether a user is a participant of a conversation.</summary>
+    Task<bool> IsParticipantAsync(Guid conversationId, Guid userId);
 }

@@ -12,6 +12,7 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Taskpilot.API.Configuration;
 using Taskpilot.API.Data;
+using Taskpilot.API.Hubs;
 using Taskpilot.API.Services;
 using Taskpilot.API.Validators.Auth;
 
@@ -52,7 +53,9 @@ builder.Services.AddCors(options =>
     options.AddPolicy(FrontendCorsPolicy, policy =>
         policy.WithOrigins("http://localhost:5173")
               .AllowAnyHeader()
-              .AllowAnyMethod());
+              .AllowAnyMethod()
+              // Required for SignalR WebSocket connections from the browser.
+              .AllowCredentials());
 });
 
 // Add MVC controllers (the project started as minimal API, so this is required
@@ -90,6 +93,22 @@ builder.Services
             // No tolerance window: a token is invalid the moment it expires.
             ClockSkew = TimeSpan.Zero
         };
+
+        // Browsers cannot set the Authorization header on a WebSocket handshake,
+        // so for SignalR hub paths read the token from the "access_token" query string.
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                var accessToken = context.Request.Query["access_token"];
+                var path = context.HttpContext.Request.Path;
+                if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hubs"))
+                {
+                    context.Token = accessToken;
+                }
+                return Task.CompletedTask;
+            }
+        };
     });
 
 // Enables [Authorize] attributes on controllers/actions.
@@ -124,13 +143,16 @@ builder.Services.AddSwaggerGen(options =>
     });
 });
 
+// Real-time messaging (SignalR) — powers the chat hub.
+builder.Services.AddSignalR();
+
 // Register application services. Scoped = one instance per HTTP request.
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IChatService, ChatService>();
 // Token generation is stateless, so a singleton is fine.
 builder.Services.AddSingleton<ITokenService, TokenService>();
 
-// Later sessions will add: AutoMapper, SignalR, MassTransit, Redis, etc.
+// Later sessions will add: AutoMapper, MassTransit, Redis, etc.
 
 // Build the application from the configured services.
 var app = builder.Build();
@@ -164,6 +186,9 @@ app.UseAuthorization();
 
 // Map attribute-routed controllers (e.g. POST /api/auth/register).
 app.MapControllers();
+
+// Map the SignalR chat hub. Clients connect to /hubs/chat for real-time messages.
+app.MapHub<ChatHub>("/hubs/chat");
 
 // Run the application (starts listening for HTTP requests).
 app.Run();

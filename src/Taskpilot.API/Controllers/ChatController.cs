@@ -1,7 +1,9 @@
 using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Taskpilot.API.DTOs.Chat;
+using Taskpilot.API.Hubs;
 using Taskpilot.API.Services;
 
 namespace Taskpilot.API.Controllers;
@@ -16,17 +18,20 @@ namespace Taskpilot.API.Controllers;
 public class ChatController : BaseApiController
 {
     private readonly IChatService _chatService;
+    private readonly IHubContext<ChatHub> _chatHub;
     private readonly IValidator<SendMessageDto> _sendMessageValidator;
     private readonly IValidator<CreateGroupConversationDto> _createGroupValidator;
     private readonly ILogger<ChatController> _logger;
 
     public ChatController(
         IChatService chatService,
+        IHubContext<ChatHub> chatHub,
         IValidator<SendMessageDto> sendMessageValidator,
         IValidator<CreateGroupConversationDto> createGroupValidator,
         ILogger<ChatController> logger)
     {
         _chatService = chatService;
+        _chatHub = chatHub;
         _sendMessageValidator = sendMessageValidator;
         _createGroupValidator = createGroupValidator;
         _logger = logger;
@@ -108,6 +113,11 @@ public class ChatController : BaseApiController
         // A non-participant is forbidden; other failures are bad requests.
         if (!result.Succeeded)
             return StatusCode(StatusCodes.Status403Forbidden, new { error = result.Error });
+
+        // Push the message in real time to everyone subscribed to this conversation.
+        await _chatHub.Clients
+            .Group(ChatHub.GroupName(dto.ConversationId))
+            .SendAsync("ReceiveMessage", result.Value);
 
         return StatusCode(StatusCodes.Status201Created, result.Value);
     }

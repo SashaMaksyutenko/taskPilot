@@ -189,12 +189,12 @@ public class ChatService : IChatService
         }
     }
 
-    // --- helpers ---
-
-    /// <summary>Checks whether a user belongs to a conversation.</summary>
-    private Task<bool> IsParticipantAsync(Guid conversationId, Guid userId) =>
+    /// <inheritdoc />
+    public Task<bool> IsParticipantAsync(Guid conversationId, Guid userId) =>
         _context.ConversationParticipants
             .AnyAsync(p => p.ConversationId == conversationId && p.UserId == userId);
+
+    // --- helpers ---
 
     /// <summary>Builds a new participant entity.</summary>
     private static ConversationParticipant NewParticipant(Guid conversationId, Guid userId) => new()

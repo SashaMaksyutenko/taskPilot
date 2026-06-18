@@ -1,5 +1,3 @@
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
 using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -15,7 +13,7 @@ namespace Taskpilot.API.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/auth")]
-public class AuthController : ControllerBase
+public class AuthController : BaseApiController
 {
     private readonly IAuthService _authService;
     private readonly IValidator<RegisterDto> _registerValidator;
@@ -161,15 +159,15 @@ public class AuthController : ControllerBase
     [HttpGet("me")]
     public async Task<IActionResult> Me()
     {
-        // The user id is stored in the "sub" claim of the JWT.
-        var sub = User.FindFirstValue(JwtRegisteredClaimNames.Sub);
-        if (!Guid.TryParse(sub, out var userId))
+        // The user id comes from the JWT "sub" claim (see BaseApiController).
+        var userId = CurrentUserId();
+        if (userId is null)
         {
             _logger.LogWarning("Me endpoint: token has no valid 'sub' claim.");
             return Unauthorized();
         }
 
-        var result = await _authService.GetCurrentUserAsync(userId);
+        var result = await _authService.GetCurrentUserAsync(userId.Value);
         if (!result.Succeeded)
         {
             return NotFound(new { error = result.Error });

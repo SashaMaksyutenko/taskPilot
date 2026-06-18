@@ -1,6 +1,7 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import GuestRoute from './components/GuestRoute'
 import ProtectedRoute from './components/ProtectedRoute'
+import ChatPage from './pages/ChatPage'
 import HomePage from './pages/HomePage'
 import RegisterPage from './pages/RegisterPage'
 import LoginPage from './pages/LoginPage'
@@ -23,6 +24,7 @@ function App() {
         {/* Authenticated-only pages */}
         <Route element={<ProtectedRoute />}>
           <Route path="/" element={<HomePage />} />
+          <Route path="/chat" element={<ChatPage />} />
         </Route>
 
         {/* Unknown routes go home (which itself redirects to login if needed). */}

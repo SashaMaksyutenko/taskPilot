@@ -38,6 +38,12 @@ public class TaskpilotDbContext : DbContext
     /// <summary>Uploaded file metadata.</summary>
     public DbSet<FileAttachment> FileAttachments => Set<FileAttachment>();
 
+    /// <summary>Forum discussion topics.</summary>
+    public DbSet<ForumTopic> ForumTopics => Set<ForumTopic>();
+
+    /// <summary>Forum replies.</summary>
+    public DbSet<ForumReply> ForumReplies => Set<ForumReply>();
+
     /// <summary>
     /// Налаштування моделі (Fluent API): обмеження, індекси, перетворення типів.
     /// Викликається EF Core під час побудови моделі та генерації міграцій.
@@ -176,6 +182,52 @@ public class TaskpilotDbContext : DbContext
             entity.HasOne(f => f.Uploader)
                   .WithMany()
                   .HasForeignKey(f => f.UploaderId)
+                  .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        // ForumTopic entity configuration
+        modelBuilder.Entity<ForumTopic>(entity =>
+        {
+            entity.HasKey(t => t.Id);
+
+            entity.Property(t => t.Title).IsRequired().HasMaxLength(200);
+            entity.Property(t => t.Body).IsRequired().HasMaxLength(10000);
+
+            // List newest/pinned topics quickly.
+            entity.HasIndex(t => t.CreatedAt);
+
+            entity.HasOne(t => t.Author)
+                  .WithMany()
+                  .HasForeignKey(t => t.AuthorId)
+                  .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        // ForumReply entity configuration
+        modelBuilder.Entity<ForumReply>(entity =>
+        {
+            entity.HasKey(r => r.Id);
+
+            entity.Property(r => r.Body).IsRequired().HasMaxLength(10000);
+
+            // Fetch a topic's replies in order.
+            entity.HasIndex(r => new { r.TopicId, r.CreatedAt });
+
+            // Deleting a topic removes its replies.
+            entity.HasOne(r => r.Topic)
+                  .WithMany(t => t.Replies)
+                  .HasForeignKey(r => r.TopicId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            // Author and the optional parent reply are restricted to avoid
+            // multiple cascade paths / self-reference cycles.
+            entity.HasOne(r => r.Author)
+                  .WithMany()
+                  .HasForeignKey(r => r.AuthorId)
+                  .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(r => r.ParentReply)
+                  .WithMany()
+                  .HasForeignKey(r => r.ParentReplyId)
                   .OnDelete(DeleteBehavior.Restrict);
         });
     }

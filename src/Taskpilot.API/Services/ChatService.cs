@@ -14,11 +14,16 @@ namespace Taskpilot.API.Services;
 public class ChatService : IChatService
 {
     private readonly TaskpilotDbContext _context;
+    private readonly INotificationService _notifications;
     private readonly ILogger<ChatService> _logger;
 
-    public ChatService(TaskpilotDbContext context, ILogger<ChatService> logger)
+    public ChatService(
+        TaskpilotDbContext context,
+        INotificationService notifications,
+        ILogger<ChatService> logger)
     {
         _context = context;
+        _notifications = notifications;
         _logger = logger;
     }
 
@@ -168,6 +173,20 @@ public class ChatService : IChatService
                 .Where(u => u.Id == senderId)
                 .Select(u => u.Name)
                 .FirstAsync();
+
+            // Notify the other participants of the conversation.
+            var otherParticipantIds = await _context.ConversationParticipants
+                .Where(p => p.ConversationId == dto.ConversationId && p.UserId != senderId)
+                .Select(p => p.UserId)
+                .ToListAsync();
+            foreach (var participantId in otherParticipantIds)
+            {
+                await _notifications.CreateAsync(
+                    participantId,
+                    NotificationType.Chat,
+                    $"New message from {senderName}",
+                    "/chat");
+            }
 
             _logger.LogInformation("Message sent. MessageId: {MessageId}", message.Id);
             return Result<MessageDto>.Ok(new MessageDto

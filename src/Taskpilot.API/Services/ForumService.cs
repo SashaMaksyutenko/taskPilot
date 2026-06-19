@@ -13,11 +13,16 @@ namespace Taskpilot.API.Services;
 public class ForumService : IForumService
 {
     private readonly TaskpilotDbContext _context;
+    private readonly INotificationService _notifications;
     private readonly ILogger<ForumService> _logger;
 
-    public ForumService(TaskpilotDbContext context, ILogger<ForumService> logger)
+    public ForumService(
+        TaskpilotDbContext context,
+        INotificationService notifications,
+        ILogger<ForumService> logger)
     {
         _context = context;
+        _notifications = notifications;
         _logger = logger;
     }
 
@@ -226,6 +231,33 @@ public class ForumService : IForumService
                 .Where(u => u.Id == authorId)
                 .Select(u => u.Name)
                 .FirstAsync();
+
+            // Notify the topic author (unless they replied to their own topic).
+            if (topic.AuthorId != authorId)
+            {
+                await _notifications.CreateAsync(
+                    topic.AuthorId,
+                    NotificationType.Forum,
+                    $"{authorName} replied to your topic \"{topic.Title}\".",
+                    $"/forum/topics/{topic.Id}");
+            }
+
+            // For a nested reply, also notify the parent reply's author (if different).
+            if (dto.ParentReplyId.HasValue)
+            {
+                var parentAuthorId = await _context.ForumReplies
+                    .Where(r => r.Id == dto.ParentReplyId.Value)
+                    .Select(r => (Guid?)r.AuthorId)
+                    .FirstOrDefaultAsync();
+                if (parentAuthorId is Guid pid && pid != authorId && pid != topic.AuthorId)
+                {
+                    await _notifications.CreateAsync(
+                        pid,
+                        NotificationType.Forum,
+                        $"{authorName} replied to your comment in \"{topic.Title}\".",
+                        $"/forum/topics/{topic.Id}");
+                }
+            }
 
             _logger.LogInformation("Reply added. ReplyId: {ReplyId}", reply.Id);
             // A brand-new reply has no votes yet.

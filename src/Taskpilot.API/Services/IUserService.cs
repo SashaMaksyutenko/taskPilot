@@ -14,4 +14,7 @@ public interface IUserService
 
     /// <summary>Changes the user's password after verifying the current one.</summary>
     Task<Result> ChangePasswordAsync(Guid userId, ChangePasswordDto dto);
+
+    /// <summary>Returns the public profile of any user by id.</summary>
+    Task<Result<PublicProfileDto>> GetPublicProfileAsync(Guid userId);
 }

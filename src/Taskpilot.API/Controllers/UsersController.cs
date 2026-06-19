@@ -28,6 +28,16 @@ public class UsersController : BaseApiController
         _changePasswordValidator = changePasswordValidator;
     }
 
+    /// <summary>Returns the public profile of a user by id.</summary>
+    [HttpGet("{userId:guid}")]
+    public async Task<IActionResult> GetPublicProfile(Guid userId)
+    {
+        var result = await _userService.GetPublicProfileAsync(userId);
+        return result.Succeeded
+            ? Ok(result.Value)
+            : NotFound(new { error = result.Error });
+    }
+
     /// <summary>Updates the current user's profile.</summary>
     [HttpPut("me")]
     public async Task<IActionResult> UpdateProfile([FromBody] UpdateProfileDto dto)

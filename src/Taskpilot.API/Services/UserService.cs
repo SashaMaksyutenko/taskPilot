@@ -69,4 +69,17 @@ public class UserService : IUserService
         _logger.LogInformation("Password changed. UserId: {UserId}", userId);
         return Result.Ok();
     }
+
+    /// <inheritdoc />
+    public async Task<Result<PublicProfileDto>> GetPublicProfileAsync(Guid userId)
+    {
+        // Read-only lookup of the public profile.
+        var user = await _context.Users
+            .AsNoTracking()
+            .FirstOrDefaultAsync(u => u.Id == userId);
+
+        return user is null
+            ? Result<PublicProfileDto>.Fail("User not found.")
+            : Result<PublicProfileDto>.Ok(UserMapper.ToPublicProfile(user));
+    }
 }

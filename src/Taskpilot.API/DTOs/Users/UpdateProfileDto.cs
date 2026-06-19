@@ -7,4 +7,13 @@ public class UpdateProfileDto
     public string? Title { get; set; }
     public string? Bio { get; set; }
     public string? Location { get; set; }
+
+    // Contact / social links
+    public string? Website { get; set; }
+    public string? LinkedIn { get; set; }
+    public string? GitHub { get; set; }
+    public string? Phone { get; set; }
+
+    /// <summary>Whether to show the email on the public profile.</summary>
+    public bool ShowEmail { get; set; }
 }

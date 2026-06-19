@@ -100,6 +100,12 @@ public class TaskpilotDbContext : DbContext
             entity.Property(u => u.Title).HasMaxLength(100);
             entity.Property(u => u.Bio).HasMaxLength(1000);
             entity.Property(u => u.Location).HasMaxLength(100);
+
+            // Optional contact / social links.
+            entity.Property(u => u.Website).HasMaxLength(200);
+            entity.Property(u => u.LinkedIn).HasMaxLength(200);
+            entity.Property(u => u.GitHub).HasMaxLength(200);
+            entity.Property(u => u.Phone).HasMaxLength(30);
         });
 
         // RefreshToken entity configuration

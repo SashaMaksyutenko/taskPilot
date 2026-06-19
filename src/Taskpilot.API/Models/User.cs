@@ -49,4 +49,24 @@ public class User
 
     /// <summary>Location (city/country).</summary>
     public string? Location { get; set; }
+
+    // --- Contact / social links (optional) ---
+
+    /// <summary>Personal website URL.</summary>
+    public string? Website { get; set; }
+
+    /// <summary>LinkedIn profile URL.</summary>
+    public string? LinkedIn { get; set; }
+
+    /// <summary>GitHub profile URL.</summary>
+    public string? GitHub { get; set; }
+
+    /// <summary>Phone number.</summary>
+    public string? Phone { get; set; }
+
+    /// <summary>
+    /// Privacy toggle: whether the email is shown on the public profile.
+    /// Defaults to false — email stays private unless the user opts in.
+    /// </summary>
+    public bool ShowEmail { get; set; }
 }

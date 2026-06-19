@@ -30,6 +30,21 @@ public class UserDto
     /// <summary>Location.</summary>
     public string? Location { get; set; }
 
+    /// <summary>Personal website URL.</summary>
+    public string? Website { get; set; }
+
+    /// <summary>LinkedIn profile URL.</summary>
+    public string? LinkedIn { get; set; }
+
+    /// <summary>GitHub profile URL.</summary>
+    public string? GitHub { get; set; }
+
+    /// <summary>Phone number.</summary>
+    public string? Phone { get; set; }
+
+    /// <summary>Whether the email is shown on the public profile.</summary>
+    public bool ShowEmail { get; set; }
+
     /// <summary>UTC time the account was created.</summary>
     public DateTime CreatedAt { get; set; }
 }

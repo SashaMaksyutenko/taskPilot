@@ -21,5 +21,17 @@ public class UpdateProfileValidator : AbstractValidator<UpdateProfileDto>
 
         RuleFor(x => x.Location)
             .MaximumLength(100).WithMessage("Location must not exceed 100 characters.");
+
+        RuleFor(x => x.Website)
+            .MaximumLength(200).WithMessage("Website must not exceed 200 characters.");
+
+        RuleFor(x => x.LinkedIn)
+            .MaximumLength(200).WithMessage("LinkedIn must not exceed 200 characters.");
+
+        RuleFor(x => x.GitHub)
+            .MaximumLength(200).WithMessage("GitHub must not exceed 200 characters.");
+
+        RuleFor(x => x.Phone)
+            .MaximumLength(30).WithMessage("Phone must not exceed 30 characters.");
     }
 }

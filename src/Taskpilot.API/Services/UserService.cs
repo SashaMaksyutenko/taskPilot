@@ -34,6 +34,11 @@ public class UserService : IUserService
         user.Title = dto.Title?.Trim();
         user.Bio = dto.Bio?.Trim();
         user.Location = dto.Location?.Trim();
+        user.Website = dto.Website?.Trim();
+        user.LinkedIn = dto.LinkedIn?.Trim();
+        user.GitHub = dto.GitHub?.Trim();
+        user.Phone = dto.Phone?.Trim();
+        user.ShowEmail = dto.ShowEmail;
         user.UpdatedAt = DateTime.UtcNow;
 
         await _context.SaveChangesAsync();

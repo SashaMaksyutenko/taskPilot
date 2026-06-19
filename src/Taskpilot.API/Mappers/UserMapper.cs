@@ -21,10 +21,18 @@ public static class UserMapper
         Title = u.Title,
         Bio = u.Bio,
         Location = u.Location,
+        Website = u.Website,
+        LinkedIn = u.LinkedIn,
+        GitHub = u.GitHub,
+        Phone = u.Phone,
+        ShowEmail = u.ShowEmail,
         CreatedAt = u.CreatedAt,
     };
 
-    /// <summary>Public view of another user. Excludes email and account status.</summary>
+    /// <summary>
+    /// Public view of another user. Account status is never exposed; the email is
+    /// only included when the user opted in via <see cref="User.ShowEmail"/>.
+    /// </summary>
     public static PublicProfileDto ToPublicProfile(User u) => new()
     {
         Id = u.Id,
@@ -33,6 +41,11 @@ public static class UserMapper
         Title = u.Title,
         Bio = u.Bio,
         Location = u.Location,
+        Email = u.ShowEmail ? u.Email : null,
+        Website = u.Website,
+        LinkedIn = u.LinkedIn,
+        GitHub = u.GitHub,
+        Phone = u.Phone,
         MemberSince = u.CreatedAt,
     };
 }

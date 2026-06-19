@@ -12,5 +12,15 @@ public class PublicProfileDto
     public string? Title { get; set; }
     public string? Bio { get; set; }
     public string? Location { get; set; }
+
+    /// <summary>Email — only present when the user opted to show it; otherwise null.</summary>
+    public string? Email { get; set; }
+
+    // Contact / social links (shown publicly)
+    public string? Website { get; set; }
+    public string? LinkedIn { get; set; }
+    public string? GitHub { get; set; }
+    public string? Phone { get; set; }
+
     public DateTime MemberSince { get; set; }
 }

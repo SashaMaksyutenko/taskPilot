@@ -13,11 +13,16 @@ namespace Taskpilot.API.Services;
 public class MarketplaceService : IMarketplaceService
 {
     private readonly TaskpilotDbContext _context;
+    private readonly INotificationService _notifications;
     private readonly ILogger<MarketplaceService> _logger;
 
-    public MarketplaceService(TaskpilotDbContext context, ILogger<MarketplaceService> logger)
+    public MarketplaceService(
+        TaskpilotDbContext context,
+        INotificationService notifications,
+        ILogger<MarketplaceService> logger)
     {
         _context = context;
+        _notifications = notifications;
         _logger = logger;
     }
 
@@ -134,6 +139,13 @@ public class MarketplaceService : IMarketplaceService
                 .Select(u => u.Name)
                 .FirstAsync();
 
+            // Notify the task poster about the new application.
+            await _notifications.CreateAsync(
+                task.PosterId,
+                NotificationType.Marketplace,
+                $"{applicantName} applied to your task \"{task.Title}\".",
+                $"/marketplace/tasks/{task.Id}");
+
             _logger.LogInformation("Application submitted. ApplicationId: {ApplicationId}", application.Id);
             return Result<ApplicationDto>.Ok(MapApplication(application, applicantName));
         }
@@ -181,6 +193,16 @@ public class MarketplaceService : IMarketplaceService
         }
 
         await _context.SaveChangesAsync();
+
+        // Notify the applicant about the decision.
+        await _notifications.CreateAsync(
+            application.ApplicantId,
+            NotificationType.Marketplace,
+            accept
+                ? $"Your application to \"{task.Title}\" was accepted!"
+                : $"Your application to \"{task.Title}\" was rejected.",
+            $"/marketplace/tasks/{task.Id}");
+
         return Result.Ok();
     }
 

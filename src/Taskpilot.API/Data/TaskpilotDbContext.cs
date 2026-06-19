@@ -53,6 +53,9 @@ public class TaskpilotDbContext : DbContext
     /// <summary>Applications to marketplace tasks.</summary>
     public DbSet<TaskApplication> TaskApplications => Set<TaskApplication>();
 
+    /// <summary>In-app notifications.</summary>
+    public DbSet<Notification> Notifications => Set<Notification>();
+
     /// <summary>
     /// Налаштування моделі (Fluent API): обмеження, індекси, перетворення типів.
     /// Викликається EF Core під час побудови моделі та генерації міграцій.
@@ -319,6 +322,27 @@ public class TaskpilotDbContext : DbContext
                   .WithMany()
                   .HasForeignKey(a => a.ApplicantId)
                   .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        // Notification entity configuration
+        modelBuilder.Entity<Notification>(entity =>
+        {
+            entity.HasKey(n => n.Id);
+
+            entity.Property(n => n.Message).IsRequired().HasMaxLength(500);
+            entity.Property(n => n.Link).HasMaxLength(500);
+            entity.Property(n => n.Type)
+                  .HasConversion<string>()
+                  .HasMaxLength(20)
+                  .IsRequired();
+
+            // Fast lookup of a user's notifications, newest first / unread filter.
+            entity.HasIndex(n => new { n.RecipientId, n.IsRead, n.CreatedAt });
+
+            entity.HasOne(n => n.Recipient)
+                  .WithMany()
+                  .HasForeignKey(n => n.RecipientId)
+                  .OnDelete(DeleteBehavior.Cascade);
         });
     }
 }

@@ -1,0 +1,27 @@
+using Taskpilot.API.Common;
+using Taskpilot.API.DTOs.Notifications;
+using Taskpilot.API.Models;
+
+namespace Taskpilot.API.Services;
+
+/// <summary>
+/// Creates and reads in-app notifications. Other services call <see cref="CreateAsync"/>
+/// to notify users about events (e.g. a new application).
+/// </summary>
+public interface INotificationService
+{
+    /// <summary>Creates a notification for a user (used internally by other services).</summary>
+    Task CreateAsync(Guid recipientId, NotificationType type, string message, string? link = null);
+
+    /// <summary>Lists a user's notifications (newest first), optionally only unread ones.</summary>
+    Task<Result<List<NotificationDto>>> GetForUserAsync(Guid userId, bool unreadOnly);
+
+    /// <summary>Returns the count of unread notifications for the bell badge.</summary>
+    Task<Result<int>> GetUnreadCountAsync(Guid userId);
+
+    /// <summary>Marks one notification as read (only the owner's own notification).</summary>
+    Task<Result> MarkReadAsync(Guid userId, Guid notificationId);
+
+    /// <summary>Marks all of a user's notifications as read.</summary>
+    Task<Result> MarkAllReadAsync(Guid userId);
+}

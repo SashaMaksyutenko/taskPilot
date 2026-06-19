@@ -17,10 +17,30 @@ namespace Taskpilot.API.Hubs;
 public class ChatHub : Hub
 {
     private readonly IChatService _chatService;
+    private readonly PresenceTracker _presence;
 
-    public ChatHub(IChatService chatService)
+    public ChatHub(IChatService chatService, PresenceTracker presence)
     {
         _chatService = chatService;
+        _presence = presence;
+    }
+
+    /// <summary>Marks the connecting user as online.</summary>
+    public override async Task OnConnectedAsync()
+    {
+        var userId = GetUserId();
+        if (userId is not null)
+            _presence.Connected(userId.Value, Context.ConnectionId);
+        await base.OnConnectedAsync();
+    }
+
+    /// <summary>Marks the user offline once their last connection drops.</summary>
+    public override async Task OnDisconnectedAsync(Exception? exception)
+    {
+        var userId = GetUserId();
+        if (userId is not null)
+            _presence.Disconnected(userId.Value, Context.ConnectionId);
+        await base.OnDisconnectedAsync(exception);
     }
 
     /// <summary>

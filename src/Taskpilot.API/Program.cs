@@ -146,6 +146,9 @@ builder.Services.AddSwaggerGen(options =>
 // Real-time messaging (SignalR) — powers the chat hub.
 builder.Services.AddSignalR();
 
+// Tracks who is currently connected to the chat hub (shared singleton state).
+builder.Services.AddSingleton<PresenceTracker>();
+
 // Register application services. Scoped = one instance per HTTP request.
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IChatService, ChatService>();

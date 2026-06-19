@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Taskpilot.API.Common;
 using Taskpilot.API.Data;
 using Taskpilot.API.DTOs.Chat;
+using Taskpilot.API.Hubs;
 using Taskpilot.API.Models;
 
 namespace Taskpilot.API.Services;
@@ -15,15 +16,18 @@ public class ChatService : IChatService
 {
     private readonly TaskpilotDbContext _context;
     private readonly INotificationService _notifications;
+    private readonly PresenceTracker _presence;
     private readonly ILogger<ChatService> _logger;
 
     public ChatService(
         TaskpilotDbContext context,
         INotificationService notifications,
+        PresenceTracker presence,
         ILogger<ChatService> logger)
     {
         _context = context;
         _notifications = notifications;
+        _presence = presence;
         _logger = logger;
     }
 
@@ -174,13 +178,17 @@ public class ChatService : IChatService
                 .Select(u => u.Name)
                 .FirstAsync();
 
-            // Notify the other participants of the conversation.
+            // Notify only the OFFLINE participants. Online users already receive the
+            // message in real time over the hub, so an in-app notification would be noise.
             var otherParticipantIds = await _context.ConversationParticipants
                 .Where(p => p.ConversationId == dto.ConversationId && p.UserId != senderId)
                 .Select(p => p.UserId)
                 .ToListAsync();
             foreach (var participantId in otherParticipantIds)
             {
+                if (_presence.IsOnline(participantId))
+                    continue;
+
                 await _notifications.CreateAsync(
                     participantId,
                     NotificationType.Chat,

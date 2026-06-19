@@ -1,3 +1,4 @@
+using Taskpilot.API.DTOs.Admin;
 using Taskpilot.API.DTOs.Auth;
 using Taskpilot.API.DTOs.Users;
 using Taskpilot.API.Models;
@@ -47,5 +48,16 @@ public static class UserMapper
         GitHub = u.GitHub,
         Phone = u.Phone,
         MemberSince = u.CreatedAt,
+    };
+
+    /// <summary>Admin view of a user (full management row).</summary>
+    public static AdminUserDto ToAdminDto(User u) => new()
+    {
+        Id = u.Id,
+        Name = u.Name,
+        Email = u.Email,
+        Role = u.Role.ToString(),
+        IsActive = u.IsActive,
+        CreatedAt = u.CreatedAt,
     };
 }

@@ -69,6 +69,9 @@ builder.Services.AddValidatorsFromAssemblyContaining<RegisterValidator>();
 // Bind JWT settings from the "Jwt" config section (populated from .env: Jwt__*).
 builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("Jwt"));
 
+// Bind the initial-admin credentials (populated from .env: Admin__*).
+builder.Services.Configure<AdminSeedSettings>(builder.Configuration.GetSection("Admin"));
+
 // Read the JWT settings now so we can configure token validation below.
 var jwtSettings = builder.Configuration.GetSection("Jwt").Get<JwtSettings>()
     ?? throw new InvalidOperationException("JWT settings are not configured. Set Jwt__* in .env.");
@@ -165,6 +168,9 @@ builder.Services.AddSingleton<ITokenService, TokenService>();
 
 // Build the application from the configured services.
 var app = builder.Build();
+
+// Ensure the initial admin user exists (created/promoted from Admin__* in .env).
+await DataSeeder.SeedAdminAsync(app.Services);
 
 // --- HTTP pipeline (middleware) ---
 

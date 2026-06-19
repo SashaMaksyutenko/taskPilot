@@ -21,6 +21,15 @@ public class UserDto
     /// <summary>Whether the account is active.</summary>
     public bool IsActive { get; set; }
 
+    /// <summary>Job title / headline.</summary>
+    public string? Title { get; set; }
+
+    /// <summary>Short bio.</summary>
+    public string? Bio { get; set; }
+
+    /// <summary>Location.</summary>
+    public string? Location { get; set; }
+
     /// <summary>UTC time the account was created.</summary>
     public DateTime CreatedAt { get; set; }
 }

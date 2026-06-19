@@ -4,6 +4,7 @@ using Taskpilot.API.Common;
 using Taskpilot.API.Configuration;
 using Taskpilot.API.Data;
 using Taskpilot.API.DTOs.Auth;
+using Taskpilot.API.Mappers;
 using Taskpilot.API.Models;
 
 namespace Taskpilot.API.Services;
@@ -225,15 +226,7 @@ public class AuthService : IAuthService
                 return Result<UserDto>.Fail("User not found.");
             }
 
-            return Result<UserDto>.Ok(new UserDto
-            {
-                Id = user.Id,
-                Name = user.Name,
-                Email = user.Email,
-                Role = user.Role.ToString(),
-                IsActive = user.IsActive,
-                CreatedAt = user.CreatedAt
-            });
+            return Result<UserDto>.Ok(UserMapper.ToDto(user));
         }
         catch (Exception ex)
         {

@@ -156,6 +156,7 @@ builder.Services.AddScoped<IFileService, FileService>();
 builder.Services.AddScoped<IForumService, ForumService>();
 builder.Services.AddScoped<IMarketplaceService, MarketplaceService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
+builder.Services.AddScoped<IUserService, UserService>();
 // Token generation is stateless, so a singleton is fine.
 builder.Services.AddSingleton<ITokenService, TokenService>();
 

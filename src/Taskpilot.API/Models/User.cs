@@ -38,4 +38,15 @@ public class User
     /// null, якщо запис ще жодного разу не оновлювався.
     /// </summary>
     public DateTime? UpdatedAt { get; set; }
+
+    // --- Profile fields (optional) ---
+
+    /// <summary>Job title / headline shown on the profile.</summary>
+    public string? Title { get; set; }
+
+    /// <summary>Short "about me" text.</summary>
+    public string? Bio { get; set; }
+
+    /// <summary>Location (city/country).</summary>
+    public string? Location { get; set; }
 }

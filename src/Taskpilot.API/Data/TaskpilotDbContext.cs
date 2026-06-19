@@ -95,6 +95,11 @@ public class TaskpilotDbContext : DbContext
                   .HasConversion<string>()
                   .HasMaxLength(20)
                   .IsRequired();
+
+            // Optional profile fields.
+            entity.Property(u => u.Title).HasMaxLength(100);
+            entity.Property(u => u.Bio).HasMaxLength(1000);
+            entity.Property(u => u.Location).HasMaxLength(100);
         });
 
         // RefreshToken entity configuration

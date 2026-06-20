@@ -42,8 +42,15 @@ export default function HomePage() {
         )}
 
         <Link
-          to="/chat"
+          to="/projects"
           className="mt-6 block w-full rounded-lg bg-[#1E2A44] py-2.5 font-semibold text-white transition hover:bg-[#27345a]"
+        >
+          My projects
+        </Link>
+
+        <Link
+          to="/chat"
+          className="mt-3 block w-full rounded-lg bg-[#1E2A44] py-2.5 font-semibold text-white transition hover:bg-[#27345a]"
         >
           Open chat
         </Link>

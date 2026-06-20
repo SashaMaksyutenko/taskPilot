@@ -162,6 +162,7 @@ builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IAdminService, AdminService>();
 builder.Services.AddScoped<IProjectService, ProjectService>();
+builder.Services.AddScoped<ITaskService, TaskService>();
 // Token generation is stateless, so a singleton is fine.
 builder.Services.AddSingleton<ITokenService, TokenService>();
 

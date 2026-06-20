@@ -1,0 +1,111 @@
+using FluentValidation;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Taskpilot.API.DTOs.Projects;
+using Taskpilot.API.Services;
+
+namespace Taskpilot.API.Controllers;
+
+/// <summary>
+/// REST endpoints for project tasks. Create/list are nested under a project;
+/// single-task operations use the task id. All require authentication and are
+/// scoped to the owner of the parent project.
+/// </summary>
+[ApiController]
+[Authorize]
+public class TasksController : BaseApiController
+{
+    private readonly ITaskService _tasks;
+    private readonly IValidator<CreateTaskDto> _createValidator;
+    private readonly IValidator<UpdateTaskDto> _updateValidator;
+
+    public TasksController(
+        ITaskService tasks,
+        IValidator<CreateTaskDto> createValidator,
+        IValidator<UpdateTaskDto> updateValidator)
+    {
+        _tasks = tasks;
+        _createValidator = createValidator;
+        _updateValidator = updateValidator;
+    }
+
+    /// <summary>Lists a project's tasks (use ?status=Backlog|InProgress|Review|Done for a Kanban column).</summary>
+    [HttpGet("api/projects/{projectId:guid}/tasks")]
+    public async Task<IActionResult> GetByProject(Guid projectId, [FromQuery] string? status = null)
+    {
+        var userId = CurrentUserId();
+        if (userId is null) return Unauthorized();
+
+        var result = await _tasks.GetTasksAsync(userId.Value, projectId, status);
+        return result.Succeeded
+            ? Ok(result.Value)
+            : BadRequest(new { error = result.Error });
+    }
+
+    /// <summary>Creates a task in a project.</summary>
+    [HttpPost("api/projects/{projectId:guid}/tasks")]
+    public async Task<IActionResult> Create(Guid projectId, [FromBody] CreateTaskDto dto)
+    {
+        var userId = CurrentUserId();
+        if (userId is null) return Unauthorized();
+
+        var validation = await _createValidator.ValidateAsync(dto);
+        if (!validation.IsValid)
+            return BadRequest(new { errors = validation.Errors.Select(e => new { field = e.PropertyName, message = e.ErrorMessage }) });
+
+        var result = await _tasks.CreateTaskAsync(userId.Value, projectId, dto);
+        return result.Succeeded
+            ? StatusCode(StatusCodes.Status201Created, result.Value)
+            : BadRequest(new { error = result.Error });
+    }
+
+    /// <summary>Returns a single task.</summary>
+    [HttpGet("api/tasks/{taskId:guid}")]
+    public async Task<IActionResult> Get(Guid taskId)
+    {
+        var userId = CurrentUserId();
+        if (userId is null) return Unauthorized();
+
+        var result = await _tasks.GetTaskAsync(userId.Value, taskId);
+        return result.Succeeded ? Ok(result.Value) : NotFound(new { error = result.Error });
+    }
+
+    /// <summary>Updates a task's editable fields.</summary>
+    [HttpPut("api/tasks/{taskId:guid}")]
+    public async Task<IActionResult> Update(Guid taskId, [FromBody] UpdateTaskDto dto)
+    {
+        var userId = CurrentUserId();
+        if (userId is null) return Unauthorized();
+
+        var validation = await _updateValidator.ValidateAsync(dto);
+        if (!validation.IsValid)
+            return BadRequest(new { errors = validation.Errors.Select(e => new { field = e.PropertyName, message = e.ErrorMessage }) });
+
+        var result = await _tasks.UpdateTaskAsync(userId.Value, taskId, dto);
+        return result.Succeeded ? Ok(result.Value) : NotFound(new { error = result.Error });
+    }
+
+    /// <summary>Moves a task to another Kanban status.</summary>
+    [HttpPost("api/tasks/{taskId:guid}/status")]
+    public async Task<IActionResult> ChangeStatus(Guid taskId, [FromBody] ChangeStatusDto dto)
+    {
+        var userId = CurrentUserId();
+        if (userId is null) return Unauthorized();
+
+        var result = await _tasks.ChangeStatusAsync(userId.Value, taskId, dto.Status);
+        return result.Succeeded ? Ok(result.Value) : BadRequest(new { error = result.Error });
+    }
+
+    /// <summary>Deletes a task.</summary>
+    [HttpDelete("api/tasks/{taskId:guid}")]
+    public async Task<IActionResult> Delete(Guid taskId)
+    {
+        var userId = CurrentUserId();
+        if (userId is null) return Unauthorized();
+
+        var result = await _tasks.DeleteTaskAsync(userId.Value, taskId);
+        return result.Succeeded
+            ? Ok(new { message = "Task deleted." })
+            : NotFound(new { error = result.Error });
+    }
+}

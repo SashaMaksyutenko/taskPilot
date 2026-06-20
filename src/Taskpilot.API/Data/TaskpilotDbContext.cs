@@ -56,6 +56,12 @@ public class TaskpilotDbContext : DbContext
     /// <summary>In-app notifications.</summary>
     public DbSet<Notification> Notifications => Set<Notification>();
 
+    /// <summary>Projects.</summary>
+    public DbSet<Project> Projects => Set<Project>();
+
+    /// <summary>Tasks within projects.</summary>
+    public DbSet<ProjectTask> ProjectTasks => Set<ProjectTask>();
+
     /// <summary>
     /// Налаштування моделі (Fluent API): обмеження, індекси, перетворення типів.
     /// Викликається EF Core під час побудови моделі та генерації міграцій.
@@ -354,6 +360,63 @@ public class TaskpilotDbContext : DbContext
                   .WithMany()
                   .HasForeignKey(n => n.RecipientId)
                   .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // Project entity configuration
+        modelBuilder.Entity<Project>(entity =>
+        {
+            entity.HasKey(p => p.Id);
+
+            entity.Property(p => p.Name).IsRequired().HasMaxLength(150);
+            entity.Property(p => p.Description).HasMaxLength(5000);
+            entity.Property(p => p.Color).HasMaxLength(20);
+
+            entity.HasIndex(p => p.OwnerId);
+
+            entity.HasOne(p => p.Owner)
+                  .WithMany()
+                  .HasForeignKey(p => p.OwnerId)
+                  .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        // ProjectTask entity configuration
+        modelBuilder.Entity<ProjectTask>(entity =>
+        {
+            entity.HasKey(t => t.Id);
+
+            entity.Property(t => t.Title).IsRequired().HasMaxLength(200);
+            entity.Property(t => t.Description).HasMaxLength(10000);
+
+            // Store status and priority as readable strings.
+            entity.Property(t => t.Status)
+                  .HasConversion<string>().HasMaxLength(20).IsRequired();
+            entity.Property(t => t.Priority)
+                  .HasConversion<string>().HasMaxLength(20).IsRequired();
+
+            // Common queries: a project's tasks by status.
+            entity.HasIndex(t => new { t.ProjectId, t.Status });
+
+            // Deleting a project removes its tasks.
+            entity.HasOne(t => t.Project)
+                  .WithMany(p => p.Tasks)
+                  .HasForeignKey(t => t.ProjectId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            // User/self links are restricted to avoid multiple cascade paths / cycles.
+            entity.HasOne(t => t.Assignee)
+                  .WithMany()
+                  .HasForeignKey(t => t.AssigneeId)
+                  .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(t => t.Creator)
+                  .WithMany()
+                  .HasForeignKey(t => t.CreatorId)
+                  .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(t => t.ParentTask)
+                  .WithMany()
+                  .HasForeignKey(t => t.ParentTaskId)
+                  .OnDelete(DeleteBehavior.Restrict);
         });
     }
 }

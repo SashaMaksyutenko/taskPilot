@@ -1,2 +1,6 @@
 /* Tailwind CSS v4 — single import pulls in base, components and utilities. */
 @import "tailwindcss";
+
+/* Enable class-based dark mode: `dark:` utilities apply when an ancestor has .dark.
+   (Tailwind v4 defaults to prefers-color-scheme; this opts into a manual toggle.) */
+@custom-variant dark (&:where(.dark, .dark *));

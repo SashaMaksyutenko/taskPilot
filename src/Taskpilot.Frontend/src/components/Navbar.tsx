@@ -8,6 +8,7 @@ const LINKS = [
   { to: '/', label: 'Dashboard', end: true },
   { to: '/projects', label: 'Projects', end: false },
   { to: '/calendar', label: 'Calendar', end: false },
+  { to: '/forum', label: 'Forum', end: false },
   { to: '/chat', label: 'Chat', end: false },
 ]
 

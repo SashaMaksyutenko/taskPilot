@@ -9,6 +9,7 @@ const LINKS = [
   { to: '/projects', label: 'Projects', end: false },
   { to: '/calendar', label: 'Calendar', end: false },
   { to: '/forum', label: 'Forum', end: false },
+  { to: '/marketplace', label: 'Market', end: false },
   { to: '/chat', label: 'Chat', end: false },
 ]
 

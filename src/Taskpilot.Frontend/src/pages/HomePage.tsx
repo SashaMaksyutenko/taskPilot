@@ -49,6 +49,13 @@ export default function HomePage() {
         </Link>
 
         <Link
+          to="/calendar"
+          className="mt-3 block w-full rounded-lg bg-[#1E2A44] py-2.5 font-semibold text-white transition hover:bg-[#27345a]"
+        >
+          Calendar
+        </Link>
+
+        <Link
           to="/chat"
           className="mt-3 block w-full rounded-lg bg-[#1E2A44] py-2.5 font-semibold text-white transition hover:bg-[#27345a]"
         >

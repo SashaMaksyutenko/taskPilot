@@ -2,6 +2,7 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import GuestRoute from './components/GuestRoute'
 import ProtectedRoute from './components/ProtectedRoute'
 import BoardPage from './pages/BoardPage'
+import CalendarPage from './pages/CalendarPage'
 import ChatPage from './pages/ChatPage'
 import HomePage from './pages/HomePage'
 import ProjectsPage from './pages/ProjectsPage'
@@ -29,6 +30,7 @@ function App() {
           <Route path="/chat" element={<ChatPage />} />
           <Route path="/projects" element={<ProjectsPage />} />
           <Route path="/projects/:projectId" element={<BoardPage />} />
+          <Route path="/calendar" element={<CalendarPage />} />
         </Route>
 
         {/* Unknown routes go home (which itself redirects to login if needed). */}

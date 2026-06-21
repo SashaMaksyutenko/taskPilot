@@ -34,9 +34,12 @@ public class CalendarController : BaseApiController
         var fromDate = from.HasValue
             ? DateTime.SpecifyKind(from.Value, DateTimeKind.Utc)
             : DateTime.UtcNow.Date;
-        var toDate = to.HasValue
+        var toRaw = to.HasValue
             ? DateTime.SpecifyKind(to.Value, DateTimeKind.Utc)
             : fromDate.AddMonths(1);
+
+        // Make the 'to' day inclusive: cover the whole day, not just its midnight.
+        var toDate = toRaw.Date.AddDays(1).AddTicks(-1);
 
         var result = await _tasks.GetCalendarTasksAsync(userId.Value, fromDate, toDate);
         return Ok(result.Value);

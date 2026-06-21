@@ -1,4 +1,5 @@
 using Taskpilot.API.Common;
+using Taskpilot.API.DTOs.Calendar;
 using Taskpilot.API.DTOs.Projects;
 
 namespace Taskpilot.API.Services;
@@ -22,4 +23,10 @@ public interface ITaskService
     Task<Result<TaskDto>> ChangeStatusAsync(Guid userId, Guid taskId, string status);
 
     Task<Result> DeleteTaskAsync(Guid userId, Guid taskId);
+
+    /// <summary>
+    /// Returns the user's tasks (across all their projects) that have a deadline
+    /// within the [from, to] range — used to render the calendar.
+    /// </summary>
+    Task<Result<List<CalendarTaskDto>>> GetCalendarTasksAsync(Guid userId, DateTime from, DateTime to);
 }

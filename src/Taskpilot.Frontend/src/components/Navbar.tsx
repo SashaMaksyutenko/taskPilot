@@ -1,8 +1,6 @@
-import { useEffect, useRef, useState } from 'react'
+import { useState } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
-import { createNotificationConnection } from '../lib/notificationHub'
-import { notificationService } from '../services/notificationService'
-import type { AppNotification } from '../types/notification'
+import { useNotifications } from '../hooks/useNotifications'
 import { logout } from '../store/authSlice'
 import { useAppDispatch, useAppSelector } from '../store/hooks'
 
@@ -23,81 +21,20 @@ export default function Navbar() {
   const dispatch = useAppDispatch()
   const navigate = useNavigate()
   const user = useAppSelector((s) => s.auth.user)
-  const [unread, setUnread] = useState(0)
   const [dark, setDark] = useState(() => document.documentElement.classList.contains('dark'))
 
-  const [notesOpen, setNotesOpen] = useState(false)
-  const [notes, setNotes] = useState<AppNotification[]>([])
-  const [toasts, setToasts] = useState<AppNotification[]>([])
-  const bellRef = useRef<HTMLDivElement | null>(null)
-
-  useEffect(() => {
-    notificationService.getUnreadCount().then(setUnread).catch(() => {})
-  }, [])
-
-  const dismissToast = (id: string) => setToasts((prev) => prev.filter((t) => t.id !== id))
-
-  // Subscribe to real-time notifications: bump the unread count, prepend the new
-  // item to the list (so an open panel shows it immediately) and pop a toast.
-  useEffect(() => {
-    const connection = createNotificationConnection()
-    connection.on('ReceiveNotification', (n: AppNotification) => {
-      setUnread((c) => c + 1)
-      setNotes((prev) => [n, ...prev])
-      setToasts((prev) => [...prev, n])
-      // Auto-dismiss the toast after a few seconds.
-      setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== n.id)), 5000)
-    })
-    connection.start().catch(() => {})
-    return () => {
-      connection.stop()
-    }
-  }, [])
-
-  const openToast = async (n: AppNotification) => {
-    dismissToast(n.id)
-    if (!n.isRead) {
-      await notificationService.markRead(n.id).catch(() => {})
-      setNotes((prev) => prev.map((x) => (x.id === n.id ? { ...x, isRead: true } : x)))
-      setUnread((c) => Math.max(0, c - 1))
-    }
-    if (n.link) navigate(n.link)
-  }
-
-  // Close the notifications panel when clicking anywhere outside it.
-  useEffect(() => {
-    if (!notesOpen) return
-    const onClick = (e: MouseEvent) => {
-      if (bellRef.current && !bellRef.current.contains(e.target as Node)) setNotesOpen(false)
-    }
-    document.addEventListener('mousedown', onClick)
-    return () => document.removeEventListener('mousedown', onClick)
-  }, [notesOpen])
-
-  const toggleNotes = () => {
-    const next = !notesOpen
-    setNotesOpen(next)
-    if (next) {
-      // Load the latest notifications each time the panel opens.
-      notificationService.getNotifications().then(setNotes).catch(() => {})
-    }
-  }
-
-  const openNotification = async (n: AppNotification) => {
-    if (!n.isRead) {
-      await notificationService.markRead(n.id).catch(() => {})
-      setNotes((prev) => prev.map((x) => (x.id === n.id ? { ...x, isRead: true } : x)))
-      setUnread((c) => Math.max(0, c - 1))
-    }
-    setNotesOpen(false)
-    if (n.link) navigate(n.link)
-  }
-
-  const markAllRead = async () => {
-    await notificationService.markAllRead().catch(() => {})
-    setNotes((prev) => prev.map((x) => ({ ...x, isRead: true })))
-    setUnread(0)
-  }
+  const {
+    unread,
+    notes,
+    toasts,
+    open: notesOpen,
+    bellRef,
+    toggle: toggleNotes,
+    openNotification,
+    openToast,
+    dismissToast,
+    markAllRead,
+  } = useNotifications()
 
   const toggleTheme = () => {
     const next = !dark

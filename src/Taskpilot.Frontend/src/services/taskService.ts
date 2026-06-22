@@ -23,4 +23,11 @@ export const taskService = {
   deleteTask(taskId: string): Promise<void> {
     return api.delete(`/api/tasks/${taskId}`).then(() => undefined)
   },
+
+  /** Downloads the project's tasks as a CSV blob. */
+  exportCsv(projectId: string): Promise<Blob> {
+    return api
+      .get(`/api/projects/${projectId}/tasks/export`, { responseType: 'blob' })
+      .then((r) => r.data as Blob)
+  },
 }

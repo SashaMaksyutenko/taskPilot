@@ -13,6 +13,10 @@ export const notificationService = {
     return api.get<{ count: number }>('/api/notifications/unread-count').then((r) => r.data.count)
   },
 
+  markRead(id: string): Promise<void> {
+    return api.post(`/api/notifications/${id}/read`).then(() => undefined)
+  },
+
   markAllRead(): Promise<void> {
     return api.post('/api/notifications/read-all').then(() => undefined)
   },

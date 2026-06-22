@@ -174,6 +174,15 @@ builder.Services.AddSingleton<ITokenService, TokenService>();
 // Build the application from the configured services.
 var app = builder.Build();
 
+// Apply any pending EF Core migrations on startup. This creates/updates the
+// schema automatically in fresh environments (e.g. a container or a new server),
+// so no separate migration step is needed to deploy.
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<TaskpilotDbContext>();
+    await db.Database.MigrateAsync();
+}
+
 // Ensure the initial admin user exists (created/promoted from Admin__* in .env).
 await DataSeeder.SeedAdminAsync(app.Services);
 

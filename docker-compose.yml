@@ -20,6 +20,36 @@ services:
     volumes:
       # Зберігаємо дані БД між перезапусками контейнера
       - postgres_data:/var/lib/postgresql/data
+    # Дозволяємо api дочекатися, поки база буде готова приймати підключення
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d taskpilot"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # ---- Backend API (ASP.NET Core) ----
+  # Секрети (JWT_KEY, ADMIN_PASSWORD) беруться з кореневого .env через підстановку
+  # ${...} — у git комітимо лише .env.example. Рядок підключення вказує на сервіс
+  # postgres усередині docker-мережі (host = "postgres", порт 5432).
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: taskpilot-api
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__DefaultConnection: "Host=postgres;Port=5432;Database=taskpilot;Username=postgres;Password=postgres"
+      Jwt__Key: "${JWT_KEY}"
+      Jwt__Issuer: "Taskpilot.API"
+      Jwt__Audience: "Taskpilot.Client"
+      Admin__Email: "${ADMIN_EMAIL:-admin@taskpilot.local}"
+      Admin__Password: "${ADMIN_PASSWORD}"
+      Admin__Name: "Administrator"
 
   # ---- Кеш Redis ----
   redis:

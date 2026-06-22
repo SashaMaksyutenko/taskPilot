@@ -1,0 +1,14 @@
+# Keep the build context small and never ship secrets or build output.
+**/bin/
+**/obj/
+**/.vs/
+**/.git/
+**/node_modules/
+**/dist/
+
+# Secrets — never copy any .env into the image.
+**/.env
+**/.env.local
+
+# The frontend is built and deployed separately.
+src/Taskpilot.Frontend/

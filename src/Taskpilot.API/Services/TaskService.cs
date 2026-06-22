@@ -15,11 +15,13 @@ namespace Taskpilot.API.Services;
 public class TaskService : ITaskService
 {
     private readonly TaskpilotDbContext _context;
+    private readonly IWebhookService _webhooks;
     private readonly ILogger<TaskService> _logger;
 
-    public TaskService(TaskpilotDbContext context, ILogger<TaskService> logger)
+    public TaskService(TaskpilotDbContext context, IWebhookService webhooks, ILogger<TaskService> logger)
     {
         _context = context;
+        _webhooks = webhooks;
         _logger = logger;
     }
 
@@ -144,6 +146,18 @@ public class TaskService : ITaskService
         task.CompletedAt = parsed == ProjectTaskStatus.Done ? DateTime.UtcNow : null;
         task.UpdatedAt = DateTime.UtcNow;
         await _context.SaveChangesAsync();
+
+        // Emit the task.completed webhook event when a task is finished.
+        if (parsed == ProjectTaskStatus.Done)
+        {
+            await _webhooks.DispatchAsync(WebhookEvents.TaskCompleted, new
+            {
+                taskId = task.Id,
+                title = task.Title,
+                projectId = task.ProjectId,
+                completedAt = task.CompletedAt,
+            });
+        }
 
         _logger.LogInformation("Task status changed. TaskId: {TaskId}, Status: {Status}", taskId, parsed);
         return Result<TaskDto>.Ok(await LoadDtoAsync(task.Id));

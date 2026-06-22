@@ -62,6 +62,9 @@ public class TaskpilotDbContext : DbContext
     /// <summary>Tasks within projects.</summary>
     public DbSet<ProjectTask> ProjectTasks => Set<ProjectTask>();
 
+    /// <summary>Outgoing webhooks.</summary>
+    public DbSet<Webhook> Webhooks => Set<Webhook>();
+
     /// <summary>
     /// Налаштування моделі (Fluent API): обмеження, індекси, перетворення типів.
     /// Викликається EF Core під час побудови моделі та генерації міграцій.
@@ -417,6 +420,25 @@ public class TaskpilotDbContext : DbContext
                   .WithMany()
                   .HasForeignKey(t => t.ParentTaskId)
                   .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        // Webhook entity configuration
+        modelBuilder.Entity<Webhook>(entity =>
+        {
+            entity.HasKey(w => w.Id);
+
+            entity.Property(w => w.Url).IsRequired().HasMaxLength(500);
+            entity.Property(w => w.Event).IsRequired().HasMaxLength(100);
+            entity.Property(w => w.Secret).IsRequired().HasMaxLength(200);
+
+            // Find active webhooks for an event quickly when dispatching.
+            entity.HasIndex(w => new { w.Event, w.IsActive });
+
+            // Deleting a user removes their webhooks (only cascade path to Users).
+            entity.HasOne(w => w.Owner)
+                  .WithMany()
+                  .HasForeignKey(w => w.OwnerId)
+                  .OnDelete(DeleteBehavior.Cascade);
         });
     }
 }

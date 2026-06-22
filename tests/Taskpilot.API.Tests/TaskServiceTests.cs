@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
+using Moq;
 using Taskpilot.API.Data;
 using Taskpilot.API.DTOs.Projects;
 using Taskpilot.API.Services;
@@ -11,7 +12,7 @@ namespace Taskpilot.API.Tests;
 public class TaskServiceTests
 {
     private static TaskService Create(TaskpilotDbContext ctx) =>
-        new(ctx, NullLogger<TaskService>.Instance);
+        new(ctx, new Mock<IWebhookService>().Object, NullLogger<TaskService>.Instance);
 
     [Fact]
     public async Task CreateTask_DefaultsToBacklogAndMedium()

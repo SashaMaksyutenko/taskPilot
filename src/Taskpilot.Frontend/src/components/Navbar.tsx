@@ -48,7 +48,7 @@ export default function Navbar() {
       </NavLink>
 
       <nav className="hidden items-center gap-1 sm:flex">
-        {LINKS.map((l) => (
+        {(user?.role === 'Admin' ? [...LINKS, { to: '/admin', label: 'Admin', end: false }] : LINKS).map((l) => (
           <NavLink
             key={l.to}
             to={l.to}

@@ -1,6 +1,8 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
+import AdminRoute from './components/AdminRoute'
 import GuestRoute from './components/GuestRoute'
 import ProtectedRoute from './components/ProtectedRoute'
+import AdminPage from './pages/AdminPage'
 import BoardPage from './pages/BoardPage'
 import CalendarPage from './pages/CalendarPage'
 import ChatPage from './pages/ChatPage'
@@ -41,6 +43,9 @@ function App() {
           <Route path="/marketplace" element={<MarketplacePage />} />
           <Route path="/marketplace/:taskId" element={<MarketplaceTaskPage />} />
           <Route path="/settings" element={<SettingsPage />} />
+          <Route element={<AdminRoute />}>
+            <Route path="/admin" element={<AdminPage />} />
+          </Route>
         </Route>
 
         {/* Unknown routes go home (which itself redirects to login if needed). */}

@@ -51,6 +51,21 @@ services:
       Admin__Password: "${ADMIN_PASSWORD}"
       Admin__Name: "Administrator"
 
+  # ---- Frontend (React SPA за nginx) ----
+  # nginx віддає статичний build і проксить /api та /hubs на сервіс api, тож
+  # браузер працює з одним origin (без CORS). VITE_API_URL порожній => відносні URL.
+  frontend:
+    build:
+      context: ./src/Taskpilot.Frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: ""
+    container_name: taskpilot-frontend
+    depends_on:
+      - api
+    ports:
+      - "3000:80"
+
   # ---- Кеш Redis ----
   redis:
     image: redis:7

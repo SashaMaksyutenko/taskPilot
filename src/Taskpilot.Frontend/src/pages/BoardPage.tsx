@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import Navbar from '../components/Navbar'
+import TaskDetailModal from '../components/TaskDetailModal'
 import { projectService } from '../services/projectService'
 import { taskService } from '../services/taskService'
 import { STATUS_COLUMNS, type Project, type Task, type TaskStatus } from '../types/project'
@@ -20,6 +21,7 @@ export default function BoardPage() {
   const [project, setProject] = useState<Project | null>(null)
   const [tasks, setTasks] = useState<Task[]>([])
   const [newTitle, setNewTitle] = useState('')
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null)
   const draggingId = useRef<string | null>(null)
 
   useEffect(() => {
@@ -114,6 +116,7 @@ export default function BoardPage() {
                         draggingId.current = t.id
                         e.dataTransfer.setData('taskId', t.id)
                       }}
+                      onClick={() => setSelectedTask(t)}
                       className="cursor-grab rounded-lg border border-slate-200 bg-white p-3 shadow-sm active:cursor-grabbing dark:border-slate-700 dark:bg-slate-900"
                     >
                       <div className="text-sm font-medium">{t.title}</div>
@@ -140,6 +143,15 @@ export default function BoardPage() {
           })}
         </div>
       </main>
+
+      {selectedTask && (
+        <TaskDetailModal
+          task={selectedTask}
+          onClose={() => setSelectedTask(null)}
+          onSaved={(updated) => setTasks((prev) => prev.map((t) => (t.id === updated.id ? updated : t)))}
+          onDeleted={(taskId) => setTasks((prev) => prev.filter((t) => t.id !== taskId))}
+        />
+      )}
     </div>
   )
 }

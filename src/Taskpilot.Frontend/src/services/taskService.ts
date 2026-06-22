@@ -16,6 +16,19 @@ export const taskService = {
     return api.post<Task>(`/api/projects/${projectId}/tasks`, data).then((r) => r.data)
   },
 
+  updateTask(
+    taskId: string,
+    data: {
+      title: string
+      description?: string | null
+      priority?: string
+      assigneeId?: string | null
+      deadline?: string | null
+    },
+  ): Promise<Task> {
+    return api.put<Task>(`/api/tasks/${taskId}`, data).then((r) => r.data)
+  },
+
   changeStatus(taskId: string, status: TaskStatus): Promise<Task> {
     return api.post<Task>(`/api/tasks/${taskId}/status`, { status }).then((r) => r.data)
   },

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
 import type { HubConnection } from '@microsoft/signalr'
+import Navbar from '../components/Navbar'
 import { createChatConnection } from '../lib/chatHub'
 import { chatService } from '../services/chatService'
 import type { Conversation, Message } from '../types/chat'
@@ -95,101 +95,102 @@ export default function ChatPage() {
   }
 
   return (
-    <div className="flex h-screen bg-slate-50 text-[#1E2A44]">
-      {/* Sidebar: conversations */}
-      <aside className="flex w-72 flex-col border-r border-slate-200 bg-white">
-        <div className="flex items-center gap-2 border-b border-slate-200 p-4">
-          <img src="/logo-mark.svg" alt="" className="h-7 w-7" />
-          <span className="font-bold">Chats</span>
-          <Link to="/" className="ml-auto text-sm text-slate-500 hover:underline">
-            Home
-          </Link>
-        </div>
-
-        {/* Start a direct chat by user id (user search comes later) */}
-        <div className="flex gap-2 border-b border-slate-200 p-3">
-          <input
-            value={otherUserId}
-            onChange={(e) => setOtherUserId(e.target.value)}
-            placeholder="User id to chat with"
-            className="min-w-0 flex-1 rounded border border-slate-300 px-2 py-1 text-sm outline-none focus:border-[#1E2A44]"
-          />
-          <button
-            onClick={startDirect}
-            className="rounded bg-[#1E2A44] px-3 text-sm font-medium text-white"
-          >
-            +
-          </button>
-        </div>
-
-        <div className="flex-1 overflow-y-auto">
-          {conversations.length === 0 && (
-            <p className="p-4 text-sm text-slate-400">No conversations yet.</p>
-          )}
-          {conversations.map((conv) => (
-            <button
-              key={conv.id}
-              onClick={() => selectConversation(conv.id)}
-              className={`block w-full border-b border-slate-100 px-4 py-3 text-left text-sm hover:bg-slate-50 ${
-                selectedId === conv.id ? 'bg-slate-100 font-semibold' : ''
-              }`}
-            >
-              {conversationTitle(conv)}
-              <span className="ml-2 text-xs text-slate-400">{conv.type}</span>
-            </button>
-          ))}
-        </div>
-      </aside>
-
-      {/* Main: messages */}
-      <main className="flex flex-1 flex-col">
-        {selectedId ? (
-          <>
-            <div className="flex-1 space-y-3 overflow-y-auto p-6">
-              {messages.map((m) => {
-                const mine = m.senderId === currentUser?.id
-                return (
-                  <div key={m.id} className={`flex ${mine ? 'justify-end' : 'justify-start'}`}>
-                    <div
-                      className={`max-w-md rounded-2xl px-4 py-2 ${
-                        mine ? 'bg-[#1E2A44] text-white' : 'bg-white text-[#1E2A44] shadow'
-                      }`}
-                    >
-                      {!mine && (
-                        <div className="mb-0.5 text-xs font-semibold text-slate-500">
-                          {m.senderName}
-                        </div>
-                      )}
-                      <div className="whitespace-pre-wrap break-words">{m.content}</div>
-                    </div>
-                  </div>
-                )
-              })}
-              <div ref={bottomRef} />
-            </div>
-
-            <div className="flex gap-2 border-t border-slate-200 bg-white p-4">
-              <input
-                value={text}
-                onChange={(e) => setText(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && send()}
-                placeholder="Type a message…"
-                className="flex-1 rounded-lg border border-slate-300 px-3 py-2 outline-none focus:border-[#1E2A44]"
-              />
-              <button
-                onClick={send}
-                className="rounded-lg bg-[#F6BE2C] px-5 font-semibold text-[#1E2A44] transition hover:brightness-95"
-              >
-                Send
-              </button>
-            </div>
-          </>
-        ) : (
-          <div className="flex flex-1 items-center justify-center text-slate-400">
-            Select a conversation to start chatting
+    <div className="flex h-screen flex-col bg-slate-50 text-[#1E2A44] dark:bg-slate-900 dark:text-slate-100">
+      <Navbar />
+      <div className="flex min-h-0 flex-1">
+        {/* Sidebar: conversations */}
+        <aside className="flex w-72 flex-col border-r border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-800">
+          <div className="border-b border-slate-200 p-4 dark:border-slate-700">
+            <span className="font-bold">Chats</span>
           </div>
-        )}
-      </main>
+
+          {/* Start a direct chat by user id (user search comes later) */}
+          <div className="flex gap-2 border-b border-slate-200 p-3 dark:border-slate-700">
+            <input
+              value={otherUserId}
+              onChange={(e) => setOtherUserId(e.target.value)}
+              placeholder="User id to chat with"
+              className="min-w-0 flex-1 rounded border border-slate-300 px-2 py-1 text-sm outline-none focus:border-[#1E2A44] dark:border-slate-600 dark:bg-slate-900"
+            />
+            <button
+              onClick={startDirect}
+              className="rounded bg-[#1E2A44] px-3 text-sm font-medium text-white"
+            >
+              +
+            </button>
+          </div>
+
+          <div className="flex-1 overflow-y-auto">
+            {conversations.length === 0 && (
+              <p className="p-4 text-sm text-slate-400">No conversations yet.</p>
+            )}
+            {conversations.map((conv) => (
+              <button
+                key={conv.id}
+                onClick={() => selectConversation(conv.id)}
+                className={`block w-full border-b border-slate-100 px-4 py-3 text-left text-sm hover:bg-slate-50 dark:border-slate-700/60 dark:hover:bg-slate-700/50 ${
+                  selectedId === conv.id ? 'bg-slate-100 font-semibold dark:bg-slate-700' : ''
+                }`}
+              >
+                {conversationTitle(conv)}
+                <span className="ml-2 text-xs text-slate-400">{conv.type}</span>
+              </button>
+            ))}
+          </div>
+        </aside>
+
+        {/* Main: messages */}
+        <main className="flex min-h-0 flex-1 flex-col">
+          {selectedId ? (
+            <>
+              <div className="flex-1 space-y-3 overflow-y-auto p-6">
+                {messages.map((m) => {
+                  const mine = m.senderId === currentUser?.id
+                  return (
+                    <div key={m.id} className={`flex ${mine ? 'justify-end' : 'justify-start'}`}>
+                      <div
+                        className={`max-w-md rounded-2xl px-4 py-2 ${
+                          mine
+                            ? 'bg-[#1E2A44] text-white'
+                            : 'bg-white text-[#1E2A44] shadow dark:bg-slate-800 dark:text-slate-100'
+                        }`}
+                      >
+                        {!mine && (
+                          <div className="mb-0.5 text-xs font-semibold text-slate-500 dark:text-slate-400">
+                            {m.senderName}
+                          </div>
+                        )}
+                        <div className="whitespace-pre-wrap break-words">{m.content}</div>
+                      </div>
+                    </div>
+                  )
+                })}
+                <div ref={bottomRef} />
+              </div>
+
+              <div className="flex gap-2 border-t border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-800">
+                <input
+                  value={text}
+                  onChange={(e) => setText(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && send()}
+                  placeholder="Type a message…"
+                  className="flex-1 rounded-lg border border-slate-300 px-3 py-2 outline-none focus:border-[#1E2A44] dark:border-slate-600 dark:bg-slate-900"
+                />
+                <button
+                  onClick={send}
+                  className="rounded-lg bg-[#F6BE2C] px-5 font-semibold text-[#1E2A44] transition hover:brightness-95"
+                >
+                  Send
+                </button>
+              </div>
+            </>
+          ) : (
+            <div className="flex flex-1 items-center justify-center text-slate-400">
+              Select a conversation to start chatting
+            </div>
+          )}
+        </main>
+      </div>
     </div>
   )
 }

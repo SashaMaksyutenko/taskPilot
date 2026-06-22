@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import Navbar from '../components/Navbar'
 import { calendarService } from '../services/calendarService'
 import { notificationService } from '../services/notificationService'
@@ -17,32 +17,47 @@ const isoDate = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(
  */
 export default function HomePage() {
   const dispatch = useAppDispatch()
+  const navigate = useNavigate()
   const { user, isAuthenticated } = useAppSelector((s) => s.auth)
 
   const [projectCount, setProjectCount] = useState(0)
   const [unread, setUnread] = useState(0)
   const [upcoming, setUpcoming] = useState(0)
   const [notifications, setNotifications] = useState<AppNotification[]>([])
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     if (isAuthenticated && !user) dispatch(fetchMe())
   }, [isAuthenticated, user, dispatch])
 
   useEffect(() => {
-    projectService.getProjects().then((p) => setProjectCount(p.length)).catch(() => {})
-    notificationService.getUnreadCount().then(setUnread).catch(() => {})
-    notificationService.getNotifications().then((n) => setNotifications(n.slice(0, 6))).catch(() => {})
-
     const today = new Date()
     const in30 = new Date()
     in30.setDate(today.getDate() + 30)
-    calendarService.getTasks(isoDate(today), isoDate(in30)).then((t) => setUpcoming(t.length)).catch(() => {})
+
+    // Load all dashboard data, then drop the loading state once everything settles.
+    Promise.allSettled([
+      projectService.getProjects().then((p) => setProjectCount(p.length)),
+      notificationService.getUnreadCount().then(setUnread),
+      notificationService.getNotifications().then((n) => setNotifications(n.slice(0, 6))),
+      calendarService.getTasks(isoDate(today), isoDate(in30)).then((t) => setUpcoming(t.length)),
+    ]).finally(() => setLoading(false))
   }, [])
 
   const markAllRead = async () => {
     await notificationService.markAllRead().catch(() => {})
     setUnread(0)
     setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })))
+  }
+
+  // Open a notification: mark it read locally + on the server and follow its link.
+  const openNotification = async (n: AppNotification) => {
+    if (!n.isRead) {
+      await notificationService.markRead(n.id).catch(() => {})
+      setNotifications((prev) => prev.map((x) => (x.id === n.id ? { ...x, isRead: true } : x)))
+      setUnread((c) => Math.max(0, c - 1))
+    }
+    if (n.link) navigate(n.link)
   }
 
   return (
@@ -56,9 +71,9 @@ export default function HomePage() {
         </p>
 
         <div className="mt-6 grid gap-4 sm:grid-cols-3">
-          <Stat label="Projects" value={projectCount} accent="bg-indigo-100 text-indigo-700" />
-          <Stat label="Unread notifications" value={unread} accent="bg-blue-100 text-blue-700" />
-          <Stat label="Deadlines (30 days)" value={upcoming} accent="bg-amber-100 text-amber-700" />
+          <Stat label="Projects" value={projectCount} accent="bg-indigo-100 text-indigo-700" loading={loading} />
+          <Stat label="Unread notifications" value={unread} accent="bg-blue-100 text-blue-700" loading={loading} />
+          <Stat label="Deadlines (30 days)" value={upcoming} accent="bg-amber-100 text-amber-700" loading={loading} />
         </div>
 
         <div className="mt-6 grid gap-4 lg:grid-cols-3">
@@ -71,17 +86,24 @@ export default function HomePage() {
                 </button>
               )}
             </div>
-            {notifications.length === 0 ? (
+            {loading ? (
+              <p className="py-6 text-center text-sm text-slate-400">Loading…</p>
+            ) : notifications.length === 0 ? (
               <p className="py-6 text-center text-sm text-slate-400">No activity yet.</p>
             ) : (
               <ul className="divide-y divide-slate-100 dark:divide-slate-700">
                 {notifications.map((n) => (
-                  <li key={n.id} className="flex items-start gap-3 py-3">
-                    <span className={`mt-1.5 h-2 w-2 flex-none rounded-full ${n.isRead ? 'bg-slate-300' : 'bg-[#F6BE2C]'}`} />
-                    <div>
-                      <p className="text-sm">{n.message}</p>
-                      <p className="text-xs text-slate-400">{new Date(n.createdAt).toLocaleString()}</p>
-                    </div>
+                  <li key={n.id}>
+                    <button
+                      onClick={() => openNotification(n)}
+                      className="flex w-full items-start gap-3 py-3 text-left hover:opacity-80"
+                    >
+                      <span className={`mt-1.5 h-2 w-2 flex-none rounded-full ${n.isRead ? 'bg-slate-300' : 'bg-[#F6BE2C]'}`} />
+                      <div>
+                        <p className="text-sm">{n.message}</p>
+                        <p className="text-xs text-slate-400">{new Date(n.createdAt).toLocaleString()}</p>
+                      </div>
+                    </button>
                   </li>
                 ))}
               </ul>
@@ -102,13 +124,29 @@ export default function HomePage() {
   )
 }
 
-function Stat({ label, value, accent }: { label: string; value: number; accent: string }) {
+function Stat({
+  label,
+  value,
+  accent,
+  loading,
+}: {
+  label: string
+  value: number
+  accent: string
+  loading: boolean
+}) {
   return (
     <div className="rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-800">
       <div className="text-sm text-slate-500 dark:text-slate-400">{label}</div>
       <div className="mt-1 flex items-center gap-2">
-        <span className="text-3xl font-bold">{value}</span>
-        <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${accent}`}>total</span>
+        {loading ? (
+          <span className="my-1 h-7 w-10 animate-pulse rounded bg-slate-200 dark:bg-slate-700" />
+        ) : (
+          <>
+            <span className="text-3xl font-bold">{value}</span>
+            <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${accent}`}>total</span>
+          </>
+        )}
       </div>
     </div>
   )

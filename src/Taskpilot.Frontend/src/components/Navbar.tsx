@@ -28,25 +28,41 @@ export default function Navbar() {
 
   const [notesOpen, setNotesOpen] = useState(false)
   const [notes, setNotes] = useState<AppNotification[]>([])
+  const [toasts, setToasts] = useState<AppNotification[]>([])
   const bellRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
     notificationService.getUnreadCount().then(setUnread).catch(() => {})
   }, [])
 
-  // Subscribe to real-time notifications: bump the unread count and prepend the
-  // new item to the list (so an open panel shows it immediately).
+  const dismissToast = (id: string) => setToasts((prev) => prev.filter((t) => t.id !== id))
+
+  // Subscribe to real-time notifications: bump the unread count, prepend the new
+  // item to the list (so an open panel shows it immediately) and pop a toast.
   useEffect(() => {
     const connection = createNotificationConnection()
     connection.on('ReceiveNotification', (n: AppNotification) => {
       setUnread((c) => c + 1)
       setNotes((prev) => [n, ...prev])
+      setToasts((prev) => [...prev, n])
+      // Auto-dismiss the toast after a few seconds.
+      setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== n.id)), 5000)
     })
     connection.start().catch(() => {})
     return () => {
       connection.stop()
     }
   }, [])
+
+  const openToast = async (n: AppNotification) => {
+    dismissToast(n.id)
+    if (!n.isRead) {
+      await notificationService.markRead(n.id).catch(() => {})
+      setNotes((prev) => prev.map((x) => (x.id === n.id ? { ...x, isRead: true } : x)))
+      setUnread((c) => Math.max(0, c - 1))
+    }
+    if (n.link) navigate(n.link)
+  }
 
   // Close the notifications panel when clicking anywhere outside it.
   useEffect(() => {
@@ -96,7 +112,8 @@ export default function Navbar() {
   }
 
   return (
-    <header className="sticky top-0 z-10 flex items-center gap-1 border-b border-slate-200 bg-white px-4 py-2.5 dark:border-slate-700 dark:bg-slate-800">
+    <>
+      <header className="sticky top-0 z-10 flex items-center gap-1 border-b border-slate-200 bg-white px-4 py-2.5 dark:border-slate-700 dark:bg-slate-800">
       <NavLink to="/" className="mr-4 flex items-center gap-2 font-bold text-[#1E2A44] dark:text-white">
         <img src="/logo-mark.svg" className="h-7 w-7" alt="" />
         TaskPilot
@@ -199,6 +216,30 @@ export default function Navbar() {
           Log out
         </button>
       </div>
-    </header>
+      </header>
+
+      {/* Toasts for incoming real-time notifications */}
+      {toasts.length > 0 && (
+        <div className="fixed bottom-4 right-4 z-50 flex w-80 flex-col gap-2">
+          {toasts.map((t) => (
+            <div
+              key={t.id}
+              className="flex items-start gap-2 rounded-xl border border-slate-200 bg-white p-3 shadow-lg dark:border-slate-700 dark:bg-slate-800"
+            >
+              <span className="mt-1.5 h-2 w-2 flex-none rounded-full bg-[#F6BE2C]" />
+              <button onClick={() => openToast(t)} className="min-w-0 flex-1 text-left text-sm">
+                <span className="block text-slate-700 dark:text-slate-200">{t.message}</span>
+              </button>
+              <button
+                onClick={() => dismissToast(t.id)}
+                className="flex-none text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+              >
+                ✕
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+    </>
   )
 }

@@ -1,3 +1,4 @@
+using System.Text;
 using Microsoft.EntityFrameworkCore;
 using Taskpilot.API.Common;
 using Taskpilot.API.Data;
@@ -187,7 +188,49 @@ public class TaskService : ITaskService
         return Result<List<CalendarTaskDto>>.Ok(items);
     }
 
+    /// <inheritdoc />
+    public async Task<Result<string>> ExportTasksCsvAsync(Guid userId, Guid projectId)
+    {
+        var ownsProject = await _context.Projects.AnyAsync(p => p.Id == projectId && p.OwnerId == userId);
+        if (!ownsProject)
+            return Result<string>.Fail("Project not found.");
+
+        var tasks = await _context.ProjectTasks
+            .Where(t => t.ProjectId == projectId)
+            .Include(t => t.Assignee)
+            .OrderBy(t => t.CreatedAt)
+            .AsNoTracking()
+            .ToListAsync();
+
+        var sb = new StringBuilder();
+        sb.AppendLine("Title,Status,Priority,Assignee,Deadline,CreatedAt,CompletedAt");
+        foreach (var t in tasks)
+        {
+            sb.AppendLine(string.Join(",",
+                Csv(t.Title),
+                Csv(t.Status.ToString()),
+                Csv(t.Priority.ToString()),
+                Csv(t.Assignee?.Name ?? string.Empty),
+                Csv(t.Deadline?.ToString("u") ?? string.Empty),
+                Csv(t.CreatedAt.ToString("u")),
+                Csv(t.CompletedAt?.ToString("u") ?? string.Empty)));
+        }
+
+        return Result<string>.Ok(sb.ToString());
+    }
+
     // --- helpers ---
+
+    /// <summary>
+    /// Escapes a value for CSV: fields containing a comma, quote or newline are wrapped
+    /// in double quotes, and inner quotes are doubled.
+    /// </summary>
+    private static string Csv(string value)
+    {
+        if (value.Contains(',') || value.Contains('"') || value.Contains('\n') || value.Contains('\r'))
+            return "\"" + value.Replace("\"", "\"\"") + "\"";
+        return value;
+    }
 
     /// <summary>Loads a task (with assignee/creator) only if the caller owns its project.</summary>
     private async Task<ProjectTask?> LoadOwnedAsync(Guid taskId, Guid userId)

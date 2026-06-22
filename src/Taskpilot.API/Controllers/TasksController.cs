@@ -1,3 +1,4 @@
+using System.Text;
 using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -40,6 +41,21 @@ public class TasksController : BaseApiController
         return result.Succeeded
             ? Ok(result.Value)
             : BadRequest(new { error = result.Error });
+    }
+
+    /// <summary>Exports a project's tasks as a CSV file.</summary>
+    [HttpGet("api/projects/{projectId:guid}/tasks/export")]
+    public async Task<IActionResult> Export(Guid projectId)
+    {
+        var userId = CurrentUserId();
+        if (userId is null) return Unauthorized();
+
+        var result = await _tasks.ExportTasksCsvAsync(userId.Value, projectId);
+        if (!result.Succeeded)
+            return NotFound(new { error = result.Error });
+
+        var bytes = Encoding.UTF8.GetBytes(result.Value!);
+        return File(bytes, "text/csv", $"tasks-{projectId}.csv");
     }
 
     /// <summary>Creates a task in a project.</summary>

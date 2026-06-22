@@ -29,4 +29,9 @@ public interface ITaskService
     /// within the [from, to] range — used to render the calendar.
     /// </summary>
     Task<Result<List<CalendarTaskDto>>> GetCalendarTasksAsync(Guid userId, DateTime from, DateTime to);
+
+    /// <summary>
+    /// Exports a project's tasks as a CSV document (the caller must own the project).
+    /// </summary>
+    Task<Result<string>> ExportTasksCsvAsync(Guid userId, Guid projectId);
 }

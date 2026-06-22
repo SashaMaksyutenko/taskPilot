@@ -3,6 +3,7 @@ import type { HubConnection } from '@microsoft/signalr'
 import Navbar from '../components/Navbar'
 import { createChatConnection } from '../lib/chatHub'
 import { chatService } from '../services/chatService'
+import { userService, type UserSearchResult } from '../services/userService'
 import type { Conversation, Message } from '../types/chat'
 import { fetchMe } from '../store/authSlice'
 import { useAppDispatch, useAppSelector } from '../store/hooks'
@@ -20,7 +21,8 @@ export default function ChatPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [messages, setMessages] = useState<Message[]>([])
   const [text, setText] = useState('')
-  const [otherUserId, setOtherUserId] = useState('')
+  const [search, setSearch] = useState('')
+  const [results, setResults] = useState<UserSearchResult[]>([])
 
   const connectionRef = useRef<HubConnection | null>(null)
   // Ref mirror of selectedId so the SignalR callback always sees the latest value.
@@ -74,12 +76,24 @@ export default function ChatPage() {
     await chatService.sendMessage(selectedId, content).catch(() => {})
   }
 
-  const startDirect = async () => {
-    const id = otherUserId.trim()
-    if (!id) return
+  // Debounced user search: query the backend a short moment after typing stops.
+  useEffect(() => {
+    const term = search.trim()
+    if (term.length < 2) {
+      setResults([])
+      return
+    }
+    const handle = setTimeout(() => {
+      userService.searchUsers(term).then(setResults).catch(() => setResults([]))
+    }, 300)
+    return () => clearTimeout(handle)
+  }, [search])
+
+  const startDirect = async (userId: string) => {
+    setSearch('')
+    setResults([])
     try {
-      const conv = await chatService.startDirect(id)
-      setOtherUserId('')
+      const conv = await chatService.startDirect(userId)
       setConversations((prev) => (prev.some((c) => c.id === conv.id) ? prev : [conv, ...prev]))
       selectConversation(conv.id)
     } catch {
@@ -104,20 +118,31 @@ export default function ChatPage() {
             <span className="font-bold">Chats</span>
           </div>
 
-          {/* Start a direct chat by user id (user search comes later) */}
-          <div className="flex gap-2 border-b border-slate-200 p-3 dark:border-slate-700">
+          {/* Start a direct chat by searching for a user by name or email */}
+          <div className="relative border-b border-slate-200 p-3 dark:border-slate-700">
             <input
-              value={otherUserId}
-              onChange={(e) => setOtherUserId(e.target.value)}
-              placeholder="User id to chat with"
-              className="min-w-0 flex-1 rounded border border-slate-300 px-2 py-1 text-sm outline-none focus:border-[#1E2A44] dark:border-slate-600 dark:bg-slate-900"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search people to chat with…"
+              className="w-full rounded border border-slate-300 px-2 py-1 text-sm outline-none focus:border-[#1E2A44] dark:border-slate-600 dark:bg-slate-900"
             />
-            <button
-              onClick={startDirect}
-              className="rounded bg-[#1E2A44] px-3 text-sm font-medium text-white"
-            >
-              +
-            </button>
+            {results.length > 0 && (
+              <ul className="absolute left-3 right-3 top-full z-20 -mt-1 max-h-64 overflow-y-auto rounded-b border border-t-0 border-slate-300 bg-white shadow-lg dark:border-slate-600 dark:bg-slate-800">
+                {results.map((u) => (
+                  <li key={u.id}>
+                    <button
+                      onClick={() => startDirect(u.id)}
+                      className="block w-full px-3 py-2 text-left text-sm hover:bg-slate-50 dark:hover:bg-slate-700"
+                    >
+                      <span className="font-medium">{u.name}</span>
+                      {u.title && (
+                        <span className="ml-2 text-xs text-slate-400">{u.title}</span>
+                      )}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
 
           <div className="flex-1 overflow-y-auto">

@@ -28,6 +28,17 @@ public class UsersController : BaseApiController
         _changePasswordValidator = changePasswordValidator;
     }
 
+    /// <summary>Searches active users by name or email (to start a chat, assign a task, etc.).</summary>
+    [HttpGet("search")]
+    public async Task<IActionResult> SearchUsers([FromQuery] string q)
+    {
+        var userId = CurrentUserId();
+        if (userId is null) return Unauthorized();
+
+        var result = await _userService.SearchUsersAsync(userId.Value, q ?? string.Empty);
+        return Ok(result.Value);
+    }
+
     /// <summary>Returns the public profile of a user by id.</summary>
     [HttpGet("{userId:guid}")]
     public async Task<IActionResult> GetPublicProfile(Guid userId)

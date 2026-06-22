@@ -17,4 +17,7 @@ public interface IUserService
 
     /// <summary>Returns the public profile of any user by id.</summary>
     Task<Result<PublicProfileDto>> GetPublicProfileAsync(Guid userId);
+
+    /// <summary>Searches active users by name or email, excluding the caller.</summary>
+    Task<Result<List<UserSearchResultDto>>> SearchUsersAsync(Guid currentUserId, string query);
 }

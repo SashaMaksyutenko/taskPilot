@@ -87,4 +87,26 @@ public class UserService : IUserService
             ? Result<PublicProfileDto>.Fail("User not found.")
             : Result<PublicProfileDto>.Ok(UserMapper.ToPublicProfile(user));
     }
+
+    /// <inheritdoc />
+    public async Task<Result<List<UserSearchResultDto>>> SearchUsersAsync(Guid currentUserId, string query)
+    {
+        var term = query.Trim();
+        // Require at least 2 characters to avoid returning the whole directory.
+        if (term.Length < 2)
+            return Result<List<UserSearchResultDto>>.Ok(new List<UserSearchResultDto>());
+
+        var pattern = $"%{term}%";
+        var users = await _context.Users
+            .Where(u => u.IsActive
+                        && u.Id != currentUserId
+                        && (EF.Functions.ILike(u.Name, pattern) || EF.Functions.ILike(u.Email, pattern)))
+            .OrderBy(u => u.Name)
+            .Take(10)
+            .Select(u => new UserSearchResultDto { Id = u.Id, Name = u.Name, Title = u.Title })
+            .AsNoTracking()
+            .ToListAsync();
+
+        return Result<List<UserSearchResultDto>>.Ok(users);
+    }
 }

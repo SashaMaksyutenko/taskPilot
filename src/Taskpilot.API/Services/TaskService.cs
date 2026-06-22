@@ -65,6 +65,14 @@ public class TaskService : ITaskService
         _context.ProjectTasks.Add(task);
         await _context.SaveChangesAsync();
 
+        await _webhooks.DispatchAsync(WebhookEvents.TaskCreated, new
+        {
+            taskId = task.Id,
+            title = task.Title,
+            projectId,
+            priority = task.Priority.ToString(),
+        });
+
         _logger.LogInformation("Task created. TaskId: {TaskId}, ProjectId: {ProjectId}", task.Id, projectId);
         return Result<TaskDto>.Ok(await LoadDtoAsync(task.Id));
     }

@@ -14,11 +14,13 @@ namespace Taskpilot.API.Services;
 public class ProjectService : IProjectService
 {
     private readonly TaskpilotDbContext _context;
+    private readonly IWebhookService _webhooks;
     private readonly ILogger<ProjectService> _logger;
 
-    public ProjectService(TaskpilotDbContext context, ILogger<ProjectService> logger)
+    public ProjectService(TaskpilotDbContext context, IWebhookService webhooks, ILogger<ProjectService> logger)
     {
         _context = context;
+        _webhooks = webhooks;
         _logger = logger;
     }
 
@@ -51,6 +53,13 @@ public class ProjectService : IProjectService
         };
         _context.Projects.Add(project);
         await _context.SaveChangesAsync();
+
+        await _webhooks.DispatchAsync(WebhookEvents.ProjectCreated, new
+        {
+            projectId = project.Id,
+            name = project.Name,
+            ownerId,
+        });
 
         _logger.LogInformation("Project created. ProjectId: {ProjectId}, OwnerId: {OwnerId}", project.Id, ownerId);
         return Result<ProjectDto>.Ok(await LoadDtoAsync(project.Id));

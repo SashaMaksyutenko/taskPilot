@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
+import { createNotificationConnection } from '../lib/notificationHub'
 import { notificationService } from '../services/notificationService'
 import type { AppNotification } from '../types/notification'
 import { logout } from '../store/authSlice'
@@ -31,6 +32,20 @@ export default function Navbar() {
 
   useEffect(() => {
     notificationService.getUnreadCount().then(setUnread).catch(() => {})
+  }, [])
+
+  // Subscribe to real-time notifications: bump the unread count and prepend the
+  // new item to the list (so an open panel shows it immediately).
+  useEffect(() => {
+    const connection = createNotificationConnection()
+    connection.on('ReceiveNotification', (n: AppNotification) => {
+      setUnread((c) => c + 1)
+      setNotes((prev) => [n, ...prev])
+    })
+    connection.start().catch(() => {})
+    return () => {
+      connection.stop()
+    }
   }, [])
 
   // Close the notifications panel when clicking anywhere outside it.

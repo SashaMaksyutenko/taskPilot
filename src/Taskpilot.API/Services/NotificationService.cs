@@ -1,29 +1,37 @@
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Taskpilot.API.Common;
 using Taskpilot.API.Data;
 using Taskpilot.API.DTOs.Notifications;
+using Taskpilot.API.Hubs;
 using Taskpilot.API.Models;
 
 namespace Taskpilot.API.Services;
 
 /// <summary>
-/// Stores and reads in-app notifications in the database.
+/// Stores and reads in-app notifications in the database, and pushes new ones to
+/// the recipient in real time over the notification hub.
 /// </summary>
 public class NotificationService : INotificationService
 {
     private readonly TaskpilotDbContext _context;
+    private readonly IHubContext<NotificationHub> _hub;
     private readonly ILogger<NotificationService> _logger;
 
-    public NotificationService(TaskpilotDbContext context, ILogger<NotificationService> logger)
+    public NotificationService(
+        TaskpilotDbContext context,
+        IHubContext<NotificationHub> hub,
+        ILogger<NotificationService> logger)
     {
         _context = context;
+        _hub = hub;
         _logger = logger;
     }
 
     /// <inheritdoc />
     public async Task CreateAsync(Guid recipientId, NotificationType type, string message, string? link = null)
     {
-        _context.Notifications.Add(new Notification
+        var notification = new Notification
         {
             Id = Guid.NewGuid(),
             RecipientId = recipientId,
@@ -32,9 +40,21 @@ public class NotificationService : INotificationService
             Link = link,
             IsRead = false,
             CreatedAt = DateTime.UtcNow,
-        });
+        };
+        _context.Notifications.Add(notification);
         await _context.SaveChangesAsync();
         _logger.LogInformation("Notification created. RecipientId: {RecipientId}, Type: {Type}", recipientId, type);
+
+        // Push to the recipient's connected clients (if any) so the bell updates live.
+        await _hub.Clients.Group(NotificationHub.GroupName(recipientId)).SendAsync("ReceiveNotification", new NotificationDto
+        {
+            Id = notification.Id,
+            Type = notification.Type.ToString(),
+            Message = notification.Message,
+            Link = notification.Link,
+            IsRead = notification.IsRead,
+            CreatedAt = notification.CreatedAt,
+        });
     }
 
     /// <inheritdoc />

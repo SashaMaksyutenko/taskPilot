@@ -84,7 +84,12 @@ export default function Navbar() {
           )}
         </div>
 
-        <span className="hidden text-sm text-slate-500 dark:text-slate-300 sm:inline">{user?.name}</span>
+        <NavLink
+          to="/settings"
+          className="hidden text-sm text-slate-500 hover:text-[#1E2A44] dark:text-slate-300 dark:hover:text-white sm:inline"
+        >
+          {user?.name}
+        </NavLink>
         <button
           onClick={handleLogout}
           className="text-sm font-semibold text-slate-500 hover:text-[#1E2A44] dark:text-slate-300 dark:hover:text-white"

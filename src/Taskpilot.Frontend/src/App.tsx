@@ -9,6 +9,7 @@ import HomePage from './pages/HomePage'
 import MarketplacePage from './pages/MarketplacePage'
 import MarketplaceTaskPage from './pages/MarketplaceTaskPage'
 import ProjectsPage from './pages/ProjectsPage'
+import SettingsPage from './pages/SettingsPage'
 import TopicPage from './pages/TopicPage'
 import RegisterPage from './pages/RegisterPage'
 import LoginPage from './pages/LoginPage'
@@ -39,6 +40,7 @@ function App() {
           <Route path="/forum/:topicId" element={<TopicPage />} />
           <Route path="/marketplace" element={<MarketplacePage />} />
           <Route path="/marketplace/:taskId" element={<MarketplaceTaskPage />} />
+          <Route path="/settings" element={<SettingsPage />} />
         </Route>
 
         {/* Unknown routes go home (which itself redirects to login if needed). */}

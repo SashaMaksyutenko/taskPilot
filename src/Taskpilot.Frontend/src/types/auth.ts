@@ -25,12 +25,20 @@ export interface AuthResponse {
   role: string
 }
 
-/** Public user profile (mirrors UserDto, returned by GET /api/auth/me). */
+/** Self user profile (mirrors UserDto, returned by GET /api/auth/me). */
 export interface User {
   id: string
   name: string
   email: string
   role: string
   isActive: boolean
+  title: string | null
+  bio: string | null
+  location: string | null
+  website: string | null
+  linkedIn: string | null
+  github: string | null
+  phone: string | null
+  showEmail: boolean
   createdAt: string
 }

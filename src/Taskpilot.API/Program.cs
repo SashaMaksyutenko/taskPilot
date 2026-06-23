@@ -14,6 +14,7 @@ using Microsoft.OpenApi.Models;
 using Taskpilot.API.Configuration;
 using Taskpilot.API.Data;
 using Taskpilot.API.Hubs;
+using Taskpilot.API.Middleware;
 using Taskpilot.API.Services;
 using Taskpilot.API.Validators.Auth;
 
@@ -259,6 +260,10 @@ app.UseAuthorization();
 
 // Enforce the configured rate-limiting policies (e.g. the "auth" policy).
 app.UseRateLimiter();
+
+// RBAC: make the Viewer role read-only (runs after authentication so the user's
+// role is known). Must precede endpoint execution.
+app.UseMiddleware<ViewerReadOnlyMiddleware>();
 
 // Map attribute-routed controllers (e.g. POST /api/auth/register).
 app.MapControllers();

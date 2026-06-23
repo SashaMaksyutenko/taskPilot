@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import Navbar from '../components/Navbar'
 import { marketplaceService } from '../services/marketplaceService'
+import { useAppSelector } from '../store/hooks'
 import type { MarketTaskListItem } from '../types/marketplace'
 
 const statusColor: Record<string, string> = {
@@ -15,6 +16,10 @@ const statusColor: Record<string, string> = {
  * Marketplace home: browse public tasks and post a new one.
  */
 export default function MarketplacePage() {
+  // RBAC: only Managers and Admins may post tasks (backend enforces this too).
+  const role = useAppSelector((s) => s.auth.user?.role)
+  const canPost = role === 'Manager' || role === 'Admin'
+
   const [tasks, setTasks] = useState<MarketTaskListItem[]>([])
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
@@ -50,7 +55,8 @@ export default function MarketplacePage() {
       <main className="mx-auto max-w-3xl px-6 py-8">
         <h1 className="mb-6 text-2xl font-bold">Marketplace</h1>
 
-        {/* Post a task */}
+        {/* Post a task — Managers/Admins only */}
+        {canPost && (
         <div className="mb-8 rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-800">
           <h2 className="mb-3 font-bold">Post a task</h2>
           <input
@@ -88,6 +94,7 @@ export default function MarketplacePage() {
             Post task
           </button>
         </div>
+        )}
 
         {/* Task list */}
         {tasks.length === 0 ? (

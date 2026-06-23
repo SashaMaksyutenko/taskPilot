@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Link, useParams } from 'react-router-dom'
 import Navbar from '../components/Navbar'
 import { marketplaceService } from '../services/marketplaceService'
@@ -16,6 +17,7 @@ const appStatusColor: Record<string, string> = {
  * else can apply (while the task is open and they haven't applied yet).
  */
 export default function MarketplaceTaskPage() {
+  const { t } = useTranslation()
   const { taskId = '' } = useParams()
   const currentUserId = useAppSelector((s) => s.auth.user?.id)
   const [task, setTask] = useState<MarketTaskDetail | null>(null)
@@ -32,7 +34,7 @@ export default function MarketplaceTaskPage() {
     return (
       <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
         <Navbar />
-        <p className="p-8 text-slate-400">Loading…</p>
+        <p className="p-8 text-slate-400">{t('topic.loading')}</p>
       </div>
     )
   }
@@ -61,7 +63,7 @@ export default function MarketplaceTaskPage() {
       <Navbar />
       <main className="mx-auto max-w-3xl px-6 py-8">
         <Link to="/marketplace" className="text-sm text-slate-500 hover:underline dark:text-slate-400">
-          ← Marketplace
+          {t('marketTask.back')}
         </Link>
 
         {/* Task header */}
@@ -71,11 +73,11 @@ export default function MarketplaceTaskPage() {
             <span className="text-lg font-bold">${task.budget}</span>
           </div>
           <div className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-            by {task.posterName} · {task.status}
-            {task.assigneeName ? ` · assigned to ${task.assigneeName}` : ''}
+            {t('forum.by')} {task.posterName} · {t(`market.status.${task.status}`, task.status)}
+            {task.assigneeName ? ` · ${t('marketTask.assignedTo', { name: task.assigneeName })}` : ''}
           </div>
           {task.requiredSkills && (
-            <div className="mt-2 text-sm text-slate-600 dark:text-slate-300">Skills: {task.requiredSkills}</div>
+            <div className="mt-2 text-sm text-slate-600 dark:text-slate-300">{t('marketTask.skills')}: {task.requiredSkills}</div>
           )}
           <p className="mt-4 whitespace-pre-wrap">{task.description}</p>
         </div>
@@ -83,7 +85,7 @@ export default function MarketplaceTaskPage() {
         {/* Poster: applications */}
         {isPoster ? (
           <>
-            <h2 className="mb-3 mt-6 font-bold">{task.applications.length} application(s)</h2>
+            <h2 className="mb-3 mt-6 font-bold">{t('market.applications', { count: task.applications.length })}</h2>
             <div className="space-y-3">
               {task.applications.map((a) => (
                 <div key={a.id} className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-800">
@@ -91,39 +93,39 @@ export default function MarketplaceTaskPage() {
                     <span className="font-semibold">{a.applicantName}</span>
                     <span className="text-sm text-slate-500 dark:text-slate-400">· ${a.proposedRate}</span>
                     <span className={`ml-auto rounded-full px-2 py-0.5 text-[11px] font-semibold ${appStatusColor[a.status]}`}>
-                      {a.status}
+                      {t(`marketTask.appStatus.${a.status}`, a.status)}
                     </span>
                   </div>
                   <p className="mt-2 text-sm">{a.coverLetter}</p>
                   {a.status === 'Pending' && task.status === 'Open' && (
                     <div className="mt-3 flex gap-2">
                       <button onClick={() => decide(a.id, true)} className="rounded-lg bg-green-600 px-4 py-1.5 text-sm font-semibold text-white hover:bg-green-700">
-                        Accept
+                        {t('marketTask.accept')}
                       </button>
                       <button onClick={() => decide(a.id, false)} className="rounded-lg border border-slate-300 px-4 py-1.5 text-sm font-semibold hover:bg-slate-50 dark:border-slate-600 dark:hover:bg-slate-700">
-                        Reject
+                        {t('marketTask.reject')}
                       </button>
                     </div>
                   )}
                 </div>
               ))}
-              {task.applications.length === 0 && <p className="text-slate-400">No applications yet.</p>}
+              {task.applications.length === 0 && <p className="text-slate-400">{t('marketTask.noApplications')}</p>}
             </div>
           </>
         ) : myApplication ? (
           <div className="mt-6 rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-800">
-            You applied —{' '}
+            {t('marketTask.youApplied')}{' '}
             <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${appStatusColor[myApplication.status]}`}>
-              {myApplication.status}
+              {t(`marketTask.appStatus.${myApplication.status}`, myApplication.status)}
             </span>
           </div>
         ) : task.status === 'Open' ? (
           <div className="mt-6 rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-800">
-            <h2 className="mb-3 font-bold">Apply for this task</h2>
+            <h2 className="mb-3 font-bold">{t('marketTask.applyHeading')}</h2>
             <textarea
               value={coverLetter}
               onChange={(e) => setCoverLetter(e.target.value)}
-              placeholder="Cover letter"
+              placeholder={t('marketTask.coverLetter')}
               rows={3}
               className="mb-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 outline-none focus:border-[#1E2A44] dark:border-slate-600 dark:bg-slate-900"
             />
@@ -132,16 +134,16 @@ export default function MarketplaceTaskPage() {
                 value={rate}
                 onChange={(e) => setRate(e.target.value)}
                 type="number"
-                placeholder="Your rate ($)"
+                placeholder={t('marketTask.rate')}
                 className="w-40 rounded-lg border border-slate-300 bg-white px-3 py-2 outline-none focus:border-[#1E2A44] dark:border-slate-600 dark:bg-slate-900"
               />
               <button onClick={apply} className="rounded-lg bg-[#1E2A44] px-5 font-semibold text-white hover:bg-[#27345a]">
-                Apply
+                {t('marketTask.apply')}
               </button>
             </div>
           </div>
         ) : (
-          <p className="mt-6 text-sm text-slate-400">This task is no longer open for applications.</p>
+          <p className="mt-6 text-sm text-slate-400">{t('marketTask.closed')}</p>
         )}
       </main>
     </div>

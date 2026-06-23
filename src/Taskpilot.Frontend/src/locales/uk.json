@@ -146,5 +146,24 @@
       "Completed": "Завершена",
       "Cancelled": "Скасована"
     }
+  },
+  "marketTask": {
+    "back": "← Маркетплейс",
+    "assignedTo": "призначено: {{name}}",
+    "skills": "Навички",
+    "accept": "Прийняти",
+    "reject": "Відхилити",
+    "noApplications": "Заявок ще немає.",
+    "youApplied": "Ви подалися —",
+    "applyHeading": "Подати заявку на задачу",
+    "coverLetter": "Супровідний лист",
+    "rate": "Ваша ставка ($)",
+    "apply": "Подати",
+    "closed": "Задача більше не приймає заявок.",
+    "appStatus": {
+      "Pending": "Очікує",
+      "Accepted": "Прийнято",
+      "Rejected": "Відхилено"
+    }
   }
 }

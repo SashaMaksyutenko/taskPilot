@@ -146,5 +146,24 @@
       "Completed": "Completed",
       "Cancelled": "Cancelled"
     }
+  },
+  "marketTask": {
+    "back": "← Marketplace",
+    "assignedTo": "assigned to {{name}}",
+    "skills": "Skills",
+    "accept": "Accept",
+    "reject": "Reject",
+    "noApplications": "No applications yet.",
+    "youApplied": "You applied —",
+    "applyHeading": "Apply for this task",
+    "coverLetter": "Cover letter",
+    "rate": "Your rate ($)",
+    "apply": "Apply",
+    "closed": "This task is no longer open for applications.",
+    "appStatus": {
+      "Pending": "Pending",
+      "Accepted": "Accepted",
+      "Rejected": "Rejected"
+    }
   }
 }

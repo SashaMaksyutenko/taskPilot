@@ -34,6 +34,7 @@ public class ProjectService : IProjectService
         OwnerId = p.OwnerId,
         OwnerName = p.Owner.Name,
         TaskCount = p.Tasks.Count,
+        CompletedTaskCount = p.Tasks.Count(t => t.Status == ProjectTaskStatus.Done),
         IsArchived = p.ArchivedAt != null,
         CreatedAt = p.CreatedAt,
         ArchivedAt = p.ArchivedAt,

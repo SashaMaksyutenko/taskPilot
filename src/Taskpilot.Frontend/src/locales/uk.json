@@ -70,7 +70,8 @@
     "newPlaceholder": "Назва нового проєкту…",
     "create": "Створити",
     "empty": "Проєктів ще немає. Створіть перший вище.",
-    "tasks": "Завдань: {{count}}"
+    "tasks": "Завдань: {{count}}",
+    "progress": "{{done}}/{{total}} виконано"
   },
   "board": {
     "backToProjects": "← Проєкти",

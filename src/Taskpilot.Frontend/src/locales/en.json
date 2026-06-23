@@ -70,7 +70,8 @@
     "newPlaceholder": "New project name…",
     "create": "Create",
     "empty": "No projects yet. Create your first one above.",
-    "tasks": "{{count}} tasks"
+    "tasks": "{{count}} tasks",
+    "progress": "{{done}}/{{total}} done"
   },
   "board": {
     "backToProjects": "← Projects",

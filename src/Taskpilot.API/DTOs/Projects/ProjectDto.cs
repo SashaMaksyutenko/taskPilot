@@ -10,6 +10,10 @@ public class ProjectDto
     public Guid OwnerId { get; set; }
     public string OwnerName { get; set; } = string.Empty;
     public int TaskCount { get; set; }
+
+    /// <summary>Number of tasks in the Done status (for the progress bar).</summary>
+    public int CompletedTaskCount { get; set; }
+
     public bool IsArchived { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime? ArchivedAt { get; set; }

@@ -73,6 +73,22 @@ export default function ProjectsPage() {
                   <span className="font-semibold">{p.name}</span>
                 </div>
                 <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">{t('projects.tasks', { count: p.taskCount })}</p>
+
+                {/* Progress: share of tasks in the Done status. */}
+                {(() => {
+                  const pct = p.taskCount > 0 ? Math.round((p.completedTaskCount / p.taskCount) * 100) : 0
+                  return (
+                    <div className="mt-3">
+                      <div className="mb-1 flex justify-between text-xs text-slate-500 dark:text-slate-400">
+                        <span>{t('projects.progress', { done: p.completedTaskCount, total: p.taskCount })}</span>
+                        <span>{pct}%</span>
+                      </div>
+                      <div className="h-2 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700">
+                        <div className="h-full rounded-full bg-green-500 transition-all" style={{ width: `${pct}%` }} />
+                      </div>
+                    </div>
+                  )
+                })()}
               </Link>
             ))}
           </div>

@@ -119,5 +119,15 @@
     "by": "by",
     "replies": "replies",
     "views": "views"
+  },
+  "topic": {
+    "loading": "Loading…",
+    "backToForum": "← Forum",
+    "repliesHeading": "{{count}} replies",
+    "solution": "Solution",
+    "markSolution": "Mark as solution",
+    "locked": "This topic is locked.",
+    "replyPlaceholder": "Write a reply…",
+    "reply": "Reply"
   }
 }

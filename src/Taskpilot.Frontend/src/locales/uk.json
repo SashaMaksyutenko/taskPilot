@@ -119,5 +119,15 @@
     "by": "від",
     "replies": "відповідей",
     "views": "переглядів"
+  },
+  "topic": {
+    "loading": "Завантаження…",
+    "backToForum": "← Форум",
+    "repliesHeading": "Відповідей: {{count}}",
+    "solution": "Рішення",
+    "markSolution": "Позначити рішенням",
+    "locked": "Тему закрито.",
+    "replyPlaceholder": "Напишіть відповідь…",
+    "reply": "Відповісти"
   }
 }

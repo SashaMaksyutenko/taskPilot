@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Link, useParams } from 'react-router-dom'
 import Navbar from '../components/Navbar'
 import { forumService } from '../services/forumService'
@@ -10,6 +11,7 @@ import type { Reply, TopicDetail } from '../types/forum'
  * "accept solution" action (topic author only), plus a reply form.
  */
 export default function TopicPage() {
+  const { t } = useTranslation()
   const { topicId = '' } = useParams()
   const currentUserId = useAppSelector((s) => s.auth.user?.id)
   const [topic, setTopic] = useState<TopicDetail | null>(null)
@@ -50,7 +52,7 @@ export default function TopicPage() {
     return (
       <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
         <Navbar />
-        <p className="p-8 text-slate-400">Loading…</p>
+        <p className="p-8 text-slate-400">{t('topic.loading')}</p>
       </div>
     )
   }
@@ -60,21 +62,21 @@ export default function TopicPage() {
       <Navbar />
       <main className="mx-auto max-w-3xl px-6 py-8">
         <Link to="/forum" className="text-sm text-slate-500 hover:underline dark:text-slate-400">
-          ← Forum
+          {t('topic.backToForum')}
         </Link>
 
         {/* Original post */}
         <div className="mt-3 rounded-xl border border-slate-200 bg-white p-6 dark:border-slate-700 dark:bg-slate-800">
           <h1 className="text-xl font-bold">{topic.title}</h1>
           <div className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-            by {topic.authorName} · {new Date(topic.createdAt).toLocaleString()} · {topic.viewCount} views
+            {t('forum.by')} {topic.authorName} · {new Date(topic.createdAt).toLocaleString()} · {topic.viewCount} {t('forum.views')}
           </div>
           <p className="mt-4 whitespace-pre-wrap">{topic.body}</p>
         </div>
 
         {/* Replies */}
         <h2 className="mb-3 mt-6 font-bold">
-          {topic.replies.length} {topic.replies.length === 1 ? 'reply' : 'replies'}
+          {t('topic.repliesHeading', { count: topic.replies.length })}
         </h2>
         <div className="space-y-3">
           {topic.replies.map((r) => (
@@ -104,7 +106,7 @@ export default function TopicPage() {
               <div className="min-w-0 flex-1">
                 {r.isSolution && (
                   <span className="mb-1 inline-block rounded bg-green-100 px-2 py-0.5 text-[11px] font-semibold text-green-700">
-                    ✓ Solution
+                    ✓ {t('topic.solution')}
                   </span>
                 )}
                 <p className="whitespace-pre-wrap">{r.body}</p>
@@ -112,7 +114,7 @@ export default function TopicPage() {
                   <span>{r.authorName}</span>
                   {isAuthor && !r.isSolution && (
                     <button onClick={() => markSolution(r)} className="font-semibold text-green-600 hover:underline">
-                      Mark as solution
+                      {t('topic.markSolution')}
                     </button>
                   )}
                 </div>
@@ -123,13 +125,13 @@ export default function TopicPage() {
 
         {/* Add reply */}
         {topic.isLocked ? (
-          <p className="mt-6 text-sm text-slate-400">🔒 This topic is locked.</p>
+          <p className="mt-6 text-sm text-slate-400">🔒 {t('topic.locked')}</p>
         ) : (
           <div className="mt-6">
             <textarea
               value={body}
               onChange={(e) => setBody(e.target.value)}
-              placeholder="Write a reply…"
+              placeholder={t('topic.replyPlaceholder')}
               rows={3}
               className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 outline-none focus:border-[#1E2A44] dark:border-slate-600 dark:bg-slate-800"
             />
@@ -137,7 +139,7 @@ export default function TopicPage() {
               onClick={submitReply}
               className="mt-2 rounded-lg bg-[#1E2A44] px-5 py-2 font-semibold text-white transition hover:bg-[#27345a]"
             >
-              Reply
+              {t('topic.reply')}
             </button>
           </div>
         )}

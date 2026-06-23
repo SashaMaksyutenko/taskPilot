@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { taskService } from '../services/taskService'
 import { userService, type UserSearchResult } from '../services/userService'
 import type { Task } from '../types/project'
@@ -25,6 +26,7 @@ export default function TaskDetailModal({
   onSaved: (task: Task) => void
   onDeleted: (taskId: string) => void
 }) {
+  const { t } = useTranslation()
   const [title, setTitle] = useState(task.title)
   const [description, setDescription] = useState(task.description ?? '')
   const [priority, setPriority] = useState(task.priority)
@@ -98,20 +100,20 @@ export default function TaskDetailModal({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-bold">Task details</h2>
+          <h2 className="text-lg font-bold">{t('taskModal.title')}</h2>
           <button onClick={onClose} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
             ✕
           </button>
         </div>
 
-        <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Title</label>
+        <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">{t('taskModal.titleField')}</label>
         <input
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           className="mb-4 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-[#1E2A44] dark:border-slate-600 dark:bg-slate-900"
         />
 
-        <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Description</label>
+        <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">{t('taskModal.description')}</label>
         <textarea
           value={description}
           onChange={(e) => setDescription(e.target.value)}
@@ -121,7 +123,7 @@ export default function TaskDetailModal({
 
         <div className="mb-4 grid grid-cols-2 gap-4">
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Priority</label>
+            <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">{t('taskModal.priority')}</label>
             <select
               value={priority}
               onChange={(e) => setPriority(e.target.value)}
@@ -129,13 +131,13 @@ export default function TaskDetailModal({
             >
               {PRIORITIES.map((p) => (
                 <option key={p} value={p}>
-                  {p}
+                  {t(`board.priority.${p}`, p)}
                 </option>
               ))}
             </select>
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Deadline</label>
+            <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">{t('taskModal.deadline')}</label>
             <input
               type="date"
               value={deadline}
@@ -146,7 +148,7 @@ export default function TaskDetailModal({
         </div>
 
         {/* Assignee */}
-        <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Assignee</label>
+        <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">{t('taskModal.assignee')}</label>
         <div className="mb-4">
           <div className="mb-2 flex items-center gap-2 text-sm">
             {assigneeName ? (
@@ -155,11 +157,11 @@ export default function TaskDetailModal({
                   @{assigneeName}
                 </span>
                 <button onClick={unassign} className="text-xs font-semibold text-red-600 hover:underline">
-                  Unassign
+                  {t('taskModal.unassign')}
                 </button>
               </>
             ) : (
-              <span className="text-slate-400">Unassigned</span>
+              <span className="text-slate-400">{t('taskModal.unassigned')}</span>
             )}
           </div>
 
@@ -167,7 +169,7 @@ export default function TaskDetailModal({
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search a person to assign…"
+              placeholder={t('taskModal.searchAssignee')}
               className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-[#1E2A44] dark:border-slate-600 dark:bg-slate-900"
             />
             {results.length > 0 && (
@@ -194,13 +196,13 @@ export default function TaskDetailModal({
             disabled={saving}
             className="rounded-lg bg-[#1E2A44] px-5 py-2 text-sm font-semibold text-white transition hover:bg-[#27345a] disabled:opacity-60"
           >
-            Save
+            {t('taskModal.save')}
           </button>
           <button
             onClick={remove}
             className="text-sm font-semibold text-red-600 hover:underline"
           >
-            Delete task
+            {t('taskModal.deleteTask')}
           </button>
         </div>
       </div>

@@ -90,5 +90,18 @@
       "Medium": "Medium",
       "Low": "Low"
     }
+  },
+  "taskModal": {
+    "title": "Task details",
+    "titleField": "Title",
+    "description": "Description",
+    "priority": "Priority",
+    "deadline": "Deadline",
+    "assignee": "Assignee",
+    "unassign": "Unassign",
+    "unassigned": "Unassigned",
+    "searchAssignee": "Search a person to assign…",
+    "save": "Save",
+    "deleteTask": "Delete task"
   }
 }

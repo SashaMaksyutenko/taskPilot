@@ -90,5 +90,18 @@
       "Medium": "Середній",
       "Low": "Низький"
     }
+  },
+  "taskModal": {
+    "title": "Деталі задачі",
+    "titleField": "Назва",
+    "description": "Опис",
+    "priority": "Пріоритет",
+    "deadline": "Дедлайн",
+    "assignee": "Виконавець",
+    "unassign": "Зняти",
+    "unassigned": "Не призначено",
+    "searchAssignee": "Знайти людину для призначення…",
+    "save": "Зберегти",
+    "deleteTask": "Видалити задачу"
   }
 }

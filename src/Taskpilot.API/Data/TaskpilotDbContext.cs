@@ -65,6 +65,9 @@ public class TaskpilotDbContext : DbContext
     /// <summary>Outgoing webhooks.</summary>
     public DbSet<Webhook> Webhooks => Set<Webhook>();
 
+    /// <summary>Audit trail of actions performed in the system.</summary>
+    public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
+
     /// <summary>
     /// Налаштування моделі (Fluent API): обмеження, індекси, перетворення типів.
     /// Викликається EF Core під час побудови моделі та генерації міграцій.
@@ -439,6 +442,26 @@ public class TaskpilotDbContext : DbContext
                   .WithMany()
                   .HasForeignKey(w => w.OwnerId)
                   .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // AuditLog entity configuration
+        modelBuilder.Entity<AuditLog>(entity =>
+        {
+            entity.HasKey(a => a.Id);
+
+            entity.Property(a => a.Action).IsRequired().HasMaxLength(100);
+            entity.Property(a => a.ActorEmail).HasMaxLength(256);
+            entity.Property(a => a.EntityType).HasMaxLength(100);
+            entity.Property(a => a.EntityId).HasMaxLength(100);
+            entity.Property(a => a.Details).HasMaxLength(2000);
+            entity.Property(a => a.IpAddress).HasMaxLength(64);
+
+            // Common queries: the audit feed newest-first, and per-actor history.
+            entity.HasIndex(a => a.CreatedAt);
+            entity.HasIndex(a => a.ActorId);
+
+            // Intentionally NO foreign key to User: audit logs are immutable history
+            // and must remain even after the actor's account is deleted.
         });
     }
 }

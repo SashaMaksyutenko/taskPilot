@@ -165,6 +165,7 @@ builder.Services.AddScoped<IAdminService, AdminService>();
 builder.Services.AddScoped<IProjectService, ProjectService>();
 builder.Services.AddScoped<ITaskService, TaskService>();
 builder.Services.AddScoped<IWebhookService, WebhookService>();
+builder.Services.AddScoped<IAuditService, AuditService>();
 // HttpClient factory used to deliver webhook POSTs.
 builder.Services.AddHttpClient();
 // Token generation is stateless, so a singleton is fine.

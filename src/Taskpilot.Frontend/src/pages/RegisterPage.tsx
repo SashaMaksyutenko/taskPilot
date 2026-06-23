@@ -1,7 +1,9 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
+import { useTranslation } from 'react-i18next'
 import { Link, useNavigate } from 'react-router-dom'
 import { z } from 'zod'
+import LangSwitch from '../components/LangSwitch'
 import { useAppDispatch, useAppSelector } from '../store/hooks'
 import { register as registerThunk } from '../store/authSlice'
 
@@ -27,6 +29,7 @@ type FormValues = z.infer<typeof schema>
 export default function RegisterPage() {
   const dispatch = useAppDispatch()
   const navigate = useNavigate()
+  const { t } = useTranslation()
   // Server-side error (e.g. "Email is already in use") and loading flag from the store.
   const { error: serverError, status } = useAppSelector((s) => s.auth)
 
@@ -49,10 +52,13 @@ export default function RegisterPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-50 px-4">
       <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-lg">
+        <div className="flex justify-end">
+          <LangSwitch />
+        </div>
         <img src="/logo.svg" alt="TaskPilot" className="mx-auto w-44" />
 
         <h1 className="mt-2 text-center text-2xl font-bold text-[#1E2A44]">
-          Create your account
+          {t('auth.createAccount')}
         </h1>
 
         {/* Server error banner */}
@@ -64,18 +70,18 @@ export default function RegisterPage() {
 
         <form onSubmit={handleSubmit(onSubmit)} className="mt-6 space-y-4" noValidate>
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">Name</label>
+            <label className="mb-1 block text-sm font-medium text-slate-700">{t('auth.name')}</label>
             <input
               type="text"
               {...field('name')}
               className="w-full rounded-lg border border-slate-300 px-3 py-2 outline-none focus:border-[#1E2A44]"
-              placeholder="Your name"
+              placeholder={t('auth.namePlaceholder')}
             />
             {errors.name && <p className="mt-1 text-sm text-red-600">{errors.name.message}</p>}
           </div>
 
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">Email</label>
+            <label className="mb-1 block text-sm font-medium text-slate-700">{t('auth.email')}</label>
             <input
               type="email"
               {...field('email')}
@@ -86,7 +92,7 @@ export default function RegisterPage() {
           </div>
 
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">Password</label>
+            <label className="mb-1 block text-sm font-medium text-slate-700">{t('auth.password')}</label>
             <input
               type="password"
               {...field('password')}
@@ -103,14 +109,14 @@ export default function RegisterPage() {
             disabled={status === 'loading'}
             className="w-full rounded-lg bg-[#1E2A44] py-2.5 font-semibold text-white transition hover:bg-[#27345a] disabled:opacity-60"
           >
-            {status === 'loading' ? 'Creating…' : 'Sign up'}
+            {status === 'loading' ? t('auth.creating') : t('auth.signup')}
           </button>
         </form>
 
         <p className="mt-6 text-center text-sm text-slate-600">
-          Already have an account?{' '}
+          {t('auth.haveAccount')}{' '}
           <Link to="/login" className="font-semibold text-[#1E2A44] hover:underline">
-            Log in
+            {t('auth.login')}
           </Link>
         </p>
       </div>

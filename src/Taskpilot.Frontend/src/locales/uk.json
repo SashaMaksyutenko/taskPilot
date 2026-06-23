@@ -8,5 +8,19 @@
     "chat": "Чат",
     "admin": "Адмін",
     "logout": "Вийти"
+  },
+  "auth": {
+    "welcomeBack": "З поверненням",
+    "createAccount": "Створіть акаунт",
+    "name": "Ім'я",
+    "namePlaceholder": "Ваше ім'я",
+    "email": "Пошта",
+    "password": "Пароль",
+    "login": "Увійти",
+    "loggingIn": "Вхід…",
+    "signup": "Зареєструватися",
+    "creating": "Створення…",
+    "needAccount": "Немає акаунту?",
+    "haveAccount": "Вже є акаунт?"
   }
 }

@@ -8,5 +8,19 @@
     "chat": "Chat",
     "admin": "Admin",
     "logout": "Log out"
+  },
+  "auth": {
+    "welcomeBack": "Welcome back",
+    "createAccount": "Create your account",
+    "name": "Name",
+    "namePlaceholder": "Your name",
+    "email": "Email",
+    "password": "Password",
+    "login": "Log in",
+    "loggingIn": "Logging in…",
+    "signup": "Sign up",
+    "creating": "Creating…",
+    "needAccount": "Need an account?",
+    "haveAccount": "Already have an account?"
   }
 }

@@ -22,5 +22,21 @@
     "creating": "Створення…",
     "needAccount": "Немає акаунту?",
     "haveAccount": "Вже є акаунт?"
+  },
+  "dashboard": {
+    "welcome": "З поверненням",
+    "subtitle": "Ось що відбувається у ваших справах.",
+    "projects": "Проєкти",
+    "unread": "Непрочитані сповіщення",
+    "deadlines": "Дедлайни (30 днів)",
+    "total": "всього",
+    "recentActivity": "Остання активність",
+    "markAllRead": "Прочитати все",
+    "loading": "Завантаження…",
+    "noActivity": "Поки що активності немає.",
+    "quickActions": "Швидкі дії",
+    "myProjects": "Мої проєкти",
+    "calendar": "Календар",
+    "openChat": "Відкрити чат"
   }
 }

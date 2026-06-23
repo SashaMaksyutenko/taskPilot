@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Link, useNavigate } from 'react-router-dom'
 import Navbar from '../components/Navbar'
 import { calendarService } from '../services/calendarService'
@@ -18,6 +19,7 @@ const isoDate = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(
 export default function HomePage() {
   const dispatch = useAppDispatch()
   const navigate = useNavigate()
+  const { t } = useTranslation()
   const { user, isAuthenticated } = useAppSelector((s) => s.auth)
 
   const [projectCount, setProjectCount] = useState(0)
@@ -65,31 +67,31 @@ export default function HomePage() {
       <Navbar />
 
       <main className="mx-auto max-w-5xl px-6 py-8">
-        <h1 className="text-2xl font-bold">Welcome back{user ? `, ${user.name}` : ''} 👋</h1>
+        <h1 className="text-2xl font-bold">{t('dashboard.welcome')}{user ? `, ${user.name}` : ''} 👋</h1>
         <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-          Here’s what’s happening across your work.
+          {t('dashboard.subtitle')}
         </p>
 
         <div className="mt-6 grid gap-4 sm:grid-cols-3">
-          <Stat label="Projects" value={projectCount} accent="bg-indigo-100 text-indigo-700" loading={loading} />
-          <Stat label="Unread notifications" value={unread} accent="bg-blue-100 text-blue-700" loading={loading} />
-          <Stat label="Deadlines (30 days)" value={upcoming} accent="bg-amber-100 text-amber-700" loading={loading} />
+          <Stat label={t('dashboard.projects')} value={projectCount} accent="bg-indigo-100 text-indigo-700" loading={loading} />
+          <Stat label={t('dashboard.unread')} value={unread} accent="bg-blue-100 text-blue-700" loading={loading} />
+          <Stat label={t('dashboard.deadlines')} value={upcoming} accent="bg-amber-100 text-amber-700" loading={loading} />
         </div>
 
         <div className="mt-6 grid gap-4 lg:grid-cols-3">
           <div className="rounded-xl border border-slate-200 bg-white p-5 lg:col-span-2 dark:border-slate-700 dark:bg-slate-800">
             <div className="mb-3 flex items-center">
-              <h2 className="font-bold">Recent activity</h2>
+              <h2 className="font-bold">{t('dashboard.recentActivity')}</h2>
               {unread > 0 && (
                 <button onClick={markAllRead} className="ml-auto text-xs font-semibold text-slate-500 hover:underline dark:text-slate-400">
-                  Mark all read
+                  {t('dashboard.markAllRead')}
                 </button>
               )}
             </div>
             {loading ? (
-              <p className="py-6 text-center text-sm text-slate-400">Loading…</p>
+              <p className="py-6 text-center text-sm text-slate-400">{t('dashboard.loading')}</p>
             ) : notifications.length === 0 ? (
-              <p className="py-6 text-center text-sm text-slate-400">No activity yet.</p>
+              <p className="py-6 text-center text-sm text-slate-400">{t('dashboard.noActivity')}</p>
             ) : (
               <ul className="divide-y divide-slate-100 dark:divide-slate-700">
                 {notifications.map((n) => (
@@ -111,11 +113,11 @@ export default function HomePage() {
           </div>
 
           <div className="rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-800">
-            <h2 className="mb-3 font-bold">Quick actions</h2>
+            <h2 className="mb-3 font-bold">{t('dashboard.quickActions')}</h2>
             <div className="space-y-2">
-              <Action to="/projects" label="My projects" primary />
-              <Action to="/calendar" label="Calendar" />
-              <Action to="/chat" label="Open chat" />
+              <Action to="/projects" label={t('dashboard.myProjects')} primary />
+              <Action to="/calendar" label={t('dashboard.calendar')} />
+              <Action to="/chat" label={t('dashboard.openChat')} />
             </div>
           </div>
         </div>
@@ -135,6 +137,7 @@ function Stat({
   accent: string
   loading: boolean
 }) {
+  const { t } = useTranslation()
   return (
     <div className="rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-800">
       <div className="text-sm text-slate-500 dark:text-slate-400">{label}</div>
@@ -144,7 +147,7 @@ function Stat({
         ) : (
           <>
             <span className="text-3xl font-bold">{value}</span>
-            <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${accent}`}>total</span>
+            <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${accent}`}>{t('dashboard.total')}</span>
           </>
         )}
       </div>

@@ -22,5 +22,21 @@
     "creating": "Creating…",
     "needAccount": "Need an account?",
     "haveAccount": "Already have an account?"
+  },
+  "dashboard": {
+    "welcome": "Welcome back",
+    "subtitle": "Here’s what’s happening across your work.",
+    "projects": "Projects",
+    "unread": "Unread notifications",
+    "deadlines": "Deadlines (30 days)",
+    "total": "total",
+    "recentActivity": "Recent activity",
+    "markAllRead": "Mark all read",
+    "loading": "Loading…",
+    "noActivity": "No activity yet.",
+    "quickActions": "Quick actions",
+    "myProjects": "My projects",
+    "calendar": "Calendar",
+    "openChat": "Open chat"
   }
 }

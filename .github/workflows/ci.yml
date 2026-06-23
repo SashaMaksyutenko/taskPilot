@@ -1,0 +1,53 @@
+name: CI
+
+# Build and test on every push and pull request to main.
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  backend:
+    name: Backend (build + test)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Restore
+        run: dotnet restore Taskpilot.sln
+
+      - name: Build
+        run: dotnet build Taskpilot.sln --configuration Release --no-restore
+
+      # Tests use the EF Core in-memory provider, so no database is required.
+      - name: Test
+        run: dotnet test tests/Taskpilot.API.Tests/Taskpilot.API.Tests.csproj --configuration Release --no-build --verbosity normal
+
+  frontend:
+    name: Frontend (build)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: src/Taskpilot.Frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: src/Taskpilot.Frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      # `npm run build` runs the TypeScript type-check (tsc -b) then the Vite build.
+      - name: Build
+        run: npm run build

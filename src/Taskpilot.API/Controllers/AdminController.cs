@@ -36,9 +36,13 @@ public class AdminController : BaseApiController
     public async Task<IActionResult> ChangeRole(Guid userId, [FromBody] ChangeRoleDto dto)
     {
         var result = await _adminService.ChangeRoleAsync(userId, dto.Role);
-        return result.Succeeded
-            ? Ok(new { message = $"Role changed to {dto.Role}." })
-            : BadRequest(new { error = result.Error });
+        if (!result.Succeeded)
+            return BadRequest(new { error = result.Error });
+
+        // Record who changed whose role and to what.
+        await _audit.LogAsync("user.role.changed", actorId: CurrentUserId(), actorEmail: CurrentUserEmail(),
+            entityType: "User", entityId: userId.ToString(), details: $"role -> {dto.Role}", ipAddress: ClientIp());
+        return Ok(new { message = $"Role changed to {dto.Role}." });
     }
 
     /// <summary>Bans (deactivates) a user.</summary>
@@ -49,9 +53,12 @@ public class AdminController : BaseApiController
         if (adminId is null) return Unauthorized();
 
         var result = await _adminService.SetActiveAsync(adminId.Value, userId, isActive: false);
-        return result.Succeeded
-            ? Ok(new { message = "User banned." })
-            : BadRequest(new { error = result.Error });
+        if (!result.Succeeded)
+            return BadRequest(new { error = result.Error });
+
+        await _audit.LogAsync("user.banned", actorId: adminId, actorEmail: CurrentUserEmail(),
+            entityType: "User", entityId: userId.ToString(), ipAddress: ClientIp());
+        return Ok(new { message = "User banned." });
     }
 
     /// <summary>Unbans (reactivates) a user.</summary>
@@ -62,9 +69,12 @@ public class AdminController : BaseApiController
         if (adminId is null) return Unauthorized();
 
         var result = await _adminService.SetActiveAsync(adminId.Value, userId, isActive: true);
-        return result.Succeeded
-            ? Ok(new { message = "User unbanned." })
-            : BadRequest(new { error = result.Error });
+        if (!result.Succeeded)
+            return BadRequest(new { error = result.Error });
+
+        await _audit.LogAsync("user.unbanned", actorId: adminId, actorEmail: CurrentUserEmail(),
+            entityType: "User", entityId: userId.ToString(), ipAddress: ClientIp());
+        return Ok(new { message = "User unbanned." });
     }
 
     /// <summary>Returns a page of audit-trail entries (newest first), optionally filtered by action.</summary>

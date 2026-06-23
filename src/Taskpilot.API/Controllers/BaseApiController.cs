@@ -24,4 +24,9 @@ public abstract class BaseApiController : ControllerBase
     /// The caller's IP address (for audit/logging), or null when unavailable.
     /// </summary>
     protected string? ClientIp() => HttpContext.Connection.RemoteIpAddress?.ToString();
+
+    /// <summary>
+    /// The authenticated user's email, read from the JWT "email" claim (or null).
+    /// </summary>
+    protected string? CurrentUserEmail() => User.FindFirstValue(JwtRegisteredClaimNames.Email);
 }

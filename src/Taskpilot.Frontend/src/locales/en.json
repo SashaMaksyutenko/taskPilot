@@ -79,6 +79,7 @@
     "exportCsv": "Export CSV",
     "addPlaceholder": "Add a task (goes to Backlog)…",
     "add": "Add",
+    "edit": "Edit",
     "dropHere": "Drop tasks here",
     "status": {
       "Backlog": "Backlog",

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, useParams } from 'react-router-dom'
 import Navbar from '../components/Navbar'
+import TaskContextMenu from '../components/TaskContextMenu'
 import TaskDetailModal from '../components/TaskDetailModal'
 import { projectService } from '../services/projectService'
 import { taskService } from '../services/taskService'
@@ -49,6 +50,25 @@ export default function BoardPage() {
     } catch {
       taskService.getTasks(projectId).then(setTasks).catch(() => {})
     }
+  }
+
+  // Context-menu actions.
+  const changePriority = async (task: Task, priority: string) => {
+    const updated = await taskService
+      .updateTask(task.id, {
+        title: task.title,
+        description: task.description,
+        priority,
+        assigneeId: task.assigneeId,
+        deadline: task.deadline,
+      })
+      .catch(() => null)
+    if (updated) setTasks((prev) => prev.map((t) => (t.id === updated.id ? updated : t)))
+  }
+
+  const removeTask = async (task: Task) => {
+    await taskService.deleteTask(task.id).catch(() => {})
+    setTasks((prev) => prev.filter((t) => t.id !== task.id))
   }
 
   const exportCsv = async () => {
@@ -111,30 +131,36 @@ export default function BoardPage() {
 
                 <div className="space-y-2">
                   {colTasks.map((task) => (
-                    <div
+                    <TaskContextMenu
                       key={task.id}
-                      draggable
-                      onDragStart={(e) => {
-                        draggingId.current = task.id
-                        e.dataTransfer.setData('taskId', task.id)
-                      }}
-                      onClick={() => setSelectedTask(task)}
-                      className="cursor-grab rounded-lg border border-slate-200 bg-white p-3 shadow-sm active:cursor-grabbing dark:border-slate-700 dark:bg-slate-900"
+                      onEdit={() => setSelectedTask(task)}
+                      onChangePriority={(p) => changePriority(task, p)}
+                      onDelete={() => removeTask(task)}
                     >
-                      <div className="text-sm font-medium">{task.title}</div>
-                      <div className="mt-2 flex items-center gap-2">
-                        <span
-                          className={`rounded px-2 py-0.5 text-[11px] font-semibold ${
-                            priorityClasses[task.priority] ?? 'bg-slate-200 text-slate-600'
-                          }`}
-                        >
-                          {t(`board.priority.${task.priority}`, task.priority)}
-                        </span>
-                        {task.assigneeName && (
-                          <span className="text-[11px] text-slate-500 dark:text-slate-400">@{task.assigneeName}</span>
-                        )}
+                      <div
+                        draggable
+                        onDragStart={(e) => {
+                          draggingId.current = task.id
+                          e.dataTransfer.setData('taskId', task.id)
+                        }}
+                        onClick={() => setSelectedTask(task)}
+                        className="cursor-grab rounded-lg border border-slate-200 bg-white p-3 shadow-sm active:cursor-grabbing dark:border-slate-700 dark:bg-slate-900"
+                      >
+                        <div className="text-sm font-medium">{task.title}</div>
+                        <div className="mt-2 flex items-center gap-2">
+                          <span
+                            className={`rounded px-2 py-0.5 text-[11px] font-semibold ${
+                              priorityClasses[task.priority] ?? 'bg-slate-200 text-slate-600'
+                            }`}
+                          >
+                            {t(`board.priority.${task.priority}`, task.priority)}
+                          </span>
+                          {task.assigneeName && (
+                            <span className="text-[11px] text-slate-500 dark:text-slate-400">@{task.assigneeName}</span>
+                          )}
+                        </div>
                       </div>
-                    </div>
+                    </TaskContextMenu>
                   ))}
                   {colTasks.length === 0 && (
                     <p className="px-1 py-4 text-center text-xs text-slate-400">{t('board.dropHere')}</p>

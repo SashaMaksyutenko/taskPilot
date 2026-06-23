@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import Navbar from '../components/Navbar'
 import { calendarService } from '../services/calendarService'
 import type { CalendarTask } from '../types/calendar'
@@ -10,12 +11,6 @@ const STATUS_COLORS: Record<string, string> = {
   Done: 'bg-green-100 text-green-700',
 }
 
-const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
-const MONTHS = [
-  'January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December',
-]
-
 const pad = (n: number) => String(n).padStart(2, '0')
 const dateKey = (y: number, m: number, d: number) => `${y}-${pad(m + 1)}-${pad(d)}`
 
@@ -23,6 +18,10 @@ const dateKey = (y: number, m: number, d: number) => `${y}-${pad(m + 1)}-${pad(d
  * Month calendar. Shows tasks on their deadline day, colored by status.
  */
 export default function CalendarPage() {
+  const { t } = useTranslation()
+  const months = t('calendar.months', { returnObjects: true }) as string[]
+  const weekdays = t('calendar.weekdays', { returnObjects: true }) as string[]
+
   const today = new Date()
   const [year, setYear] = useState(today.getFullYear())
   const [month, setMonth] = useState(today.getMonth())
@@ -61,14 +60,14 @@ export default function CalendarPage() {
     <div className="min-h-screen bg-slate-50 text-[#1E2A44] dark:bg-slate-900 dark:text-slate-100">
       <Navbar />
       <main className="mx-auto max-w-5xl px-6 py-6">
-        <h1 className="mb-4 text-2xl font-bold">Calendar</h1>
+        <h1 className="mb-4 text-2xl font-bold">{t('calendar.title')}</h1>
 
         <div className="mb-4 flex items-center gap-4">
           <button onClick={prevMonth} className="rounded-lg border border-slate-300 px-3 py-1 hover:bg-white dark:border-slate-600 dark:hover:bg-slate-800">
             ←
           </button>
           <span className="text-lg font-semibold">
-            {MONTHS[month]} {year}
+            {months[month]} {year}
           </span>
           <button onClick={nextMonth} className="rounded-lg border border-slate-300 px-3 py-1 hover:bg-white dark:border-slate-600 dark:hover:bg-slate-800">
             →
@@ -76,7 +75,7 @@ export default function CalendarPage() {
         </div>
 
         <div className="grid grid-cols-7 gap-px text-center text-xs font-semibold text-slate-500 dark:text-slate-400">
-          {WEEKDAYS.map((w) => (
+          {weekdays.map((w) => (
             <div key={w} className="py-2">
               {w}
             </div>
@@ -101,15 +100,15 @@ export default function CalendarPage() {
                       {d}
                     </div>
                     <div className="space-y-1">
-                      {dayTasks.map((t) => (
+                      {dayTasks.map((task) => (
                         <div
-                          key={t.id}
-                          title={`${t.title} · ${t.projectName} · ${t.status}`}
+                          key={task.id}
+                          title={`${task.title} · ${task.projectName} · ${t(`board.status.${task.status}`, task.status)}`}
                           className={`truncate rounded px-1.5 py-0.5 text-[11px] font-medium ${
-                            STATUS_COLORS[t.status] ?? 'bg-slate-200 text-slate-700'
+                            STATUS_COLORS[task.status] ?? 'bg-slate-200 text-slate-700'
                           }`}
                         >
-                          {t.title}
+                          {task.title}
                         </div>
                       ))}
                     </div>

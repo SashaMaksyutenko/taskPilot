@@ -103,5 +103,10 @@
     "searchAssignee": "Search a person to assign…",
     "save": "Save",
     "deleteTask": "Delete task"
+  },
+  "calendar": {
+    "title": "Calendar",
+    "months": ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"],
+    "weekdays": ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
   }
 }

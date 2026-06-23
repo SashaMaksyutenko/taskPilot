@@ -13,4 +13,5 @@ export interface AdminStats extends PublicStats {
   activeUsers: number
   anonymousVisitorsToday: number
   anonymousVisitsTotal: number
+  usersByRole: Record<string, number>
 }

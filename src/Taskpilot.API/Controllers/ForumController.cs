@@ -28,11 +28,11 @@ public class ForumController : BaseApiController
         _createReplyValidator = createReplyValidator;
     }
 
-    /// <summary>Lists all topics (pinned first, then newest).</summary>
+    /// <summary>Lists topics (pinned first, then newest), optionally filtered by author.</summary>
     [HttpGet("topics")]
-    public async Task<IActionResult> GetTopics()
+    public async Task<IActionResult> GetTopics([FromQuery] Guid? authorId)
     {
-        var result = await _forumService.GetTopicsAsync();
+        var result = await _forumService.GetTopicsAsync(authorId);
         return Ok(result.Value);
     }
 

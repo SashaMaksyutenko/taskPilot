@@ -29,4 +29,7 @@ public class AdminStatsDto
 
     /// <summary>Total anonymous requests counted since the app started.</summary>
     public long AnonymousVisitsTotal { get; set; }
+
+    /// <summary>Number of users per role (role name → count), for the breakdown chart.</summary>
+    public Dictionary<string, int> UsersByRole { get; set; } = new();
 }

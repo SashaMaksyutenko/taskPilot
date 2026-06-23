@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useParams } from 'react-router-dom'
+import { Link, useParams } from 'react-router-dom'
 import Navbar from '../components/Navbar'
+import { forumService } from '../services/forumService'
 import { userService, type PublicProfile } from '../services/userService'
+import type { TopicListItem } from '../types/forum'
 
 /** A contact line shown only when the value is present. */
 function Contact({ label, value, href }: { label: string; value?: string | null; href?: string }) {
@@ -29,6 +31,7 @@ export default function UserProfilePage() {
   const { t } = useTranslation()
   const { userId = '' } = useParams()
   const [profile, setProfile] = useState<PublicProfile | null>(null)
+  const [topics, setTopics] = useState<TopicListItem[]>([])
   const [notFound, setNotFound] = useState(false)
 
   useEffect(() => {
@@ -37,6 +40,7 @@ export default function UserProfilePage() {
       .getPublicProfile(userId)
       .then(setProfile)
       .catch(() => setNotFound(true))
+    forumService.getTopics(userId).then(setTopics).catch(() => {})
   }, [userId])
 
   return (
@@ -95,6 +99,31 @@ export default function UserProfilePage() {
                 </div>
               </div>
             )}
+
+            {/* Forum topics by this user */}
+            <div className="mt-6 rounded-xl border border-slate-200 bg-white p-6 dark:border-slate-700 dark:bg-slate-800">
+              <h2 className="mb-3 font-bold">{t('profile.topics')}</h2>
+              {topics.length === 0 ? (
+                <p className="text-sm text-slate-400">{t('profile.noTopics')}</p>
+              ) : (
+                <ul className="space-y-2">
+                  {topics.map((topic) => (
+                    <li key={topic.id}>
+                      <Link
+                        to={`/forum/${topic.id}`}
+                        className="flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-700/50"
+                      >
+                        {topic.isPinned && <span>📌</span>}
+                        <span className="min-w-0 flex-1 truncate font-medium">{topic.title}</span>
+                        <span className="flex-none text-xs text-slate-400">
+                          {topic.replyCount} · {topic.viewCount}
+                        </span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
           </>
         )}
       </main>

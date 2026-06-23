@@ -3,8 +3,10 @@ import type { Reply, TopicDetail, TopicListItem, VoteResult } from '../types/for
 
 /** REST calls for the forum. */
 export const forumService = {
-  getTopics(): Promise<TopicListItem[]> {
-    return api.get<TopicListItem[]>('/api/forum/topics').then((r) => r.data)
+  getTopics(authorId?: string): Promise<TopicListItem[]> {
+    return api
+      .get<TopicListItem[]>('/api/forum/topics', { params: authorId ? { authorId } : {} })
+      .then((r) => r.data)
   },
 
   getTopic(id: string): Promise<TopicDetail> {

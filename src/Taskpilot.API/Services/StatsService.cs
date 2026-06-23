@@ -30,8 +30,15 @@ public class StatsService : IStatsService
     {
         var (common, online) = await LoadCommonAsync();
 
+        // Count users grouped by role for the breakdown chart (role stored as string).
+        var byRole = await _context.Users
+            .GroupBy(u => u.Role)
+            .Select(g => new { Role = g.Key, Count = g.Count() })
+            .ToListAsync();
+
         return Result<AdminStatsDto>.Ok(new AdminStatsDto
         {
+            UsersByRole = byRole.ToDictionary(x => x.Role.ToString(), x => x.Count),
             TotalUsers = common.TotalUsers,
             ActiveUsers = common.ActiveUsers,
             NewestUserName = common.NewestUserName,

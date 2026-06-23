@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 import Navbar from '../components/Navbar'
+import RoleChart from '../components/RoleChart'
 import StatsPanel from '../components/StatsPanel'
 import { adminService } from '../services/adminService'
 import { statsService } from '../services/statsService'
@@ -54,8 +55,9 @@ export default function AdminPage() {
           </Link>
         </div>
 
-        <div className="mb-6">
+        <div className="mb-6 grid gap-4 lg:grid-cols-2">
           <StatsPanel stats={stats} />
+          {stats && <RoleChart usersByRole={stats.usersByRole} />}
         </div>
 
         <div className="overflow-hidden rounded-xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-800">

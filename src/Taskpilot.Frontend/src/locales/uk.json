@@ -193,12 +193,15 @@
       "Manager": "Менеджер",
       "Admin": "Адмін",
       "Viewer": "Глядач"
-    }
+    },
+    "usersByRole": "Користувачі за ролями"
   },
   "profile": {
     "notFound": "Користувача не знайдено.",
     "memberSince": "З нами з {{date}}",
-    "contacts": "Контакти"
+    "contacts": "Контакти",
+    "topics": "Теми на форумі",
+    "noTopics": "Тем ще немає."
   },
   "audit": {
     "title": "Адмін · Журнал аудиту",

@@ -193,12 +193,15 @@
       "Manager": "Manager",
       "Admin": "Admin",
       "Viewer": "Viewer"
-    }
+    },
+    "usersByRole": "Users by role"
   },
   "profile": {
     "notFound": "User not found.",
     "memberSince": "Member since {{date}}",
-    "contacts": "Contacts"
+    "contacts": "Contacts",
+    "topics": "Forum topics",
+    "noTopics": "No topics yet."
   },
   "audit": {
     "title": "Admin · Audit log",

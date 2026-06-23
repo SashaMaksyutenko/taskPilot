@@ -72,9 +72,11 @@ public class ForumService : IForumService
     }
 
     /// <inheritdoc />
-    public async Task<Result<List<TopicListItemDto>>> GetTopicsAsync()
+    public async Task<Result<List<TopicListItemDto>>> GetTopicsAsync(Guid? authorId = null)
     {
         var topics = await _context.ForumTopics
+            // Optional filter: only topics started by the given author.
+            .Where(t => authorId == null || t.AuthorId == authorId)
             .OrderByDescending(t => t.IsPinned)
             .ThenByDescending(t => t.CreatedAt)
             .Select(t => new TopicListItemDto

@@ -11,8 +11,8 @@ public interface IForumService
     /// <summary>Creates a new topic authored by the given user.</summary>
     Task<Result<TopicDetailDto>> CreateTopicAsync(Guid authorId, CreateTopicDto dto);
 
-    /// <summary>Lists all topics (pinned first, then newest).</summary>
-    Task<Result<List<TopicListItemDto>>> GetTopicsAsync();
+    /// <summary>Lists topics (pinned first, then newest), optionally filtered by author.</summary>
+    Task<Result<List<TopicListItemDto>>> GetTopicsAsync(Guid? authorId = null);
 
     /// <summary>
     /// Returns a topic with its replies and increments its view count.

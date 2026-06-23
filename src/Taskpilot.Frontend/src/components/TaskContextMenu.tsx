@@ -1,13 +1,13 @@
 import * as ContextMenu from '@radix-ui/react-context-menu'
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
+import {
+  menuContentClass as contentClass,
+  menuItemClass as itemClass,
+  menuSeparatorClass as separatorClass,
+} from './contextMenuStyles'
 
 const PRIORITIES = ['High', 'Medium', 'Low']
-
-const itemClass =
-  'cursor-pointer rounded px-3 py-1.5 text-sm outline-none data-[highlighted]:bg-slate-100 dark:data-[highlighted]:bg-slate-700'
-const contentClass =
-  'z-50 min-w-40 rounded-lg border border-slate-200 bg-white p-1 shadow-lg dark:border-slate-700 dark:bg-slate-800'
 
 /**
  * Right-click (or long-press) context menu for a task card: edit, change priority
@@ -52,7 +52,7 @@ export default function TaskContextMenu({
             </ContextMenu.Portal>
           </ContextMenu.Sub>
 
-          <ContextMenu.Separator className="my-1 h-px bg-slate-100 dark:bg-slate-700" />
+          <ContextMenu.Separator className={separatorClass} />
 
           <ContextMenu.Item className={`${itemClass} text-red-600`} onSelect={onDelete}>
             {t('taskModal.deleteTask')}

@@ -2,7 +2,9 @@ import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 import Navbar from '../components/Navbar'
+import ProjectContextMenu from '../components/ProjectContextMenu'
 import { projectService } from '../services/projectService'
+import { taskService } from '../services/taskService'
 import type { Project } from '../types/project'
 
 /**
@@ -34,6 +36,23 @@ export default function ProjectsPage() {
     }
   }
 
+  // Context-menu actions.
+  const exportTasks = async (project: Project) => {
+    const blob = await taskService.exportCsv(project.id).catch(() => null)
+    if (!blob) return
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `${project.name}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  const archive = async (project: Project) => {
+    await projectService.archive(project.id).catch(() => {})
+    load()
+  }
+
   return (
     <div className="min-h-screen bg-slate-50 text-[#1E2A44] dark:bg-slate-900 dark:text-slate-100">
       <Navbar />
@@ -63,11 +82,11 @@ export default function ProjectsPage() {
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {projects.map((p) => (
-              <Link
-                key={p.id}
-                to={`/projects/${p.id}`}
-                className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition hover:shadow-md dark:border-slate-700 dark:bg-slate-800"
-              >
+              <ProjectContextMenu key={p.id} onExport={() => exportTasks(p)} onArchive={() => archive(p)}>
+                <Link
+                  to={`/projects/${p.id}`}
+                  className="block rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition hover:shadow-md dark:border-slate-700 dark:bg-slate-800"
+                >
                 <div className="flex items-center gap-2">
                   <span className="inline-block h-3 w-3 rounded-full" style={{ background: p.color ?? '#94a3b8' }} />
                   <span className="font-semibold">{p.name}</span>
@@ -89,7 +108,8 @@ export default function ProjectsPage() {
                     </div>
                   )
                 })()}
-              </Link>
+                </Link>
+              </ProjectContextMenu>
             ))}
           </div>
         )}

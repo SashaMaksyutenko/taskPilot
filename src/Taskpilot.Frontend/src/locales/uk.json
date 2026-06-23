@@ -71,7 +71,8 @@
     "create": "Створити",
     "empty": "Проєктів ще немає. Створіть перший вище.",
     "tasks": "Завдань: {{count}}",
-    "progress": "{{done}}/{{total}} виконано"
+    "progress": "{{done}}/{{total}} виконано",
+    "archive": "Архівувати"
   },
   "board": {
     "backToProjects": "← Проєкти",

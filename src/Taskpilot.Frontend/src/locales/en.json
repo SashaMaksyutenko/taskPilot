@@ -71,7 +71,8 @@
     "create": "Create",
     "empty": "No projects yet. Create your first one above.",
     "tasks": "{{count}} tasks",
-    "progress": "{{done}}/{{total}} done"
+    "progress": "{{done}}/{{total}} done",
+    "archive": "Archive"
   },
   "board": {
     "backToProjects": "← Projects",

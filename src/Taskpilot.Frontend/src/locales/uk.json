@@ -129,5 +129,22 @@
     "locked": "Тему закрито.",
     "replyPlaceholder": "Напишіть відповідь…",
     "reply": "Відповісти"
+  },
+  "market": {
+    "title": "Маркетплейс",
+    "postSection": "Опублікувати задачу",
+    "taskTitle": "Назва задачі",
+    "describe": "Опишіть роботу",
+    "budget": "Бюджет ($)",
+    "skills": "Навички (напр. React, .NET)",
+    "postBtn": "Опублікувати",
+    "empty": "Задач ще немає.",
+    "applications": "Заявок: {{count}}",
+    "status": {
+      "Open": "Відкрита",
+      "InProgress": "В роботі",
+      "Completed": "Завершена",
+      "Cancelled": "Скасована"
+    }
   }
 }

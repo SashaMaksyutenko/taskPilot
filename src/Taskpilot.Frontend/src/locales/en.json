@@ -129,5 +129,22 @@
     "locked": "This topic is locked.",
     "replyPlaceholder": "Write a reply…",
     "reply": "Reply"
+  },
+  "market": {
+    "title": "Marketplace",
+    "postSection": "Post a task",
+    "taskTitle": "Task title",
+    "describe": "Describe the work",
+    "budget": "Budget ($)",
+    "skills": "Skills (e.g. React, .NET)",
+    "postBtn": "Post task",
+    "empty": "No tasks yet.",
+    "applications": "{{count}} applications",
+    "status": {
+      "Open": "Open",
+      "InProgress": "In progress",
+      "Completed": "Completed",
+      "Cancelled": "Cancelled"
+    }
   }
 }

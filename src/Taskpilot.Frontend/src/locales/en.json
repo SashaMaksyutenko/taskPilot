@@ -1,0 +1,12 @@
+{
+  "nav": {
+    "dashboard": "Dashboard",
+    "projects": "Projects",
+    "calendar": "Calendar",
+    "forum": "Forum",
+    "market": "Market",
+    "chat": "Chat",
+    "admin": "Admin",
+    "logout": "Log out"
+  }
+}

@@ -1,16 +1,18 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { NavLink, useNavigate } from 'react-router-dom'
 import { useNotifications } from '../hooks/useNotifications'
 import { logout } from '../store/authSlice'
 import { useAppDispatch, useAppSelector } from '../store/hooks'
 
+// `key` points at the i18n translation key (nav.*); `to` is the route.
 const LINKS = [
-  { to: '/', label: 'Dashboard', end: true },
-  { to: '/projects', label: 'Projects', end: false },
-  { to: '/calendar', label: 'Calendar', end: false },
-  { to: '/forum', label: 'Forum', end: false },
-  { to: '/marketplace', label: 'Market', end: false },
-  { to: '/chat', label: 'Chat', end: false },
+  { to: '/', key: 'nav.dashboard', end: true },
+  { to: '/projects', key: 'nav.projects', end: false },
+  { to: '/calendar', key: 'nav.calendar', end: false },
+  { to: '/forum', key: 'nav.forum', end: false },
+  { to: '/marketplace', key: 'nav.market', end: false },
+  { to: '/chat', key: 'nav.chat', end: false },
 ]
 
 /**
@@ -20,8 +22,12 @@ const LINKS = [
 export default function Navbar() {
   const dispatch = useAppDispatch()
   const navigate = useNavigate()
+  const { t, i18n } = useTranslation()
   const user = useAppSelector((s) => s.auth.user)
   const [dark, setDark] = useState(() => document.documentElement.classList.contains('dark'))
+
+  // Toggle between English and Ukrainian (persisted to localStorage by the detector).
+  const toggleLang = () => i18n.changeLanguage(i18n.language.startsWith('uk') ? 'en' : 'uk')
 
   const {
     unread,
@@ -57,7 +63,7 @@ export default function Navbar() {
       </NavLink>
 
       <nav className="hidden items-center gap-1 sm:flex">
-        {(user?.role === 'Admin' ? [...LINKS, { to: '/admin', label: 'Admin', end: false }] : LINKS).map((l) => (
+        {(user?.role === 'Admin' ? [...LINKS, { to: '/admin', key: 'nav.admin', end: false }] : LINKS).map((l) => (
           <NavLink
             key={l.to}
             to={l.to}
@@ -70,12 +76,20 @@ export default function Navbar() {
               }`
             }
           >
-            {l.label}
+            {t(l.key)}
           </NavLink>
         ))}
       </nav>
 
       <div className="ml-auto flex items-center gap-3">
+        <button
+          onClick={toggleLang}
+          title="Change language"
+          className="rounded-lg px-2 py-2 text-xs font-bold text-slate-500 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-700"
+        >
+          {i18n.language.startsWith('uk') ? 'УКР' : 'EN'}
+        </button>
+
         <button
           onClick={toggleTheme}
           title="Toggle theme"
@@ -150,7 +164,7 @@ export default function Navbar() {
           onClick={handleLogout}
           className="text-sm font-semibold text-slate-500 hover:text-[#1E2A44] dark:text-slate-300 dark:hover:text-white"
         >
-          Log out
+          {t('nav.logout')}
         </button>
       </div>
       </header>

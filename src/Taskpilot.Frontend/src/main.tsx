@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client'
 import { Provider } from 'react-redux'
 import { store } from './store/store'
 import './index.css'
+import './lib/i18n' // initialize localization (i18next) before the app renders
 import App from './App.tsx'
 
 // Apply the saved theme before the app renders to avoid a flash of the wrong theme.

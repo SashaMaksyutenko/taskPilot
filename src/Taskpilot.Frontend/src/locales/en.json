@@ -108,5 +108,16 @@
     "title": "Calendar",
     "months": ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"],
     "weekdays": ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+  },
+  "forum": {
+    "title": "Forum",
+    "startDiscussion": "Start a discussion",
+    "topicTitle": "Topic title",
+    "bodyPlaceholder": "What do you want to discuss?",
+    "postTopic": "Post topic",
+    "empty": "No topics yet. Be the first to post!",
+    "by": "by",
+    "replies": "replies",
+    "views": "views"
   }
 }

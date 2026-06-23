@@ -147,6 +147,20 @@
       "Cancelled": "Cancelled"
     }
   },
+  "chat": {
+    "title": "Chats",
+    "searchPlaceholder": "Search people to chat with…",
+    "noConversations": "No conversations yet.",
+    "group": "Group",
+    "directChat": "Direct chat",
+    "messagePlaceholder": "Type a message…",
+    "send": "Send",
+    "selectConversation": "Select a conversation to start chatting",
+    "type": {
+      "Group": "Group",
+      "Direct": "Direct"
+    }
+  },
   "marketTask": {
     "back": "← Marketplace",
     "assignedTo": "assigned to {{name}}",

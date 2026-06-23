@@ -147,6 +147,20 @@
       "Cancelled": "Скасована"
     }
   },
+  "chat": {
+    "title": "Чати",
+    "searchPlaceholder": "Знайти людину для чату…",
+    "noConversations": "Розмов ще немає.",
+    "group": "Група",
+    "directChat": "Особистий чат",
+    "messagePlaceholder": "Напишіть повідомлення…",
+    "send": "Надіслати",
+    "selectConversation": "Виберіть розмову, щоб почати спілкування",
+    "type": {
+      "Group": "Група",
+      "Direct": "Особистий"
+    }
+  },
   "marketTask": {
     "back": "← Маркетплейс",
     "assignedTo": "призначено: {{name}}",

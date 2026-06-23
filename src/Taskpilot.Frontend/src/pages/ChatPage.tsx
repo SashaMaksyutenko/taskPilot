@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import type { HubConnection } from '@microsoft/signalr'
 import Navbar from '../components/Navbar'
 import { createChatConnection } from '../lib/chatHub'
@@ -14,6 +15,7 @@ import { useAppDispatch, useAppSelector } from '../store/hooks'
  * over the SignalR hub.
  */
 export default function ChatPage() {
+  const { t } = useTranslation()
   const dispatch = useAppDispatch()
   const currentUser = useAppSelector((s) => s.auth.user)
 
@@ -103,9 +105,9 @@ export default function ChatPage() {
 
   // Title to show for a conversation in the list.
   const conversationTitle = (conv: Conversation): string => {
-    if (conv.type === 'Group') return conv.name ?? 'Group'
+    if (conv.type === 'Group') return conv.name ?? t('chat.group')
     const other = conv.participants.find((p) => p.userId !== currentUser?.id)
-    return other?.name ?? 'Direct chat'
+    return other?.name ?? t('chat.directChat')
   }
 
   return (
@@ -115,7 +117,7 @@ export default function ChatPage() {
         {/* Sidebar: conversations */}
         <aside className="flex w-72 flex-col border-r border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-800">
           <div className="border-b border-slate-200 p-4 dark:border-slate-700">
-            <span className="font-bold">Chats</span>
+            <span className="font-bold">{t('chat.title')}</span>
           </div>
 
           {/* Start a direct chat by searching for a user by name or email */}
@@ -123,7 +125,7 @@ export default function ChatPage() {
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search people to chat with…"
+              placeholder={t('chat.searchPlaceholder')}
               className="w-full rounded border border-slate-300 px-2 py-1 text-sm outline-none focus:border-[#1E2A44] dark:border-slate-600 dark:bg-slate-900"
             />
             {results.length > 0 && (
@@ -147,7 +149,7 @@ export default function ChatPage() {
 
           <div className="flex-1 overflow-y-auto">
             {conversations.length === 0 && (
-              <p className="p-4 text-sm text-slate-400">No conversations yet.</p>
+              <p className="p-4 text-sm text-slate-400">{t('chat.noConversations')}</p>
             )}
             {conversations.map((conv) => (
               <button
@@ -158,7 +160,7 @@ export default function ChatPage() {
                 }`}
               >
                 {conversationTitle(conv)}
-                <span className="ml-2 text-xs text-slate-400">{conv.type}</span>
+                <span className="ml-2 text-xs text-slate-400">{t(`chat.type.${conv.type}`, conv.type)}</span>
               </button>
             ))}
           </div>
@@ -198,20 +200,20 @@ export default function ChatPage() {
                   value={text}
                   onChange={(e) => setText(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && send()}
-                  placeholder="Type a message…"
+                  placeholder={t('chat.messagePlaceholder')}
                   className="flex-1 rounded-lg border border-slate-300 px-3 py-2 outline-none focus:border-[#1E2A44] dark:border-slate-600 dark:bg-slate-900"
                 />
                 <button
                   onClick={send}
                   className="rounded-lg bg-[#F6BE2C] px-5 font-semibold text-[#1E2A44] transition hover:brightness-95"
                 >
-                  Send
+                  {t('chat.send')}
                 </button>
               </div>
             </>
           ) : (
             <div className="flex flex-1 items-center justify-center text-slate-400">
-              Select a conversation to start chatting
+              {t('chat.selectConversation')}
             </div>
           )}
         </main>

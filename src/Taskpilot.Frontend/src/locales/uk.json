@@ -161,6 +161,39 @@
       "Direct": "Особистий"
     }
   },
+  "stats": {
+    "title": "Статистика сайту",
+    "users": "Користувачі",
+    "topics": "Теми",
+    "posts": "Повідомлення",
+    "online": "Онлайн",
+    "newestMember": "Новий учасник:",
+    "onlineNow": "Зараз онлайн: {{count}} зареєстрованих",
+    "anonymousToday": "{{count}} анонімних сьогодні",
+    "noneOnline": "Зареєстрованих онлайн немає.",
+    "activeUsers": "Активні",
+    "visitorsToday": "Відвідувачів сьогодні",
+    "anonRequests": "Анон. запитів"
+  },
+  "admin": {
+    "usersTitle": "Адмін · Користувачі ({{count}})",
+    "auditLog": "Журнал аудиту →",
+    "name": "Ім'я",
+    "email": "Пошта",
+    "role": "Роль",
+    "status": "Статус",
+    "actions": "Дії",
+    "active": "Активний",
+    "banned": "Забанений",
+    "ban": "Забанити",
+    "unban": "Розбанити",
+    "roles": {
+      "Developer": "Розробник",
+      "Manager": "Менеджер",
+      "Admin": "Адмін",
+      "Viewer": "Глядач"
+    }
+  },
   "marketTask": {
     "back": "← Маркетплейс",
     "assignedTo": "призначено: {{name}}",

@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import type { AdminStats, PublicStats } from '../types/stats'
 
 /** Renders one labelled statistic. */
@@ -21,31 +22,32 @@ function isAdmin(stats: PublicStats | AdminStats): stats is AdminStats {
  * when present).
  */
 export default function StatsPanel({ stats }: { stats: PublicStats | AdminStats | null }) {
+  const { t } = useTranslation()
   if (!stats) return null
   const admin = isAdmin(stats)
 
   return (
     <section className="rounded-xl border border-slate-200 bg-white p-5 text-[#1E2A44] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100">
-      <h2 className="mb-4 font-bold">Site statistics</h2>
+      <h2 className="mb-4 font-bold">{t('stats.title')}</h2>
 
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-        <Stat value={stats.totalUsers} label="Users" />
-        <Stat value={stats.totalTopics} label="Topics" />
-        <Stat value={stats.totalForumPosts} label="Posts" />
-        <Stat value={stats.onlineUsers} label="Online" />
+        <Stat value={stats.totalUsers} label={t('stats.users')} />
+        <Stat value={stats.totalTopics} label={t('stats.topics')} />
+        <Stat value={stats.totalForumPosts} label={t('stats.posts')} />
+        <Stat value={stats.onlineUsers} label={t('stats.online')} />
       </div>
 
       {stats.newestUserName && (
         <p className="mt-4 text-sm text-slate-500 dark:text-slate-400">
-          Newest member: <span className="font-semibold text-[#1E2A44] dark:text-slate-200">{stats.newestUserName}</span>
+          {t('stats.newestMember')} <span className="font-semibold text-[#1E2A44] dark:text-slate-200">{stats.newestUserName}</span>
         </p>
       )}
 
       {/* Who is online */}
       <div className="mt-4 border-t border-slate-100 pt-4 dark:border-slate-700">
         <div className="text-sm font-semibold">
-          Online now: {stats.onlineUsers} registered
-          {admin && <span className="font-normal text-slate-500 dark:text-slate-400"> · {stats.anonymousVisitorsToday} anonymous today</span>}
+          {t('stats.onlineNow', { count: stats.onlineUsers })}
+          {admin && <span className="font-normal text-slate-500 dark:text-slate-400"> · {t('stats.anonymousToday', { count: stats.anonymousVisitorsToday })}</span>}
         </div>
         {stats.onlineUserNames.length > 0 ? (
           <div className="mt-1 flex flex-wrap gap-x-2 gap-y-1 text-sm text-green-600 dark:text-green-400">
@@ -54,16 +56,16 @@ export default function StatsPanel({ stats }: { stats: PublicStats | AdminStats 
             ))}
           </div>
         ) : (
-          <p className="mt-1 text-sm text-slate-400">No registered users online.</p>
+          <p className="mt-1 text-sm text-slate-400">{t('stats.noneOnline')}</p>
         )}
       </div>
 
       {/* Admin-only analytics */}
       {admin && (
         <div className="mt-4 grid grid-cols-2 gap-4 border-t border-slate-100 pt-4 sm:grid-cols-3 dark:border-slate-700">
-          <Stat value={stats.activeUsers} label="Active users" />
-          <Stat value={stats.anonymousVisitorsToday} label="Visitors today" />
-          <Stat value={stats.anonymousVisitsTotal} label="Anon. requests" />
+          <Stat value={stats.activeUsers} label={t('stats.activeUsers')} />
+          <Stat value={stats.anonymousVisitorsToday} label={t('stats.visitorsToday')} />
+          <Stat value={stats.anonymousVisitsTotal} label={t('stats.anonRequests')} />
         </div>
       )}
     </section>

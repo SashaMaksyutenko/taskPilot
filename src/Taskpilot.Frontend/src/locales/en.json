@@ -161,6 +161,39 @@
       "Direct": "Direct"
     }
   },
+  "stats": {
+    "title": "Site statistics",
+    "users": "Users",
+    "topics": "Topics",
+    "posts": "Posts",
+    "online": "Online",
+    "newestMember": "Newest member:",
+    "onlineNow": "Online now: {{count}} registered",
+    "anonymousToday": "{{count}} anonymous today",
+    "noneOnline": "No registered users online.",
+    "activeUsers": "Active users",
+    "visitorsToday": "Visitors today",
+    "anonRequests": "Anon. requests"
+  },
+  "admin": {
+    "usersTitle": "Admin · Users ({{count}})",
+    "auditLog": "Audit log →",
+    "name": "Name",
+    "email": "Email",
+    "role": "Role",
+    "status": "Status",
+    "actions": "Actions",
+    "active": "Active",
+    "banned": "Banned",
+    "ban": "Ban",
+    "unban": "Unban",
+    "roles": {
+      "Developer": "Developer",
+      "Manager": "Manager",
+      "Admin": "Admin",
+      "Viewer": "Viewer"
+    }
+  },
   "marketTask": {
     "back": "← Marketplace",
     "assignedTo": "assigned to {{name}}",

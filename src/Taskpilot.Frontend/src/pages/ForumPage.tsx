@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import Navbar from '../components/Navbar'
 import { forumService } from '../services/forumService'
 import type { TopicListItem } from '../types/forum'
@@ -10,6 +10,7 @@ import type { TopicListItem } from '../types/forum'
  */
 export default function ForumPage() {
   const { t } = useTranslation()
+  const navigate = useNavigate()
   const [topics, setTopics] = useState<TopicListItem[]>([])
   const [title, setTitle] = useState('')
   const [body, setBody] = useState('')
@@ -82,7 +83,18 @@ export default function ForumPage() {
                       {topic.title}
                     </div>
                     <div className="text-xs text-slate-500 dark:text-slate-400">
-                      {t('forum.by')} {topic.authorName} · {new Date(topic.createdAt).toLocaleDateString()}
+                      {t('forum.by')}{' '}
+                      <span
+                        onClick={(e) => {
+                          e.preventDefault()
+                          e.stopPropagation()
+                          navigate(`/users/${topic.authorId}`)
+                        }}
+                        className="cursor-pointer font-medium hover:underline"
+                      >
+                        {topic.authorName}
+                      </span>{' '}
+                      · {new Date(topic.createdAt).toLocaleDateString()}
                     </div>
                   </div>
                   <div className="flex flex-none gap-4 text-center text-xs text-slate-500 dark:text-slate-400">

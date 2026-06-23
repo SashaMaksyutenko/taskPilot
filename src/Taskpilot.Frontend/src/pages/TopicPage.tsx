@@ -115,7 +115,9 @@ export default function TopicPage() {
                 )}
                 <p className="whitespace-pre-wrap">{r.body}</p>
                 <div className="mt-2 flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400">
-                  <span>{r.authorName}</span>
+                  <Link to={`/users/${r.authorId}`} className="font-medium hover:underline">
+                    {r.authorName}
+                  </Link>
                   {isAuthor && !r.isSolution && (
                     <button onClick={() => markSolution(r)} className="font-semibold text-green-600 hover:underline">
                       {t('topic.markSolution')}

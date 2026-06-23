@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import Navbar from '../components/Navbar'
 import { marketplaceService } from '../services/marketplaceService'
 import { useAppSelector } from '../store/hooks'
@@ -18,6 +18,7 @@ const statusColor: Record<string, string> = {
  */
 export default function MarketplacePage() {
   const { t } = useTranslation()
+  const navigate = useNavigate()
   // RBAC: only Managers and Admins may post tasks (backend enforces this too).
   const role = useAppSelector((s) => s.auth.user?.role)
   const canPost = role === 'Manager' || role === 'Admin'
@@ -112,7 +113,18 @@ export default function MarketplacePage() {
                   <div className="min-w-0 flex-1">
                     <div className="truncate font-semibold">{task.title}</div>
                     <div className="text-xs text-slate-500 dark:text-slate-400">
-                      {t('forum.by')} {task.posterName} · {t('market.applications', { count: task.applicationCount })}
+                      {t('forum.by')}{' '}
+                      <span
+                        onClick={(e) => {
+                          e.preventDefault()
+                          e.stopPropagation()
+                          navigate(`/users/${task.posterId}`)
+                        }}
+                        className="cursor-pointer font-medium hover:underline"
+                      >
+                        {task.posterName}
+                      </span>{' '}
+                      · {t('market.applications', { count: task.applicationCount })}
                       {task.requiredSkills ? ` · ${task.requiredSkills}` : ''}
                     </div>
                   </div>

@@ -72,7 +72,9 @@ export default function AdminPage() {
             <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
               {users.map((u) => (
                 <tr key={u.id}>
-                  <td className="px-4 py-3 font-medium">{u.name}</td>
+                  <td className="px-4 py-3 font-medium">
+                    <Link to={`/users/${u.id}`} className="hover:underline">{u.name}</Link>
+                  </td>
                   <td className="px-4 py-3 text-slate-500 dark:text-slate-400">{u.email}</td>
                   <td className="px-4 py-3">
                     <select

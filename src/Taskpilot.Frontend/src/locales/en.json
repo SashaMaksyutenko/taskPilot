@@ -121,7 +121,9 @@
     "empty": "No topics yet. Be the first to post!",
     "by": "by",
     "replies": "replies",
-    "views": "views"
+    "views": "views",
+    "copyLink": "Copy link",
+    "delete": "Delete"
   },
   "topic": {
     "loading": "Loading…",

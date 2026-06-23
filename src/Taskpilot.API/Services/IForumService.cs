@@ -24,6 +24,11 @@ public interface IForumService
     Task<Result<ReplyDto>> AddReplyAsync(Guid authorId, CreateReplyDto dto);
 
     /// <summary>
+    /// Deletes a topic (and its replies). Allowed only for the topic's author or an admin.
+    /// </summary>
+    Task<Result> DeleteTopicAsync(Guid topicId, Guid userId, bool isAdmin);
+
+    /// <summary>
     /// Casts (or toggles/changes) a user's vote on a reply.
     /// Voting the same value again removes the vote. Returns the new score.
     /// </summary>

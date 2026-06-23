@@ -49,6 +49,19 @@ public class ForumController : BaseApiController
             : NotFound(new { error = result.Error });
     }
 
+    /// <summary>Deletes a topic (author or admin only).</summary>
+    [HttpDelete("topics/{topicId:guid}")]
+    public async Task<IActionResult> DeleteTopic(Guid topicId)
+    {
+        var userId = CurrentUserId();
+        if (userId is null) return Unauthorized();
+
+        var result = await _forumService.DeleteTopicAsync(topicId, userId.Value, User.IsInRole("Admin"));
+        return result.Succeeded
+            ? Ok(new { message = "Topic deleted." })
+            : BadRequest(new { error = result.Error });
+    }
+
     /// <summary>Creates a new topic.</summary>
     [HttpPost("topics")]
     public async Task<IActionResult> CreateTopic([FromBody] CreateTopicDto dto)

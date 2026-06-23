@@ -2,7 +2,9 @@ import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, useNavigate } from 'react-router-dom'
 import Navbar from '../components/Navbar'
+import TopicContextMenu from '../components/TopicContextMenu'
 import { forumService } from '../services/forumService'
+import { useAppSelector } from '../store/hooks'
 import type { TopicListItem } from '../types/forum'
 
 /**
@@ -11,6 +13,7 @@ import type { TopicListItem } from '../types/forum'
 export default function ForumPage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
+  const currentUser = useAppSelector((s) => s.auth.user)
   const [topics, setTopics] = useState<TopicListItem[]>([])
   const [title, setTitle] = useState('')
   const [body, setBody] = useState('')
@@ -33,6 +36,11 @@ export default function ForumPage() {
     } finally {
       setLoading(false)
     }
+  }
+
+  const removeTopic = async (id: string) => {
+    await forumService.deleteTopic(id).catch(() => {})
+    setTopics((prev) => prev.filter((x) => x.id !== id))
   }
 
   return (
@@ -73,6 +81,11 @@ export default function ForumPage() {
           <ul className="space-y-2">
             {topics.map((topic) => (
               <li key={topic.id}>
+                <TopicContextMenu
+                  topicId={topic.id}
+                  canDelete={currentUser?.id === topic.authorId || currentUser?.role === 'Admin'}
+                  onDelete={() => removeTopic(topic.id)}
+                >
                 <Link
                   to={`/forum/${topic.id}`}
                   className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-4 transition hover:shadow-sm dark:border-slate-700 dark:bg-slate-800"
@@ -108,6 +121,7 @@ export default function ForumPage() {
                     </div>
                   </div>
                 </Link>
+                </TopicContextMenu>
               </li>
             ))}
           </ul>

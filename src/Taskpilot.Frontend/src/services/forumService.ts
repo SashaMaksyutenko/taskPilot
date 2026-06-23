@@ -17,6 +17,10 @@ export const forumService = {
     return api.post<TopicDetail>('/api/forum/topics', data).then((r) => r.data)
   },
 
+  deleteTopic(id: string): Promise<void> {
+    return api.delete(`/api/forum/topics/${id}`).then(() => undefined)
+  },
+
   addReply(data: { topicId: string; body: string; parentReplyId?: string }): Promise<Reply> {
     return api.post<Reply>('/api/forum/replies', data).then((r) => r.data)
   },

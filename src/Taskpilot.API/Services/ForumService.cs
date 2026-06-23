@@ -195,6 +195,25 @@ public class ForumService : IForumService
     }
 
     /// <inheritdoc />
+    public async Task<Result> DeleteTopicAsync(Guid topicId, Guid userId, bool isAdmin)
+    {
+        var topic = await _context.ForumTopics.FirstOrDefaultAsync(t => t.Id == topicId);
+        if (topic is null)
+            return Result.Fail("Topic not found.");
+
+        // Only the author or an admin may delete a topic.
+        if (topic.AuthorId != userId && !isAdmin)
+            return Result.Fail("You can only delete your own topics.");
+
+        // Removing the topic cascades to its replies and their votes (FK Cascade).
+        _context.ForumTopics.Remove(topic);
+        await _context.SaveChangesAsync();
+
+        _logger.LogInformation("Topic deleted. TopicId: {TopicId}, By: {UserId}, Admin: {IsAdmin}", topicId, userId, isAdmin);
+        return Result.Ok();
+    }
+
+    /// <inheritdoc />
     public async Task<Result<ReplyDto>> AddReplyAsync(Guid authorId, CreateReplyDto dto)
     {
         _logger.LogInformation("AddReply. TopicId: {TopicId}, AuthorId: {AuthorId}", dto.TopicId, authorId);

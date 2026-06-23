@@ -4,6 +4,7 @@
 // JWT, Serilog, Swagger, etc. are added in later sessions.
 
 using System.Text;
+using System.Threading.RateLimiting;
 using DotNetEnv;
 using FluentValidation;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -169,6 +170,24 @@ builder.Services.AddHttpClient();
 // Token generation is stateless, so a singleton is fine.
 builder.Services.AddSingleton<ITokenService, TokenService>();
 
+// Rate limiting protects abusable endpoints from brute force and spam.
+// The "auth" policy allows max 5 requests per minute per client IP; once the
+// window is exceeded the request is rejected with 429 Too Many Requests.
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.AddPolicy("auth", httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            // Partition by caller IP so one client cannot exhaust everyone's quota.
+            partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 5,
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0, // reject immediately instead of queueing
+            }));
+});
+
 // Later sessions will add: AutoMapper, MassTransit, Redis, etc.
 
 // Build the application from the configured services.
@@ -212,6 +231,9 @@ app.UseCors(FrontendCorsPolicy);
 // Authentication must run before authorization so the user identity is known.
 app.UseAuthentication();
 app.UseAuthorization();
+
+// Enforce the configured rate-limiting policies (e.g. the "auth" policy).
+app.UseRateLimiter();
 
 // Map attribute-routed controllers (e.g. POST /api/auth/register).
 app.MapControllers();

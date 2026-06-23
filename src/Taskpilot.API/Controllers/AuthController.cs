@@ -1,6 +1,7 @@
 using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Taskpilot.API.DTOs.Auth;
 using Taskpilot.API.Services;
 
@@ -44,6 +45,7 @@ public class AuthController : BaseApiController
     /// 400 Bad Request when validation fails;
     /// 409 Conflict when the email is already in use.
     /// </returns>
+    [EnableRateLimiting("auth")]
     [HttpPost("register")]
     public async Task<IActionResult> Register([FromBody] RegisterDto dto)
     {
@@ -84,6 +86,7 @@ public class AuthController : BaseApiController
     /// 400 Bad Request when validation fails;
     /// 401 Unauthorized when the credentials are invalid.
     /// </returns>
+    [EnableRateLimiting("auth")]
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] LoginDto dto)
     {
@@ -123,6 +126,7 @@ public class AuthController : BaseApiController
     /// 400 Bad Request when the refresh token is missing;
     /// 401 Unauthorized when the refresh token is invalid, expired or revoked.
     /// </returns>
+    [EnableRateLimiting("auth")]
     [HttpPost("refresh")]
     public async Task<IActionResult> Refresh([FromBody] RefreshTokenDto dto)
     {

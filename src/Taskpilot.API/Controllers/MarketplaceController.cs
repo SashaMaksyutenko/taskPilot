@@ -46,7 +46,11 @@ public class MarketplaceController : BaseApiController
             : NotFound(new { error = result.Error });
     }
 
-    /// <summary>Posts a new task.</summary>
+    /// <summary>
+    /// Posts a new public task. RBAC: only Managers and Admins may post marketplace
+    /// tasks (Developers browse and apply). Viewers are read-only (blocked earlier).
+    /// </summary>
+    [Authorize(Roles = "Manager,Admin")]
     [HttpPost("tasks")]
     public async Task<IActionResult> CreateTask([FromBody] CreateTaskDto dto)
     {

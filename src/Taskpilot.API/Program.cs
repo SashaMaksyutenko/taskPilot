@@ -154,6 +154,9 @@ builder.Services.AddSignalR();
 // Tracks who is currently connected to the chat hub (shared singleton state).
 builder.Services.AddSingleton<PresenceTracker>();
 
+// Tracks anonymous (not-logged-in) site visitors (shared singleton state).
+builder.Services.AddSingleton<VisitorTracker>();
+
 // Register application services. Scoped = one instance per HTTP request.
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IChatService, ChatService>();
@@ -167,6 +170,7 @@ builder.Services.AddScoped<IProjectService, ProjectService>();
 builder.Services.AddScoped<ITaskService, TaskService>();
 builder.Services.AddScoped<IWebhookService, WebhookService>();
 builder.Services.AddScoped<IAuditService, AuditService>();
+builder.Services.AddScoped<IStatsService, StatsService>();
 // HttpClient factory used to deliver webhook POSTs.
 builder.Services.AddHttpClient();
 // Token generation is stateless, so a singleton is fine.
@@ -260,6 +264,9 @@ app.UseAuthorization();
 
 // Enforce the configured rate-limiting policies (e.g. the "auth" policy).
 app.UseRateLimiter();
+
+// Count anonymous visitors (runs after authentication so we know who is logged in).
+app.UseMiddleware<VisitorTrackingMiddleware>();
 
 // RBAC: make the Viewer role read-only (runs after authentication so the user's
 // role is known). Must precede endpoint execution.

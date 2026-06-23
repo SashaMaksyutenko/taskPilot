@@ -16,11 +16,13 @@ public class AdminController : BaseApiController
 {
     private readonly IAdminService _adminService;
     private readonly IAuditService _audit;
+    private readonly IStatsService _stats;
 
-    public AdminController(IAdminService adminService, IAuditService audit)
+    public AdminController(IAdminService adminService, IAuditService audit, IStatsService stats)
     {
         _adminService = adminService;
         _audit = audit;
+        _stats = stats;
     }
 
     /// <summary>Lists all users.</summary>
@@ -28,6 +30,14 @@ public class AdminController : BaseApiController
     public async Task<IActionResult> GetUsers()
     {
         var result = await _adminService.GetAllUsersAsync();
+        return Ok(result.Value);
+    }
+
+    /// <summary>Live site statistics: user counts, online users, anonymous visitors.</summary>
+    [HttpGet("stats")]
+    public async Task<IActionResult> GetStats()
+    {
+        var result = await _stats.GetFullStatsAsync();
         return Ok(result.Value);
     }
 

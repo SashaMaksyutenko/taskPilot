@@ -38,4 +38,10 @@ public class PresenceTracker
 
     /// <summary>True if the user has at least one active connection.</summary>
     public bool IsOnline(Guid userId) => _connections.ContainsKey(userId);
+
+    /// <summary>Number of distinct users currently online (any connection).</summary>
+    public int OnlineCount => _connections.Count;
+
+    /// <summary>Ids of all users currently online (any connection).</summary>
+    public IReadOnlyCollection<Guid> OnlineUserIds() => _connections.Keys.ToArray();
 }

@@ -186,6 +186,30 @@ builder.Services.AddRateLimiter(options =>
                 Window = TimeSpan.FromMinutes(1),
                 QueueLimit = 0, // reject immediately instead of queueing
             }));
+
+    // Global limit applied to every request: max 100 per minute, partitioned by
+    // authenticated user (JWT "sub") so the quota follows the person across IPs,
+    // falling back to the caller IP for anonymous requests. Real-time hub paths
+    // and the health probe are exempt so long-lived connections and monitoring
+    // are never throttled.
+    options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(httpContext =>
+    {
+        var path = httpContext.Request.Path;
+        if (path.StartsWithSegments("/hubs") || path.StartsWithSegments("/health"))
+            return RateLimitPartition.GetNoLimiter("exempt");
+
+        // "sub" is the user-id claim (MapInboundClaims is disabled, so it stays "sub").
+        var partitionKey = httpContext.User.FindFirst("sub")?.Value
+            ?? httpContext.Connection.RemoteIpAddress?.ToString()
+            ?? "anonymous";
+
+        return RateLimitPartition.GetFixedWindowLimiter(partitionKey, _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = 100,
+            Window = TimeSpan.FromMinutes(1),
+            QueueLimit = 0,
+        });
+    });
 });
 
 // Later sessions will add: AutoMapper, MassTransit, Redis, etc.

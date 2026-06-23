@@ -71,5 +71,24 @@
     "create": "Create",
     "empty": "No projects yet. Create your first one above.",
     "tasks": "{{count}} tasks"
+  },
+  "board": {
+    "backToProjects": "← Projects",
+    "title": "Board",
+    "exportCsv": "Export CSV",
+    "addPlaceholder": "Add a task (goes to Backlog)…",
+    "add": "Add",
+    "dropHere": "Drop tasks here",
+    "status": {
+      "Backlog": "Backlog",
+      "InProgress": "In Progress",
+      "Review": "Review",
+      "Done": "Done"
+    },
+    "priority": {
+      "High": "High",
+      "Medium": "Medium",
+      "Low": "Low"
+    }
   }
 }

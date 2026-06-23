@@ -71,5 +71,24 @@
     "create": "Створити",
     "empty": "Проєктів ще немає. Створіть перший вище.",
     "tasks": "Завдань: {{count}}"
+  },
+  "board": {
+    "backToProjects": "← Проєкти",
+    "title": "Дошка",
+    "exportCsv": "Експорт CSV",
+    "addPlaceholder": "Додати задачу (у Backlog)…",
+    "add": "Додати",
+    "dropHere": "Перетягніть задачі сюди",
+    "status": {
+      "Backlog": "Беклог",
+      "InProgress": "В роботі",
+      "Review": "Рев'ю",
+      "Done": "Готово"
+    },
+    "priority": {
+      "High": "Високий",
+      "Medium": "Середній",
+      "Low": "Низький"
+    }
   }
 }

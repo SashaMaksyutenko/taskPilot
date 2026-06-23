@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Link, useParams } from 'react-router-dom'
 import Navbar from '../components/Navbar'
 import TaskDetailModal from '../components/TaskDetailModal'
@@ -17,6 +18,7 @@ const priorityClasses: Record<string, string> = {
  * be dragged between columns (native HTML5 drag & drop), which calls the status API.
  */
 export default function BoardPage() {
+  const { t } = useTranslation()
   const { projectId = '' } = useParams()
   const [project, setProject] = useState<Project | null>(null)
   const [tasks, setTasks] = useState<Task[]>([])
@@ -66,14 +68,14 @@ export default function BoardPage() {
       <main className="px-6 py-6">
         <div className="mb-5 flex items-center gap-3">
           <Link to="/projects" className="text-sm text-slate-500 hover:underline dark:text-slate-400">
-            ← Projects
+            {t('board.backToProjects')}
           </Link>
-          <h1 className="text-xl font-bold">{project?.name ?? 'Board'}</h1>
+          <h1 className="text-xl font-bold">{project?.name ?? t('board.title')}</h1>
           <button
             onClick={exportCsv}
             className="ml-auto rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-semibold hover:bg-white dark:border-slate-600 dark:hover:bg-slate-800"
           >
-            Export CSV
+            {t('board.exportCsv')}
           </button>
         </div>
 
@@ -83,11 +85,11 @@ export default function BoardPage() {
             value={newTitle}
             onChange={(e) => setNewTitle(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && addTask()}
-            placeholder="Add a task (goes to Backlog)…"
+            placeholder={t('board.addPlaceholder')}
             className="flex-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-[#1E2A44] dark:border-slate-600 dark:bg-slate-800"
           />
           <button onClick={addTask} className="rounded-lg bg-[#1E2A44] px-4 text-sm font-semibold text-white">
-            Add
+            {t('board.add')}
           </button>
         </div>
 
@@ -103,39 +105,39 @@ export default function BoardPage() {
                 className="rounded-xl bg-slate-100 p-3 dark:bg-slate-800"
               >
                 <div className="mb-3 flex items-center justify-between px-1 text-sm font-bold">
-                  <span>{col.label}</span>
+                  <span>{t(`board.status.${col.key}`)}</span>
                   <span className="text-slate-400">{colTasks.length}</span>
                 </div>
 
                 <div className="space-y-2">
-                  {colTasks.map((t) => (
+                  {colTasks.map((task) => (
                     <div
-                      key={t.id}
+                      key={task.id}
                       draggable
                       onDragStart={(e) => {
-                        draggingId.current = t.id
-                        e.dataTransfer.setData('taskId', t.id)
+                        draggingId.current = task.id
+                        e.dataTransfer.setData('taskId', task.id)
                       }}
-                      onClick={() => setSelectedTask(t)}
+                      onClick={() => setSelectedTask(task)}
                       className="cursor-grab rounded-lg border border-slate-200 bg-white p-3 shadow-sm active:cursor-grabbing dark:border-slate-700 dark:bg-slate-900"
                     >
-                      <div className="text-sm font-medium">{t.title}</div>
+                      <div className="text-sm font-medium">{task.title}</div>
                       <div className="mt-2 flex items-center gap-2">
                         <span
                           className={`rounded px-2 py-0.5 text-[11px] font-semibold ${
-                            priorityClasses[t.priority] ?? 'bg-slate-200 text-slate-600'
+                            priorityClasses[task.priority] ?? 'bg-slate-200 text-slate-600'
                           }`}
                         >
-                          {t.priority}
+                          {t(`board.priority.${task.priority}`, task.priority)}
                         </span>
-                        {t.assigneeName && (
-                          <span className="text-[11px] text-slate-500 dark:text-slate-400">@{t.assigneeName}</span>
+                        {task.assigneeName && (
+                          <span className="text-[11px] text-slate-500 dark:text-slate-400">@{task.assigneeName}</span>
                         )}
                       </div>
                     </div>
                   ))}
                   {colTasks.length === 0 && (
-                    <p className="px-1 py-4 text-center text-xs text-slate-400">Drop tasks here</p>
+                    <p className="px-1 py-4 text-center text-xs text-slate-400">{t('board.dropHere')}</p>
                   )}
                 </div>
               </div>

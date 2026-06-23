@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, useParams } from 'react-router-dom'
 import Navbar from '../components/Navbar'
+import TaskActionsDropdown from '../components/TaskActionsDropdown'
 import TaskContextMenu from '../components/TaskContextMenu'
 import TaskDetailModal from '../components/TaskDetailModal'
 import { projectService } from '../services/projectService'
@@ -144,9 +145,17 @@ export default function BoardPage() {
                           e.dataTransfer.setData('taskId', task.id)
                         }}
                         onClick={() => setSelectedTask(task)}
-                        className="cursor-grab rounded-lg border border-slate-200 bg-white p-3 shadow-sm active:cursor-grabbing dark:border-slate-700 dark:bg-slate-900"
+                        className="group relative cursor-grab rounded-lg border border-slate-200 bg-white p-3 shadow-sm active:cursor-grabbing dark:border-slate-700 dark:bg-slate-900"
                       >
-                        <div className="text-sm font-medium">{task.title}</div>
+                        {/* Hover three-dot menu (same actions as right-click) */}
+                        <div className="absolute right-1 top-1 opacity-0 transition group-hover:opacity-100">
+                          <TaskActionsDropdown
+                            onEdit={() => setSelectedTask(task)}
+                            onChangePriority={(p) => changePriority(task, p)}
+                            onDelete={() => removeTask(task)}
+                          />
+                        </div>
+                        <div className="pr-5 text-sm font-medium">{task.title}</div>
                         <div className="mt-2 flex items-center gap-2">
                           <span
                             className={`rounded px-2 py-0.5 text-[11px] font-semibold ${

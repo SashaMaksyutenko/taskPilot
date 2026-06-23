@@ -64,5 +64,12 @@
     "noWebhooks": "No webhooks yet.",
     "delete": "Delete",
     "add": "Add"
+  },
+  "projects": {
+    "title": "Projects",
+    "newPlaceholder": "New project name…",
+    "create": "Create",
+    "empty": "No projects yet. Create your first one above.",
+    "tasks": "{{count}} tasks"
   }
 }

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 import Navbar from '../components/Navbar'
 import { projectService } from '../services/projectService'
@@ -9,6 +10,7 @@ import type { Project } from '../types/project'
  * Each project links to its Kanban board.
  */
 export default function ProjectsPage() {
+  const { t } = useTranslation()
   const [projects, setProjects] = useState<Project[]>([])
   const [name, setName] = useState('')
   const [loading, setLoading] = useState(false)
@@ -36,7 +38,7 @@ export default function ProjectsPage() {
     <div className="min-h-screen bg-slate-50 text-[#1E2A44] dark:bg-slate-900 dark:text-slate-100">
       <Navbar />
       <main className="mx-auto max-w-5xl px-6 py-8">
-        <h1 className="mb-6 text-2xl font-bold">Projects</h1>
+        <h1 className="mb-6 text-2xl font-bold">{t('projects.title')}</h1>
 
         {/* Create project */}
         <div className="mb-6 flex gap-2">
@@ -44,7 +46,7 @@ export default function ProjectsPage() {
             value={name}
             onChange={(e) => setName(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && create()}
-            placeholder="New project name…"
+            placeholder={t('projects.newPlaceholder')}
             className="flex-1 rounded-lg border border-slate-300 bg-white px-3 py-2 outline-none focus:border-[#1E2A44] dark:border-slate-600 dark:bg-slate-800"
           />
           <button
@@ -52,12 +54,12 @@ export default function ProjectsPage() {
             disabled={loading}
             className="rounded-lg bg-[#1E2A44] px-5 font-semibold text-white transition hover:bg-[#27345a] disabled:opacity-60"
           >
-            Create
+            {t('projects.create')}
           </button>
         </div>
 
         {projects.length === 0 ? (
-          <p className="text-slate-400">No projects yet. Create your first one above.</p>
+          <p className="text-slate-400">{t('projects.empty')}</p>
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {projects.map((p) => (
@@ -70,7 +72,7 @@ export default function ProjectsPage() {
                   <span className="inline-block h-3 w-3 rounded-full" style={{ background: p.color ?? '#94a3b8' }} />
                   <span className="font-semibold">{p.name}</span>
                 </div>
-                <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">{p.taskCount} task(s)</p>
+                <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">{t('projects.tasks', { count: p.taskCount })}</p>
               </Link>
             ))}
           </div>

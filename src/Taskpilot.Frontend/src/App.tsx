@@ -3,6 +3,7 @@ import AdminRoute from './components/AdminRoute'
 import GuestRoute from './components/GuestRoute'
 import ProtectedRoute from './components/ProtectedRoute'
 import AdminPage from './pages/AdminPage'
+import AuditPage from './pages/AuditPage'
 import BoardPage from './pages/BoardPage'
 import CalendarPage from './pages/CalendarPage'
 import ChatPage from './pages/ChatPage'
@@ -45,6 +46,7 @@ function App() {
           <Route path="/settings" element={<SettingsPage />} />
           <Route element={<AdminRoute />}>
             <Route path="/admin" element={<AdminPage />} />
+            <Route path="/admin/audit" element={<AuditPage />} />
           </Route>
         </Route>
 

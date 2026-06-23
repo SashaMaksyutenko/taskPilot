@@ -1,10 +1,18 @@
 import api from '../lib/api'
-import type { AdminUser } from '../types/admin'
+import type { AdminUser, AuditLog, PagedResult } from '../types/admin'
 
 /** Admin-only REST calls for user management. */
 export const adminService = {
   getUsers(): Promise<AdminUser[]> {
     return api.get<AdminUser[]>('/api/admin/users').then((r) => r.data)
+  },
+
+  getAudit(page: number, pageSize: number, action?: string): Promise<PagedResult<AuditLog>> {
+    return api
+      .get<PagedResult<AuditLog>>('/api/admin/audit', {
+        params: { page, pageSize, ...(action ? { action } : {}) },
+      })
+      .then((r) => r.data)
   },
 
   changeRole(userId: string, role: string): Promise<void> {

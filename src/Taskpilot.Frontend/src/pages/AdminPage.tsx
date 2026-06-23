@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import Navbar from '../components/Navbar'
 import { adminService } from '../services/adminService'
 import { useAppSelector } from '../store/hooks'
@@ -33,7 +34,15 @@ export default function AdminPage() {
     <div className="min-h-screen bg-slate-50 text-[#1E2A44] dark:bg-slate-900 dark:text-slate-100">
       <Navbar />
       <main className="mx-auto max-w-5xl px-6 py-8">
-        <h1 className="mb-6 text-2xl font-bold">Admin · Users ({users.length})</h1>
+        <div className="mb-6 flex items-center gap-3">
+          <h1 className="text-2xl font-bold">Admin · Users ({users.length})</h1>
+          <Link
+            to="/admin/audit"
+            className="ml-auto rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-semibold hover:bg-white dark:border-slate-600 dark:hover:bg-slate-800"
+          >
+            Audit log →
+          </Link>
+        </div>
 
         <div className="overflow-hidden rounded-xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-800">
           <table className="w-full text-sm">

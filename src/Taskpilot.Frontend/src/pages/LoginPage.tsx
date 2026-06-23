@@ -1,9 +1,13 @@
 import { zodResolver } from '@hookform/resolvers/zod'
+import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { Link, useNavigate } from 'react-router-dom'
 import { z } from 'zod'
+import StatsPanel from '../components/StatsPanel'
+import { statsService } from '../services/statsService'
 import { fetchMe, login } from '../store/authSlice'
 import { useAppDispatch, useAppSelector } from '../store/hooks'
+import type { PublicStats } from '../types/stats'
 
 // Login validation only checks the fields are present/well-formed.
 const schema = z.object({
@@ -21,6 +25,12 @@ export default function LoginPage() {
   const dispatch = useAppDispatch()
   const navigate = useNavigate()
   const { error: serverError, status } = useAppSelector((s) => s.auth)
+
+  // Public site stats shown below the form (visible to everyone, like a forum footer).
+  const [stats, setStats] = useState<PublicStats | null>(null)
+  useEffect(() => {
+    statsService.getPublic().then(setStats).catch(() => {})
+  }, [])
 
   const {
     register: field,
@@ -40,7 +50,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50 px-4">
+    <div className="min-h-screen flex flex-col items-center justify-center gap-6 bg-slate-50 px-4 py-10">
       <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-lg">
         <img src="/logo.svg" alt="TaskPilot" className="mx-auto w-44" />
 
@@ -95,6 +105,12 @@ export default function LoginPage() {
           </Link>
         </p>
       </div>
+
+      {stats && (
+        <div className="w-full max-w-md">
+          <StatsPanel stats={stats} />
+        </div>
+      )}
     </div>
   )
 }

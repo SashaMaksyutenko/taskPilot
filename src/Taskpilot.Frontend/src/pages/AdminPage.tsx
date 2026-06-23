@@ -1,9 +1,12 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import Navbar from '../components/Navbar'
+import StatsPanel from '../components/StatsPanel'
 import { adminService } from '../services/adminService'
+import { statsService } from '../services/statsService'
 import { useAppSelector } from '../store/hooks'
 import { ROLES, type AdminUser } from '../types/admin'
+import type { AdminStats } from '../types/stats'
 
 /**
  * Admin user management: list users, change roles and ban/unban accounts.
@@ -12,12 +15,17 @@ import { ROLES, type AdminUser } from '../types/admin'
 export default function AdminPage() {
   const currentUserId = useAppSelector((s) => s.auth.user?.id)
   const [users, setUsers] = useState<AdminUser[]>([])
+  const [stats, setStats] = useState<AdminStats | null>(null)
 
   const load = () => {
     adminService.getUsers().then(setUsers).catch(() => {})
   }
 
   useEffect(load, [])
+
+  useEffect(() => {
+    statsService.getAdmin().then(setStats).catch(() => {})
+  }, [])
 
   const changeRole = async (id: string, role: string) => {
     await adminService.changeRole(id, role).catch(() => {})
@@ -42,6 +50,10 @@ export default function AdminPage() {
           >
             Audit log →
           </Link>
+        </div>
+
+        <div className="mb-6">
+          <StatsPanel stats={stats} />
         </div>
 
         <div className="overflow-hidden rounded-xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-800">

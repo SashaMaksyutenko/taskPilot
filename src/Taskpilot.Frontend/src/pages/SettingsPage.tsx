@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { AxiosError } from 'axios'
 import Navbar from '../components/Navbar'
 import { userService, type UpdateProfileData } from '../services/userService'
@@ -25,6 +26,7 @@ const emptyForm: UpdateProfileData = {
  */
 export default function SettingsPage() {
   const dispatch = useAppDispatch()
+  const { t } = useTranslation()
   const { user, isAuthenticated } = useAppSelector((s) => s.auth)
 
   const [form, setForm] = useState<UpdateProfileData>(emptyForm)
@@ -86,9 +88,9 @@ export default function SettingsPage() {
     try {
       await userService.updateProfile(form)
       dispatch(fetchMe())
-      setProfileMsg('Profile saved.')
+      setProfileMsg(t('settings.profileSaved'))
     } catch {
-      setProfileMsg('Could not save profile.')
+      setProfileMsg(t('settings.profileSaveError'))
     } finally {
       setSaving(false)
     }
@@ -98,11 +100,11 @@ export default function SettingsPage() {
     setPwMsg('')
     try {
       await userService.changePassword(current, next)
-      setPwMsg('Password changed.')
+      setPwMsg(t('settings.passwordChanged'))
       setCurrent('')
       setNext('')
     } catch (e) {
-      const msg = e instanceof AxiosError ? (e.response?.data?.error ?? 'Failed.') : 'Failed.'
+      const msg = e instanceof AxiosError ? (e.response?.data?.error ?? t('settings.failed')) : t('settings.failed')
       setPwMsg(msg)
     }
   }
@@ -111,22 +113,22 @@ export default function SettingsPage() {
     <div className="min-h-screen bg-slate-50 text-[#1E2A44] dark:bg-slate-900 dark:text-slate-100">
       <Navbar />
       <main className="mx-auto max-w-2xl px-6 py-8">
-        <h1 className="mb-6 text-2xl font-bold">Settings</h1>
+        <h1 className="mb-6 text-2xl font-bold">{t('settings.title')}</h1>
 
         {/* Profile */}
         <section className="mb-8 rounded-xl border border-slate-200 bg-white p-6 dark:border-slate-700 dark:bg-slate-800">
-          <h2 className="mb-4 font-bold">Profile</h2>
+          <h2 className="mb-4 font-bold">{t('settings.profile')}</h2>
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Name" value={form.name} onChange={(v) => set('name', v)} />
-            <Field label="Title" value={form.title ?? ''} onChange={(v) => set('title', v)} />
-            <Field label="Location" value={form.location ?? ''} onChange={(v) => set('location', v)} />
-            <Field label="Phone" value={form.phone ?? ''} onChange={(v) => set('phone', v)} />
-            <Field label="Website" value={form.website ?? ''} onChange={(v) => set('website', v)} />
-            <Field label="LinkedIn" value={form.linkedIn ?? ''} onChange={(v) => set('linkedIn', v)} />
-            <Field label="GitHub" value={form.github ?? ''} onChange={(v) => set('github', v)} />
+            <Field label={t('settings.name')} value={form.name} onChange={(v) => set('name', v)} />
+            <Field label={t('settings.jobTitle')} value={form.title ?? ''} onChange={(v) => set('title', v)} />
+            <Field label={t('settings.location')} value={form.location ?? ''} onChange={(v) => set('location', v)} />
+            <Field label={t('settings.phone')} value={form.phone ?? ''} onChange={(v) => set('phone', v)} />
+            <Field label={t('settings.website')} value={form.website ?? ''} onChange={(v) => set('website', v)} />
+            <Field label={t('settings.linkedin')} value={form.linkedIn ?? ''} onChange={(v) => set('linkedIn', v)} />
+            <Field label={t('settings.github')} value={form.github ?? ''} onChange={(v) => set('github', v)} />
           </div>
 
-          <label className="mb-1 mt-4 block text-sm font-medium text-slate-700 dark:text-slate-300">Bio</label>
+          <label className="mb-1 mt-4 block text-sm font-medium text-slate-700 dark:text-slate-300">{t('settings.bio')}</label>
           <textarea
             value={form.bio ?? ''}
             onChange={(e) => set('bio', e.target.value)}
@@ -136,7 +138,7 @@ export default function SettingsPage() {
 
           <label className="mt-4 flex items-center gap-2 text-sm">
             <input type="checkbox" checked={form.showEmail} onChange={(e) => set('showEmail', e.target.checked)} />
-            Show my email on my public profile
+            {t('settings.showEmail')}
           </label>
 
           <div className="mt-5 flex items-center gap-3">
@@ -145,7 +147,7 @@ export default function SettingsPage() {
               disabled={saving}
               className="rounded-lg bg-[#1E2A44] px-5 py-2 font-semibold text-white transition hover:bg-[#27345a] disabled:opacity-60"
             >
-              Save profile
+              {t('settings.saveProfile')}
             </button>
             {profileMsg && <span className="text-sm text-slate-500 dark:text-slate-400">{profileMsg}</span>}
           </div>
@@ -153,17 +155,17 @@ export default function SettingsPage() {
 
         {/* Change password */}
         <section className="rounded-xl border border-slate-200 bg-white p-6 dark:border-slate-700 dark:bg-slate-800">
-          <h2 className="mb-4 font-bold">Change password</h2>
+          <h2 className="mb-4 font-bold">{t('settings.changePassword')}</h2>
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Current password" type="password" value={current} onChange={setCurrent} />
-            <Field label="New password" type="password" value={next} onChange={setNext} />
+            <Field label={t('settings.currentPassword')} type="password" value={current} onChange={setCurrent} />
+            <Field label={t('settings.newPassword')} type="password" value={next} onChange={setNext} />
           </div>
           <div className="mt-5 flex items-center gap-3">
             <button
               onClick={changePassword}
               className="rounded-lg bg-[#1E2A44] px-5 py-2 font-semibold text-white transition hover:bg-[#27345a]"
             >
-              Change password
+              {t('settings.changePassword')}
             </button>
             {pwMsg && <span className="text-sm text-slate-500 dark:text-slate-400">{pwMsg}</span>}
           </div>
@@ -171,14 +173,14 @@ export default function SettingsPage() {
 
         {/* Webhooks */}
         <section className="mt-8 rounded-xl border border-slate-200 bg-white p-6 dark:border-slate-700 dark:bg-slate-800">
-          <h2 className="mb-1 font-bold">Webhooks</h2>
+          <h2 className="mb-1 font-bold">{t('settings.webhooks')}</h2>
           <p className="mb-4 text-sm text-slate-500 dark:text-slate-400">
-            Send a signed POST to a URL when an event happens.
+            {t('settings.webhooksDesc')}
           </p>
 
           {/* Existing webhooks */}
           {webhooks.length === 0 ? (
-            <p className="mb-4 text-sm text-slate-400">No webhooks yet.</p>
+            <p className="mb-4 text-sm text-slate-400">{t('settings.noWebhooks')}</p>
           ) : (
             <ul className="mb-4 space-y-2">
               {webhooks.map((w) => (
@@ -194,7 +196,7 @@ export default function SettingsPage() {
                     onClick={() => removeWebhook(w.id)}
                     className="flex-none text-xs font-semibold text-red-600 hover:underline"
                   >
-                    Delete
+                    {t('settings.delete')}
                   </button>
                 </li>
               ))}
@@ -224,7 +226,7 @@ export default function SettingsPage() {
               onClick={addWebhook}
               className="rounded-lg bg-[#1E2A44] px-5 py-2 text-sm font-semibold text-white hover:bg-[#27345a]"
             >
-              Add
+              {t('settings.add')}
             </button>
           </div>
         </section>

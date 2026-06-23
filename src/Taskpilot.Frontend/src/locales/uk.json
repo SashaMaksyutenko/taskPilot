@@ -38,5 +38,31 @@
     "myProjects": "Мої проєкти",
     "calendar": "Календар",
     "openChat": "Відкрити чат"
+  },
+  "settings": {
+    "title": "Налаштування",
+    "profile": "Профіль",
+    "name": "Ім'я",
+    "jobTitle": "Посада",
+    "location": "Місто",
+    "phone": "Телефон",
+    "website": "Вебсайт",
+    "linkedin": "LinkedIn",
+    "github": "GitHub",
+    "bio": "Про себе",
+    "showEmail": "Показувати мою пошту в публічному профілі",
+    "saveProfile": "Зберегти профіль",
+    "profileSaved": "Профіль збережено.",
+    "profileSaveError": "Не вдалося зберегти профіль.",
+    "changePassword": "Змінити пароль",
+    "currentPassword": "Поточний пароль",
+    "newPassword": "Новий пароль",
+    "passwordChanged": "Пароль змінено.",
+    "failed": "Не вдалося.",
+    "webhooks": "Вебхуки",
+    "webhooksDesc": "Надсилати підписаний POST на URL, коли стається подія.",
+    "noWebhooks": "Вебхуків ще немає.",
+    "delete": "Видалити",
+    "add": "Додати"
   }
 }

@@ -38,5 +38,31 @@
     "myProjects": "My projects",
     "calendar": "Calendar",
     "openChat": "Open chat"
+  },
+  "settings": {
+    "title": "Settings",
+    "profile": "Profile",
+    "name": "Name",
+    "jobTitle": "Title",
+    "location": "Location",
+    "phone": "Phone",
+    "website": "Website",
+    "linkedin": "LinkedIn",
+    "github": "GitHub",
+    "bio": "Bio",
+    "showEmail": "Show my email on my public profile",
+    "saveProfile": "Save profile",
+    "profileSaved": "Profile saved.",
+    "profileSaveError": "Could not save profile.",
+    "changePassword": "Change password",
+    "currentPassword": "Current password",
+    "newPassword": "New password",
+    "passwordChanged": "Password changed.",
+    "failed": "Failed.",
+    "webhooks": "Webhooks",
+    "webhooksDesc": "Send a signed POST to a URL when an event happens.",
+    "noWebhooks": "No webhooks yet.",
+    "delete": "Delete",
+    "add": "Add"
   }
 }

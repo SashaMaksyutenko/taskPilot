@@ -19,4 +19,9 @@ public abstract class BaseApiController : ControllerBase
         var sub = User.FindFirstValue(JwtRegisteredClaimNames.Sub);
         return Guid.TryParse(sub, out var id) ? id : null;
     }
+
+    /// <summary>
+    /// The caller's IP address (for audit/logging), or null when unavailable.
+    /// </summary>
+    protected string? ClientIp() => HttpContext.Connection.RemoteIpAddress?.ToString();
 }

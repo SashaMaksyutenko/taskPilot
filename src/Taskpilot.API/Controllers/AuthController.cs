@@ -19,6 +19,7 @@ public class AuthController : BaseApiController
     private readonly IAuthService _authService;
     private readonly IValidator<RegisterDto> _registerValidator;
     private readonly IValidator<LoginDto> _loginValidator;
+    private readonly IAuditService _audit;
     private readonly ILogger<AuthController> _logger;
 
     /// <summary>
@@ -28,11 +29,13 @@ public class AuthController : BaseApiController
         IAuthService authService,
         IValidator<RegisterDto> registerValidator,
         IValidator<LoginDto> loginValidator,
+        IAuditService audit,
         ILogger<AuthController> logger)
     {
         _authService = authService;
         _registerValidator = registerValidator;
         _loginValidator = loginValidator;
+        _audit = audit;
         _logger = logger;
     }
 
@@ -73,6 +76,9 @@ public class AuthController : BaseApiController
         }
 
         _logger.LogInformation("User registered via endpoint. UserId: {UserId}", result.Value);
+        // Record the registration in the audit trail.
+        await _audit.LogAsync("auth.register", actorId: result.Value, actorEmail: dto.Email,
+            entityType: "User", entityId: result.Value.ToString(), ipAddress: ClientIp());
         // 201 Created with the new user's id.
         return StatusCode(StatusCodes.Status201Created, new { id = result.Value });
     }
@@ -109,10 +115,16 @@ public class AuthController : BaseApiController
         {
             // Invalid credentials / disabled account -> 401 Unauthorized.
             _logger.LogWarning("Login failed. Email: {Email}. Reason: {Error}", dto.Email, result.Error);
+            // Record the failed attempt (no actor id — the caller is not authenticated).
+            await _audit.LogAsync("auth.login.failed", actorEmail: dto.Email,
+                details: result.Error, ipAddress: ClientIp());
             return Unauthorized(new { error = result.Error });
         }
 
         _logger.LogInformation("Login successful via endpoint. UserId: {UserId}", result.Value!.UserId);
+        // Record the successful login in the audit trail.
+        await _audit.LogAsync("auth.login.success", actorId: result.Value.UserId, actorEmail: dto.Email,
+            entityType: "User", entityId: result.Value.UserId.ToString(), ipAddress: ClientIp());
         // 200 OK with the access token and user info.
         return Ok(result.Value);
     }

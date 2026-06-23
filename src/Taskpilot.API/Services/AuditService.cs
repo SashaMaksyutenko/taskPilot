@@ -1,4 +1,7 @@
+using Microsoft.EntityFrameworkCore;
+using Taskpilot.API.Common;
 using Taskpilot.API.Data;
+using Taskpilot.API.DTOs.Admin;
 using Taskpilot.API.Models;
 
 namespace Taskpilot.API.Services;
@@ -48,5 +51,50 @@ public class AuditService : IAuditService
         _logger.LogInformation(
             "Audit: {Action} by {ActorId} on {EntityType}:{EntityId}",
             action, actorId, entityType, entityId);
+    }
+
+    /// <inheritdoc />
+    public async Task<Result<PagedResult<AuditLogDto>>> GetAsync(int page, int pageSize, string? action = null)
+    {
+        // Clamp paging to a safe range so a bad client cannot request the whole table.
+        if (page < 1) page = 1;
+        if (pageSize < 1 || pageSize > 100) pageSize = 50;
+
+        var query = _context.AuditLogs.AsNoTracking();
+
+        // Optional exact-match filter on the action code.
+        if (!string.IsNullOrWhiteSpace(action))
+        {
+            var trimmed = action.Trim();
+            query = query.Where(a => a.Action == trimmed);
+        }
+
+        var total = await query.CountAsync();
+
+        var items = await query
+            .OrderByDescending(a => a.CreatedAt)       // newest first
+            .Skip((page - 1) * pageSize)               // skip earlier pages
+            .Take(pageSize)                            // take the current page
+            .Select(a => new AuditLogDto
+            {
+                Id = a.Id,
+                ActorId = a.ActorId,
+                ActorEmail = a.ActorEmail,
+                Action = a.Action,
+                EntityType = a.EntityType,
+                EntityId = a.EntityId,
+                Details = a.Details,
+                IpAddress = a.IpAddress,
+                CreatedAt = a.CreatedAt,
+            })
+            .ToListAsync();
+
+        return Result<PagedResult<AuditLogDto>>.Ok(new PagedResult<AuditLogDto>
+        {
+            Items = items,
+            Total = total,
+            Page = page,
+            PageSize = pageSize,
+        });
     }
 }

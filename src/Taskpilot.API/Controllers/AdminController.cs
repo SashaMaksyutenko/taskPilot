@@ -15,10 +15,12 @@ namespace Taskpilot.API.Controllers;
 public class AdminController : BaseApiController
 {
     private readonly IAdminService _adminService;
+    private readonly IAuditService _audit;
 
-    public AdminController(IAdminService adminService)
+    public AdminController(IAdminService adminService, IAuditService audit)
     {
         _adminService = adminService;
+        _audit = audit;
     }
 
     /// <summary>Lists all users.</summary>
@@ -63,5 +65,16 @@ public class AdminController : BaseApiController
         return result.Succeeded
             ? Ok(new { message = "User unbanned." })
             : BadRequest(new { error = result.Error });
+    }
+
+    /// <summary>Returns a page of audit-trail entries (newest first), optionally filtered by action.</summary>
+    [HttpGet("audit")]
+    public async Task<IActionResult> GetAudit(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 50,
+        [FromQuery] string? action = null)
+    {
+        var result = await _audit.GetAsync(page, pageSize, action);
+        return Ok(result.Value);
     }
 }

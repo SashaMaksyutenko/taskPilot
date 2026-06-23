@@ -51,4 +51,44 @@ public class AuditServiceTests
         Assert.Null(entry.ActorId);
         Assert.Null(entry.ActorEmail);
     }
+
+    [Fact]
+    public async Task GetAsync_ReturnsNewestFirstAndPages()
+    {
+        using var ctx = TestDb.CreateContext();
+        var svc = Create(ctx);
+        // Three entries written in order; CreatedAt is set on write.
+        await svc.LogAsync("a.one");
+        await Task.Delay(5);
+        await svc.LogAsync("a.two");
+        await Task.Delay(5);
+        await svc.LogAsync("a.three");
+
+        var firstPage = await svc.GetAsync(page: 1, pageSize: 2);
+
+        Assert.True(firstPage.Succeeded);
+        Assert.Equal(3, firstPage.Value!.Total);          // total across all pages
+        Assert.Equal(2, firstPage.Value.Items.Count);     // page size respected
+        Assert.Equal("a.three", firstPage.Value.Items[0].Action); // newest first
+        Assert.Equal("a.two", firstPage.Value.Items[1].Action);
+
+        var secondPage = await svc.GetAsync(page: 2, pageSize: 2);
+        Assert.Single(secondPage.Value!.Items);
+        Assert.Equal("a.one", secondPage.Value.Items[0].Action);
+    }
+
+    [Fact]
+    public async Task GetAsync_FiltersByAction()
+    {
+        using var ctx = TestDb.CreateContext();
+        var svc = Create(ctx);
+        await svc.LogAsync("auth.login.success");
+        await svc.LogAsync("auth.login.failed");
+        await svc.LogAsync("auth.login.failed");
+
+        var failed = await svc.GetAsync(page: 1, pageSize: 50, action: "auth.login.failed");
+
+        Assert.Equal(2, failed.Value!.Total);
+        Assert.All(failed.Value.Items, i => Assert.Equal("auth.login.failed", i.Action));
+    }
 }

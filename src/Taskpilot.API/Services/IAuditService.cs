@@ -1,3 +1,6 @@
+using Taskpilot.API.Common;
+using Taskpilot.API.DTOs.Admin;
+
 namespace Taskpilot.API.Services;
 
 /// <summary>
@@ -24,4 +27,12 @@ public interface IAuditService
         string? entityId = null,
         string? details = null,
         string? ipAddress = null);
+
+    /// <summary>
+    /// Returns a page of audit entries, newest first, optionally filtered by action.
+    /// </summary>
+    /// <param name="page">1-based page number.</param>
+    /// <param name="pageSize">Items per page (clamped to a safe range).</param>
+    /// <param name="action">Optional exact action filter (e.g. "auth.login.failed").</param>
+    Task<Result<PagedResult<AuditLogDto>>> GetAsync(int page, int pageSize, string? action = null);
 }

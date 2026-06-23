@@ -195,6 +195,11 @@
       "Viewer": "Глядач"
     }
   },
+  "profile": {
+    "notFound": "Користувача не знайдено.",
+    "memberSince": "З нами з {{date}}",
+    "contacts": "Контакти"
+  },
   "audit": {
     "title": "Адмін · Журнал аудиту",
     "events": "(подій: {{count}})",

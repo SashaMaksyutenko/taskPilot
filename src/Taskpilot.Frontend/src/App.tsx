@@ -14,6 +14,7 @@ import MarketplaceTaskPage from './pages/MarketplaceTaskPage'
 import ProjectsPage from './pages/ProjectsPage'
 import SettingsPage from './pages/SettingsPage'
 import TopicPage from './pages/TopicPage'
+import UserProfilePage from './pages/UserProfilePage'
 import RegisterPage from './pages/RegisterPage'
 import LoginPage from './pages/LoginPage'
 
@@ -44,6 +45,7 @@ function App() {
           <Route path="/marketplace" element={<MarketplacePage />} />
           <Route path="/marketplace/:taskId" element={<MarketplaceTaskPage />} />
           <Route path="/settings" element={<SettingsPage />} />
+          <Route path="/users/:userId" element={<UserProfilePage />} />
           <Route element={<AdminRoute />}>
             <Route path="/admin" element={<AdminPage />} />
             <Route path="/admin/audit" element={<AuditPage />} />

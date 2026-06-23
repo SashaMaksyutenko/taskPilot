@@ -195,6 +195,11 @@
       "Viewer": "Viewer"
     }
   },
+  "profile": {
+    "notFound": "User not found.",
+    "memberSince": "Member since {{date}}",
+    "contacts": "Contacts"
+  },
   "audit": {
     "title": "Admin · Audit log",
     "events": "({{count}} events)",

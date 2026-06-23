@@ -69,7 +69,11 @@ export default function TopicPage() {
         <div className="mt-3 rounded-xl border border-slate-200 bg-white p-6 dark:border-slate-700 dark:bg-slate-800">
           <h1 className="text-xl font-bold">{topic.title}</h1>
           <div className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-            {t('forum.by')} {topic.authorName} · {new Date(topic.createdAt).toLocaleString()} · {topic.viewCount} {t('forum.views')}
+            {t('forum.by')}{' '}
+            <Link to={`/users/${topic.authorId}`} className="font-medium hover:underline">
+              {topic.authorName}
+            </Link>{' '}
+            · {new Date(topic.createdAt).toLocaleString()} · {topic.viewCount} {t('forum.views')}
           </div>
           <p className="mt-4 whitespace-pre-wrap">{topic.body}</p>
         </div>

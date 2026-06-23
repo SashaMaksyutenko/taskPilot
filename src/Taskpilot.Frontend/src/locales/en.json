@@ -194,6 +194,24 @@
       "Viewer": "Viewer"
     }
   },
+  "audit": {
+    "title": "Admin · Audit log",
+    "events": "({{count}} events)",
+    "backToUsers": "← Users",
+    "filterPlaceholder": "Filter by action, e.g. auth.login.failed",
+    "filter": "Filter",
+    "clear": "Clear",
+    "time": "Time (UTC)",
+    "action": "Action",
+    "actor": "Actor",
+    "ip": "IP",
+    "details": "Details",
+    "noEvents": "No events.",
+    "system": "system",
+    "pageOf": "Page {{page}} of {{total}}",
+    "prev": "Prev",
+    "next": "Next"
+  },
   "marketTask": {
     "back": "← Marketplace",
     "assignedTo": "assigned to {{name}}",

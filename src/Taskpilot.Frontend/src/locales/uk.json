@@ -194,6 +194,24 @@
       "Viewer": "Глядач"
     }
   },
+  "audit": {
+    "title": "Адмін · Журнал аудиту",
+    "events": "(подій: {{count}})",
+    "backToUsers": "← Користувачі",
+    "filterPlaceholder": "Фільтр за дією, напр. auth.login.failed",
+    "filter": "Фільтрувати",
+    "clear": "Очистити",
+    "time": "Час (UTC)",
+    "action": "Дія",
+    "actor": "Актор",
+    "ip": "IP",
+    "details": "Деталі",
+    "noEvents": "Подій немає.",
+    "system": "система",
+    "pageOf": "Сторінка {{page}} з {{total}}",
+    "prev": "Назад",
+    "next": "Далі"
+  },
   "marketTask": {
     "back": "← Маркетплейс",
     "assignedTo": "призначено: {{name}}",

@@ -83,9 +83,20 @@ public class UserService : IUserService
             .AsNoTracking()
             .FirstOrDefaultAsync(u => u.Id == userId);
 
-        return user is null
-            ? Result<PublicProfileDto>.Fail("User not found.")
-            : Result<PublicProfileDto>.Ok(UserMapper.ToPublicProfile(user));
+        if (user is null)
+            return Result<PublicProfileDto>.Fail("User not found.");
+
+        var dto = UserMapper.ToPublicProfile(user);
+
+        // Aggregate the marketplace reviews this user has received.
+        var stars = await _context.Reviews
+            .Where(r => r.RateeId == userId)
+            .Select(r => r.Stars)
+            .ToListAsync();
+        dto.ReviewCount = stars.Count;
+        dto.AverageRating = stars.Count > 0 ? Math.Round(stars.Average(), 1) : null;
+
+        return Result<PublicProfileDto>.Ok(dto);
     }
 
     /// <inheritdoc />

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, useParams } from 'react-router-dom'
 import Navbar from '../components/Navbar'
+import StarRating from '../components/StarRating'
 import { forumService } from '../services/forumService'
 import { userService, type PublicProfile } from '../services/userService'
 import type { TopicListItem } from '../types/forum'
@@ -69,6 +70,14 @@ export default function UserProfilePage() {
                   </div>
                   {profile.location && (
                     <div className="mt-1 text-sm text-slate-500 dark:text-slate-400">📍 {profile.location}</div>
+                  )}
+                  {profile.averageRating != null && (
+                    <div className="mt-1 flex items-center gap-2 text-sm">
+                      <StarRating value={Math.round(profile.averageRating)} />
+                      <span className="text-slate-500 dark:text-slate-400">
+                        {profile.averageRating} ({t('marketTask.reviews')}: {profile.reviewCount})
+                      </span>
+                    </div>
                   )}
                 </div>
               </div>

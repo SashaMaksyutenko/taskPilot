@@ -23,4 +23,10 @@ public class PublicProfileDto
     public string? Phone { get; set; }
 
     public DateTime MemberSince { get; set; }
+
+    /// <summary>Average star rating from marketplace reviews (null when none yet).</summary>
+    public double? AverageRating { get; set; }
+
+    /// <summary>Number of reviews received.</summary>
+    public int ReviewCount { get; set; }
 }

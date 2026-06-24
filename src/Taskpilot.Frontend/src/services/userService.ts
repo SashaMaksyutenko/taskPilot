@@ -34,6 +34,8 @@ export interface PublicProfile {
   github?: string | null
   phone?: string | null
   memberSince: string
+  averageRating: number | null
+  reviewCount: number
 }
 
 /** REST calls for the current user's account (profile, password). */

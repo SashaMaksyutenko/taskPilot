@@ -68,6 +68,9 @@ public class TaskpilotDbContext : DbContext
     /// <summary>Audit trail of actions performed in the system.</summary>
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
 
+    /// <summary>Two-way reviews for completed marketplace tasks.</summary>
+    public DbSet<Review> Reviews => Set<Review>();
+
     /// <summary>
     /// Налаштування моделі (Fluent API): обмеження, індекси, перетворення типів.
     /// Викликається EF Core під час побудови моделі та генерації міграцій.
@@ -468,6 +471,25 @@ public class TaskpilotDbContext : DbContext
 
             // Intentionally NO foreign key to User: audit logs are immutable history
             // and must remain even after the actor's account is deleted.
+        });
+
+        // Review entity configuration
+        modelBuilder.Entity<Review>(entity =>
+        {
+            entity.HasKey(r => r.Id);
+
+            entity.Property(r => r.Comment).HasMaxLength(1000);
+
+            // One review per rater per task.
+            entity.HasIndex(r => new { r.MarketplaceTaskId, r.RaterId }).IsUnique();
+            // Quick lookup of a user's received reviews (for their average rating).
+            entity.HasIndex(r => r.RateeId);
+
+            // Deleting a task removes its reviews. Rater/ratee are plain ids (no FK).
+            entity.HasOne(r => r.MarketplaceTask)
+                  .WithMany()
+                  .HasForeignKey(r => r.MarketplaceTaskId)
+                  .OnDelete(DeleteBehavior.Cascade);
         });
     }
 }

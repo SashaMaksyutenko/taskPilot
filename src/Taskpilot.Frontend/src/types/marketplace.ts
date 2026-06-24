@@ -39,3 +39,13 @@ export interface MarketTaskDetail {
   createdAt: string
   applications: Application[]
 }
+
+export interface Review {
+  id: string
+  raterId: string
+  raterName: string
+  rateeId: string
+  stars: number
+  comment: string | null
+  createdAt: string
+}

@@ -31,4 +31,13 @@ public interface IMarketplaceService
 
     /// <summary>Poster approves the submitted work (Submitted → Completed).</summary>
     Task<Result> ApproveTaskAsync(Guid posterId, Guid taskId);
+
+    /// <summary>
+    /// Leaves a 1–5 star review for a completed task. The rater must be the poster or
+    /// the assignee; the review is about the other party. One review per rater per task.
+    /// </summary>
+    Task<Result> RateAsync(Guid raterId, Guid taskId, int stars, string? comment);
+
+    /// <summary>Returns the reviews left for a task.</summary>
+    Task<Result<List<ReviewDto>>> GetReviewsAsync(Guid taskId);
 }

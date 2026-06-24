@@ -110,6 +110,27 @@ public class MarketplaceController : BaseApiController
             : BadRequest(new { error = result.Error });
     }
 
+    /// <summary>Leaves a 1–5 star review for a completed task (poster or assignee).</summary>
+    [HttpPost("tasks/{taskId:guid}/rate")]
+    public async Task<IActionResult> Rate(Guid taskId, [FromBody] RateDto dto)
+    {
+        var userId = CurrentUserId();
+        if (userId is null) return Unauthorized();
+
+        var result = await _marketplace.RateAsync(userId.Value, taskId, dto.Stars, dto.Comment);
+        return result.Succeeded
+            ? Ok(new { message = "Review saved." })
+            : BadRequest(new { error = result.Error });
+    }
+
+    /// <summary>Returns the reviews left for a task.</summary>
+    [HttpGet("tasks/{taskId:guid}/reviews")]
+    public async Task<IActionResult> GetReviews(Guid taskId)
+    {
+        var result = await _marketplace.GetReviewsAsync(taskId);
+        return Ok(result.Value);
+    }
+
     /// <summary>Accepts an application (task poster only).</summary>
     [HttpPost("applications/{applicationId:guid}/accept")]
     public Task<IActionResult> Accept(Guid applicationId) => DecideAsync(applicationId, accept: true);

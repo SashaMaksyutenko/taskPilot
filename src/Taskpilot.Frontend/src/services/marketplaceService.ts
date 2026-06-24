@@ -1,5 +1,5 @@
 import api from '../lib/api'
-import type { Application, MarketTaskDetail, MarketTaskListItem } from '../types/marketplace'
+import type { Application, MarketTaskDetail, MarketTaskListItem, Review } from '../types/marketplace'
 
 /** REST calls for the marketplace. */
 export const marketplaceService = {
@@ -41,5 +41,15 @@ export const marketplaceService = {
   /** Poster approves submitted work. */
   approve(taskId: string): Promise<void> {
     return api.post(`/api/marketplace/tasks/${taskId}/approve`).then(() => undefined)
+  },
+
+  /** Leaves a 1–5 star review for a completed task. */
+  rate(taskId: string, stars: number, comment?: string): Promise<void> {
+    return api.post(`/api/marketplace/tasks/${taskId}/rate`, { stars, comment }).then(() => undefined)
+  },
+
+  /** Lists the reviews left for a task. */
+  getReviews(taskId: string): Promise<Review[]> {
+    return api.get<Review[]>(`/api/marketplace/tasks/${taskId}/reviews`).then((r) => r.data)
   },
 }

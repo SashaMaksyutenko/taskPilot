@@ -261,6 +261,81 @@ public class MarketplaceService : IMarketplaceService
         return Result.Ok();
     }
 
+    /// <inheritdoc />
+    public async Task<Result> RateAsync(Guid raterId, Guid taskId, int stars, string? comment)
+    {
+        if (stars < 1 || stars > 5)
+            return Result.Fail("Rating must be between 1 and 5 stars.");
+
+        var task = await _context.MarketplaceTasks.FirstOrDefaultAsync(t => t.Id == taskId);
+        if (task is null)
+            return Result.Fail("Task not found.");
+
+        if (task.Status != MarketplaceTaskStatus.Completed)
+            return Result.Fail("You can only rate a completed task.");
+
+        // The rater must be a party of the task; the ratee is the other party.
+        Guid rateeId;
+        if (raterId == task.PosterId)
+            rateeId = task.AssigneeId ?? Guid.Empty;
+        else if (raterId == task.AssigneeId)
+            rateeId = task.PosterId;
+        else
+            return Result.Fail("Only the poster or the assignee can rate this task.");
+
+        if (rateeId == Guid.Empty)
+            return Result.Fail("There is no counterpart to rate.");
+
+        var alreadyRated = await _context.Reviews
+            .AnyAsync(r => r.MarketplaceTaskId == taskId && r.RaterId == raterId);
+        if (alreadyRated)
+            return Result.Fail("You have already rated this task.");
+
+        _context.Reviews.Add(new Review
+        {
+            Id = Guid.NewGuid(),
+            MarketplaceTaskId = taskId,
+            RaterId = raterId,
+            RateeId = rateeId,
+            Stars = stars,
+            Comment = string.IsNullOrWhiteSpace(comment) ? null : comment.Trim(),
+            CreatedAt = DateTime.UtcNow,
+        });
+        await _context.SaveChangesAsync();
+
+        await _notifications.CreateAsync(
+            rateeId,
+            NotificationType.Marketplace,
+            $"You received a {stars}★ rating for \"{task.Title}\".",
+            $"/marketplace/tasks/{taskId}");
+
+        _logger.LogInformation("Marketplace review left. TaskId: {TaskId}, RaterId: {RaterId}, Stars: {Stars}", taskId, raterId, stars);
+        return Result.Ok();
+    }
+
+    /// <inheritdoc />
+    public async Task<Result<List<ReviewDto>>> GetReviewsAsync(Guid taskId)
+    {
+        // Join to Users for the rater's name (rater/ratee are plain ids on Review).
+        var reviews = await _context.Reviews
+            .Where(r => r.MarketplaceTaskId == taskId)
+            .OrderByDescending(r => r.CreatedAt)
+            .Select(r => new ReviewDto
+            {
+                Id = r.Id,
+                RaterId = r.RaterId,
+                RaterName = _context.Users.Where(u => u.Id == r.RaterId).Select(u => u.Name).FirstOrDefault() ?? string.Empty,
+                RateeId = r.RateeId,
+                Stars = r.Stars,
+                Comment = r.Comment,
+                CreatedAt = r.CreatedAt,
+            })
+            .AsNoTracking()
+            .ToListAsync();
+
+        return Result<List<ReviewDto>>.Ok(reviews);
+    }
+
     // --- mapping ---
 
     private static TaskDetailDto MapDetail(MarketplaceTask t) => new()

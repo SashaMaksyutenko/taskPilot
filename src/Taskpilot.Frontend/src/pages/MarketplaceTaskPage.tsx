@@ -2,9 +2,10 @@ import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, useParams } from 'react-router-dom'
 import Navbar from '../components/Navbar'
+import StarRating from '../components/StarRating'
 import { marketplaceService } from '../services/marketplaceService'
 import { useAppSelector } from '../store/hooks'
-import type { MarketTaskDetail } from '../types/marketplace'
+import type { MarketTaskDetail, Review } from '../types/marketplace'
 
 const appStatusColor: Record<string, string> = {
   Pending: 'bg-amber-100 text-amber-700',
@@ -23,12 +24,28 @@ export default function MarketplaceTaskPage() {
   const [task, setTask] = useState<MarketTaskDetail | null>(null)
   const [coverLetter, setCoverLetter] = useState('')
   const [rate, setRate] = useState('')
+  const [reviews, setReviews] = useState<Review[]>([])
+  const [myStars, setMyStars] = useState(0)
+  const [myComment, setMyComment] = useState('')
 
   const load = () => {
     if (taskId) marketplaceService.getTask(taskId).then(setTask).catch(() => {})
   }
 
+  const loadReviews = () => {
+    if (taskId) marketplaceService.getReviews(taskId).then(setReviews).catch(() => {})
+  }
+
   useEffect(load, [taskId])
+  useEffect(loadReviews, [taskId])
+
+  const submitRating = async () => {
+    if (myStars < 1) return
+    await marketplaceService.rate(taskId, myStars, myComment.trim() || undefined).catch(() => {})
+    setMyStars(0)
+    setMyComment('')
+    loadReviews()
+  }
 
   if (!task) {
     return (
@@ -178,6 +195,52 @@ export default function MarketplaceTaskPage() {
           </div>
         ) : (
           <p className="mt-6 text-sm text-slate-400">{t('marketTask.closed')}</p>
+        )}
+
+        {/* Two-way rating — only on completed tasks */}
+        {task.status === 'Completed' && (
+          <div className="mt-6 rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-800">
+            {/* Rating form: poster or assignee, if they haven't rated yet */}
+            {(isPoster || task.assigneeId === currentUserId) &&
+              !reviews.some((r) => r.raterId === currentUserId) && (
+                <div className="mb-4 border-b border-slate-100 pb-4 dark:border-slate-700">
+                  <h2 className="mb-2 font-bold">{t('marketTask.rateHeading')}</h2>
+                  <StarRating value={myStars} onChange={setMyStars} />
+                  <textarea
+                    value={myComment}
+                    onChange={(e) => setMyComment(e.target.value)}
+                    placeholder={t('marketTask.rateComment')}
+                    rows={2}
+                    className="mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-[#1E2A44] dark:border-slate-600 dark:bg-slate-900"
+                  />
+                  <button
+                    onClick={submitRating}
+                    disabled={myStars < 1}
+                    className="mt-2 rounded-lg bg-[#1E2A44] px-5 py-2 text-sm font-semibold text-white hover:bg-[#27345a] disabled:opacity-50"
+                  >
+                    {t('marketTask.rateSubmit')}
+                  </button>
+                </div>
+              )}
+
+            {/* Existing reviews */}
+            <h2 className="mb-2 font-bold">{t('marketTask.reviews')}</h2>
+            {reviews.length === 0 ? (
+              <p className="text-sm text-slate-400">{t('marketTask.noReviews')}</p>
+            ) : (
+              <ul className="space-y-3">
+                {reviews.map((r) => (
+                  <li key={r.id} className="text-sm">
+                    <div className="flex items-center gap-2">
+                      <Link to={`/users/${r.raterId}`} className="font-semibold hover:underline">{r.raterName}</Link>
+                      <StarRating value={r.stars} />
+                    </div>
+                    {r.comment && <p className="mt-1 text-slate-600 dark:text-slate-300">{r.comment}</p>}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
         )}
       </main>
     </div>

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { HubConnection } from '@microsoft/signalr'
+import AttachmentPreview from '../components/AttachmentPreview'
 import MessageContextMenu from '../components/MessageContextMenu'
 import Navbar from '../components/Navbar'
 import { createChatConnection } from '../lib/chatHub'
@@ -221,12 +222,13 @@ export default function ChatPage() {
                           )}
                           {m.content && <div className="whitespace-pre-wrap break-words">{m.content}</div>}
                           {m.fileId && (
-                            <button
-                              onClick={() => downloadAttachment(m.fileId!, m.fileName ?? 'file')}
-                              className={`mt-1 flex items-center gap-1 text-sm underline ${mine ? 'text-white/90' : 'text-[#1E2A44] dark:text-slate-100'}`}
-                            >
-                              📎 {m.fileName}
-                            </button>
+                            <AttachmentPreview
+                              fileId={m.fileId}
+                              fileName={m.fileName}
+                              contentType={m.fileContentType}
+                              mine={mine}
+                              onDownload={downloadAttachment}
+                            />
                           )}
                         </div>
                       </MessageContextMenu>

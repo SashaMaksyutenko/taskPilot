@@ -13,4 +13,9 @@ public class MessageDto
     public DateTime CreatedAt { get; set; }
     public DateTime? EditedAt { get; set; }
     public bool IsDeleted { get; set; }
+
+    // Attached file (null when the message has no attachment).
+    public Guid? FileId { get; set; }
+    public string? FileName { get; set; }
+    public string? FileContentType { get; set; }
 }

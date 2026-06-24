@@ -20,8 +20,14 @@ public class Message
     /// <summary>Navigation to the sender.</summary>
     public User Sender { get; set; } = null!;
 
-    /// <summary>Message text.</summary>
+    /// <summary>Message text. May be empty when the message is just a file attachment.</summary>
     public string Content { get; set; } = string.Empty;
+
+    /// <summary>Optional file attached to the message (foreign key).</summary>
+    public Guid? FileAttachmentId { get; set; }
+
+    /// <summary>Navigation to the attached file, if any.</summary>
+    public FileAttachment? FileAttachment { get; set; }
 
     /// <summary>UTC time the message was created.</summary>
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

@@ -13,8 +13,12 @@ public class SendMessageValidator : AbstractValidator<SendMessageDto>
         RuleFor(x => x.ConversationId)
             .NotEmpty().WithMessage("ConversationId is required.");
 
+        // Text is required unless the message carries a file attachment.
         RuleFor(x => x.Content)
             .NotEmpty().WithMessage("Message cannot be empty.")
+            .When(x => x.FileAttachmentId is null);
+
+        RuleFor(x => x.Content)
             .MaximumLength(MaxContentLength)
             .WithMessage($"Message must not exceed {MaxContentLength} characters.");
     }

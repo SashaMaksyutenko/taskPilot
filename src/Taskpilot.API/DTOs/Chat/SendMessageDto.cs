@@ -8,6 +8,9 @@ public class SendMessageDto
     /// <summary>Conversation the message is posted to.</summary>
     public Guid ConversationId { get; set; }
 
-    /// <summary>Message text.</summary>
+    /// <summary>Message text. May be empty when a file is attached.</summary>
     public string Content { get; set; } = string.Empty;
+
+    /// <summary>Optional id of a previously uploaded file to attach.</summary>
+    public Guid? FileAttachmentId { get; set; }
 }

@@ -145,6 +145,7 @@ public class ChatService : IChatService
             .Where(m => m.ConversationId == conversationId)
             .OrderBy(m => m.CreatedAt)
             .Include(m => m.Sender)
+            .Include(m => m.FileAttachment)
             .AsNoTracking()
             .ToListAsync();
 
@@ -159,6 +160,15 @@ public class ChatService : IChatService
         if (!await IsParticipantAsync(dto.ConversationId, senderId))
             return Result<MessageDto>.Fail("You are not a participant of this conversation.");
 
+        // If a file is attached, make sure it exists before linking it.
+        FileAttachment? attachment = null;
+        if (dto.FileAttachmentId is { } fileId)
+        {
+            attachment = await _context.FileAttachments.FirstOrDefaultAsync(f => f.Id == fileId);
+            if (attachment is null)
+                return Result<MessageDto>.Fail("Attached file not found.");
+        }
+
         try
         {
             var message = new Message
@@ -167,6 +177,7 @@ public class ChatService : IChatService
                 ConversationId = dto.ConversationId,
                 SenderId = senderId,
                 Content = dto.Content.Trim(),
+                FileAttachmentId = attachment?.Id,
                 CreatedAt = DateTime.UtcNow,
             };
             _context.Messages.Add(message);
@@ -207,6 +218,9 @@ public class ChatService : IChatService
                 CreatedAt = message.CreatedAt,
                 EditedAt = message.EditedAt,
                 IsDeleted = message.IsDeleted,
+                FileId = attachment?.Id,
+                FileName = attachment?.FileName,
+                FileContentType = attachment?.ContentType,
             });
         }
         catch (Exception ex)
@@ -281,5 +295,8 @@ public class ChatService : IChatService
         CreatedAt = m.CreatedAt,
         EditedAt = m.EditedAt,
         IsDeleted = m.IsDeleted,
+        FileId = m.FileAttachmentId,
+        FileName = m.FileAttachment?.FileName,
+        FileContentType = m.FileAttachment?.ContentType,
     };
 }

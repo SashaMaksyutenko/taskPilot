@@ -202,6 +202,12 @@ public class TaskpilotDbContext : DbContext
                   .WithMany()
                   .HasForeignKey(m => m.SenderId)
                   .OnDelete(DeleteBehavior.Restrict);
+
+            // Optional file attachment; keep the file row if the message is removed.
+            entity.HasOne(m => m.FileAttachment)
+                  .WithMany()
+                  .HasForeignKey(m => m.FileAttachmentId)
+                  .OnDelete(DeleteBehavior.Restrict);
         });
 
         // FileAttachment entity configuration

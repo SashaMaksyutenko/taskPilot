@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { HubConnection } from '@microsoft/signalr'
+import MessageContextMenu from '../components/MessageContextMenu'
 import Navbar from '../components/Navbar'
 import { createChatConnection } from '../lib/chatHub'
 import { chatService } from '../services/chatService'
@@ -76,6 +77,11 @@ export default function ChatPage() {
     setText('')
     // The message is echoed back to us via the hub, so we do not append it here.
     await chatService.sendMessage(selectedId, content).catch(() => {})
+  }
+
+  const deleteMessage = async (id: string) => {
+    await chatService.deleteMessage(id).catch(() => {})
+    setMessages((prev) => prev.filter((m) => m.id !== id))
   }
 
   // Debounced user search: query the backend a short moment after typing stops.
@@ -175,20 +181,26 @@ export default function ChatPage() {
                   const mine = m.senderId === currentUser?.id
                   return (
                     <div key={m.id} className={`flex ${mine ? 'justify-end' : 'justify-start'}`}>
-                      <div
-                        className={`max-w-md rounded-2xl px-4 py-2 ${
-                          mine
-                            ? 'bg-[#1E2A44] text-white'
-                            : 'bg-white text-[#1E2A44] shadow dark:bg-slate-800 dark:text-slate-100'
-                        }`}
+                      <MessageContextMenu
+                        content={m.content}
+                        canDelete={mine}
+                        onDelete={() => deleteMessage(m.id)}
                       >
-                        {!mine && (
-                          <div className="mb-0.5 text-xs font-semibold text-slate-500 dark:text-slate-400">
-                            {m.senderName}
-                          </div>
-                        )}
-                        <div className="whitespace-pre-wrap break-words">{m.content}</div>
-                      </div>
+                        <div
+                          className={`max-w-md rounded-2xl px-4 py-2 ${
+                            mine
+                              ? 'bg-[#1E2A44] text-white'
+                              : 'bg-white text-[#1E2A44] shadow dark:bg-slate-800 dark:text-slate-100'
+                          }`}
+                        >
+                          {!mine && (
+                            <div className="mb-0.5 text-xs font-semibold text-slate-500 dark:text-slate-400">
+                              {m.senderName}
+                            </div>
+                          )}
+                          <div className="whitespace-pre-wrap break-words">{m.content}</div>
+                        </div>
+                      </MessageContextMenu>
                     </div>
                   )
                 })}

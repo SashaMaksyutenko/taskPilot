@@ -217,6 +217,24 @@ public class ChatService : IChatService
     }
 
     /// <inheritdoc />
+    public async Task<Result> DeleteMessageAsync(Guid messageId, Guid userId)
+    {
+        var message = await _context.Messages.FirstOrDefaultAsync(m => m.Id == messageId);
+        if (message is null)
+            return Result.Fail("Message not found.");
+
+        // Only the author of a message may delete it.
+        if (message.SenderId != userId)
+            return Result.Fail("You can only delete your own messages.");
+
+        _context.Messages.Remove(message);
+        await _context.SaveChangesAsync();
+
+        _logger.LogInformation("Message deleted. MessageId: {MessageId}, UserId: {UserId}", messageId, userId);
+        return Result.Ok();
+    }
+
+    /// <inheritdoc />
     public Task<bool> IsParticipantAsync(Guid conversationId, Guid userId) =>
         _context.ConversationParticipants
             .AnyAsync(p => p.ConversationId == conversationId && p.UserId == userId);

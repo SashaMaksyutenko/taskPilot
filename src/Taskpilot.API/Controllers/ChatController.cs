@@ -121,4 +121,17 @@ public class ChatController : BaseApiController
 
         return StatusCode(StatusCodes.Status201Created, result.Value);
     }
+
+    /// <summary>Deletes a message (sender only).</summary>
+    [HttpDelete("messages/{messageId:guid}")]
+    public async Task<IActionResult> DeleteMessage(Guid messageId)
+    {
+        var userId = CurrentUserId();
+        if (userId is null) return Unauthorized();
+
+        var result = await _chatService.DeleteMessageAsync(messageId, userId.Value);
+        return result.Succeeded
+            ? Ok(new { message = "Message deleted." })
+            : BadRequest(new { error = result.Error });
+    }
 }

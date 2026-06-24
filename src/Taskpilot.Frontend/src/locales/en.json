@@ -161,6 +161,8 @@
     "messagePlaceholder": "Type a message…",
     "send": "Send",
     "selectConversation": "Select a conversation to start chatting",
+    "copy": "Copy text",
+    "delete": "Delete",
     "type": {
       "Group": "Group",
       "Direct": "Direct"

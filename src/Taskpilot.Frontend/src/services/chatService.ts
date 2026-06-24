@@ -30,4 +30,9 @@ export const chatService = {
       .post<Message>('/api/chat/messages', { conversationId, content })
       .then((r) => r.data)
   },
+
+  /** DELETE /api/chat/messages/{id} — delete own message. */
+  deleteMessage(messageId: string): Promise<void> {
+    return api.delete(`/api/chat/messages/${messageId}`).then(() => undefined)
+  },
 }

@@ -32,4 +32,14 @@ export const marketplaceService = {
   reject(applicationId: string): Promise<void> {
     return api.post(`/api/marketplace/applications/${applicationId}/reject`).then(() => undefined)
   },
+
+  /** Assignee submits finished work. */
+  submit(taskId: string): Promise<void> {
+    return api.post(`/api/marketplace/tasks/${taskId}/submit`).then(() => undefined)
+  },
+
+  /** Poster approves submitted work. */
+  approve(taskId: string): Promise<void> {
+    return api.post(`/api/marketplace/tasks/${taskId}/approve`).then(() => undefined)
+  },
 }

@@ -13,5 +13,8 @@ public enum MarketplaceTaskStatus
     Completed = 2,
 
     /// <summary>Cancelled by the poster.</summary>
-    Cancelled = 3
+    Cancelled = 3,
+
+    /// <summary>Work submitted by the assignee, awaiting the poster's approval.</summary>
+    Submitted = 4
 }

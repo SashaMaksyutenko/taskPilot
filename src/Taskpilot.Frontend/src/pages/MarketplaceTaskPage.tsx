@@ -58,6 +58,16 @@ export default function MarketplaceTaskPage() {
     load()
   }
 
+  const submitWork = async () => {
+    await marketplaceService.submit(task!.id).catch(() => {})
+    load()
+  }
+
+  const approveWork = async () => {
+    await marketplaceService.approve(task!.id).catch(() => {})
+    load()
+  }
+
   return (
     <div className="min-h-screen bg-slate-50 text-[#1E2A44] dark:bg-slate-900 dark:text-slate-100">
       <Navbar />
@@ -87,6 +97,17 @@ export default function MarketplaceTaskPage() {
         {/* Poster: applications */}
         {isPoster ? (
           <>
+            {task.status === 'Submitted' && (
+              <div className="mt-6 flex items-center gap-3 rounded-xl border border-amber-300 bg-amber-50 p-4 dark:border-amber-700 dark:bg-amber-950/30">
+                <span className="text-sm">{t('market.status.Submitted')}</span>
+                <button
+                  onClick={approveWork}
+                  className="ml-auto rounded-lg bg-green-600 px-5 py-2 text-sm font-semibold text-white hover:bg-green-700"
+                >
+                  {t('marketTask.approveWork')}
+                </button>
+              </div>
+            )}
             <h2 className="mb-3 mt-6 font-bold">{t('market.applications', { count: task.applications.length })}</h2>
             <div className="space-y-3">
               {task.applications.map((a) => (
@@ -120,6 +141,17 @@ export default function MarketplaceTaskPage() {
             <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${appStatusColor[myApplication.status]}`}>
               {t(`marketTask.appStatus.${myApplication.status}`, myApplication.status)}
             </span>
+            {/* Assignee can submit their finished work */}
+            {task.assigneeId === currentUserId && task.status === 'InProgress' && (
+              <div className="mt-3">
+                <button
+                  onClick={submitWork}
+                  className="rounded-lg bg-[#1E2A44] px-5 py-2 text-sm font-semibold text-white hover:bg-[#27345a]"
+                >
+                  {t('marketTask.submitWork')}
+                </button>
+              </div>
+            )}
           </div>
         ) : task.status === 'Open' ? (
           <div className="mt-6 rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-800">

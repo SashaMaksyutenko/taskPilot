@@ -84,6 +84,32 @@ public class MarketplaceController : BaseApiController
             : BadRequest(new { error = result.Error });
     }
 
+    /// <summary>Assignee submits finished work (In Progress → Submitted).</summary>
+    [HttpPost("tasks/{taskId:guid}/submit")]
+    public async Task<IActionResult> Submit(Guid taskId)
+    {
+        var userId = CurrentUserId();
+        if (userId is null) return Unauthorized();
+
+        var result = await _marketplace.SubmitTaskAsync(userId.Value, taskId);
+        return result.Succeeded
+            ? Ok(new { message = "Work submitted." })
+            : BadRequest(new { error = result.Error });
+    }
+
+    /// <summary>Poster approves submitted work (Submitted → Completed).</summary>
+    [HttpPost("tasks/{taskId:guid}/approve")]
+    public async Task<IActionResult> Approve(Guid taskId)
+    {
+        var userId = CurrentUserId();
+        if (userId is null) return Unauthorized();
+
+        var result = await _marketplace.ApproveTaskAsync(userId.Value, taskId);
+        return result.Succeeded
+            ? Ok(new { message = "Task approved." })
+            : BadRequest(new { error = result.Error });
+    }
+
     /// <summary>Accepts an application (task poster only).</summary>
     [HttpPost("applications/{applicationId:guid}/accept")]
     public Task<IActionResult> Accept(Guid applicationId) => DecideAsync(applicationId, accept: true);

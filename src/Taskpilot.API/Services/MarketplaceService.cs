@@ -206,6 +206,61 @@ public class MarketplaceService : IMarketplaceService
         return Result.Ok();
     }
 
+    /// <inheritdoc />
+    public async Task<Result> SubmitTaskAsync(Guid assigneeId, Guid taskId)
+    {
+        var task = await _context.MarketplaceTasks.FirstOrDefaultAsync(t => t.Id == taskId);
+        if (task is null)
+            return Result.Fail("Task not found.");
+
+        if (task.AssigneeId != assigneeId)
+            return Result.Fail("Only the assignee can submit this task.");
+
+        if (task.Status != MarketplaceTaskStatus.InProgress)
+            return Result.Fail("The task is not in progress.");
+
+        task.Status = MarketplaceTaskStatus.Submitted;
+        await _context.SaveChangesAsync();
+
+        // Tell the poster the work is ready for review.
+        await _notifications.CreateAsync(
+            task.PosterId,
+            NotificationType.Marketplace,
+            $"Work submitted for \"{task.Title}\" — ready for review.",
+            $"/marketplace/tasks/{task.Id}");
+
+        _logger.LogInformation("Marketplace task submitted. TaskId: {TaskId}", taskId);
+        return Result.Ok();
+    }
+
+    /// <inheritdoc />
+    public async Task<Result> ApproveTaskAsync(Guid posterId, Guid taskId)
+    {
+        var task = await _context.MarketplaceTasks.FirstOrDefaultAsync(t => t.Id == taskId);
+        if (task is null)
+            return Result.Fail("Task not found.");
+
+        if (task.PosterId != posterId)
+            return Result.Fail("Only the poster can approve this task.");
+
+        if (task.Status != MarketplaceTaskStatus.Submitted)
+            return Result.Fail("The task has not been submitted yet.");
+
+        task.Status = MarketplaceTaskStatus.Completed;
+        await _context.SaveChangesAsync();
+
+        // Tell the assignee their work was approved.
+        if (task.AssigneeId is { } assigneeId)
+            await _notifications.CreateAsync(
+                assigneeId,
+                NotificationType.Marketplace,
+                $"Your work on \"{task.Title}\" was approved!",
+                $"/marketplace/tasks/{task.Id}");
+
+        _logger.LogInformation("Marketplace task approved/completed. TaskId: {TaskId}", taskId);
+        return Result.Ok();
+    }
+
     // --- mapping ---
 
     private static TaskDetailDto MapDetail(MarketplaceTask t) => new()

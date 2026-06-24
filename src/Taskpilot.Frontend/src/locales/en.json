@@ -148,6 +148,7 @@
     "status": {
       "Open": "Open",
       "InProgress": "In progress",
+      "Submitted": "Submitted",
       "Completed": "Completed",
       "Cancelled": "Cancelled"
     }
@@ -239,6 +240,8 @@
     "coverLetter": "Cover letter",
     "rate": "Your rate ($)",
     "apply": "Apply",
+    "submitWork": "Submit work",
+    "approveWork": "Approve work",
     "closed": "This task is no longer open for applications.",
     "appStatus": {
       "Pending": "Pending",

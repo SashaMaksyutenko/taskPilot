@@ -25,4 +25,10 @@ public interface IMarketplaceService
     /// moves it to In Progress and rejects the other pending applications.
     /// </summary>
     Task<Result> DecideApplicationAsync(Guid posterId, Guid applicationId, bool accept);
+
+    /// <summary>Assignee submits their finished work (In Progress → Submitted).</summary>
+    Task<Result> SubmitTaskAsync(Guid assigneeId, Guid taskId);
+
+    /// <summary>Poster approves the submitted work (Submitted → Completed).</summary>
+    Task<Result> ApproveTaskAsync(Guid posterId, Guid taskId);
 }

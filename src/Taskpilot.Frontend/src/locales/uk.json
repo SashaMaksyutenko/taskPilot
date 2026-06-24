@@ -148,6 +148,7 @@
     "status": {
       "Open": "Відкрита",
       "InProgress": "В роботі",
+      "Submitted": "На перевірці",
       "Completed": "Завершена",
       "Cancelled": "Скасована"
     }
@@ -239,6 +240,8 @@
     "coverLetter": "Супровідний лист",
     "rate": "Ваша ставка ($)",
     "apply": "Подати",
+    "submitWork": "Здати роботу",
+    "approveWork": "Прийняти роботу",
     "closed": "Задача більше не приймає заявок.",
     "appStatus": {
       "Pending": "Очікує",

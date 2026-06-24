@@ -71,6 +71,9 @@ public class TaskpilotDbContext : DbContext
     /// <summary>Two-way reviews for completed marketplace tasks.</summary>
     public DbSet<Review> Reviews => Set<Review>();
 
+    /// <summary>Personal notes.</summary>
+    public DbSet<Note> Notes => Set<Note>();
+
     /// <summary>
     /// Налаштування моделі (Fluent API): обмеження, індекси, перетворення типів.
     /// Викликається EF Core під час побудови моделі та генерації міграцій.
@@ -489,6 +492,25 @@ public class TaskpilotDbContext : DbContext
             entity.HasOne(r => r.MarketplaceTask)
                   .WithMany()
                   .HasForeignKey(r => r.MarketplaceTaskId)
+                  .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // Note entity configuration
+        modelBuilder.Entity<Note>(entity =>
+        {
+            entity.HasKey(n => n.Id);
+
+            entity.Property(n => n.Title).HasMaxLength(200);
+            entity.Property(n => n.Content).HasMaxLength(10000);
+            entity.Property(n => n.Color).HasMaxLength(20);
+
+            // List a user's notes quickly.
+            entity.HasIndex(n => n.OwnerId);
+
+            // Notes are personal data: deleting the owner removes their notes.
+            entity.HasOne(n => n.Owner)
+                  .WithMany()
+                  .HasForeignKey(n => n.OwnerId)
                   .OnDelete(DeleteBehavior.Cascade);
         });
     }

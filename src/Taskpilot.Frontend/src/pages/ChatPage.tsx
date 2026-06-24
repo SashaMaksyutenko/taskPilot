@@ -5,6 +5,7 @@ import MessageContextMenu from '../components/MessageContextMenu'
 import Navbar from '../components/Navbar'
 import { createChatConnection } from '../lib/chatHub'
 import { chatService } from '../services/chatService'
+import { fileService } from '../services/fileService'
 import { userService, type UserSearchResult } from '../services/userService'
 import type { Conversation, Message } from '../types/chat'
 import { fetchMe } from '../store/authSlice'
@@ -31,6 +32,7 @@ export default function ChatPage() {
   // Ref mirror of selectedId so the SignalR callback always sees the latest value.
   const selectedIdRef = useRef<string | null>(null)
   const bottomRef = useRef<HTMLDivElement | null>(null)
+  const fileInputRef = useRef<HTMLInputElement | null>(null)
 
   // Make sure we know who the current user is (to label direct chats).
   useEffect(() => {
@@ -82,6 +84,25 @@ export default function ChatPage() {
   const deleteMessage = async (id: string) => {
     await chatService.deleteMessage(id).catch(() => {})
     setMessages((prev) => prev.filter((m) => m.id !== id))
+  }
+
+  // Upload the chosen file, then send it as a message attachment.
+  const attachFile = async (file: File) => {
+    if (!selectedId) return
+    const uploaded = await fileService.upload(file).catch(() => null)
+    if (uploaded) await chatService.sendMessage(selectedId, '', uploaded.id).catch(() => {})
+  }
+
+  // Download an attachment (authenticated) and trigger a save dialog.
+  const downloadAttachment = async (fileId: string, fileName: string) => {
+    const blob = await fileService.download(fileId).catch(() => null)
+    if (!blob) return
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = fileName
+    a.click()
+    URL.revokeObjectURL(url)
   }
 
   // Debounced user search: query the backend a short moment after typing stops.
@@ -198,7 +219,15 @@ export default function ChatPage() {
                               {m.senderName}
                             </div>
                           )}
-                          <div className="whitespace-pre-wrap break-words">{m.content}</div>
+                          {m.content && <div className="whitespace-pre-wrap break-words">{m.content}</div>}
+                          {m.fileId && (
+                            <button
+                              onClick={() => downloadAttachment(m.fileId!, m.fileName ?? 'file')}
+                              className={`mt-1 flex items-center gap-1 text-sm underline ${mine ? 'text-white/90' : 'text-[#1E2A44] dark:text-slate-100'}`}
+                            >
+                              📎 {m.fileName}
+                            </button>
+                          )}
                         </div>
                       </MessageContextMenu>
                     </div>
@@ -207,7 +236,25 @@ export default function ChatPage() {
                 <div ref={bottomRef} />
               </div>
 
-              <div className="flex gap-2 border-t border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-800">
+              <div className="flex items-center gap-2 border-t border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-800">
+                {/* Attach a file */}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  className="hidden"
+                  onChange={(e) => {
+                    const f = e.target.files?.[0]
+                    if (f) attachFile(f)
+                    e.target.value = '' // allow re-selecting the same file
+                  }}
+                />
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  title="Attach a file"
+                  className="rounded-lg px-2 py-2 text-lg text-slate-500 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-700"
+                >
+                  📎
+                </button>
                 <input
                   value={text}
                   onChange={(e) => setText(e.target.value)}

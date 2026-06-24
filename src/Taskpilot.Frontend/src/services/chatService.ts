@@ -24,10 +24,10 @@ export const chatService = {
       .then((r) => r.data)
   },
 
-  /** POST /api/chat/messages — send a message. */
-  sendMessage(conversationId: string, content: string): Promise<Message> {
+  /** POST /api/chat/messages — send a message, optionally with a file attachment. */
+  sendMessage(conversationId: string, content: string, fileAttachmentId?: string): Promise<Message> {
     return api
-      .post<Message>('/api/chat/messages', { conversationId, content })
+      .post<Message>('/api/chat/messages', { conversationId, content, fileAttachmentId })
       .then((r) => r.data)
   },
 

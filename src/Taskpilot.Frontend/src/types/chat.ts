@@ -22,4 +22,7 @@ export interface Message {
   createdAt: string
   editedAt: string | null
   isDeleted: boolean
+  fileId: string | null
+  fileName: string | null
+  fileContentType: string | null
 }

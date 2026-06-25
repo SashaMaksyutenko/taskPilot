@@ -6,8 +6,20 @@
     "forum": "Форум",
     "market": "Маркет",
     "chat": "Чат",
+    "notes": "Нотатки",
     "admin": "Адмін",
     "logout": "Вийти"
+  },
+  "notes": {
+    "title": "Нотатки",
+    "titlePlaceholder": "Заголовок",
+    "contentPlaceholder": "Напишіть нотатку…",
+    "add": "Додати",
+    "save": "Зберегти",
+    "cancel": "Скасувати",
+    "edit": "Редагувати",
+    "delete": "Видалити",
+    "empty": "Нотаток ще немає."
   },
   "auth": {
     "welcomeBack": "З поверненням",

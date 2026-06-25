@@ -6,8 +6,20 @@
     "forum": "Forum",
     "market": "Market",
     "chat": "Chat",
+    "notes": "Notes",
     "admin": "Admin",
     "logout": "Log out"
+  },
+  "notes": {
+    "title": "Notes",
+    "titlePlaceholder": "Title",
+    "contentPlaceholder": "Write a note…",
+    "add": "Add",
+    "save": "Save",
+    "cancel": "Cancel",
+    "edit": "Edit",
+    "delete": "Delete",
+    "empty": "No notes yet."
   },
   "auth": {
     "welcomeBack": "Welcome back",

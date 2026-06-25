@@ -91,6 +91,11 @@ export default function BoardPage() {
     if (blob) download(blob, 'xlsx')
   }
 
+  const exportPdf = async () => {
+    const blob = await taskService.exportPdf(projectId).catch(() => null)
+    if (blob) download(blob, 'pdf')
+  }
+
   return (
     <div className="min-h-screen bg-slate-50 text-[#1E2A44] dark:bg-slate-900 dark:text-slate-100">
       <Navbar />
@@ -111,6 +116,12 @@ export default function BoardPage() {
             className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-semibold hover:bg-white dark:border-slate-600 dark:hover:bg-slate-800"
           >
             {t('board.exportXlsx')}
+          </button>
+          <button
+            onClick={exportPdf}
+            className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-semibold hover:bg-white dark:border-slate-600 dark:hover:bg-slate-800"
+          >
+            {t('board.exportPdf')}
           </button>
         </div>
 

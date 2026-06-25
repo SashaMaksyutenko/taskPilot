@@ -75,6 +75,20 @@ public class TasksController : BaseApiController
             $"tasks-{projectId}.xlsx");
     }
 
+    /// <summary>Exports a project's tasks as a PDF file.</summary>
+    [HttpGet("api/projects/{projectId:guid}/tasks/export/pdf")]
+    public async Task<IActionResult> ExportPdf(Guid projectId)
+    {
+        var userId = CurrentUserId();
+        if (userId is null) return Unauthorized();
+
+        var result = await _tasks.ExportTasksPdfAsync(userId.Value, projectId);
+        if (!result.Succeeded)
+            return NotFound(new { error = result.Error });
+
+        return File(result.Value!, "application/pdf", $"tasks-{projectId}.pdf");
+    }
+
     /// <summary>Creates a task in a project.</summary>
     [HttpPost("api/projects/{projectId:guid}/tasks")]
     public async Task<IActionResult> Create(Guid projectId, [FromBody] CreateTaskDto dto)

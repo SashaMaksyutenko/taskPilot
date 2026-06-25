@@ -24,6 +24,9 @@ using Taskpilot.API.Validators.Auth;
 // The .env file is gitignored and never committed.
 Env.TraversePath().Load();
 
+// QuestPDF runs under its free Community license (allowed for this project size).
+QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
+
 // Build the host. Configuration is read from appsettings.json, environment
 // variables (including everything loaded from .env above) and command-line args.
 var builder = WebApplication.CreateBuilder(args);

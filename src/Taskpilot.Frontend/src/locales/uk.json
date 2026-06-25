@@ -91,6 +91,7 @@
     "title": "Дошка",
     "exportCsv": "Експорт CSV",
     "exportXlsx": "Експорт Excel",
+    "exportPdf": "Експорт PDF",
     "addPlaceholder": "Додати задачу (у Backlog)…",
     "add": "Додати",
     "edit": "Редагувати",

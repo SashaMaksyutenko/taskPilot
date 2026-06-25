@@ -50,4 +50,11 @@ export const taskService = {
       .get(`/api/projects/${projectId}/tasks/export/xlsx`, { responseType: 'blob' })
       .then((r) => r.data as Blob)
   },
+
+  /** Downloads the project's tasks as a PDF blob. */
+  exportPdf(projectId: string): Promise<Blob> {
+    return api
+      .get(`/api/projects/${projectId}/tasks/export/pdf`, { responseType: 'blob' })
+      .then((r) => r.data as Blob)
+  },
 }

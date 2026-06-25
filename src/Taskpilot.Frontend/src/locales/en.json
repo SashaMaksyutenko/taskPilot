@@ -91,6 +91,7 @@
     "title": "Board",
     "exportCsv": "Export CSV",
     "exportXlsx": "Export Excel",
+    "exportPdf": "Export PDF",
     "addPlaceholder": "Add a task (goes to Backlog)…",
     "add": "Add",
     "edit": "Edit",

@@ -1,6 +1,8 @@
 using System.Text;
 using ClosedXML.Excel;
 using Microsoft.EntityFrameworkCore;
+using QuestPDF.Fluent;
+using QuestPDF.Helpers;
 using Taskpilot.API.Common;
 using Taskpilot.API.Data;
 using Taskpilot.API.DTOs.Calendar;
@@ -284,6 +286,67 @@ public class TaskService : ITaskService
         using var stream = new MemoryStream();
         workbook.SaveAs(stream);
         return Result<byte[]>.Ok(stream.ToArray());
+    }
+
+    /// <inheritdoc />
+    public async Task<Result<byte[]>> ExportTasksPdfAsync(Guid userId, Guid projectId)
+    {
+        var project = await _context.Projects
+            .Where(p => p.Id == projectId && p.OwnerId == userId)
+            .Select(p => new { p.Name })
+            .FirstOrDefaultAsync();
+        if (project is null)
+            return Result<byte[]>.Fail("Project not found.");
+
+        var tasks = await _context.ProjectTasks
+            .Where(t => t.ProjectId == projectId)
+            .Include(t => t.Assignee)
+            .OrderBy(t => t.CreatedAt)
+            .AsNoTracking()
+            .ToListAsync();
+
+        var pdf = Document.Create(container =>
+        {
+            container.Page(page =>
+            {
+                page.Margin(30);
+                page.Size(PageSizes.A4);
+                page.DefaultTextStyle(x => x.FontSize(10));
+
+                page.Header().Text($"Tasks — {project.Name}").FontSize(18).Bold();
+
+                page.Content().PaddingTop(10).Table(table =>
+                {
+                    table.ColumnsDefinition(columns =>
+                    {
+                        columns.RelativeColumn(3); // Title
+                        columns.RelativeColumn();  // Status
+                        columns.RelativeColumn();  // Priority
+                        columns.RelativeColumn(2); // Assignee
+                        columns.RelativeColumn(2); // Deadline
+                    });
+
+                    table.Header(header =>
+                    {
+                        foreach (var h in new[] { "Title", "Status", "Priority", "Assignee", "Deadline" })
+                            header.Cell().Background(Colors.Grey.Lighten3).Padding(4).Text(h).Bold();
+                    });
+
+                    foreach (var task in tasks)
+                    {
+                        table.Cell().Padding(4).Text(task.Title);
+                        table.Cell().Padding(4).Text(task.Status.ToString());
+                        table.Cell().Padding(4).Text(task.Priority.ToString());
+                        table.Cell().Padding(4).Text(task.Assignee?.Name ?? string.Empty);
+                        table.Cell().Padding(4).Text(task.Deadline?.ToString("u") ?? string.Empty);
+                    }
+                });
+
+                page.Footer().AlignRight().Text($"Generated {DateTime.UtcNow:u}").FontSize(8).FontColor(Colors.Grey.Medium);
+            });
+        }).GeneratePdf();
+
+        return Result<byte[]>.Ok(pdf);
     }
 
     // --- helpers ---

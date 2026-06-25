@@ -1,4 +1,5 @@
 using System.Text;
+using ClosedXML.Excel;
 using Microsoft.EntityFrameworkCore;
 using Taskpilot.API.Common;
 using Taskpilot.API.Data;
@@ -239,6 +240,50 @@ public class TaskService : ITaskService
         }
 
         return Result<string>.Ok(sb.ToString());
+    }
+
+    /// <inheritdoc />
+    public async Task<Result<byte[]>> ExportTasksXlsxAsync(Guid userId, Guid projectId)
+    {
+        var ownsProject = await _context.Projects.AnyAsync(p => p.Id == projectId && p.OwnerId == userId);
+        if (!ownsProject)
+            return Result<byte[]>.Fail("Project not found.");
+
+        var tasks = await _context.ProjectTasks
+            .Where(t => t.ProjectId == projectId)
+            .Include(t => t.Assignee)
+            .OrderBy(t => t.CreatedAt)
+            .AsNoTracking()
+            .ToListAsync();
+
+        using var workbook = new XLWorkbook();
+        var ws = workbook.Worksheets.Add("Tasks");
+
+        // Header row.
+        string[] headers = { "Title", "Status", "Priority", "Assignee", "Deadline", "Created", "Completed" };
+        for (var c = 0; c < headers.Length; c++)
+            ws.Cell(1, c + 1).Value = headers[c];
+        ws.Row(1).Style.Font.Bold = true;
+
+        // Data rows.
+        var row = 2;
+        foreach (var t in tasks)
+        {
+            ws.Cell(row, 1).Value = t.Title;
+            ws.Cell(row, 2).Value = t.Status.ToString();
+            ws.Cell(row, 3).Value = t.Priority.ToString();
+            ws.Cell(row, 4).Value = t.Assignee?.Name ?? string.Empty;
+            ws.Cell(row, 5).Value = t.Deadline?.ToString("u") ?? string.Empty;
+            ws.Cell(row, 6).Value = t.CreatedAt.ToString("u");
+            ws.Cell(row, 7).Value = t.CompletedAt?.ToString("u") ?? string.Empty;
+            row++;
+        }
+
+        ws.Columns().AdjustToContents();
+
+        using var stream = new MemoryStream();
+        workbook.SaveAs(stream);
+        return Result<byte[]>.Ok(stream.ToArray());
     }
 
     // --- helpers ---

@@ -34,4 +34,9 @@ public interface ITaskService
     /// Exports a project's tasks as a CSV document (the caller must own the project).
     /// </summary>
     Task<Result<string>> ExportTasksCsvAsync(Guid userId, Guid projectId);
+
+    /// <summary>
+    /// Exports a project's tasks as an Excel (.xlsx) workbook (caller must own the project).
+    /// </summary>
+    Task<Result<byte[]>> ExportTasksXlsxAsync(Guid userId, Guid projectId);
 }

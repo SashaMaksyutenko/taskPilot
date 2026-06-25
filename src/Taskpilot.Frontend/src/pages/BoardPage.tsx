@@ -72,15 +72,23 @@ export default function BoardPage() {
     setTasks((prev) => prev.filter((t) => t.id !== task.id))
   }
 
-  const exportCsv = async () => {
-    const blob = await taskService.exportCsv(projectId).catch(() => null)
-    if (!blob) return
+  const download = (blob: Blob, ext: string) => {
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `${project?.name ?? 'tasks'}.csv`
+    a.download = `${project?.name ?? 'tasks'}.${ext}`
     a.click()
     URL.revokeObjectURL(url)
+  }
+
+  const exportCsv = async () => {
+    const blob = await taskService.exportCsv(projectId).catch(() => null)
+    if (blob) download(blob, 'csv')
+  }
+
+  const exportXlsx = async () => {
+    const blob = await taskService.exportXlsx(projectId).catch(() => null)
+    if (blob) download(blob, 'xlsx')
   }
 
   return (
@@ -97,6 +105,12 @@ export default function BoardPage() {
             className="ml-auto rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-semibold hover:bg-white dark:border-slate-600 dark:hover:bg-slate-800"
           >
             {t('board.exportCsv')}
+          </button>
+          <button
+            onClick={exportXlsx}
+            className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-semibold hover:bg-white dark:border-slate-600 dark:hover:bg-slate-800"
+          >
+            {t('board.exportXlsx')}
           </button>
         </div>
 

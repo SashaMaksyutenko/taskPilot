@@ -43,4 +43,11 @@ export const taskService = {
       .get(`/api/projects/${projectId}/tasks/export`, { responseType: 'blob' })
       .then((r) => r.data as Blob)
   },
+
+  /** Downloads the project's tasks as an Excel (.xlsx) blob. */
+  exportXlsx(projectId: string): Promise<Blob> {
+    return api
+      .get(`/api/projects/${projectId}/tasks/export/xlsx`, { responseType: 'blob' })
+      .then((r) => r.data as Blob)
+  },
 }

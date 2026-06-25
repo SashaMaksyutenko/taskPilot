@@ -90,6 +90,7 @@
     "backToProjects": "← Projects",
     "title": "Board",
     "exportCsv": "Export CSV",
+    "exportXlsx": "Export Excel",
     "addPlaceholder": "Add a task (goes to Backlog)…",
     "add": "Add",
     "edit": "Edit",

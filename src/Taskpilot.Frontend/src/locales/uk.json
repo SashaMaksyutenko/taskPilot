@@ -90,6 +90,7 @@
     "backToProjects": "← Проєкти",
     "title": "Дошка",
     "exportCsv": "Експорт CSV",
+    "exportXlsx": "Експорт Excel",
     "addPlaceholder": "Додати задачу (у Backlog)…",
     "add": "Додати",
     "edit": "Редагувати",

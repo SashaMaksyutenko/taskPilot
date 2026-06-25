@@ -58,6 +58,23 @@ public class TasksController : BaseApiController
         return File(bytes, "text/csv", $"tasks-{projectId}.csv");
     }
 
+    /// <summary>Exports a project's tasks as an Excel (.xlsx) file.</summary>
+    [HttpGet("api/projects/{projectId:guid}/tasks/export/xlsx")]
+    public async Task<IActionResult> ExportXlsx(Guid projectId)
+    {
+        var userId = CurrentUserId();
+        if (userId is null) return Unauthorized();
+
+        var result = await _tasks.ExportTasksXlsxAsync(userId.Value, projectId);
+        if (!result.Succeeded)
+            return NotFound(new { error = result.Error });
+
+        return File(
+            result.Value!,
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            $"tasks-{projectId}.xlsx");
+    }
+
     /// <summary>Creates a task in a project.</summary>
     [HttpPost("api/projects/{projectId:guid}/tasks")]
     public async Task<IActionResult> Create(Guid projectId, [FromBody] CreateTaskDto dto)

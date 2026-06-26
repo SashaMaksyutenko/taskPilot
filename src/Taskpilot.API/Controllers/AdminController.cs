@@ -17,12 +17,14 @@ public class AdminController : BaseApiController
     private readonly IAdminService _adminService;
     private readonly IAuditService _audit;
     private readonly IStatsService _stats;
+    private readonly IOverdueService _overdue;
 
-    public AdminController(IAdminService adminService, IAuditService audit, IStatsService stats)
+    public AdminController(IAdminService adminService, IAuditService audit, IStatsService stats, IOverdueService overdue)
     {
         _adminService = adminService;
         _audit = audit;
         _stats = stats;
+        _overdue = overdue;
     }
 
     /// <summary>Lists all users.</summary>
@@ -39,6 +41,14 @@ public class AdminController : BaseApiController
     {
         var result = await _stats.GetFullStatsAsync();
         return Ok(result.Value);
+    }
+
+    /// <summary>Runs the overdue-tasks check now (otherwise it runs on a timer).</summary>
+    [HttpPost("overdue-check")]
+    public async Task<IActionResult> RunOverdueCheck()
+    {
+        var processed = await _overdue.ProcessOverdueAsync();
+        return Ok(new { processed });
     }
 
     /// <summary>Changes a user's role.</summary>

@@ -176,6 +176,9 @@ builder.Services.AddScoped<IAuditService, AuditService>();
 builder.Services.AddScoped<IStatsService, StatsService>();
 builder.Services.AddScoped<INoteService, NoteService>();
 builder.Services.AddScoped<ISearchService, SearchService>();
+builder.Services.AddScoped<IOverdueService, OverdueService>();
+// Background worker that flags overdue tasks (notifications + webhooks).
+builder.Services.AddHostedService<OverdueBackgroundService>();
 // HttpClient factory used to deliver webhook POSTs.
 builder.Services.AddHttpClient();
 // Token generation is stateless, so a singleton is fine.

@@ -58,4 +58,10 @@ public class ProjectTask
 
     /// <summary>UTC time the task was marked Done; null otherwise.</summary>
     public DateTime? CompletedAt { get; set; }
+
+    /// <summary>
+    /// UTC time the overdue notification/webhook was emitted for this task; null until
+    /// then. Prevents the background overdue check from notifying repeatedly.
+    /// </summary>
+    public DateTime? OverdueNotifiedAt { get; set; }
 }

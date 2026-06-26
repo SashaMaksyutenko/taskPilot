@@ -139,6 +139,17 @@ public class TaskService : ITaskService
         task.UpdatedAt = DateTime.UtcNow;
         await _context.SaveChangesAsync();
 
+        await _webhooks.DispatchAsync(WebhookEvents.TaskUpdated, new
+        {
+            taskId = task.Id,
+            title = task.Title,
+            projectId = task.ProjectId,
+            priority = task.Priority.ToString(),
+            assigneeId = task.AssigneeId,
+            deadline = task.Deadline,
+            updatedAt = task.UpdatedAt,
+        });
+
         return Result<TaskDto>.Ok(await LoadDtoAsync(task.Id));
     }
 

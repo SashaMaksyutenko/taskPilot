@@ -13,11 +13,13 @@ namespace Taskpilot.API.Services;
 public class AdminService : IAdminService
 {
     private readonly TaskpilotDbContext _context;
+    private readonly IWebhookService _webhooks;
     private readonly ILogger<AdminService> _logger;
 
-    public AdminService(TaskpilotDbContext context, ILogger<AdminService> logger)
+    public AdminService(TaskpilotDbContext context, IWebhookService webhooks, ILogger<AdminService> logger)
     {
         _context = context;
+        _webhooks = webhooks;
         _logger = logger;
     }
 
@@ -74,6 +76,17 @@ public class AdminService : IAdminService
         }
 
         await _context.SaveChangesAsync();
+
+        // Only the ban transition is broadcast (not unban).
+        if (!isActive)
+            await _webhooks.DispatchAsync(WebhookEvents.UserBanned, new
+            {
+                userId = user.Id,
+                email = user.Email,
+                name = user.Name,
+                bannedAt = user.UpdatedAt,
+            });
+
         _logger.LogInformation("User {Status}. UserId: {UserId}", isActive ? "unbanned" : "banned", targetUserId);
         return Result.Ok();
     }

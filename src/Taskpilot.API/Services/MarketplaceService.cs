@@ -14,15 +14,18 @@ public class MarketplaceService : IMarketplaceService
 {
     private readonly TaskpilotDbContext _context;
     private readonly INotificationService _notifications;
+    private readonly IWebhookService _webhooks;
     private readonly ILogger<MarketplaceService> _logger;
 
     public MarketplaceService(
         TaskpilotDbContext context,
         INotificationService notifications,
+        IWebhookService webhooks,
         ILogger<MarketplaceService> logger)
     {
         _context = context;
         _notifications = notifications;
+        _webhooks = webhooks;
         _logger = logger;
     }
 
@@ -256,6 +259,14 @@ public class MarketplaceService : IMarketplaceService
                 NotificationType.Marketplace,
                 $"Your work on \"{task.Title}\" was approved!",
                 $"/marketplace/tasks/{task.Id}");
+
+        await _webhooks.DispatchAsync(WebhookEvents.MarketplaceTaskCompleted, new
+        {
+            taskId = task.Id,
+            title = task.Title,
+            posterId = task.PosterId,
+            assigneeId = task.AssigneeId,
+        });
 
         _logger.LogInformation("Marketplace task approved/completed. TaskId: {TaskId}", taskId);
         return Result.Ok();

@@ -118,6 +118,15 @@ public class ProjectService : IProjectService
         project.ArchivedAt = archived ? DateTime.UtcNow : null;
         await _context.SaveChangesAsync();
 
+        // Only the archive transition is broadcast (not restore).
+        if (archived)
+            await _webhooks.DispatchAsync(WebhookEvents.ProjectArchived, new
+            {
+                projectId = project.Id,
+                name = project.Name,
+                archivedAt = project.ArchivedAt,
+            });
+
         _logger.LogInformation("Project {State}. ProjectId: {ProjectId}", archived ? "archived" : "restored", projectId);
         return Result.Ok();
     }

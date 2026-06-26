@@ -222,6 +222,8 @@
     "banned": "Banned",
     "ban": "Ban",
     "unban": "Unban",
+    "viewProfile": "View profile",
+    "changeRole": "Change role",
     "roles": {
       "Developer": "Developer",
       "Manager": "Manager",

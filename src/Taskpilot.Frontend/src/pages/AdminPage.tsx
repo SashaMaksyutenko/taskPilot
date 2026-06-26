@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import Navbar from '../components/Navbar'
 import RoleChart from '../components/RoleChart'
 import StatsPanel from '../components/StatsPanel'
+import UserContextMenu from '../components/UserContextMenu'
 import { adminService } from '../services/adminService'
 import { statsService } from '../services/statsService'
 import { useAppSelector } from '../store/hooks'
@@ -16,6 +17,7 @@ import type { AdminStats } from '../types/stats'
  */
 export default function AdminPage() {
   const { t } = useTranslation()
+  const navigate = useNavigate()
   const currentUserId = useAppSelector((s) => s.auth.user?.id)
   const [users, setUsers] = useState<AdminUser[]>([])
   const [stats, setStats] = useState<AdminStats | null>(null)
@@ -73,7 +75,15 @@ export default function AdminPage() {
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
               {users.map((u) => (
-                <tr key={u.id}>
+                <UserContextMenu
+                  key={u.id}
+                  isActive={u.isActive}
+                  canModerate={u.id !== currentUserId}
+                  onViewProfile={() => navigate(`/users/${u.id}`)}
+                  onChangeRole={(role) => changeRole(u.id, role)}
+                  onToggleBan={() => toggleBan(u)}
+                >
+                <tr>
                   <td className="px-4 py-3 font-medium">
                     <Link to={`/users/${u.id}`} className="hover:underline">{u.name}</Link>
                   </td>
@@ -115,6 +125,7 @@ export default function AdminPage() {
                     )}
                   </td>
                 </tr>
+                </UserContextMenu>
               ))}
             </tbody>
           </table>

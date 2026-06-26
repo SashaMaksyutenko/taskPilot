@@ -222,6 +222,8 @@
     "banned": "Забанений",
     "ban": "Забанити",
     "unban": "Розбанити",
+    "viewProfile": "Профіль",
+    "changeRole": "Змінити роль",
     "roles": {
       "Developer": "Розробник",
       "Manager": "Менеджер",

@@ -8,6 +8,7 @@ import { projectService } from '../services/projectService'
 import { fetchMe } from '../store/authSlice'
 import { useAppDispatch, useAppSelector } from '../store/hooks'
 import type { AppNotification } from '../types/notification'
+import type { CalendarTask } from '../types/calendar'
 
 const pad = (n: number) => String(n).padStart(2, '0')
 const isoDate = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
@@ -25,6 +26,7 @@ export default function HomePage() {
   const [projectCount, setProjectCount] = useState(0)
   const [unread, setUnread] = useState(0)
   const [upcoming, setUpcoming] = useState(0)
+  const [overdue, setOverdue] = useState<CalendarTask[]>([])
   const [notifications, setNotifications] = useState<AppNotification[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -43,6 +45,7 @@ export default function HomePage() {
       notificationService.getUnreadCount().then(setUnread),
       notificationService.getNotifications().then((n) => setNotifications(n.slice(0, 6))),
       calendarService.getTasks(isoDate(today), isoDate(in30)).then((t) => setUpcoming(t.length)),
+      calendarService.getOverdue().then(setOverdue),
     ]).finally(() => setLoading(false))
   }, [])
 
@@ -72,11 +75,32 @@ export default function HomePage() {
           {t('dashboard.subtitle')}
         </p>
 
-        <div className="mt-6 grid gap-4 sm:grid-cols-3">
+        <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
           <Stat label={t('dashboard.projects')} value={projectCount} accent="bg-indigo-100 text-indigo-700" loading={loading} />
           <Stat label={t('dashboard.unread')} value={unread} accent="bg-blue-100 text-blue-700" loading={loading} />
           <Stat label={t('dashboard.deadlines')} value={upcoming} accent="bg-amber-100 text-amber-700" loading={loading} />
+          <Stat label={t('dashboard.overdue')} value={overdue.length} accent="bg-red-100 text-red-700" loading={loading} />
         </div>
+
+        {/* Overdue tasks */}
+        {overdue.length > 0 && (
+          <div className="mt-6 rounded-xl border border-red-200 bg-red-50 p-5 dark:border-red-900/50 dark:bg-red-950/20">
+            <h2 className="mb-3 font-bold text-red-700 dark:text-red-400">{t('dashboard.overdueTasks')}</h2>
+            <ul className="divide-y divide-red-100 dark:divide-red-900/40">
+              {overdue.map((task) => (
+                <li key={task.id}>
+                  <Link to={`/projects/${task.projectId}`} className="flex items-center gap-3 py-2 text-sm hover:opacity-80">
+                    <span className="font-medium">{task.title}</span>
+                    <span className="text-xs text-slate-500 dark:text-slate-400">{task.projectName}</span>
+                    <span className="ml-auto text-xs font-semibold text-red-600 dark:text-red-400">
+                      {new Date(task.deadline).toLocaleDateString()}
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
 
         <div className="mt-6 grid gap-4 lg:grid-cols-3">
           <div className="rounded-xl border border-slate-200 bg-white p-5 lg:col-span-2 dark:border-slate-700 dark:bg-slate-800">

@@ -43,6 +43,17 @@ public class TasksController : BaseApiController
             : BadRequest(new { error = result.Error });
     }
 
+    /// <summary>Lists the current user's overdue tasks (past deadline, not Done).</summary>
+    [HttpGet("api/tasks/overdue")]
+    public async Task<IActionResult> GetOverdue()
+    {
+        var userId = CurrentUserId();
+        if (userId is null) return Unauthorized();
+
+        var result = await _tasks.GetOverdueTasksAsync(userId.Value);
+        return Ok(result.Value);
+    }
+
     /// <summary>Exports a project's tasks as a CSV file.</summary>
     [HttpGet("api/projects/{projectId:guid}/tasks/export")]
     public async Task<IActionResult> Export(Guid projectId)

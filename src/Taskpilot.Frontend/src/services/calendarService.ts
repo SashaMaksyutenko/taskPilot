@@ -9,4 +9,9 @@ export const calendarService = {
       .get<CalendarTask[]>('/api/calendar/tasks', { params: { from, to } })
       .then((r) => r.data)
   },
+
+  /** The current user's overdue tasks (past deadline, not Done). */
+  getOverdue(): Promise<CalendarTask[]> {
+    return api.get<CalendarTask[]>('/api/tasks/overdue').then((r) => r.data)
+  },
 }

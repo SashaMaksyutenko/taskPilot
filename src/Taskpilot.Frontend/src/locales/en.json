@@ -52,6 +52,8 @@
     "projects": "Projects",
     "unread": "Unread notifications",
     "deadlines": "Deadlines (30 days)",
+    "overdue": "Overdue",
+    "overdueTasks": "Overdue tasks",
     "total": "total",
     "recentActivity": "Recent activity",
     "markAllRead": "Mark all read",

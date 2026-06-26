@@ -30,6 +30,9 @@ public interface ITaskService
     /// </summary>
     Task<Result<List<CalendarTaskDto>>> GetCalendarTasksAsync(Guid userId, DateTime from, DateTime to);
 
+    /// <summary>Returns the caller's overdue tasks (past deadline, not Done).</summary>
+    Task<Result<List<CalendarTaskDto>>> GetOverdueTasksAsync(Guid userId);
+
     /// <summary>
     /// Exports a project's tasks as a CSV document (the caller must own the project).
     /// </summary>

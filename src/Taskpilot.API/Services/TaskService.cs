@@ -187,6 +187,36 @@ public class TaskService : ITaskService
     }
 
     /// <inheritdoc />
+    public async Task<Result<List<CalendarTaskDto>>> GetOverdueTasksAsync(Guid userId)
+    {
+        var now = DateTime.UtcNow;
+
+        var tasks = await _context.ProjectTasks
+            // Overdue = has a past deadline and is not yet Done.
+            .Where(t => t.Project.OwnerId == userId
+                        && t.Deadline != null
+                        && t.Deadline < now
+                        && t.Status != ProjectTaskStatus.Done)
+            .Include(t => t.Project)
+            .OrderBy(t => t.Deadline)
+            .AsNoTracking()
+            .ToListAsync();
+
+        var items = tasks.Select(t => new CalendarTaskDto
+        {
+            Id = t.Id,
+            Title = t.Title,
+            ProjectId = t.ProjectId,
+            ProjectName = t.Project.Name,
+            Status = t.Status.ToString(),
+            Priority = t.Priority.ToString(),
+            Deadline = t.Deadline!.Value,
+        }).ToList();
+
+        return Result<List<CalendarTaskDto>>.Ok(items);
+    }
+
+    /// <inheritdoc />
     public async Task<Result<List<CalendarTaskDto>>> GetCalendarTasksAsync(Guid userId, DateTime from, DateTime to)
     {
         var tasks = await _context.ProjectTasks

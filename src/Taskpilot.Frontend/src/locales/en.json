@@ -32,6 +32,27 @@
     "delete": "Delete",
     "empty": "No notes yet."
   },
+  "landing": {
+    "tagline": "Your co-pilot for team productivity",
+    "subtitle": "Projects, real-time chat, a task marketplace, forum, notes and more — all in one place.",
+    "getStarted": "Get started",
+    "login": "Log in",
+    "featuresTitle": "Everything your team needs",
+    "f": {
+      "projects": "Projects & Kanban",
+      "projectsD": "Organize work on boards and drag tasks across stages.",
+      "chat": "Real-time chat",
+      "chatD": "Message your team instantly, with file attachments.",
+      "market": "Task marketplace",
+      "marketD": "Post public tasks, apply and get rated both ways.",
+      "forum": "Forum",
+      "forumD": "Ask, answer, upvote and mark solutions.",
+      "notes": "Notes",
+      "notesD": "Quick personal notes — colored and pinned.",
+      "calendar": "Calendar & deadlines",
+      "calendarD": "See what's due and what's overdue at a glance."
+    }
+  },
   "auth": {
     "welcomeBack": "Welcome back",
     "createAccount": "Create your account",

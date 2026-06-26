@@ -8,12 +8,12 @@ import BoardPage from './pages/BoardPage'
 import CalendarPage from './pages/CalendarPage'
 import ChatPage from './pages/ChatPage'
 import ForumPage from './pages/ForumPage'
-import HomePage from './pages/HomePage'
 import MarketplacePage from './pages/MarketplacePage'
 import MarketplaceTaskPage from './pages/MarketplaceTaskPage'
 import NotesPage from './pages/NotesPage'
 import SearchPage from './pages/SearchPage'
 import ProjectsPage from './pages/ProjectsPage'
+import RootPage from './pages/RootPage'
 import SettingsPage from './pages/SettingsPage'
 import TopicPage from './pages/TopicPage'
 import UserProfilePage from './pages/UserProfilePage'
@@ -35,9 +35,11 @@ function App() {
           <Route path="/register" element={<RegisterPage />} />
         </Route>
 
+        {/* Site root: landing for guests, dashboard for logged-in users. */}
+        <Route path="/" element={<RootPage />} />
+
         {/* Authenticated-only pages */}
         <Route element={<ProtectedRoute />}>
-          <Route path="/" element={<HomePage />} />
           <Route path="/chat" element={<ChatPage />} />
           <Route path="/projects" element={<ProjectsPage />} />
           <Route path="/projects/:projectId" element={<BoardPage />} />

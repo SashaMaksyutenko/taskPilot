@@ -7,8 +7,19 @@
     "market": "Market",
     "chat": "Chat",
     "notes": "Notes",
+    "search": "Search",
     "admin": "Admin",
     "logout": "Log out"
+  },
+  "search": {
+    "title": "Search",
+    "placeholder": "Search projects, tasks, topics, people…",
+    "projects": "Projects",
+    "tasks": "Tasks",
+    "topics": "Topics",
+    "users": "People",
+    "noResults": "No results.",
+    "hint": "Type at least 2 characters."
   },
   "notes": {
     "title": "Notes",

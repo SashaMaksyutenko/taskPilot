@@ -153,7 +153,12 @@
     "unassigned": "Unassigned",
     "searchAssignee": "Search a person to assign…",
     "save": "Save",
-    "deleteTask": "Delete task"
+    "deleteTask": "Delete task",
+    "comments": "Comments",
+    "noComments": "No comments yet.",
+    "commentPlaceholder": "Write a comment… (Ctrl+Enter to post)",
+    "addComment": "Comment",
+    "deleteComment": "Delete comment"
   },
   "calendar": {
     "title": "Calendar",

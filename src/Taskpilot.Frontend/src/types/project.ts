@@ -32,6 +32,16 @@ export interface Task {
   completedAt: string | null
 }
 
+export interface TaskComment {
+  id: string
+  taskId: string
+  authorId: string
+  authorName: string
+  body: string
+  createdAt: string
+  updatedAt: string | null
+}
+
 /** The four Kanban columns, in order. */
 export type TaskStatus = 'Backlog' | 'InProgress' | 'Review' | 'Done'
 

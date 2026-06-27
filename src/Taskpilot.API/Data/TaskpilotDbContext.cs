@@ -74,6 +74,9 @@ public class TaskpilotDbContext : DbContext
     /// <summary>Personal notes.</summary>
     public DbSet<Note> Notes => Set<Note>();
 
+    /// <summary>Comments on project tasks.</summary>
+    public DbSet<TaskComment> TaskComments => Set<TaskComment>();
+
     /// <summary>
     /// Налаштування моделі (Fluent API): обмеження, індекси, перетворення типів.
     /// Викликається EF Core під час побудови моделі та генерації міграцій.
@@ -512,6 +515,29 @@ public class TaskpilotDbContext : DbContext
                   .WithMany()
                   .HasForeignKey(n => n.OwnerId)
                   .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // TaskComment entity configuration
+        modelBuilder.Entity<TaskComment>(entity =>
+        {
+            entity.HasKey(c => c.Id);
+
+            entity.Property(c => c.Body).IsRequired().HasMaxLength(5000);
+
+            // List a task's comments in order.
+            entity.HasIndex(c => new { c.TaskId, c.CreatedAt });
+
+            // Deleting a task removes its comments.
+            entity.HasOne(c => c.Task)
+                  .WithMany()
+                  .HasForeignKey(c => c.TaskId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            // Author link is restricted to avoid multiple cascade paths.
+            entity.HasOne(c => c.Author)
+                  .WithMany()
+                  .HasForeignKey(c => c.AuthorId)
+                  .OnDelete(DeleteBehavior.Restrict);
         });
     }
 }

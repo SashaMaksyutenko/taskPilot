@@ -153,7 +153,12 @@
     "unassigned": "Не призначено",
     "searchAssignee": "Знайти людину для призначення…",
     "save": "Зберегти",
-    "deleteTask": "Видалити задачу"
+    "deleteTask": "Видалити задачу",
+    "comments": "Коментарі",
+    "noComments": "Коментарів ще немає.",
+    "commentPlaceholder": "Напишіть коментар… (Ctrl+Enter — надіслати)",
+    "addComment": "Коментувати",
+    "deleteComment": "Видалити коментар"
   },
   "calendar": {
     "title": "Календар",

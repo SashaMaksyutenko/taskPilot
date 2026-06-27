@@ -1,5 +1,5 @@
 import api from '../lib/api'
-import type { Task, TaskStatus } from '../types/project'
+import type { Task, TaskComment, TaskStatus } from '../types/project'
 
 /** REST calls for project tasks. */
 export const taskService = {
@@ -35,6 +35,21 @@ export const taskService = {
 
   deleteTask(taskId: string): Promise<void> {
     return api.delete(`/api/tasks/${taskId}`).then(() => undefined)
+  },
+
+  /** Lists a task's comments, oldest first. */
+  getComments(taskId: string): Promise<TaskComment[]> {
+    return api.get<TaskComment[]>(`/api/tasks/${taskId}/comments`).then((r) => r.data)
+  },
+
+  /** Adds a comment to a task. */
+  addComment(taskId: string, body: string): Promise<TaskComment> {
+    return api.post<TaskComment>(`/api/tasks/${taskId}/comments`, { body }).then((r) => r.data)
+  },
+
+  /** Deletes a comment authored by the current user. */
+  deleteComment(commentId: string): Promise<void> {
+    return api.delete(`/api/tasks/comments/${commentId}`).then(() => undefined)
   },
 
   /** Downloads the project's tasks as a CSV blob. */

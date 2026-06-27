@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { taskService } from '../services/taskService'
 import { userService, type UserSearchResult } from '../services/userService'
-import type { Task } from '../types/project'
+import type { Task, TaskComment } from '../types/project'
 
 const PRIORITIES = ['Low', 'Medium', 'High']
 
@@ -39,6 +39,34 @@ export default function TaskDetailModal({
   const [search, setSearch] = useState('')
   const [results, setResults] = useState<UserSearchResult[]>([])
   const [saving, setSaving] = useState(false)
+
+  // Comments thread.
+  const [comments, setComments] = useState<TaskComment[]>([])
+  const [newComment, setNewComment] = useState('')
+  const [posting, setPosting] = useState(false)
+
+  // Load the task's comments when the modal opens.
+  useEffect(() => {
+    taskService.getComments(task.id).then(setComments).catch(() => setComments([]))
+  }, [task.id])
+
+  const addComment = async () => {
+    const body = newComment.trim()
+    if (!body || posting) return
+    setPosting(true)
+    try {
+      const created = await taskService.addComment(task.id, body)
+      setComments((prev) => [...prev, created])
+      setNewComment('')
+    } finally {
+      setPosting(false)
+    }
+  }
+
+  const removeComment = async (id: string) => {
+    await taskService.deleteComment(id).catch(() => {})
+    setComments((prev) => prev.filter((c) => c.id !== id))
+  }
 
   // Debounced user search for picking an assignee.
   useEffect(() => {
@@ -96,7 +124,7 @@ export default function TaskDetailModal({
       onClick={onClose}
     >
       <div
-        className="w-full max-w-lg rounded-xl bg-white p-6 shadow-xl dark:bg-slate-800"
+        className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-xl bg-white p-6 shadow-xl dark:bg-slate-800"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-4 flex items-center justify-between">
@@ -187,6 +215,66 @@ export default function TaskDetailModal({
                 ))}
               </ul>
             )}
+          </div>
+        </div>
+
+        {/* Comments */}
+        <div className="mb-4 border-t border-slate-200 pt-4 dark:border-slate-700">
+          <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">
+            {t('taskModal.comments')} {comments.length > 0 && `(${comments.length})`}
+          </label>
+
+          {comments.length === 0 ? (
+            <p className="mb-3 text-sm text-slate-400">{t('taskModal.noComments')}</p>
+          ) : (
+            <ul className="mb-3 max-h-48 space-y-2 overflow-y-auto pr-1">
+              {comments.map((c) => (
+                <li key={c.id} className="group rounded-lg bg-slate-50 px-3 py-2 text-sm dark:bg-slate-900">
+                  <div className="flex items-center justify-between">
+                    <span className="font-medium">{c.authorName}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-slate-400">
+                        {new Date(c.createdAt).toLocaleString()}
+                      </span>
+                      <button
+                        onClick={() => removeComment(c.id)}
+                        className="text-xs font-semibold text-red-600 opacity-0 transition group-hover:opacity-100 hover:underline"
+                        title={t('taskModal.deleteComment')}
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  </div>
+                  <p className="mt-1 whitespace-pre-wrap break-words text-slate-600 dark:text-slate-300">
+                    {c.body}
+                  </p>
+                </li>
+              ))}
+            </ul>
+          )}
+
+          <div className="flex items-start gap-2">
+            <textarea
+              value={newComment}
+              onChange={(e) => setNewComment(e.target.value)}
+              onKeyDown={(e) => {
+                // Ctrl/Cmd+Enter posts the comment.
+                if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+                  e.preventDefault()
+                  addComment()
+                }
+              }}
+              rows={2}
+              placeholder={t('taskModal.commentPlaceholder')}
+              className="flex-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-[#1E2A44] dark:border-slate-600 dark:bg-slate-900"
+            />
+            <button
+              onClick={addComment}
+              disabled={posting || !newComment.trim()}
+              className="rounded-lg bg-[#1E2A44] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#27345a] disabled:opacity-60"
+            >
+              {t('taskModal.addComment')}
+            </button>
           </div>
         </div>
 

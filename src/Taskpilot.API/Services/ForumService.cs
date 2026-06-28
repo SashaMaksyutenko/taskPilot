@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Taskpilot.API.Common;
 using Taskpilot.API.Data;
+using Taskpilot.API.DTOs.Common;
 using Taskpilot.API.DTOs.Forum;
 using Taskpilot.API.Mappers;
 using Taskpilot.API.Models;
@@ -74,13 +75,23 @@ public class ForumService : IForumService
     }
 
     /// <inheritdoc />
-    public async Task<Result<List<TopicListItemDto>>> GetTopicsAsync(Guid? authorId = null)
+    public async Task<Result<PagedResult<TopicListItemDto>>> GetTopicsAsync(Guid? authorId = null, int page = 1, int pageSize = 20)
     {
-        var rows = await _context.ForumTopics
-            // Optional filter: only topics started by the given author.
-            .Where(t => authorId == null || t.AuthorId == authorId)
+        // Clamp paging to sane bounds.
+        if (page < 1) page = 1;
+        if (pageSize < 1 || pageSize > 100) pageSize = 20;
+
+        // Optional filter: only topics started by the given author.
+        var query = _context.ForumTopics
+            .Where(t => authorId == null || t.AuthorId == authorId);
+
+        var total = await query.CountAsync();
+
+        var rows = await query
             .OrderByDescending(t => t.IsPinned)
             .ThenByDescending(t => t.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
             .Select(t => new
             {
                 t.Id,
@@ -114,7 +125,13 @@ public class ForumService : IForumService
             })
             .ToList();
 
-        return Result<List<TopicListItemDto>>.Ok(topics);
+        return Result<PagedResult<TopicListItemDto>>.Ok(new PagedResult<TopicListItemDto>
+        {
+            Items = topics,
+            Total = total,
+            Page = page,
+            PageSize = pageSize,
+        });
     }
 
     /// <inheritdoc />

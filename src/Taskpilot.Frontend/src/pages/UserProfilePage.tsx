@@ -42,7 +42,7 @@ export default function UserProfilePage() {
       .getPublicProfile(userId)
       .then(setProfile)
       .catch(() => setNotFound(true))
-    forumService.getTopics(userId).then(setTopics).catch(() => {})
+    forumService.getTopics({ authorId: userId }).then((r) => setTopics(r.items)).catch(() => {})
   }, [userId])
 
   return (

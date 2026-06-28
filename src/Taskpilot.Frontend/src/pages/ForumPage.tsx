@@ -15,16 +15,27 @@ export default function ForumPage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const currentUser = useAppSelector((s) => s.auth.user)
+  const PAGE_SIZE = 10
   const [topics, setTopics] = useState<TopicListItem[]>([])
+  const [page, setPage] = useState(1)
+  const [total, setTotal] = useState(0)
   const [title, setTitle] = useState('')
   const [body, setBody] = useState('')
   const [loading, setLoading] = useState(false)
 
-  const load = () => {
-    forumService.getTopics().then(setTopics).catch(() => {})
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
+
+  const load = (p: number) => {
+    forumService
+      .getTopics({ page: p, pageSize: PAGE_SIZE })
+      .then((r) => {
+        setTopics(r.items)
+        setTotal(r.total)
+      })
+      .catch(() => {})
   }
 
-  useEffect(load, [])
+  useEffect(() => load(page), [page])
 
   const create = async () => {
     if (!title.trim() || !body.trim()) return
@@ -33,7 +44,9 @@ export default function ForumPage() {
       await forumService.createTopic({ title: title.trim(), body: body.trim() })
       setTitle('')
       setBody('')
-      load()
+      // Jump to the first page to show the new topic (reload if already there).
+      if (page === 1) load(1)
+      else setPage(1)
     } finally {
       setLoading(false)
     }
@@ -41,7 +54,7 @@ export default function ForumPage() {
 
   const removeTopic = async (id: string) => {
     await forumService.deleteTopic(id).catch(() => {})
-    setTopics((prev) => prev.filter((x) => x.id !== id))
+    load(page)
   }
 
   return (
@@ -127,6 +140,29 @@ export default function ForumPage() {
               </li>
             ))}
           </ul>
+        )}
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="mt-6 flex items-center justify-center gap-4 text-sm">
+            <button
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page <= 1}
+              className="rounded-lg border border-slate-300 px-4 py-1.5 font-semibold transition hover:bg-white disabled:opacity-40 dark:border-slate-600 dark:hover:bg-slate-800"
+            >
+              {t('audit.prev')}
+            </button>
+            <span className="text-slate-500 dark:text-slate-400">
+              {t('audit.pageOf', { page, total: totalPages })}
+            </span>
+            <button
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              disabled={page >= totalPages}
+              className="rounded-lg border border-slate-300 px-4 py-1.5 font-semibold transition hover:bg-white disabled:opacity-40 dark:border-slate-600 dark:hover:bg-slate-800"
+            >
+              {t('audit.next')}
+            </button>
+          </div>
         )}
       </main>
     </div>

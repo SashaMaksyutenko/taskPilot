@@ -1,4 +1,5 @@
 using Taskpilot.API.Common;
+using Taskpilot.API.DTOs.Common;
 using Taskpilot.API.DTOs.Forum;
 
 namespace Taskpilot.API.Services;
@@ -11,8 +12,10 @@ public interface IForumService
     /// <summary>Creates a new topic authored by the given user.</summary>
     Task<Result<TopicDetailDto>> CreateTopicAsync(Guid authorId, CreateTopicDto dto);
 
-    /// <summary>Lists topics (pinned first, then newest), optionally filtered by author.</summary>
-    Task<Result<List<TopicListItemDto>>> GetTopicsAsync(Guid? authorId = null);
+    /// <summary>
+    /// Lists a page of topics (pinned first, then newest), optionally filtered by author.
+    /// </summary>
+    Task<Result<PagedResult<TopicListItemDto>>> GetTopicsAsync(Guid? authorId = null, int page = 1, int pageSize = 20);
 
     /// <summary>
     /// Returns a topic with its replies and increments its view count.

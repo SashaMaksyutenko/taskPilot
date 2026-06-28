@@ -1,12 +1,13 @@
 import api from '../lib/api'
+import type { PagedResult } from '../types/common'
 import type { Reply, TopicDetail, TopicListItem, VoteResult } from '../types/forum'
 
 /** REST calls for the forum. */
 export const forumService = {
-  getTopics(authorId?: string): Promise<TopicListItem[]> {
-    return api
-      .get<TopicListItem[]>('/api/forum/topics', { params: authorId ? { authorId } : {} })
-      .then((r) => r.data)
+  getTopics(
+    params: { authorId?: string; page?: number; pageSize?: number } = {},
+  ): Promise<PagedResult<TopicListItem>> {
+    return api.get<PagedResult<TopicListItem>>('/api/forum/topics', { params }).then((r) => r.data)
   },
 
   getTopic(id: string): Promise<TopicDetail> {

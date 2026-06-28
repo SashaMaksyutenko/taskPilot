@@ -1,8 +1,8 @@
-namespace Taskpilot.API.DTOs.Admin;
+namespace Taskpilot.API.DTOs.Common;
 
 /// <summary>
 /// A single page of results plus the total count, so the client can render
-/// pagination controls (page numbers, "x of y").
+/// pagination controls (page numbers, "x of y"). Shared across features.
 /// </summary>
 /// <typeparam name="T">Type of the items in the page.</typeparam>
 public class PagedResult<T>

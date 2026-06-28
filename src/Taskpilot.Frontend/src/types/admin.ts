@@ -24,10 +24,5 @@ export interface AuditLog {
   createdAt: string
 }
 
-/** A page of results plus total count (mirrors PagedResult<T>). */
-export interface PagedResult<T> {
-  items: T[]
-  total: number
-  page: number
-  pageSize: number
-}
+// Re-exported from the shared module so existing imports keep working.
+export type { PagedResult } from './common'

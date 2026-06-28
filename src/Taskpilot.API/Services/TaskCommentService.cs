@@ -1,8 +1,8 @@
-using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 using Taskpilot.API.Common;
 using Taskpilot.API.Data;
 using Taskpilot.API.DTOs.Projects;
+using Taskpilot.API.Mappers;
 using Taskpilot.API.Models;
 
 namespace Taskpilot.API.Services;
@@ -22,33 +22,38 @@ public class TaskCommentService : ITaskCommentService
         _logger = logger;
     }
 
-    // Reusable projection TaskComment -> TaskCommentDto (runs in SQL).
-    private static readonly Expression<Func<TaskComment, TaskCommentDto>> ToDto = c => new TaskCommentDto
-    {
-        Id = c.Id,
-        TaskId = c.TaskId,
-        AuthorId = c.AuthorId,
-        AuthorName = c.Author.Name,
-        Body = c.Body,
-        CreatedAt = c.CreatedAt,
-        UpdatedAt = c.UpdatedAt,
-    };
-
     /// <inheritdoc />
     public async Task<Result<List<TaskCommentDto>>> GetForTaskAsync(Guid userId, Guid taskId)
     {
         if (!await OwnsTaskAsync(taskId, userId))
             return Result<List<TaskCommentDto>>.Fail("Task not found.");
 
-        var comments = await _context.TaskComments
+        var rows = await _context.TaskComments
             .Where(c => c.TaskId == taskId)
             .OrderBy(c => c.CreatedAt)
-            .Select(ToDto)
+            .Select(c => new CommentRow(c.Id, c.TaskId, c.AuthorId, c.Author.Name, c.Author.AvatarFileId, c.Body, c.CreatedAt, c.UpdatedAt))
             .AsNoTracking()
             .ToListAsync();
 
-        return Result<List<TaskCommentDto>>.Ok(comments);
+        return Result<List<TaskCommentDto>>.Ok(rows.Select(MapDto).ToList());
     }
+
+    // Intermediate row materialized from SQL; the avatar URL is composed in memory.
+    private record CommentRow(
+        Guid Id, Guid TaskId, Guid AuthorId, string AuthorName, Guid? AuthorAvatarFileId,
+        string Body, DateTime CreatedAt, DateTime? UpdatedAt);
+
+    private static TaskCommentDto MapDto(CommentRow c) => new()
+    {
+        Id = c.Id,
+        TaskId = c.TaskId,
+        AuthorId = c.AuthorId,
+        AuthorName = c.AuthorName,
+        AuthorAvatarUrl = UserMapper.AvatarUrl(c.AuthorId, c.AuthorAvatarFileId),
+        Body = c.Body,
+        CreatedAt = c.CreatedAt,
+        UpdatedAt = c.UpdatedAt,
+    };
 
     /// <inheritdoc />
     public async Task<Result<TaskCommentDto>> AddAsync(Guid userId, Guid taskId, CreateCommentDto dto)
@@ -69,14 +74,14 @@ public class TaskCommentService : ITaskCommentService
 
         _logger.LogInformation("Comment added. TaskId: {TaskId}, CommentId: {CommentId}", taskId, comment.Id);
 
-        // Reload through the projection so AuthorName is populated.
+        // Reload through the projection so AuthorName/avatar are populated.
         var added = await _context.TaskComments
             .Where(c => c.Id == comment.Id)
-            .Select(ToDto)
+            .Select(c => new CommentRow(c.Id, c.TaskId, c.AuthorId, c.Author.Name, c.Author.AvatarFileId, c.Body, c.CreatedAt, c.UpdatedAt))
             .AsNoTracking()
             .FirstAsync();
 
-        return Result<TaskCommentDto>.Ok(added);
+        return Result<TaskCommentDto>.Ok(MapDto(added));
     }
 
     /// <inheritdoc />

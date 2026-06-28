@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import Avatar from './Avatar'
 import { taskService } from '../services/taskService'
 import { userService, type UserSearchResult } from '../services/userService'
 import type { Task, TaskComment } from '../types/project'
@@ -231,7 +232,10 @@ export default function TaskDetailModal({
               {comments.map((c) => (
                 <li key={c.id} className="group rounded-lg bg-slate-50 px-3 py-2 text-sm dark:bg-slate-900">
                   <div className="flex items-center justify-between">
-                    <span className="font-medium">{c.authorName}</span>
+                    <span className="flex items-center gap-2 font-medium">
+                      <Avatar name={c.authorName} src={c.authorAvatarUrl} size={22} />
+                      {c.authorName}
+                    </span>
                     <div className="flex items-center gap-2">
                       <span className="text-xs text-slate-400">
                         {new Date(c.createdAt).toLocaleString()}

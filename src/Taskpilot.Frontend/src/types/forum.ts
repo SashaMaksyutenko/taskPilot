@@ -5,6 +5,7 @@ export interface TopicListItem {
   title: string
   authorId: string
   authorName: string
+  authorAvatarUrl: string | null
   viewCount: number
   replyCount: number
   isPinned: boolean
@@ -17,6 +18,7 @@ export interface Reply {
   topicId: string
   authorId: string
   authorName: string
+  authorAvatarUrl: string | null
   body: string
   parentReplyId: string | null
   isSolution: boolean
@@ -32,6 +34,7 @@ export interface TopicDetail {
   body: string
   authorId: string
   authorName: string
+  authorAvatarUrl: string | null
   viewCount: number
   isPinned: boolean
   isLocked: boolean

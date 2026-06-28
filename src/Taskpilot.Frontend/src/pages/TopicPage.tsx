@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, useParams } from 'react-router-dom'
+import Avatar from '../components/Avatar'
 import Navbar from '../components/Navbar'
 import { forumService } from '../services/forumService'
 import { useAppSelector } from '../store/hooks'
@@ -68,12 +69,15 @@ export default function TopicPage() {
         {/* Original post */}
         <div className="mt-3 rounded-xl border border-slate-200 bg-white p-6 dark:border-slate-700 dark:bg-slate-800">
           <h1 className="text-xl font-bold">{topic.title}</h1>
-          <div className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-            {t('forum.by')}{' '}
-            <Link to={`/users/${topic.authorId}`} className="font-medium hover:underline">
-              {topic.authorName}
-            </Link>{' '}
-            · {new Date(topic.createdAt).toLocaleString()} · {topic.viewCount} {t('forum.views')}
+          <div className="mt-1 flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+            <Avatar name={topic.authorName} src={topic.authorAvatarUrl} size={24} />
+            <span>
+              {t('forum.by')}{' '}
+              <Link to={`/users/${topic.authorId}`} className="font-medium hover:underline">
+                {topic.authorName}
+              </Link>{' '}
+              · {new Date(topic.createdAt).toLocaleString()} · {topic.viewCount} {t('forum.views')}
+            </span>
           </div>
           <p className="mt-4 whitespace-pre-wrap">{topic.body}</p>
         </div>
@@ -114,7 +118,8 @@ export default function TopicPage() {
                   </span>
                 )}
                 <p className="whitespace-pre-wrap">{r.body}</p>
-                <div className="mt-2 flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400">
+                <div className="mt-2 flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+                  <Avatar name={r.authorName} src={r.authorAvatarUrl} size={22} />
                   <Link to={`/users/${r.authorId}`} className="font-medium hover:underline">
                     {r.authorName}
                   </Link>

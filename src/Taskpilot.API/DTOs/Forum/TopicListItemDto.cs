@@ -7,6 +7,7 @@ public class TopicListItemDto
     public string Title { get; set; } = string.Empty;
     public Guid AuthorId { get; set; }
     public string AuthorName { get; set; } = string.Empty;
+    public string? AuthorAvatarUrl { get; set; }
     public int ViewCount { get; set; }
     public int ReplyCount { get; set; }
     public bool IsPinned { get; set; }

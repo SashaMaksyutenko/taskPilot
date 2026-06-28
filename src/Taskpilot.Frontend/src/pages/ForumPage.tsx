@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, useNavigate } from 'react-router-dom'
+import Avatar from '../components/Avatar'
 import Navbar from '../components/Navbar'
 import TopicContextMenu from '../components/TopicContextMenu'
 import { forumService } from '../services/forumService'
@@ -90,6 +91,7 @@ export default function ForumPage() {
                   to={`/forum/${topic.id}`}
                   className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-4 transition hover:shadow-sm dark:border-slate-700 dark:bg-slate-800"
                 >
+                  <Avatar name={topic.authorName} src={topic.authorAvatarUrl} size={38} />
                   <div className="min-w-0 flex-1">
                     <div className="truncate font-semibold">
                       {topic.isPinned && <span className="mr-1">📌</span>}

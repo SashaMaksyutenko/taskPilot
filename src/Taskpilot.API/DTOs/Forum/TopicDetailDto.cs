@@ -8,6 +8,7 @@ public class TopicDetailDto
     public string Body { get; set; } = string.Empty;
     public Guid AuthorId { get; set; }
     public string AuthorName { get; set; } = string.Empty;
+    public string? AuthorAvatarUrl { get; set; }
     public int ViewCount { get; set; }
     public bool IsPinned { get; set; }
     public bool IsLocked { get; set; }

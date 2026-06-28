@@ -37,6 +37,7 @@ export interface TaskComment {
   taskId: string
   authorId: string
   authorName: string
+  authorAvatarUrl: string | null
   body: string
   createdAt: string
   updatedAt: string | null

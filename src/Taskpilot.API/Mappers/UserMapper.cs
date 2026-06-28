@@ -12,11 +12,14 @@ namespace Taskpilot.API.Mappers;
 public static class UserMapper
 {
     /// <summary>
-    /// Public URL for the user's avatar image, or null when none is set. The
+    /// Public URL for a user's avatar image, or null when none is set. The
     /// <c>v</c> query string busts the browser cache when the avatar changes.
     /// </summary>
-    public static string? AvatarUrl(User u) =>
-        u.AvatarFileId is { } fileId ? $"/api/users/{u.Id}/avatar?v={fileId:N}" : null;
+    public static string? AvatarUrl(Guid userId, Guid? avatarFileId) =>
+        avatarFileId is { } fileId ? $"/api/users/{userId}/avatar?v={fileId:N}" : null;
+
+    /// <summary>Convenience overload for a loaded <see cref="User"/> entity.</summary>
+    public static string? AvatarUrl(User u) => AvatarUrl(u.Id, u.AvatarFileId);
 
     /// <summary>Full self-view (used by /me and profile update). Includes email.</summary>
     public static UserDto ToDto(User u) => new()

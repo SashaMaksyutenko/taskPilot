@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Taskpilot.API.Common;
 using Taskpilot.API.Data;
 using Taskpilot.API.DTOs.Forum;
+using Taskpilot.API.Mappers;
 using Taskpilot.API.Models;
 
 namespace Taskpilot.API.Services;
@@ -44,10 +45,10 @@ public class ForumService : IForumService
             _context.ForumTopics.Add(topic);
             await _context.SaveChangesAsync();
 
-            // Author name for the response (a brand-new topic has no replies/views yet).
-            var authorName = await _context.Users
+            // Author info for the response (a brand-new topic has no replies/views yet).
+            var author = await _context.Users
                 .Where(u => u.Id == authorId)
-                .Select(u => u.Name)
+                .Select(u => new { u.Name, u.AvatarFileId })
                 .FirstAsync();
 
             _logger.LogInformation("Topic created. TopicId: {TopicId}", topic.Id);
@@ -57,7 +58,8 @@ public class ForumService : IForumService
                 Title = topic.Title,
                 Body = topic.Body,
                 AuthorId = authorId,
-                AuthorName = authorName,
+                AuthorName = author.Name,
+                AuthorAvatarUrl = UserMapper.AvatarUrl(authorId, author.AvatarFileId),
                 ViewCount = 0,
                 IsPinned = false,
                 IsLocked = false,
@@ -74,25 +76,43 @@ public class ForumService : IForumService
     /// <inheritdoc />
     public async Task<Result<List<TopicListItemDto>>> GetTopicsAsync(Guid? authorId = null)
     {
-        var topics = await _context.ForumTopics
+        var rows = await _context.ForumTopics
             // Optional filter: only topics started by the given author.
             .Where(t => authorId == null || t.AuthorId == authorId)
             .OrderByDescending(t => t.IsPinned)
             .ThenByDescending(t => t.CreatedAt)
+            .Select(t => new
+            {
+                t.Id,
+                t.Title,
+                t.AuthorId,
+                AuthorName = t.Author.Name,
+                AuthorAvatarFileId = t.Author.AvatarFileId,
+                t.ViewCount,
+                ReplyCount = t.Replies.Count,
+                t.IsPinned,
+                t.IsLocked,
+                t.CreatedAt,
+            })
+            .AsNoTracking()
+            .ToListAsync();
+
+        // Compose the avatar URL in memory (EF can't translate the interpolation).
+        var topics = rows
             .Select(t => new TopicListItemDto
             {
                 Id = t.Id,
                 Title = t.Title,
                 AuthorId = t.AuthorId,
-                AuthorName = t.Author.Name,
+                AuthorName = t.AuthorName,
+                AuthorAvatarUrl = UserMapper.AvatarUrl(t.AuthorId, t.AuthorAvatarFileId),
                 ViewCount = t.ViewCount,
-                ReplyCount = t.Replies.Count,
+                ReplyCount = t.ReplyCount,
                 IsPinned = t.IsPinned,
                 IsLocked = t.IsLocked,
                 CreatedAt = t.CreatedAt,
             })
-            .AsNoTracking()
-            .ToListAsync();
+            .ToList();
 
         return Result<List<TopicListItemDto>>.Ok(topics);
     }
@@ -248,10 +268,11 @@ public class ForumService : IForumService
             _context.ForumReplies.Add(reply);
             await _context.SaveChangesAsync();
 
-            var authorName = await _context.Users
+            var author = await _context.Users
                 .Where(u => u.Id == authorId)
-                .Select(u => u.Name)
+                .Select(u => new { u.Name, u.AvatarFileId })
                 .FirstAsync();
+            var authorName = author.Name;
 
             // Notify the topic author (unless they replied to their own topic).
             if (topic.AuthorId != authorId)
@@ -288,6 +309,7 @@ public class ForumService : IForumService
                 TopicId = reply.TopicId,
                 AuthorId = authorId,
                 AuthorName = authorName,
+                AuthorAvatarUrl = UserMapper.AvatarUrl(authorId, author.AvatarFileId),
                 Body = reply.Body,
                 ParentReplyId = reply.ParentReplyId,
                 IsSolution = false,
@@ -312,6 +334,7 @@ public class ForumService : IForumService
         Body = t.Body,
         AuthorId = t.AuthorId,
         AuthorName = t.Author?.Name ?? string.Empty,
+        AuthorAvatarUrl = t.Author is null ? null : UserMapper.AvatarUrl(t.Author),
         ViewCount = t.ViewCount,
         IsPinned = t.IsPinned,
         IsLocked = t.IsLocked,
@@ -329,6 +352,7 @@ public class ForumService : IForumService
         TopicId = r.TopicId,
         AuthorId = r.AuthorId,
         AuthorName = r.Author?.Name ?? string.Empty,
+        AuthorAvatarUrl = r.Author is null ? null : UserMapper.AvatarUrl(r.Author),
         Body = r.Body,
         ParentReplyId = r.ParentReplyId,
         IsSolution = r.IsSolution,

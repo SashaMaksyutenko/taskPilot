@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, useNavigate } from 'react-router-dom'
+import Avatar from '../components/Avatar'
 import Navbar from '../components/Navbar'
 import { marketplaceService } from '../services/marketplaceService'
 import { useAppSelector } from '../store/hooks'
@@ -110,6 +111,7 @@ export default function MarketplacePage() {
                   to={`/marketplace/${task.id}`}
                   className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-4 transition hover:shadow-sm dark:border-slate-700 dark:bg-slate-800"
                 >
+                  <Avatar name={task.posterName} src={task.posterAvatarUrl} size={38} />
                   <div className="min-w-0 flex-1">
                     <div className="truncate font-semibold">{task.title}</div>
                     <div className="text-xs text-slate-500 dark:text-slate-400">

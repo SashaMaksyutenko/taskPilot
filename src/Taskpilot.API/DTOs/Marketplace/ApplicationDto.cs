@@ -7,6 +7,7 @@ public class ApplicationDto
     public Guid TaskId { get; set; }
     public Guid ApplicantId { get; set; }
     public string ApplicantName { get; set; } = string.Empty;
+    public string? ApplicantAvatarUrl { get; set; }
     public string CoverLetter { get; set; } = string.Empty;
     public decimal ProposedRate { get; set; }
     public string Status { get; set; } = string.Empty;

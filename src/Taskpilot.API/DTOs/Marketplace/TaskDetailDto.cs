@@ -12,8 +12,10 @@ public class TaskDetailDto
     public string Status { get; set; } = string.Empty;
     public Guid PosterId { get; set; }
     public string PosterName { get; set; } = string.Empty;
+    public string? PosterAvatarUrl { get; set; }
     public Guid? AssigneeId { get; set; }
     public string? AssigneeName { get; set; }
+    public string? AssigneeAvatarUrl { get; set; }
     public DateTime CreatedAt { get; set; }
     public List<ApplicationDto> Applications { get; set; } = new();
 }

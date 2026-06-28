@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Taskpilot.API.Common;
 using Taskpilot.API.Data;
 using Taskpilot.API.DTOs.Marketplace;
+using Taskpilot.API.Mappers;
 using Taskpilot.API.Models;
 
 namespace Taskpilot.API.Services;
@@ -64,9 +65,28 @@ public class MarketplaceService : IMarketplaceService
     /// <inheritdoc />
     public async Task<Result<List<TaskListItemDto>>> GetTasksAsync()
     {
-        var tasks = await _context.MarketplaceTasks
+        var rows = await _context.MarketplaceTasks
             .OrderBy(t => t.Status)          // Open (0) first
             .ThenByDescending(t => t.CreatedAt)
+            .Select(t => new
+            {
+                t.Id,
+                t.Title,
+                t.Budget,
+                t.RequiredSkills,
+                t.Deadline,
+                t.Status,
+                t.PosterId,
+                PosterName = t.Poster.Name,
+                PosterAvatarFileId = t.Poster.AvatarFileId,
+                ApplicationCount = t.Applications.Count,
+                t.CreatedAt,
+            })
+            .AsNoTracking()
+            .ToListAsync();
+
+        // Compose the avatar URL in memory (EF can't translate the interpolation).
+        var tasks = rows
             .Select(t => new TaskListItemDto
             {
                 Id = t.Id,
@@ -76,12 +96,12 @@ public class MarketplaceService : IMarketplaceService
                 Deadline = t.Deadline,
                 Status = t.Status.ToString(),
                 PosterId = t.PosterId,
-                PosterName = t.Poster.Name,
-                ApplicationCount = t.Applications.Count,
+                PosterName = t.PosterName,
+                PosterAvatarUrl = UserMapper.AvatarUrl(t.PosterId, t.PosterAvatarFileId),
+                ApplicationCount = t.ApplicationCount,
                 CreatedAt = t.CreatedAt,
             })
-            .AsNoTracking()
-            .ToListAsync();
+            .ToList();
 
         return Result<List<TaskListItemDto>>.Ok(tasks);
     }
@@ -137,10 +157,11 @@ public class MarketplaceService : IMarketplaceService
             _context.TaskApplications.Add(application);
             await _context.SaveChangesAsync();
 
-            var applicantName = await _context.Users
+            var applicant = await _context.Users
                 .Where(u => u.Id == applicantId)
-                .Select(u => u.Name)
+                .Select(u => new { u.Name, u.AvatarFileId })
                 .FirstAsync();
+            var applicantName = applicant.Name;
 
             // Notify the task poster about the new application.
             await _notifications.CreateAsync(
@@ -150,7 +171,8 @@ public class MarketplaceService : IMarketplaceService
                 $"/marketplace/tasks/{task.Id}");
 
             _logger.LogInformation("Application submitted. ApplicationId: {ApplicationId}", application.Id);
-            return Result<ApplicationDto>.Ok(MapApplication(application, applicantName));
+            return Result<ApplicationDto>.Ok(MapApplication(application, applicantName,
+                UserMapper.AvatarUrl(applicantId, applicant.AvatarFileId)));
         }
         catch (Exception ex)
         {
@@ -327,22 +349,36 @@ public class MarketplaceService : IMarketplaceService
     /// <inheritdoc />
     public async Task<Result<List<ReviewDto>>> GetReviewsAsync(Guid taskId)
     {
-        // Join to Users for the rater's name (rater/ratee are plain ids on Review).
-        var reviews = await _context.Reviews
+        // Join to Users for the rater's name + avatar (rater/ratee are plain ids on Review).
+        var rows = await _context.Reviews
             .Where(r => r.MarketplaceTaskId == taskId)
             .OrderByDescending(r => r.CreatedAt)
+            .Select(r => new
+            {
+                r.Id,
+                r.RaterId,
+                Rater = _context.Users.Where(u => u.Id == r.RaterId).Select(u => new { u.Name, u.AvatarFileId }).FirstOrDefault(),
+                r.RateeId,
+                r.Stars,
+                r.Comment,
+                r.CreatedAt,
+            })
+            .AsNoTracking()
+            .ToListAsync();
+
+        var reviews = rows
             .Select(r => new ReviewDto
             {
                 Id = r.Id,
                 RaterId = r.RaterId,
-                RaterName = _context.Users.Where(u => u.Id == r.RaterId).Select(u => u.Name).FirstOrDefault() ?? string.Empty,
+                RaterName = r.Rater?.Name ?? string.Empty,
+                RaterAvatarUrl = UserMapper.AvatarUrl(r.RaterId, r.Rater?.AvatarFileId),
                 RateeId = r.RateeId,
                 Stars = r.Stars,
                 Comment = r.Comment,
                 CreatedAt = r.CreatedAt,
             })
-            .AsNoTracking()
-            .ToListAsync();
+            .ToList();
 
         return Result<List<ReviewDto>>.Ok(reviews);
     }
@@ -360,21 +396,25 @@ public class MarketplaceService : IMarketplaceService
         Status = t.Status.ToString(),
         PosterId = t.PosterId,
         PosterName = t.Poster?.Name ?? string.Empty,
+        PosterAvatarUrl = t.Poster is null ? null : UserMapper.AvatarUrl(t.Poster),
         AssigneeId = t.AssigneeId,
         AssigneeName = t.Assignee?.Name,
+        AssigneeAvatarUrl = t.Assignee is null ? null : UserMapper.AvatarUrl(t.Assignee),
         CreatedAt = t.CreatedAt,
         Applications = t.Applications
             .OrderByDescending(a => a.CreatedAt)
-            .Select(a => MapApplication(a, a.Applicant?.Name ?? string.Empty))
+            .Select(a => MapApplication(a, a.Applicant?.Name ?? string.Empty,
+                a.Applicant is null ? null : UserMapper.AvatarUrl(a.Applicant)))
             .ToList(),
     };
 
-    private static ApplicationDto MapApplication(TaskApplication a, string applicantName) => new()
+    private static ApplicationDto MapApplication(TaskApplication a, string applicantName, string? applicantAvatarUrl = null) => new()
     {
         Id = a.Id,
         TaskId = a.TaskId,
         ApplicantId = a.ApplicantId,
         ApplicantName = applicantName,
+        ApplicantAvatarUrl = applicantAvatarUrl,
         CoverLetter = a.CoverLetter,
         ProposedRate = a.ProposedRate,
         Status = a.Status.ToString(),

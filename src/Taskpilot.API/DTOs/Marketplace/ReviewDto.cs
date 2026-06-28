@@ -6,6 +6,7 @@ public class ReviewDto
     public Guid Id { get; set; }
     public Guid RaterId { get; set; }
     public string RaterName { get; set; } = string.Empty;
+    public string? RaterAvatarUrl { get; set; }
     public Guid RateeId { get; set; }
     public int Stars { get; set; }
     public string? Comment { get; set; }

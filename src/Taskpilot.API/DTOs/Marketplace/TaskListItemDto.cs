@@ -11,6 +11,7 @@ public class TaskListItemDto
     public string Status { get; set; } = string.Empty;
     public Guid PosterId { get; set; }
     public string PosterName { get; set; } = string.Empty;
+    public string? PosterAvatarUrl { get; set; }
     public int ApplicationCount { get; set; }
     public DateTime CreatedAt { get; set; }
 }

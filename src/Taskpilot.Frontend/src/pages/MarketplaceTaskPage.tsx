@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, useParams } from 'react-router-dom'
+import Avatar from '../components/Avatar'
 import Navbar from '../components/Navbar'
 import StarRating from '../components/StarRating'
 import { marketplaceService } from '../services/marketplaceService'
@@ -99,11 +100,14 @@ export default function MarketplaceTaskPage() {
             <h1 className="flex-1 text-xl font-bold">{task.title}</h1>
             <span className="text-lg font-bold">${task.budget}</span>
           </div>
-          <div className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-            {t('forum.by')}{' '}
-            <Link to={`/users/${task.posterId}`} className="font-medium hover:underline">{task.posterName}</Link>
-            {' · '}{t(`market.status.${task.status}`, task.status)}
-            {task.assigneeName ? ` · ${t('marketTask.assignedTo', { name: task.assigneeName })}` : ''}
+          <div className="mt-1 flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+            <Avatar name={task.posterName} src={task.posterAvatarUrl} size={24} />
+            <span>
+              {t('forum.by')}{' '}
+              <Link to={`/users/${task.posterId}`} className="font-medium hover:underline">{task.posterName}</Link>
+              {' · '}{t(`market.status.${task.status}`, task.status)}
+              {task.assigneeName ? ` · ${t('marketTask.assignedTo', { name: task.assigneeName })}` : ''}
+            </span>
           </div>
           {task.requiredSkills && (
             <div className="mt-2 text-sm text-slate-600 dark:text-slate-300">{t('marketTask.skills')}: {task.requiredSkills}</div>
@@ -130,6 +134,7 @@ export default function MarketplaceTaskPage() {
               {task.applications.map((a) => (
                 <div key={a.id} className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-800">
                   <div className="flex items-center gap-2">
+                    <Avatar name={a.applicantName} src={a.applicantAvatarUrl} size={28} />
                     <Link to={`/users/${a.applicantId}`} className="font-semibold hover:underline">{a.applicantName}</Link>
                     <span className="text-sm text-slate-500 dark:text-slate-400">· ${a.proposedRate}</span>
                     <span className={`ml-auto rounded-full px-2 py-0.5 text-[11px] font-semibold ${appStatusColor[a.status]}`}>
@@ -232,6 +237,7 @@ export default function MarketplaceTaskPage() {
                 {reviews.map((r) => (
                   <li key={r.id} className="text-sm">
                     <div className="flex items-center gap-2">
+                      <Avatar name={r.raterName} src={r.raterAvatarUrl} size={24} />
                       <Link to={`/users/${r.raterId}`} className="font-semibold hover:underline">{r.raterName}</Link>
                       <StarRating value={r.stars} />
                     </div>

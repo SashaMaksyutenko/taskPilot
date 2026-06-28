@@ -27,11 +27,11 @@ public class AdminController : BaseApiController
         _overdue = overdue;
     }
 
-    /// <summary>Lists all users.</summary>
+    /// <summary>Lists a page of users.</summary>
     [HttpGet("users")]
-    public async Task<IActionResult> GetUsers()
+    public async Task<IActionResult> GetUsers([FromQuery] int page = 1, [FromQuery] int pageSize = 20)
     {
-        var result = await _adminService.GetAllUsersAsync();
+        var result = await _adminService.GetAllUsersAsync(page, pageSize);
         return Ok(result.Value);
     }
 

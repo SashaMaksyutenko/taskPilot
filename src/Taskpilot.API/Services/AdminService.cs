@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Taskpilot.API.Common;
 using Taskpilot.API.Data;
 using Taskpilot.API.DTOs.Admin;
+using Taskpilot.API.DTOs.Common;
 using Taskpilot.API.Mappers;
 using Taskpilot.API.Models;
 
@@ -24,14 +25,28 @@ public class AdminService : IAdminService
     }
 
     /// <inheritdoc />
-    public async Task<Result<List<AdminUserDto>>> GetAllUsersAsync()
+    public async Task<Result<PagedResult<AdminUserDto>>> GetAllUsersAsync(int page = 1, int pageSize = 20)
     {
+        // Clamp paging to sane bounds.
+        if (page < 1) page = 1;
+        if (pageSize < 1 || pageSize > 100) pageSize = 20;
+
+        var total = await _context.Users.CountAsync();
+
         var users = await _context.Users
             .OrderByDescending(u => u.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
             .AsNoTracking()
             .ToListAsync();
 
-        return Result<List<AdminUserDto>>.Ok(users.Select(UserMapper.ToAdminDto).ToList());
+        return Result<PagedResult<AdminUserDto>>.Ok(new PagedResult<AdminUserDto>
+        {
+            Items = users.Select(UserMapper.ToAdminDto).ToList(),
+            Total = total,
+            Page = page,
+            PageSize = pageSize,
+        });
     }
 
     /// <inheritdoc />

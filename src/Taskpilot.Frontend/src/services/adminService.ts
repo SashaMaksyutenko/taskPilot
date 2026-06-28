@@ -3,8 +3,10 @@ import type { AdminUser, AuditLog, PagedResult } from '../types/admin'
 
 /** Admin-only REST calls for user management. */
 export const adminService = {
-  getUsers(): Promise<AdminUser[]> {
-    return api.get<AdminUser[]>('/api/admin/users').then((r) => r.data)
+  getUsers(page = 1, pageSize = 20): Promise<PagedResult<AdminUser>> {
+    return api
+      .get<PagedResult<AdminUser>>('/api/admin/users', { params: { page, pageSize } })
+      .then((r) => r.data)
   },
 
   getAudit(page: number, pageSize: number, action?: string): Promise<PagedResult<AuditLog>> {

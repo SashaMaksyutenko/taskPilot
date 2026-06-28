@@ -1,5 +1,6 @@
 using Taskpilot.API.Common;
 using Taskpilot.API.DTOs.Admin;
+using Taskpilot.API.DTOs.Common;
 
 namespace Taskpilot.API.Services;
 
@@ -8,8 +9,8 @@ namespace Taskpilot.API.Services;
 /// </summary>
 public interface IAdminService
 {
-    /// <summary>Lists all users (newest first).</summary>
-    Task<Result<List<AdminUserDto>>> GetAllUsersAsync();
+    /// <summary>Lists a page of users (newest first).</summary>
+    Task<Result<PagedResult<AdminUserDto>>> GetAllUsersAsync(int page = 1, int pageSize = 20);
 
     /// <summary>Changes a user's role.</summary>
     Task<Result> ChangeRoleAsync(Guid targetUserId, string role);

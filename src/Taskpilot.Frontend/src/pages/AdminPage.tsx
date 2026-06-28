@@ -20,14 +20,25 @@ export default function AdminPage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const currentUserId = useAppSelector((s) => s.auth.user?.id)
+  const PAGE_SIZE = 20
   const [users, setUsers] = useState<AdminUser[]>([])
+  const [page, setPage] = useState(1)
+  const [total, setTotal] = useState(0)
   const [stats, setStats] = useState<AdminStats | null>(null)
 
-  const load = () => {
-    adminService.getUsers().then(setUsers).catch(() => {})
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
+
+  const load = (p: number) => {
+    adminService
+      .getUsers(p, PAGE_SIZE)
+      .then((r) => {
+        setUsers(r.items)
+        setTotal(r.total)
+      })
+      .catch(() => {})
   }
 
-  useEffect(load, [])
+  useEffect(() => load(page), [page])
 
   useEffect(() => {
     statsService.getAdmin().then(setStats).catch(() => {})
@@ -35,13 +46,13 @@ export default function AdminPage() {
 
   const changeRole = async (id: string, role: string) => {
     await adminService.changeRole(id, role).catch(() => {})
-    load()
+    load(page)
   }
 
   const toggleBan = async (u: AdminUser) => {
     if (u.isActive) await adminService.ban(u.id).catch(() => {})
     else await adminService.unban(u.id).catch(() => {})
-    load()
+    load(page)
   }
 
   return (
@@ -49,7 +60,7 @@ export default function AdminPage() {
       <Navbar />
       <main className="mx-auto max-w-5xl px-6 py-8">
         <div className="mb-6 flex items-center gap-3">
-          <h1 className="text-2xl font-bold">{t('admin.usersTitle', { count: users.length })}</h1>
+          <h1 className="text-2xl font-bold">{t('admin.usersTitle', { count: total })}</h1>
           <Link
             to="/admin/audit"
             className="ml-auto rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-semibold hover:bg-white dark:border-slate-600 dark:hover:bg-slate-800"
@@ -134,6 +145,29 @@ export default function AdminPage() {
             </tbody>
           </table>
         </div>
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="mt-6 flex items-center justify-center gap-4 text-sm">
+            <button
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page <= 1}
+              className="rounded-lg border border-slate-300 px-4 py-1.5 font-semibold transition hover:bg-white disabled:opacity-40 dark:border-slate-600 dark:hover:bg-slate-800"
+            >
+              {t('audit.prev')}
+            </button>
+            <span className="text-slate-500 dark:text-slate-400">
+              {t('audit.pageOf', { page, total: totalPages })}
+            </span>
+            <button
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              disabled={page >= totalPages}
+              className="rounded-lg border border-slate-300 px-4 py-1.5 font-semibold transition hover:bg-white disabled:opacity-40 dark:border-slate-600 dark:hover:bg-slate-800"
+            >
+              {t('audit.next')}
+            </button>
+          </div>
+        )}
       </main>
     </div>
   )

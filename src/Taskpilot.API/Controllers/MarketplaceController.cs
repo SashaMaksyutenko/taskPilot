@@ -28,11 +28,11 @@ public class MarketplaceController : BaseApiController
         _applyValidator = applyValidator;
     }
 
-    /// <summary>Lists marketplace tasks (open first, then newest).</summary>
+    /// <summary>Lists a page of marketplace tasks (open first, then newest).</summary>
     [HttpGet("tasks")]
-    public async Task<IActionResult> GetTasks()
+    public async Task<IActionResult> GetTasks([FromQuery] int page = 1, [FromQuery] int pageSize = 20)
     {
-        var result = await _marketplace.GetTasksAsync();
+        var result = await _marketplace.GetTasksAsync(page, pageSize);
         return Ok(result.Value);
     }
 

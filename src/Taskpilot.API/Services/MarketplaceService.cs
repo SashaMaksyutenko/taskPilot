@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Taskpilot.API.Common;
 using Taskpilot.API.Data;
+using Taskpilot.API.DTOs.Common;
 using Taskpilot.API.DTOs.Marketplace;
 using Taskpilot.API.Mappers;
 using Taskpilot.API.Models;
@@ -63,11 +64,19 @@ public class MarketplaceService : IMarketplaceService
     }
 
     /// <inheritdoc />
-    public async Task<Result<List<TaskListItemDto>>> GetTasksAsync()
+    public async Task<Result<PagedResult<TaskListItemDto>>> GetTasksAsync(int page = 1, int pageSize = 20)
     {
+        // Clamp paging to sane bounds.
+        if (page < 1) page = 1;
+        if (pageSize < 1 || pageSize > 100) pageSize = 20;
+
+        var total = await _context.MarketplaceTasks.CountAsync();
+
         var rows = await _context.MarketplaceTasks
             .OrderBy(t => t.Status)          // Open (0) first
             .ThenByDescending(t => t.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
             .Select(t => new
             {
                 t.Id,
@@ -103,7 +112,13 @@ public class MarketplaceService : IMarketplaceService
             })
             .ToList();
 
-        return Result<List<TaskListItemDto>>.Ok(tasks);
+        return Result<PagedResult<TaskListItemDto>>.Ok(new PagedResult<TaskListItemDto>
+        {
+            Items = tasks,
+            Total = total,
+            Page = page,
+            PageSize = pageSize,
+        });
     }
 
     /// <inheritdoc />

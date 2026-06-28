@@ -24,17 +24,28 @@ export default function MarketplacePage() {
   const role = useAppSelector((s) => s.auth.user?.role)
   const canPost = role === 'Manager' || role === 'Admin'
 
+  const PAGE_SIZE = 10
   const [tasks, setTasks] = useState<MarketTaskListItem[]>([])
+  const [page, setPage] = useState(1)
+  const [total, setTotal] = useState(0)
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [budget, setBudget] = useState('')
   const [skills, setSkills] = useState('')
 
-  const load = () => {
-    marketplaceService.getTasks().then(setTasks).catch(() => {})
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
+
+  const load = (p: number) => {
+    marketplaceService
+      .getTasks({ page: p, pageSize: PAGE_SIZE })
+      .then((r) => {
+        setTasks(r.items)
+        setTotal(r.total)
+      })
+      .catch(() => {})
   }
 
-  useEffect(load, [])
+  useEffect(() => load(page), [page])
 
   const create = async () => {
     if (!title.trim() || !description.trim() || !budget) return
@@ -50,7 +61,9 @@ export default function MarketplacePage() {
     setDescription('')
     setBudget('')
     setSkills('')
-    load()
+    // Show the newest task on page 1 (reload if already there).
+    if (page === 1) load(1)
+    else setPage(1)
   }
 
   return (
@@ -138,6 +151,29 @@ export default function MarketplacePage() {
               </li>
             ))}
           </ul>
+        )}
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="mt-6 flex items-center justify-center gap-4 text-sm">
+            <button
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page <= 1}
+              className="rounded-lg border border-slate-300 px-4 py-1.5 font-semibold transition hover:bg-white disabled:opacity-40 dark:border-slate-600 dark:hover:bg-slate-800"
+            >
+              {t('audit.prev')}
+            </button>
+            <span className="text-slate-500 dark:text-slate-400">
+              {t('audit.pageOf', { page, total: totalPages })}
+            </span>
+            <button
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              disabled={page >= totalPages}
+              className="rounded-lg border border-slate-300 px-4 py-1.5 font-semibold transition hover:bg-white disabled:opacity-40 dark:border-slate-600 dark:hover:bg-slate-800"
+            >
+              {t('audit.next')}
+            </button>
+          </div>
         )}
       </main>
     </div>

@@ -1,4 +1,5 @@
 using Taskpilot.API.Common;
+using Taskpilot.API.DTOs.Common;
 using Taskpilot.API.DTOs.Marketplace;
 
 namespace Taskpilot.API.Services;
@@ -11,8 +12,8 @@ public interface IMarketplaceService
     /// <summary>Posts a new task.</summary>
     Task<Result<TaskDetailDto>> CreateTaskAsync(Guid posterId, CreateTaskDto dto);
 
-    /// <summary>Lists tasks (open first, then newest).</summary>
-    Task<Result<List<TaskListItemDto>>> GetTasksAsync();
+    /// <summary>Lists a page of tasks (open first, then newest).</summary>
+    Task<Result<PagedResult<TaskListItemDto>>> GetTasksAsync(int page = 1, int pageSize = 20);
 
     /// <summary>Returns a task with its applications.</summary>
     Task<Result<TaskDetailDto>> GetTaskAsync(Guid taskId);

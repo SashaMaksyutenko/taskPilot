@@ -1,10 +1,15 @@
 import api from '../lib/api'
+import type { PagedResult } from '../types/common'
 import type { Application, MarketTaskDetail, MarketTaskListItem, Review } from '../types/marketplace'
 
 /** REST calls for the marketplace. */
 export const marketplaceService = {
-  getTasks(): Promise<MarketTaskListItem[]> {
-    return api.get<MarketTaskListItem[]>('/api/marketplace/tasks').then((r) => r.data)
+  getTasks(
+    params: { page?: number; pageSize?: number } = {},
+  ): Promise<PagedResult<MarketTaskListItem>> {
+    return api
+      .get<PagedResult<MarketTaskListItem>>('/api/marketplace/tasks', { params })
+      .then((r) => r.data)
   },
 
   getTask(id: string): Promise<MarketTaskDetail> {

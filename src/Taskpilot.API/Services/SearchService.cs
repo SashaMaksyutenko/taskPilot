@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Taskpilot.API.Common;
 using Taskpilot.API.Data;
 using Taskpilot.API.DTOs.Search;
+using Taskpilot.API.Mappers;
 
 namespace Taskpilot.API.Services;
 
@@ -55,14 +56,25 @@ public class SearchService : ISearchService
             .AsNoTracking()
             .ToListAsync();
 
-        var users = await _context.Users
+        var userRows = await _context.Users
             .Where(u => u.IsActive && u.Id != userId
                         && (EF.Functions.ILike(u.Name, pattern) || EF.Functions.ILike(u.Email, pattern)))
             .OrderBy(u => u.Name)
             .Take(PerCategory)
-            .Select(u => new SearchItemDto { Id = u.Id, Label = u.Name, Sublabel = u.Title })
+            .Select(u => new { u.Id, u.Name, u.Title, u.AvatarFileId })
             .AsNoTracking()
             .ToListAsync();
+
+        // Compose the avatar URL in memory (EF can't translate the interpolation).
+        var users = userRows
+            .Select(u => new SearchItemDto
+            {
+                Id = u.Id,
+                Label = u.Name,
+                Sublabel = u.Title,
+                AvatarUrl = UserMapper.AvatarUrl(u.Id, u.AvatarFileId),
+            })
+            .ToList();
 
         return Result<SearchResultsDto>.Ok(new SearchResultsDto
         {

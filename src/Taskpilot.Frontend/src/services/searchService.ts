@@ -4,6 +4,7 @@ export interface SearchItem {
   id: string
   label: string
   sublabel: string | null
+  avatarUrl: string | null
 }
 
 export interface SearchResults {

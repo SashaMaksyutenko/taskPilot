@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, useNavigate } from 'react-router-dom'
+import Avatar from '../components/Avatar'
 import Navbar from '../components/Navbar'
 import RoleChart from '../components/RoleChart'
 import StatsPanel from '../components/StatsPanel'
@@ -85,7 +86,10 @@ export default function AdminPage() {
                 >
                 <tr>
                   <td className="px-4 py-3 font-medium">
-                    <Link to={`/users/${u.id}`} className="hover:underline">{u.name}</Link>
+                    <Link to={`/users/${u.id}`} className="flex items-center gap-2 hover:underline">
+                      <Avatar name={u.name} src={u.avatarUrl} size={28} />
+                      {u.name}
+                    </Link>
                   </td>
                   <td className="px-4 py-3 text-slate-500 dark:text-slate-400">{u.email}</td>
                   <td className="px-4 py-3">

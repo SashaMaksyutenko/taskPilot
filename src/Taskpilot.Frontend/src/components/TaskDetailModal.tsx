@@ -207,10 +207,11 @@ export default function TaskDetailModal({
                   <li key={u.id}>
                     <button
                       onClick={() => pickAssignee(u)}
-                      className="block w-full px-3 py-2 text-left text-sm hover:bg-slate-50 dark:hover:bg-slate-700"
+                      className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-slate-50 dark:hover:bg-slate-700"
                     >
+                      <Avatar name={u.name} src={u.avatarUrl} size={26} />
                       <span className="font-medium">{u.name}</span>
-                      {u.title && <span className="ml-2 text-xs text-slate-400">{u.title}</span>}
+                      {u.title && <span className="ml-1 text-xs text-slate-400">{u.title}</span>}
                     </button>
                   </li>
                 ))}

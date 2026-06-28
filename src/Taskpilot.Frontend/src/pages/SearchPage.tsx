@@ -1,13 +1,24 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
+import Avatar from '../components/Avatar'
 import Navbar from '../components/Navbar'
 import { searchService, type SearchItem, type SearchResults } from '../services/searchService'
 
 const empty: SearchResults = { projects: [], tasks: [], topics: [], users: [] }
 
 /** A group of search hits with a heading and per-item links. */
-function Group({ title, items, linkFor }: { title: string; items: SearchItem[]; linkFor: (i: SearchItem) => string }) {
+function Group({
+  title,
+  items,
+  linkFor,
+  withAvatar = false,
+}: {
+  title: string
+  items: SearchItem[]
+  linkFor: (i: SearchItem) => string
+  withAvatar?: boolean
+}) {
   if (items.length === 0) return null
   return (
     <div className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-800">
@@ -16,6 +27,7 @@ function Group({ title, items, linkFor }: { title: string; items: SearchItem[]; 
         {items.map((i) => (
           <li key={`${i.id}-${i.label}`}>
             <Link to={linkFor(i)} className="flex items-center gap-2 py-2 text-sm hover:opacity-80">
+              {withAvatar && <Avatar name={i.label} src={i.avatarUrl} size={26} />}
               <span className="font-medium">{i.label}</span>
               {i.sublabel && <span className="text-xs text-slate-400">· {i.sublabel}</span>}
             </Link>
@@ -72,7 +84,7 @@ export default function SearchPage() {
             <Group title={t('search.projects')} items={results.projects} linkFor={(i) => `/projects/${i.id}`} />
             <Group title={t('search.tasks')} items={results.tasks} linkFor={(i) => `/projects/${i.id}`} />
             <Group title={t('search.topics')} items={results.topics} linkFor={(i) => `/forum/${i.id}`} />
-            <Group title={t('search.users')} items={results.users} linkFor={(i) => `/users/${i.id}`} />
+            <Group title={t('search.users')} items={results.users} linkFor={(i) => `/users/${i.id}`} withAvatar />
           </div>
         )}
       </main>

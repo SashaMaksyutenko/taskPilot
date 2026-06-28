@@ -67,6 +67,7 @@ public static class UserMapper
     {
         Id = u.Id,
         Name = u.Name,
+        AvatarUrl = AvatarUrl(u),
         Email = u.Email,
         Role = u.Role.ToString(),
         IsActive = u.IsActive,

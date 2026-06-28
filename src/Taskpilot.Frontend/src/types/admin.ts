@@ -2,6 +2,7 @@
 export interface AdminUser {
   id: string
   name: string
+  avatarUrl: string | null
   email: string
   role: string
   isActive: boolean

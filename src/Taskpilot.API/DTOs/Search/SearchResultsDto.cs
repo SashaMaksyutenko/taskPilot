@@ -11,6 +11,9 @@ public class SearchItemDto
 
     /// <summary>Optional secondary text (e.g. the project a task belongs to).</summary>
     public string? Sublabel { get; set; }
+
+    /// <summary>Optional avatar URL (set for user hits; null otherwise).</summary>
+    public string? AvatarUrl { get; set; }
 }
 
 /// <summary>Grouped results of a global search.</summary>

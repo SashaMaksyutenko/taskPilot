@@ -18,6 +18,7 @@ export interface UserSearchResult {
   id: string
   name: string
   title?: string | null
+  avatarUrl?: string | null
 }
 
 /** Public profile of any user (mirrors PublicProfileDto). */
@@ -25,6 +26,7 @@ export interface PublicProfile {
   id: string
   name: string
   role: string
+  avatarUrl?: string | null
   title?: string | null
   bio?: string | null
   location?: string | null
@@ -58,5 +60,19 @@ export const userService = {
     return api
       .post('/api/users/me/change-password', { currentPassword, newPassword })
       .then(() => undefined)
+  },
+
+  /** Uploads/replaces the current user's avatar; returns the updated profile. */
+  uploadAvatar(file: File): Promise<User> {
+    const form = new FormData()
+    form.append('file', file)
+    return api
+      .post<User>('/api/users/me/avatar', form, { headers: { 'Content-Type': 'multipart/form-data' } })
+      .then((r) => r.data)
+  },
+
+  /** Removes the current user's avatar; returns the updated profile. */
+  removeAvatar(): Promise<User> {
+    return api.delete<User>('/api/users/me/avatar').then((r) => r.data)
   },
 }

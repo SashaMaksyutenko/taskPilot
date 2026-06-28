@@ -88,6 +88,8 @@
   "settings": {
     "title": "Налаштування",
     "profile": "Профіль",
+    "changeAvatar": "Змінити фото",
+    "removeAvatar": "Видалити фото",
     "name": "Ім'я",
     "jobTitle": "Посада",
     "location": "Місто",

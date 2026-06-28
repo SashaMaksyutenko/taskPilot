@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, useParams } from 'react-router-dom'
+import Avatar from '../components/Avatar'
 import Navbar from '../components/Navbar'
 import StarRating from '../components/StarRating'
 import { forumService } from '../services/forumService'
@@ -57,9 +58,7 @@ export default function UserProfilePage() {
             {/* Header */}
             <div className="rounded-xl border border-slate-200 bg-white p-6 dark:border-slate-700 dark:bg-slate-800">
               <div className="flex items-center gap-4">
-                <div className="flex h-16 w-16 flex-none items-center justify-center rounded-full bg-[#1E2A44] text-2xl font-bold text-white">
-                  {profile.name.charAt(0).toUpperCase()}
-                </div>
+                <Avatar name={profile.name} src={profile.avatarUrl} size={64} />
                 <div className="min-w-0">
                   <h1 className="truncate text-2xl font-bold">{profile.name}</h1>
                   <div className="mt-1 flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">

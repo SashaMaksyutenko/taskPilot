@@ -11,6 +11,13 @@ namespace Taskpilot.API.Mappers;
 /// </summary>
 public static class UserMapper
 {
+    /// <summary>
+    /// Public URL for the user's avatar image, or null when none is set. The
+    /// <c>v</c> query string busts the browser cache when the avatar changes.
+    /// </summary>
+    public static string? AvatarUrl(User u) =>
+        u.AvatarFileId is { } fileId ? $"/api/users/{u.Id}/avatar?v={fileId:N}" : null;
+
     /// <summary>Full self-view (used by /me and profile update). Includes email.</summary>
     public static UserDto ToDto(User u) => new()
     {
@@ -19,6 +26,7 @@ public static class UserMapper
         Email = u.Email,
         Role = u.Role.ToString(),
         IsActive = u.IsActive,
+        AvatarUrl = AvatarUrl(u),
         Title = u.Title,
         Bio = u.Bio,
         Location = u.Location,
@@ -39,6 +47,7 @@ public static class UserMapper
         Id = u.Id,
         Name = u.Name,
         Role = u.Role.ToString(),
+        AvatarUrl = AvatarUrl(u),
         Title = u.Title,
         Bio = u.Bio,
         Location = u.Location,

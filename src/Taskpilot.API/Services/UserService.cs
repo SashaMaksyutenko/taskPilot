@@ -12,12 +12,17 @@ namespace Taskpilot.API.Services;
 /// </summary>
 public class UserService : IUserService
 {
+    // Avatars must be images and reasonably small.
+    private const long MaxAvatarBytes = 5 * 1024 * 1024;
+
     private readonly TaskpilotDbContext _context;
+    private readonly IFileService _files;
     private readonly ILogger<UserService> _logger;
 
-    public UserService(TaskpilotDbContext context, ILogger<UserService> logger)
+    public UserService(TaskpilotDbContext context, IFileService files, ILogger<UserService> logger)
     {
         _context = context;
+        _files = files;
         _logger = logger;
     }
 
@@ -108,16 +113,86 @@ public class UserService : IUserService
             return Result<List<UserSearchResultDto>>.Ok(new List<UserSearchResultDto>());
 
         var pattern = $"%{term}%";
-        var users = await _context.Users
+        var matches = await _context.Users
             .Where(u => u.IsActive
                         && u.Id != currentUserId
                         && (EF.Functions.ILike(u.Name, pattern) || EF.Functions.ILike(u.Email, pattern)))
             .OrderBy(u => u.Name)
             .Take(10)
-            .Select(u => new UserSearchResultDto { Id = u.Id, Name = u.Name, Title = u.Title })
             .AsNoTracking()
             .ToListAsync();
 
+        // Build the DTOs in memory so the avatar URL can be composed (EF can't
+        // translate the string interpolation in UserMapper.AvatarUrl).
+        var users = matches
+            .Select(u => new UserSearchResultDto
+            {
+                Id = u.Id,
+                Name = u.Name,
+                Title = u.Title,
+                AvatarUrl = UserMapper.AvatarUrl(u),
+            })
+            .ToList();
+
         return Result<List<UserSearchResultDto>>.Ok(users);
+    }
+
+    /// <inheritdoc />
+    public async Task<Result<UserDto>> SetAvatarAsync(Guid userId, IFormFile file)
+    {
+        if (file is null || file.Length == 0)
+            return Result<UserDto>.Fail("No file was provided.");
+
+        if (file.Length > MaxAvatarBytes)
+            return Result<UserDto>.Fail("Avatar exceeds the 5 MB limit.");
+
+        // Only images may be used as avatars.
+        if (string.IsNullOrWhiteSpace(file.ContentType) || !file.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
+            return Result<UserDto>.Fail("Avatar must be an image.");
+
+        var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
+        if (user is null)
+            return Result<UserDto>.Fail("User not found.");
+
+        // Reuse the generic file storage to persist the image bytes + metadata.
+        var saved = await _files.SaveAsync(file, userId);
+        if (!saved.Succeeded)
+            return Result<UserDto>.Fail(saved.Error!);
+
+        user.AvatarFileId = saved.Value!.Id;
+        user.UpdatedAt = DateTime.UtcNow;
+        await _context.SaveChangesAsync();
+
+        _logger.LogInformation("Avatar set. UserId: {UserId}, FileId: {FileId}", userId, user.AvatarFileId);
+        return Result<UserDto>.Ok(UserMapper.ToDto(user));
+    }
+
+    /// <inheritdoc />
+    public async Task<Result<UserDto>> RemoveAvatarAsync(Guid userId)
+    {
+        var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
+        if (user is null)
+            return Result<UserDto>.Fail("User not found.");
+
+        user.AvatarFileId = null;
+        user.UpdatedAt = DateTime.UtcNow;
+        await _context.SaveChangesAsync();
+
+        _logger.LogInformation("Avatar removed. UserId: {UserId}", userId);
+        return Result<UserDto>.Ok(UserMapper.ToDto(user));
+    }
+
+    /// <inheritdoc />
+    public async Task<Result<FileDownload>> GetAvatarAsync(Guid userId)
+    {
+        var fileId = await _context.Users
+            .Where(u => u.Id == userId)
+            .Select(u => u.AvatarFileId)
+            .FirstOrDefaultAsync();
+
+        if (fileId is null)
+            return Result<FileDownload>.Fail("Avatar not found.");
+
+        return await _files.GetForDownloadAsync(fileId.Value);
     }
 }

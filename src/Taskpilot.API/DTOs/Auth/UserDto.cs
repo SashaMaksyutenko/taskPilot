@@ -21,6 +21,9 @@ public class UserDto
     /// <summary>Whether the account is active.</summary>
     public bool IsActive { get; set; }
 
+    /// <summary>Public URL of the avatar image; null when none set.</summary>
+    public string? AvatarUrl { get; set; }
+
     /// <summary>Job title / headline.</summary>
     public string? Title { get; set; }
 

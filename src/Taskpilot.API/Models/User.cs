@@ -41,6 +41,12 @@ public class User
 
     // --- Profile fields (optional) ---
 
+    /// <summary>
+    /// Id of the uploaded file used as the profile avatar; null when none set.
+    /// The image itself is served publicly via GET /api/users/{id}/avatar.
+    /// </summary>
+    public Guid? AvatarFileId { get; set; }
+
     /// <summary>Job title / headline shown on the profile.</summary>
     public string? Title { get; set; }
 

@@ -4,6 +4,9 @@ import axios from 'axios'
 // with a sensible dev fallback so the app still runs without a .env file.
 const baseURL = import.meta.env.VITE_API_URL ?? 'http://localhost:5025'
 
+/** Base URL of the backend, exported for building absolute asset URLs (e.g. avatars in <img> tags). */
+export const apiBaseUrl = baseURL
+
 /**
  * Shared axios instance for all backend calls.
  * A single configured client keeps headers, base URL and interceptors in one place.

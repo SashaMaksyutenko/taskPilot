@@ -49,6 +49,45 @@ public class UsersController : BaseApiController
             : NotFound(new { error = result.Error });
     }
 
+    /// <summary>Serves a user's avatar image. Public so it can be used in &lt;img&gt; tags.</summary>
+    [AllowAnonymous]
+    [HttpGet("{userId:guid}/avatar")]
+    public async Task<IActionResult> GetAvatar(Guid userId)
+    {
+        var result = await _userService.GetAvatarAsync(userId);
+        if (!result.Succeeded)
+            return NotFound(new { error = result.Error });
+
+        var download = result.Value!;
+        return PhysicalFile(download.PhysicalPath, download.ContentType);
+    }
+
+    /// <summary>Uploads/replaces the current user's avatar (multipart/form-data, field "file").</summary>
+    [HttpPost("me/avatar")]
+    public async Task<IActionResult> UploadAvatar(IFormFile file)
+    {
+        var userId = CurrentUserId();
+        if (userId is null) return Unauthorized();
+
+        var result = await _userService.SetAvatarAsync(userId.Value, file);
+        return result.Succeeded
+            ? Ok(result.Value)
+            : BadRequest(new { error = result.Error });
+    }
+
+    /// <summary>Removes the current user's avatar.</summary>
+    [HttpDelete("me/avatar")]
+    public async Task<IActionResult> RemoveAvatar()
+    {
+        var userId = CurrentUserId();
+        if (userId is null) return Unauthorized();
+
+        var result = await _userService.RemoveAvatarAsync(userId.Value);
+        return result.Succeeded
+            ? Ok(result.Value)
+            : BadRequest(new { error = result.Error });
+    }
+
     /// <summary>Updates the current user's profile.</summary>
     [HttpPut("me")]
     public async Task<IActionResult> UpdateProfile([FromBody] UpdateProfileDto dto)

@@ -32,6 +32,7 @@ export interface User {
   email: string
   role: string
   isActive: boolean
+  avatarUrl: string | null
   title: string | null
   bio: string | null
   location: string | null

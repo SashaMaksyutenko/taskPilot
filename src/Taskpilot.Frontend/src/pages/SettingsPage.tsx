@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { AxiosError } from 'axios'
+import Avatar from '../components/Avatar'
 import Navbar from '../components/Navbar'
 import { userService, type UpdateProfileData } from '../services/userService'
 import { webhookService } from '../services/webhookService'
@@ -32,6 +33,7 @@ export default function SettingsPage() {
   const [form, setForm] = useState<UpdateProfileData>(emptyForm)
   const [profileMsg, setProfileMsg] = useState('')
   const [saving, setSaving] = useState(false)
+  const [avatarBusy, setAvatarBusy] = useState(false)
 
   const [current, setCurrent] = useState('')
   const [next, setNext] = useState('')
@@ -96,6 +98,29 @@ export default function SettingsPage() {
     }
   }
 
+  const onAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setAvatarBusy(true)
+    try {
+      await userService.uploadAvatar(file)
+      dispatch(fetchMe())
+    } finally {
+      setAvatarBusy(false)
+      e.target.value = '' // allow re-selecting the same file
+    }
+  }
+
+  const onAvatarRemove = async () => {
+    setAvatarBusy(true)
+    try {
+      await userService.removeAvatar()
+      dispatch(fetchMe())
+    } finally {
+      setAvatarBusy(false)
+    }
+  }
+
   const changePassword = async () => {
     setPwMsg('')
     try {
@@ -118,6 +143,31 @@ export default function SettingsPage() {
         {/* Profile */}
         <section className="mb-8 rounded-xl border border-slate-200 bg-white p-6 dark:border-slate-700 dark:bg-slate-800">
           <h2 className="mb-4 font-bold">{t('settings.profile')}</h2>
+
+          {/* Avatar */}
+          <div className="mb-6 flex items-center gap-4">
+            <Avatar name={user?.name ?? '?'} src={user?.avatarUrl} size={72} />
+            <div className="flex flex-col gap-2">
+              <label
+                className={`cursor-pointer rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold transition hover:bg-slate-50 dark:border-slate-600 dark:hover:bg-slate-700 ${
+                  avatarBusy ? 'pointer-events-none opacity-60' : ''
+                }`}
+              >
+                {t('settings.changeAvatar')}
+                <input type="file" accept="image/*" className="hidden" onChange={onAvatarChange} disabled={avatarBusy} />
+              </label>
+              {user?.avatarUrl && (
+                <button
+                  onClick={onAvatarRemove}
+                  disabled={avatarBusy}
+                  className="text-left text-xs font-semibold text-red-600 hover:underline disabled:opacity-60"
+                >
+                  {t('settings.removeAvatar')}
+                </button>
+              )}
+            </div>
+          </div>
+
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label={t('settings.name')} value={form.name} onChange={(v) => set('name', v)} />
             <Field label={t('settings.jobTitle')} value={form.title ?? ''} onChange={(v) => set('title', v)} />

@@ -20,4 +20,13 @@ public interface IUserService
 
     /// <summary>Searches active users by name or email, excluding the caller.</summary>
     Task<Result<List<UserSearchResultDto>>> SearchUsersAsync(Guid currentUserId, string query);
+
+    /// <summary>Sets the user's avatar from an uploaded image and returns the updated profile.</summary>
+    Task<Result<UserDto>> SetAvatarAsync(Guid userId, IFormFile file);
+
+    /// <summary>Clears the user's avatar.</summary>
+    Task<Result<UserDto>> RemoveAvatarAsync(Guid userId);
+
+    /// <summary>Resolves a user's avatar image for download (public).</summary>
+    Task<Result<FileDownload>> GetAvatarAsync(Guid userId);
 }

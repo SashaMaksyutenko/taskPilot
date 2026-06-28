@@ -88,6 +88,8 @@
   "settings": {
     "title": "Settings",
     "profile": "Profile",
+    "changeAvatar": "Change photo",
+    "removeAvatar": "Remove photo",
     "name": "Name",
     "jobTitle": "Title",
     "location": "Location",

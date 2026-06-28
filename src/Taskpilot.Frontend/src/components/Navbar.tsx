@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { NavLink, useNavigate } from 'react-router-dom'
+import Avatar from './Avatar'
 import { useNotifications } from '../hooks/useNotifications'
 import { logout } from '../store/authSlice'
 import { useAppDispatch, useAppSelector } from '../store/hooks'
@@ -158,9 +159,11 @@ export default function Navbar() {
 
         <NavLink
           to="/settings"
-          className="hidden text-sm text-slate-500 hover:text-[#1E2A44] dark:text-slate-300 dark:hover:text-white sm:inline"
+          className="flex items-center gap-2 text-sm text-slate-500 hover:text-[#1E2A44] dark:text-slate-300 dark:hover:text-white"
+          title={user?.name}
         >
-          {user?.name}
+          <Avatar name={user?.name ?? '?'} src={user?.avatarUrl} size={30} />
+          <span className="hidden sm:inline">{user?.name}</span>
         </NavLink>
         <button
           onClick={handleLogout}

@@ -1,3 +1,4 @@
+using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Taskpilot.API.DTOs.Admin;
@@ -18,13 +19,23 @@ public class AdminController : BaseApiController
     private readonly IAuditService _audit;
     private readonly IStatsService _stats;
     private readonly IOverdueService _overdue;
+    private readonly IWarningService _warnings;
+    private readonly IValidator<IssueWarningDto> _issueWarningValidator;
 
-    public AdminController(IAdminService adminService, IAuditService audit, IStatsService stats, IOverdueService overdue)
+    public AdminController(
+        IAdminService adminService,
+        IAuditService audit,
+        IStatsService stats,
+        IOverdueService overdue,
+        IWarningService warnings,
+        IValidator<IssueWarningDto> issueWarningValidator)
     {
         _adminService = adminService;
         _audit = audit;
         _stats = stats;
         _overdue = overdue;
+        _warnings = warnings;
+        _issueWarningValidator = issueWarningValidator;
     }
 
     /// <summary>Lists a page of users.</summary>
@@ -95,6 +106,31 @@ public class AdminController : BaseApiController
         await _audit.LogAsync("user.unbanned", actorId: adminId, actorEmail: CurrentUserEmail(),
             entityType: "User", entityId: userId.ToString(), ipAddress: ClientIp());
         return Ok(new { message = "User unbanned." });
+    }
+
+    /// <summary>Issues a moderation warning to a user (auto-bans at the threshold).</summary>
+    [HttpPost("users/{userId:guid}/warnings")]
+    public async Task<IActionResult> IssueWarning(Guid userId, [FromBody] IssueWarningDto dto)
+    {
+        var adminId = CurrentUserId();
+        if (adminId is null) return Unauthorized();
+
+        var validation = await _issueWarningValidator.ValidateAsync(dto);
+        if (!validation.IsValid)
+            return BadRequest(new { error = validation.Errors[0].ErrorMessage });
+
+        var result = await _warnings.IssueAsync(adminId.Value, CurrentUserEmail(), userId, dto, ClientIp());
+        return result.Succeeded
+            ? Ok(result.Value)
+            : BadRequest(new { error = result.Error });
+    }
+
+    /// <summary>Lists a user's moderation warnings (newest first).</summary>
+    [HttpGet("users/{userId:guid}/warnings")]
+    public async Task<IActionResult> GetUserWarnings(Guid userId)
+    {
+        var result = await _warnings.GetForUserAsync(userId);
+        return Ok(result.Value);
     }
 
     /// <summary>Returns a page of audit-trail entries (newest first), optionally filtered by action.</summary>

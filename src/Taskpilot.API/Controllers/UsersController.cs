@@ -15,15 +15,18 @@ namespace Taskpilot.API.Controllers;
 public class UsersController : BaseApiController
 {
     private readonly IUserService _userService;
+    private readonly IWarningService _warnings;
     private readonly IValidator<UpdateProfileDto> _updateProfileValidator;
     private readonly IValidator<ChangePasswordDto> _changePasswordValidator;
 
     public UsersController(
         IUserService userService,
+        IWarningService warnings,
         IValidator<UpdateProfileDto> updateProfileValidator,
         IValidator<ChangePasswordDto> changePasswordValidator)
     {
         _userService = userService;
+        _warnings = warnings;
         _updateProfileValidator = updateProfileValidator;
         _changePasswordValidator = changePasswordValidator;
     }
@@ -103,6 +106,17 @@ public class UsersController : BaseApiController
         return result.Succeeded
             ? Ok(result.Value)
             : NotFound(new { error = result.Error });
+    }
+
+    /// <summary>Lists the current user's moderation warnings (newest first).</summary>
+    [HttpGet("me/warnings")]
+    public async Task<IActionResult> GetMyWarnings()
+    {
+        var userId = CurrentUserId();
+        if (userId is null) return Unauthorized();
+
+        var result = await _warnings.GetForUserAsync(userId.Value);
+        return Ok(result.Value);
     }
 
     /// <summary>Changes the current user's password.</summary>

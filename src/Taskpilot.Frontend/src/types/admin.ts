@@ -25,5 +25,21 @@ export interface AuditLog {
   createdAt: string
 }
 
+/** A moderation warning (mirrors WarningDto). */
+export interface Warning {
+  id: string
+  userId: string
+  reason: string
+  issuedByName: string
+  createdAt: string
+}
+
+/** Result of issuing a warning (mirrors IssueWarningResultDto). */
+export interface IssueWarningResult {
+  warning: Warning
+  warningCount: number
+  autoBanned: boolean
+}
+
 // Re-exported from the shared module so existing imports keep working.
 export type { PagedResult } from './common'

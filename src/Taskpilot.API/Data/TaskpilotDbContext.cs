@@ -77,6 +77,9 @@ public class TaskpilotDbContext : DbContext
     /// <summary>Comments on project tasks.</summary>
     public DbSet<TaskComment> TaskComments => Set<TaskComment>();
 
+    /// <summary>Moderation warnings issued to users.</summary>
+    public DbSet<UserWarning> UserWarnings => Set<UserWarning>();
+
     /// <summary>
     /// Налаштування моделі (Fluent API): обмеження, індекси, перетворення типів.
     /// Викликається EF Core під час побудови моделі та генерації міграцій.
@@ -537,6 +540,29 @@ public class TaskpilotDbContext : DbContext
             entity.HasOne(c => c.Author)
                   .WithMany()
                   .HasForeignKey(c => c.AuthorId)
+                  .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        // UserWarning entity configuration
+        modelBuilder.Entity<UserWarning>(entity =>
+        {
+            entity.HasKey(w => w.Id);
+
+            entity.Property(w => w.Reason).IsRequired().HasMaxLength(1000);
+
+            // List a user's warnings, newest first.
+            entity.HasIndex(w => new { w.UserId, w.CreatedAt });
+
+            // Deleting the warned user removes their warnings.
+            entity.HasOne(w => w.User)
+                  .WithMany()
+                  .HasForeignKey(w => w.UserId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            // Issuer link is restricted to avoid multiple cascade paths.
+            entity.HasOne(w => w.IssuedBy)
+                  .WithMany()
+                  .HasForeignKey(w => w.IssuedById)
                   .OnDelete(DeleteBehavior.Restrict);
         });
     }

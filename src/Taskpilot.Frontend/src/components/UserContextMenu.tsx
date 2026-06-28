@@ -15,6 +15,7 @@ export default function UserContextMenu({
   onViewProfile,
   onChangeRole,
   onToggleBan,
+  onWarn,
 }: {
   children: ReactNode
   isActive: boolean
@@ -22,6 +23,7 @@ export default function UserContextMenu({
   onViewProfile: () => void
   onChangeRole: (role: string) => void
   onToggleBan: () => void
+  onWarn: () => void
 }) {
   const { t } = useTranslation()
 
@@ -50,10 +52,13 @@ export default function UserContextMenu({
             </ContextMenu.Portal>
           </ContextMenu.Sub>
 
-          {/* Ban/unban — hidden for the current admin's own row */}
+          {/* Moderation — hidden for the current admin's own row */}
           {canModerate && (
             <>
               <ContextMenu.Separator className={separatorClass} />
+              <ContextMenu.Item className={`${itemClass} text-amber-600`} onSelect={onWarn}>
+                {t('admin.warn')}
+              </ContextMenu.Item>
               <ContextMenu.Item className={`${itemClass} text-red-600`} onSelect={onToggleBan}>
                 {isActive ? t('admin.ban') : t('admin.unban')}
               </ContextMenu.Item>

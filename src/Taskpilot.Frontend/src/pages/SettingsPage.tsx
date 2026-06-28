@@ -8,6 +8,7 @@ import { webhookService } from '../services/webhookService'
 import { fetchMe } from '../store/authSlice'
 import { useAppDispatch, useAppSelector } from '../store/hooks'
 import { WEBHOOK_EVENTS, type Webhook } from '../types/webhook'
+import type { Warning } from '../types/admin'
 
 const emptyForm: UpdateProfileData = {
   name: '',
@@ -42,6 +43,11 @@ export default function SettingsPage() {
   const [webhooks, setWebhooks] = useState<Webhook[]>([])
   const [hookUrl, setHookUrl] = useState('')
   const [hookEvent, setHookEvent] = useState<string>(WEBHOOK_EVENTS[0])
+
+  const [warnings, setWarnings] = useState<Warning[]>([])
+  useEffect(() => {
+    userService.getMyWarnings().then(setWarnings).catch(() => {})
+  }, [])
 
   const loadWebhooks = () => webhookService.getWebhooks().then(setWebhooks).catch(() => {})
   useEffect(() => {
@@ -139,6 +145,25 @@ export default function SettingsPage() {
       <Navbar />
       <main className="mx-auto max-w-2xl px-6 py-8">
         <h1 className="mb-6 text-2xl font-bold">{t('settings.title')}</h1>
+
+        {/* Moderation warnings */}
+        {warnings.length > 0 && (
+          <section className="mb-8 rounded-xl border border-amber-300 bg-amber-50 p-6 dark:border-amber-700 dark:bg-amber-950/30">
+            <h2 className="mb-3 font-bold text-amber-800 dark:text-amber-200">
+              ⚠️ {t('warn.myTitle', { count: warnings.length })}
+            </h2>
+            <ul className="space-y-3">
+              {warnings.map((w) => (
+                <li key={w.id} className="text-sm text-amber-900 dark:text-amber-100">
+                  <p className="whitespace-pre-wrap">{w.reason}</p>
+                  <p className="mt-1 text-xs text-amber-700/80 dark:text-amber-300/70">
+                    {w.issuedByName} · {new Date(w.createdAt).toLocaleString()}
+                  </p>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
 
         {/* Profile */}
         <section className="mb-8 rounded-xl border border-slate-200 bg-white p-6 dark:border-slate-700 dark:bg-slate-800">

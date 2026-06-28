@@ -1,5 +1,6 @@
 import api from '../lib/api'
 import type { User } from '../types/auth'
+import type { Warning } from '../types/admin'
 
 export interface UpdateProfileData {
   name: string
@@ -74,5 +75,10 @@ export const userService = {
   /** Removes the current user's avatar; returns the updated profile. */
   removeAvatar(): Promise<User> {
     return api.delete<User>('/api/users/me/avatar').then((r) => r.data)
+  },
+
+  /** Lists the current user's moderation warnings (newest first). */
+  getMyWarnings(): Promise<Warning[]> {
+    return api.get<Warning[]>('/api/users/me/warnings').then((r) => r.data)
   },
 }

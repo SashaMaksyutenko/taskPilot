@@ -6,6 +6,7 @@ import Navbar from '../components/Navbar'
 import RoleChart from '../components/RoleChart'
 import StatsPanel from '../components/StatsPanel'
 import UserContextMenu from '../components/UserContextMenu'
+import WarnUserModal from '../components/WarnUserModal'
 import { adminService } from '../services/adminService'
 import { statsService } from '../services/statsService'
 import { useAppSelector } from '../store/hooks'
@@ -55,6 +56,26 @@ export default function AdminPage() {
     load(page)
   }
 
+  // Warn flow: target user for the modal + transient feedback message.
+  const [warnTarget, setWarnTarget] = useState<AdminUser | null>(null)
+  const [warnMsg, setWarnMsg] = useState('')
+
+  const submitWarning = async (reason: string) => {
+    if (!warnTarget) return
+    const target = warnTarget
+    const res = await adminService.issueWarning(target.id, reason).catch(() => null)
+    setWarnTarget(null)
+    if (res) {
+      setWarnMsg(
+        res.autoBanned
+          ? t('warn.autoBanned', { name: target.name, count: res.warningCount })
+          : t('warn.issued', { name: target.name, count: res.warningCount }),
+      )
+      load(page) // reflect a possible auto-ban in the table
+      setTimeout(() => setWarnMsg(''), 6000)
+    }
+  }
+
   return (
     <div className="min-h-screen bg-slate-50 text-[#1E2A44] dark:bg-slate-900 dark:text-slate-100">
       <Navbar />
@@ -68,6 +89,12 @@ export default function AdminPage() {
             {t('admin.auditLog')}
           </Link>
         </div>
+
+        {warnMsg && (
+          <div className="mb-6 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-700 dark:bg-amber-950/30 dark:text-amber-200">
+            {warnMsg}
+          </div>
+        )}
 
         <div className="mb-6 grid gap-4 lg:grid-cols-2">
           <StatsPanel stats={stats} />
@@ -94,6 +121,7 @@ export default function AdminPage() {
                   onViewProfile={() => navigate(`/users/${u.id}`)}
                   onChangeRole={(role) => changeRole(u.id, role)}
                   onToggleBan={() => toggleBan(u)}
+                  onWarn={() => setWarnTarget(u)}
                 >
                 <tr>
                   <td className="px-4 py-3 font-medium">
@@ -169,6 +197,14 @@ export default function AdminPage() {
           </div>
         )}
       </main>
+
+      {warnTarget && (
+        <WarnUserModal
+          userName={warnTarget.name}
+          onClose={() => setWarnTarget(null)}
+          onSubmit={submitWarning}
+        />
+      )}
     </div>
   )
 }

@@ -7,5 +7,6 @@ public enum NotificationType
     Marketplace = 1,
     Forum = 2,
     Chat = 3,
-    Task = 4
+    Task = 4,
+    Moderation = 5
 }

@@ -53,6 +53,16 @@
       "calendarD": "See what's due and what's overdue at a glance."
     }
   },
+  "warn": {
+    "title": "Warn {{name}}",
+    "hint": "The user will be notified. Three warnings auto-suspend the account.",
+    "reasonPlaceholder": "Reason for the warning…",
+    "cancel": "Cancel",
+    "submit": "Issue warning",
+    "issued": "Warning issued to {{name}} (now {{count}}).",
+    "autoBanned": "{{name}} reached {{count}} warnings and was auto-suspended.",
+    "myTitle": "You have {{count}} warning(s)"
+  },
   "auth": {
     "welcomeBack": "Welcome back",
     "createAccount": "Create your account",
@@ -250,6 +260,7 @@
     "banned": "Banned",
     "ban": "Ban",
     "unban": "Unban",
+    "warn": "Warn",
     "viewProfile": "View profile",
     "changeRole": "Change role",
     "roles": {

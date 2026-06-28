@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { HubConnection } from '@microsoft/signalr'
 import AttachmentPreview from '../components/AttachmentPreview'
+import Avatar from '../components/Avatar'
 import MessageContextMenu from '../components/MessageContextMenu'
 import Navbar from '../components/Navbar'
 import { createChatConnection } from '../lib/chatHub'
@@ -138,6 +139,12 @@ export default function ChatPage() {
     return other?.name ?? t('chat.directChat')
   }
 
+  // Avatar of the other participant for a direct conversation (null for groups).
+  const conversationAvatar = (conv: Conversation): string | null => {
+    if (conv.type === 'Group') return null
+    return conv.participants.find((p) => p.userId !== currentUser?.id)?.avatarUrl ?? null
+  }
+
   return (
     <div className="flex h-screen flex-col bg-slate-50 text-[#1E2A44] dark:bg-slate-900 dark:text-slate-100">
       <Navbar />
@@ -162,12 +169,13 @@ export default function ChatPage() {
                   <li key={u.id}>
                     <button
                       onClick={() => startDirect(u.id)}
-                      className="block w-full px-3 py-2 text-left text-sm hover:bg-slate-50 dark:hover:bg-slate-700"
+                      className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-slate-50 dark:hover:bg-slate-700"
                     >
-                      <span className="font-medium">{u.name}</span>
-                      {u.title && (
-                        <span className="ml-2 text-xs text-slate-400">{u.title}</span>
-                      )}
+                      <Avatar name={u.name} src={u.avatarUrl} size={28} />
+                      <span className="min-w-0 flex-1 truncate">
+                        <span className="font-medium">{u.name}</span>
+                        {u.title && <span className="ml-2 text-xs text-slate-400">{u.title}</span>}
+                      </span>
                     </button>
                   </li>
                 ))}
@@ -183,12 +191,13 @@ export default function ChatPage() {
               <button
                 key={conv.id}
                 onClick={() => selectConversation(conv.id)}
-                className={`block w-full border-b border-slate-100 px-4 py-3 text-left text-sm hover:bg-slate-50 dark:border-slate-700/60 dark:hover:bg-slate-700/50 ${
+                className={`flex w-full items-center gap-2 border-b border-slate-100 px-4 py-3 text-left text-sm hover:bg-slate-50 dark:border-slate-700/60 dark:hover:bg-slate-700/50 ${
                   selectedId === conv.id ? 'bg-slate-100 font-semibold dark:bg-slate-700' : ''
                 }`}
               >
-                {conversationTitle(conv)}
-                <span className="ml-2 text-xs text-slate-400">{t(`chat.type.${conv.type}`, conv.type)}</span>
+                <Avatar name={conversationTitle(conv)} src={conversationAvatar(conv)} size={32} />
+                <span className="min-w-0 flex-1 truncate">{conversationTitle(conv)}</span>
+                <span className="flex-none text-xs text-slate-400">{t(`chat.type.${conv.type}`, conv.type)}</span>
               </button>
             ))}
           </div>
@@ -202,7 +211,8 @@ export default function ChatPage() {
                 {messages.map((m) => {
                   const mine = m.senderId === currentUser?.id
                   return (
-                    <div key={m.id} className={`flex ${mine ? 'justify-end' : 'justify-start'}`}>
+                    <div key={m.id} className={`flex items-end gap-2 ${mine ? 'justify-end' : 'justify-start'}`}>
+                      {!mine && <Avatar name={m.senderName} src={m.senderAvatarUrl} size={28} />}
                       <MessageContextMenu
                         content={m.content}
                         canDelete={mine}

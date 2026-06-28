@@ -10,4 +10,7 @@ public class ParticipantDto
 
     /// <summary>Display name of the participating user.</summary>
     public string Name { get; set; } = string.Empty;
+
+    /// <summary>Public URL of the participant's avatar; null when none set.</summary>
+    public string? AvatarUrl { get; set; }
 }

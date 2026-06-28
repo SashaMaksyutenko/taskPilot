@@ -3,6 +3,7 @@ using Taskpilot.API.Common;
 using Taskpilot.API.Data;
 using Taskpilot.API.DTOs.Chat;
 using Taskpilot.API.Hubs;
+using Taskpilot.API.Mappers;
 using Taskpilot.API.Models;
 
 namespace Taskpilot.API.Services;
@@ -183,11 +184,12 @@ public class ChatService : IChatService
             _context.Messages.Add(message);
             await _context.SaveChangesAsync();
 
-            // Sender name for the response.
-            var senderName = await _context.Users
+            // Sender name + avatar for the response.
+            var sender = await _context.Users
                 .Where(u => u.Id == senderId)
-                .Select(u => u.Name)
+                .Select(u => new { u.Name, u.AvatarFileId })
                 .FirstAsync();
+            var senderName = sender.Name;
 
             // Notify only the OFFLINE participants. Online users already receive the
             // message in real time over the hub, so an in-app notification would be noise.
@@ -214,6 +216,7 @@ public class ChatService : IChatService
                 ConversationId = message.ConversationId,
                 SenderId = message.SenderId,
                 SenderName = senderName,
+                SenderAvatarUrl = UserMapper.AvatarUrl(senderId, sender.AvatarFileId),
                 Content = message.Content,
                 CreatedAt = message.CreatedAt,
                 EditedAt = message.EditedAt,
@@ -281,7 +284,12 @@ public class ChatService : IChatService
         Name = c.Name,
         CreatedAt = c.CreatedAt,
         Participants = c.Participants
-            .Select(p => new ParticipantDto { UserId = p.UserId, Name = p.User?.Name ?? string.Empty })
+            .Select(p => new ParticipantDto
+            {
+                UserId = p.UserId,
+                Name = p.User?.Name ?? string.Empty,
+                AvatarUrl = p.User is null ? null : UserMapper.AvatarUrl(p.User),
+            })
             .ToList(),
     };
 
@@ -291,6 +299,7 @@ public class ChatService : IChatService
         ConversationId = m.ConversationId,
         SenderId = m.SenderId,
         SenderName = m.Sender?.Name ?? string.Empty,
+        SenderAvatarUrl = m.Sender is null ? null : UserMapper.AvatarUrl(m.Sender),
         Content = m.Content,
         CreatedAt = m.CreatedAt,
         EditedAt = m.EditedAt,

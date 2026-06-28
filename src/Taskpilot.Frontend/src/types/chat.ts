@@ -3,6 +3,7 @@
 export interface Participant {
   userId: string
   name: string
+  avatarUrl: string | null
 }
 
 export interface Conversation {
@@ -18,6 +19,7 @@ export interface Message {
   conversationId: string
   senderId: string
   senderName: string
+  senderAvatarUrl: string | null
   content: string
   createdAt: string
   editedAt: string | null

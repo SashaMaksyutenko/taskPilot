@@ -1,5 +1,5 @@
 import api from '../lib/api'
-import type { AdminUser, AuditLog, IssueWarningResult, PagedResult, Warning } from '../types/admin'
+import type { AdminUser, Appeal, AuditLog, IssueWarningResult, PagedResult, Warning } from '../types/admin'
 
 /** Admin-only REST calls for user management. */
 export const adminService = {
@@ -37,5 +37,17 @@ export const adminService = {
 
   getUserWarnings(userId: string): Promise<Warning[]> {
     return api.get<Warning[]>(`/api/admin/users/${userId}/warnings`).then((r) => r.data)
+  },
+
+  getAppeals(status?: string): Promise<Appeal[]> {
+    return api
+      .get<Appeal[]>('/api/admin/appeals', { params: status ? { status } : {} })
+      .then((r) => r.data)
+  },
+
+  resolveAppeal(appealId: string, approve: boolean, note?: string): Promise<Appeal> {
+    return api
+      .post<Appeal>(`/api/admin/appeals/${appealId}/resolve`, { approve, note })
+      .then((r) => r.data)
   },
 }

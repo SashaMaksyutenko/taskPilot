@@ -8,7 +8,8 @@ import { webhookService } from '../services/webhookService'
 import { fetchMe } from '../store/authSlice'
 import { useAppDispatch, useAppSelector } from '../store/hooks'
 import { WEBHOOK_EVENTS, type Webhook } from '../types/webhook'
-import type { Warning } from '../types/admin'
+import type { Appeal, Warning } from '../types/admin'
+import AppealModal from '../components/AppealModal'
 
 const emptyForm: UpdateProfileData = {
   name: '',
@@ -45,9 +46,26 @@ export default function SettingsPage() {
   const [hookEvent, setHookEvent] = useState<string>(WEBHOOK_EVENTS[0])
 
   const [warnings, setWarnings] = useState<Warning[]>([])
-  useEffect(() => {
+  const [appeals, setAppeals] = useState<Appeal[]>([])
+  const [appealTarget, setAppealTarget] = useState<Warning | null>(null)
+
+  const loadModeration = () => {
     userService.getMyWarnings().then(setWarnings).catch(() => {})
-  }, [])
+    userService.getMyAppeals().then(setAppeals).catch(() => {})
+  }
+  useEffect(loadModeration, [])
+
+  // Warning ids that already have a pending appeal (to disable the button).
+  const pendingAppealWarningIds = new Set(
+    appeals.filter((a) => a.status === 'Pending' && a.warningId).map((a) => a.warningId as string),
+  )
+
+  const submitAppeal = async (message: string) => {
+    if (!appealTarget) return
+    await userService.createAppeal({ warningId: appealTarget.id, message }).catch(() => {})
+    setAppealTarget(null)
+    loadModeration()
+  }
 
   const loadWebhooks = () => webhookService.getWebhooks().then(setWebhooks).catch(() => {})
   useEffect(() => {
@@ -154,11 +172,58 @@ export default function SettingsPage() {
             </h2>
             <ul className="space-y-3">
               {warnings.map((w) => (
-                <li key={w.id} className="text-sm text-amber-900 dark:text-amber-100">
-                  <p className="whitespace-pre-wrap">{w.reason}</p>
-                  <p className="mt-1 text-xs text-amber-700/80 dark:text-amber-300/70">
-                    {w.issuedByName} · {new Date(w.createdAt).toLocaleString()}
-                  </p>
+                <li key={w.id} className="flex items-start justify-between gap-3 text-sm text-amber-900 dark:text-amber-100">
+                  <div className="min-w-0">
+                    <p className="whitespace-pre-wrap">{w.reason}</p>
+                    <p className="mt-1 text-xs text-amber-700/80 dark:text-amber-300/70">
+                      {w.issuedByName} · {new Date(w.createdAt).toLocaleString()}
+                    </p>
+                  </div>
+                  {pendingAppealWarningIds.has(w.id) ? (
+                    <span className="flex-none text-xs font-semibold text-amber-700/80 dark:text-amber-300/70">
+                      {t('appeal.pending')}
+                    </span>
+                  ) : (
+                    <button
+                      onClick={() => setAppealTarget(w)}
+                      className="flex-none rounded-lg border border-amber-400 px-3 py-1 text-xs font-semibold text-amber-800 hover:bg-amber-100 dark:border-amber-600 dark:text-amber-200 dark:hover:bg-amber-900/40"
+                    >
+                      {t('appeal.appeal')}
+                    </button>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+
+        {/* My appeals */}
+        {appeals.length > 0 && (
+          <section className="mb-8 rounded-xl border border-slate-200 bg-white p-6 dark:border-slate-700 dark:bg-slate-800">
+            <h2 className="mb-3 font-bold">{t('appeal.myTitle')}</h2>
+            <ul className="space-y-3">
+              {appeals.map((a) => (
+                <li key={a.id} className="text-sm">
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${
+                        a.status === 'Approved'
+                          ? 'bg-green-100 text-green-700'
+                          : a.status === 'Rejected'
+                            ? 'bg-red-100 text-red-700'
+                            : 'bg-slate-200 text-slate-700'
+                      }`}
+                    >
+                      {t(`appeal.status.${a.status}`, a.status)}
+                    </span>
+                    <span className="text-xs text-slate-400">{new Date(a.createdAt).toLocaleString()}</span>
+                  </div>
+                  <p className="mt-1 whitespace-pre-wrap text-slate-600 dark:text-slate-300">{a.message}</p>
+                  {a.reviewNote && (
+                    <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                      {t('appeal.reviewNote')}: {a.reviewNote}
+                    </p>
+                  )}
                 </li>
               ))}
             </ul>
@@ -306,6 +371,14 @@ export default function SettingsPage() {
           </div>
         </section>
       </main>
+
+      {appealTarget && (
+        <AppealModal
+          warningReason={appealTarget.reason}
+          onClose={() => setAppealTarget(null)}
+          onSubmit={submitAppeal}
+        />
+      )}
     </div>
   )
 }

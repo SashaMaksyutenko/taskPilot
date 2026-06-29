@@ -1,6 +1,7 @@
 using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Taskpilot.API.DTOs.Admin;
 using Taskpilot.API.DTOs.Users;
 using Taskpilot.API.Services;
 
@@ -16,19 +17,25 @@ public class UsersController : BaseApiController
 {
     private readonly IUserService _userService;
     private readonly IWarningService _warnings;
+    private readonly IAppealService _appeals;
     private readonly IValidator<UpdateProfileDto> _updateProfileValidator;
     private readonly IValidator<ChangePasswordDto> _changePasswordValidator;
+    private readonly IValidator<CreateAppealDto> _createAppealValidator;
 
     public UsersController(
         IUserService userService,
         IWarningService warnings,
+        IAppealService appeals,
         IValidator<UpdateProfileDto> updateProfileValidator,
-        IValidator<ChangePasswordDto> changePasswordValidator)
+        IValidator<ChangePasswordDto> changePasswordValidator,
+        IValidator<CreateAppealDto> createAppealValidator)
     {
         _userService = userService;
         _warnings = warnings;
+        _appeals = appeals;
         _updateProfileValidator = updateProfileValidator;
         _changePasswordValidator = changePasswordValidator;
+        _createAppealValidator = createAppealValidator;
     }
 
     /// <summary>Searches active users by name or email (to start a chat, assign a task, etc.).</summary>
@@ -117,6 +124,34 @@ public class UsersController : BaseApiController
 
         var result = await _warnings.GetForUserAsync(userId.Value);
         return Ok(result.Value);
+    }
+
+    /// <summary>Lists the current user's appeals (newest first).</summary>
+    [HttpGet("me/appeals")]
+    public async Task<IActionResult> GetMyAppeals()
+    {
+        var userId = CurrentUserId();
+        if (userId is null) return Unauthorized();
+
+        var result = await _appeals.GetMineAsync(userId.Value);
+        return Ok(result.Value);
+    }
+
+    /// <summary>Files an appeal against a warning.</summary>
+    [HttpPost("me/appeals")]
+    public async Task<IActionResult> CreateAppeal([FromBody] CreateAppealDto dto)
+    {
+        var userId = CurrentUserId();
+        if (userId is null) return Unauthorized();
+
+        var validation = await _createAppealValidator.ValidateAsync(dto);
+        if (!validation.IsValid)
+            return BadRequest(new { error = validation.Errors[0].ErrorMessage });
+
+        var result = await _appeals.CreateAsync(userId.Value, dto);
+        return result.Succeeded
+            ? Ok(result.Value)
+            : BadRequest(new { error = result.Error });
     }
 
     /// <summary>Changes the current user's password.</summary>

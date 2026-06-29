@@ -10,7 +10,7 @@ import WarnUserModal from '../components/WarnUserModal'
 import { adminService } from '../services/adminService'
 import { statsService } from '../services/statsService'
 import { useAppSelector } from '../store/hooks'
-import { ROLES, type AdminUser } from '../types/admin'
+import { ROLES, type AdminUser, type Appeal } from '../types/admin'
 import type { AdminStats } from '../types/stats'
 
 /**
@@ -44,6 +44,19 @@ export default function AdminPage() {
   useEffect(() => {
     statsService.getAdmin().then(setStats).catch(() => {})
   }, [])
+
+  // Pending moderation appeals queue.
+  const [appeals, setAppeals] = useState<Appeal[]>([])
+  const loadAppeals = () => adminService.getAppeals('Pending').then(setAppeals).catch(() => {})
+  useEffect(() => {
+    loadAppeals()
+  }, [])
+
+  const resolveAppeal = async (id: string, approve: boolean) => {
+    await adminService.resolveAppeal(id, approve).catch(() => {})
+    loadAppeals()
+    load(page) // an approval may have lifted a warning / changed a ban
+  }
 
   const changeRole = async (id: string, role: string) => {
     await adminService.changeRole(id, role).catch(() => {})
@@ -100,6 +113,45 @@ export default function AdminPage() {
           <StatsPanel stats={stats} />
           {stats && <RoleChart usersByRole={stats.usersByRole} />}
         </div>
+
+        {/* Pending appeals queue */}
+        {appeals.length > 0 && (
+          <section className="mb-6 rounded-xl border border-amber-300 bg-amber-50 p-5 dark:border-amber-700 dark:bg-amber-950/30">
+            <h2 className="mb-3 font-bold text-amber-800 dark:text-amber-200">
+              {t('appeal.queueTitle', { count: appeals.length })}
+            </h2>
+            <ul className="space-y-3">
+              {appeals.map((a) => (
+                <li key={a.id} className="rounded-lg bg-white p-3 text-sm dark:bg-slate-800">
+                  <div className="flex items-center gap-2">
+                    <Link to={`/users/${a.userId}`} className="font-semibold hover:underline">{a.userName}</Link>
+                    <span className="text-xs text-slate-400">{new Date(a.createdAt).toLocaleString()}</span>
+                  </div>
+                  {a.warningReason && (
+                    <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                      {t('appeal.warningLabel')}: {a.warningReason}
+                    </p>
+                  )}
+                  <p className="mt-1 whitespace-pre-wrap">{a.message}</p>
+                  <div className="mt-3 flex gap-2">
+                    <button
+                      onClick={() => resolveAppeal(a.id, true)}
+                      className="rounded-lg bg-green-600 px-4 py-1.5 text-xs font-semibold text-white hover:bg-green-700"
+                    >
+                      {t('appeal.approve')}
+                    </button>
+                    <button
+                      onClick={() => resolveAppeal(a.id, false)}
+                      className="rounded-lg border border-red-300 px-4 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50 dark:border-red-700 dark:hover:bg-red-950"
+                    >
+                      {t('appeal.reject')}
+                    </button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
 
         <div className="overflow-hidden rounded-xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-800">
           <table className="w-full text-sm">

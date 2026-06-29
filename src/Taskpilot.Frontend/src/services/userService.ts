@@ -1,6 +1,6 @@
 import api from '../lib/api'
 import type { User } from '../types/auth'
-import type { Warning } from '../types/admin'
+import type { Appeal, Warning } from '../types/admin'
 
 export interface UpdateProfileData {
   name: string
@@ -80,5 +80,15 @@ export const userService = {
   /** Lists the current user's moderation warnings (newest first). */
   getMyWarnings(): Promise<Warning[]> {
     return api.get<Warning[]>('/api/users/me/warnings').then((r) => r.data)
+  },
+
+  /** Lists the current user's appeals (newest first). */
+  getMyAppeals(): Promise<Appeal[]> {
+    return api.get<Appeal[]>('/api/users/me/appeals').then((r) => r.data)
+  },
+
+  /** Files an appeal against a warning. */
+  createAppeal(data: { warningId?: string; message: string }): Promise<Appeal> {
+    return api.post<Appeal>('/api/users/me/appeals', data).then((r) => r.data)
   },
 }

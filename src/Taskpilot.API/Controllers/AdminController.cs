@@ -20,6 +20,7 @@ public class AdminController : BaseApiController
     private readonly IStatsService _stats;
     private readonly IOverdueService _overdue;
     private readonly IWarningService _warnings;
+    private readonly IAppealService _appeals;
     private readonly IValidator<IssueWarningDto> _issueWarningValidator;
 
     public AdminController(
@@ -28,6 +29,7 @@ public class AdminController : BaseApiController
         IStatsService stats,
         IOverdueService overdue,
         IWarningService warnings,
+        IAppealService appeals,
         IValidator<IssueWarningDto> issueWarningValidator)
     {
         _adminService = adminService;
@@ -35,6 +37,7 @@ public class AdminController : BaseApiController
         _stats = stats;
         _overdue = overdue;
         _warnings = warnings;
+        _appeals = appeals;
         _issueWarningValidator = issueWarningValidator;
     }
 
@@ -131,6 +134,27 @@ public class AdminController : BaseApiController
     {
         var result = await _warnings.GetForUserAsync(userId);
         return Ok(result.Value);
+    }
+
+    /// <summary>Lists moderation appeals (pending first), optionally filtered by status.</summary>
+    [HttpGet("appeals")]
+    public async Task<IActionResult> GetAppeals([FromQuery] string? status = null)
+    {
+        var result = await _appeals.GetAllAsync(status);
+        return Ok(result.Value);
+    }
+
+    /// <summary>Resolves an appeal: approve removes the linked warning, reject keeps it.</summary>
+    [HttpPost("appeals/{appealId:guid}/resolve")]
+    public async Task<IActionResult> ResolveAppeal(Guid appealId, [FromBody] ResolveAppealDto dto)
+    {
+        var adminId = CurrentUserId();
+        if (adminId is null) return Unauthorized();
+
+        var result = await _appeals.ResolveAsync(adminId.Value, CurrentUserEmail(), appealId, dto, ClientIp());
+        return result.Succeeded
+            ? Ok(result.Value)
+            : BadRequest(new { error = result.Error });
     }
 
     /// <summary>Returns a page of audit-trail entries (newest first), optionally filtered by action.</summary>

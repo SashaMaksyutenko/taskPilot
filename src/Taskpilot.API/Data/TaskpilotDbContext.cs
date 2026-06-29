@@ -80,6 +80,9 @@ public class TaskpilotDbContext : DbContext
     /// <summary>Moderation warnings issued to users.</summary>
     public DbSet<UserWarning> UserWarnings => Set<UserWarning>();
 
+    /// <summary>Appeals against moderation warnings.</summary>
+    public DbSet<Appeal> Appeals => Set<Appeal>();
+
     /// <summary>
     /// Налаштування моделі (Fluent API): обмеження, індекси, перетворення типів.
     /// Викликається EF Core під час побудови моделі та генерації міграцій.
@@ -563,6 +566,39 @@ public class TaskpilotDbContext : DbContext
             entity.HasOne(w => w.IssuedBy)
                   .WithMany()
                   .HasForeignKey(w => w.IssuedById)
+                  .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        // Appeal entity configuration
+        modelBuilder.Entity<Appeal>(entity =>
+        {
+            entity.HasKey(a => a.Id);
+
+            entity.Property(a => a.Message).IsRequired().HasMaxLength(2000);
+            entity.Property(a => a.ReviewNote).HasMaxLength(1000);
+            entity.Property(a => a.Status)
+                  .HasConversion<string>().HasMaxLength(20).IsRequired();
+
+            // List a user's appeals + the admin's pending queue.
+            entity.HasIndex(a => new { a.UserId, a.CreatedAt });
+            entity.HasIndex(a => a.Status);
+
+            // Deleting the user removes their appeals.
+            entity.HasOne(a => a.User)
+                  .WithMany()
+                  .HasForeignKey(a => a.UserId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            // Approving an appeal deletes the warning; keep the appeal but null the link.
+            entity.HasOne(a => a.Warning)
+                  .WithMany()
+                  .HasForeignKey(a => a.WarningId)
+                  .OnDelete(DeleteBehavior.SetNull);
+
+            // Reviewer link is restricted to avoid multiple cascade paths.
+            entity.HasOne(a => a.ReviewedBy)
+                  .WithMany()
+                  .HasForeignKey(a => a.ReviewedById)
                   .OnDelete(DeleteBehavior.Restrict);
         });
     }

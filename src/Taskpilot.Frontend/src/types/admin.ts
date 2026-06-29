@@ -41,5 +41,19 @@ export interface IssueWarningResult {
   autoBanned: boolean
 }
 
+/** A moderation appeal (mirrors AppealDto). */
+export interface Appeal {
+  id: string
+  userId: string
+  userName: string
+  warningId: string | null
+  warningReason: string | null
+  message: string
+  status: 'Pending' | 'Approved' | 'Rejected'
+  reviewNote: string | null
+  createdAt: string
+  reviewedAt: string | null
+}
+
 // Re-exported from the shared module so existing imports keep working.
 export type { PagedResult } from './common'

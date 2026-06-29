@@ -63,6 +63,25 @@
     "autoBanned": "{{name}} reached {{count}} warnings and was auto-suspended.",
     "myTitle": "You have {{count}} warning(s)"
   },
+  "appeal": {
+    "appeal": "Appeal",
+    "pending": "Appeal pending",
+    "title": "Appeal a warning",
+    "warningLabel": "Warning",
+    "messagePlaceholder": "Explain why this warning should be lifted…",
+    "cancel": "Cancel",
+    "submit": "Submit appeal",
+    "myTitle": "My appeals",
+    "reviewNote": "Admin note",
+    "queueTitle": "Appeals to review ({{count}})",
+    "approve": "Approve",
+    "reject": "Reject",
+    "status": {
+      "Pending": "Pending",
+      "Approved": "Approved",
+      "Rejected": "Rejected"
+    }
+  },
   "auth": {
     "welcomeBack": "Welcome back",
     "createAccount": "Create your account",

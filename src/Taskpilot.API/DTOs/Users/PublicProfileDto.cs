@@ -33,4 +33,10 @@ public class PublicProfileDto
 
     /// <summary>Number of reviews received.</summary>
     public int ReviewCount { get; set; }
+
+    /// <summary>Computed reputation score (never negative).</summary>
+    public int ReputationPoints { get; set; }
+
+    /// <summary>Earned badge keys (the client maps them to labels/icons).</summary>
+    public List<string> Badges { get; set; } = new();
 }

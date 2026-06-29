@@ -39,6 +39,8 @@ export interface PublicProfile {
   memberSince: string
   averageRating: number | null
   reviewCount: number
+  reputationPoints: number
+  badges: string[]
 }
 
 /** REST calls for the current user's account (profile, password). */

@@ -4,6 +4,7 @@ using Taskpilot.API.Data;
 using Taskpilot.API.DTOs.Auth;
 using Taskpilot.API.DTOs.Users;
 using Taskpilot.API.Mappers;
+using Taskpilot.API.Models;
 
 namespace Taskpilot.API.Services;
 
@@ -101,7 +102,41 @@ public class UserService : IUserService
         dto.ReviewCount = stars.Count;
         dto.AverageRating = stars.Count > 0 ? Math.Round(stars.Average(), 1) : null;
 
+        await ApplyReputationAsync(dto, userId, stars);
+
         return Result<PublicProfileDto>.Ok(dto);
+    }
+
+    /// <summary>
+    /// Computes a derived reputation score and badges from the user's existing activity
+    /// (forum solutions/votes, completed marketplace tasks, review stars). No ledger —
+    /// it is recomputed on demand so it always reflects current data.
+    /// </summary>
+    private async Task ApplyReputationAsync(PublicProfileDto dto, Guid userId, List<int> reviewStars)
+    {
+        var solutions = await _context.ForumReplies
+            .CountAsync(r => r.AuthorId == userId && r.IsSolution);
+
+        // Net up/down votes across all replies the user authored.
+        var upvotes = await _context.ForumVotes
+            .Where(v => v.Reply.AuthorId == userId)
+            .SumAsync(v => (int?)v.Value) ?? 0;
+
+        var completedTasks = await _context.MarketplaceTasks
+            .CountAsync(t => t.AssigneeId == userId && t.Status == MarketplaceTaskStatus.Completed);
+
+        // Reviews above 3★ add, below 3★ subtract.
+        var reviewScore = reviewStars.Sum(s => s - 3);
+
+        var points = solutions * 15 + upvotes * 2 + completedTasks * 10 + reviewScore * 3;
+        dto.ReputationPoints = Math.Max(0, points);
+
+        var badges = new List<string>();
+        if (solutions >= 5) badges.Add("solver");
+        if (upvotes >= 25) badges.Add("contributor");
+        if (completedTasks >= 3 && (dto.AverageRating ?? 0) >= 4) badges.Add("freelancer");
+        if (dto.ReputationPoints >= 100) badges.Add("veteran");
+        dto.Badges = badges;
     }
 
     /// <inheritdoc />

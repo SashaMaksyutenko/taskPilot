@@ -82,6 +82,15 @@
       "Rejected": "Rejected"
     }
   },
+  "reputation": {
+    "points": "{{count}} pts",
+    "badge": {
+      "solver": "Problem Solver",
+      "contributor": "Top Contributor",
+      "freelancer": "Trusted Freelancer",
+      "veteran": "Veteran"
+    }
+  },
   "auth": {
     "welcomeBack": "Welcome back",
     "createAccount": "Create your account",

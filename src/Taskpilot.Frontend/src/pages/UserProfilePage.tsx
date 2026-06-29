@@ -8,6 +8,14 @@ import { forumService } from '../services/forumService'
 import { userService, type PublicProfile } from '../services/userService'
 import type { TopicListItem } from '../types/forum'
 
+/** Emoji per reputation badge key (labels come from i18n). */
+const BADGE_ICON: Record<string, string> = {
+  solver: '🧩',
+  contributor: '⬆️',
+  freelancer: '💼',
+  veteran: '🏆',
+}
+
 /** A contact line shown only when the value is present. */
 function Contact({ label, value, href }: { label: string; value?: string | null; href?: string }) {
   if (!value) return null
@@ -78,6 +86,20 @@ export default function UserProfilePage() {
                       </span>
                     </div>
                   )}
+                  <div className="mt-2 flex flex-wrap items-center gap-2">
+                    <span className="rounded-full bg-[#1E2A44] px-2.5 py-0.5 text-xs font-bold text-white">
+                      ⭐ {t('reputation.points', { count: profile.reputationPoints })}
+                    </span>
+                    {profile.badges.map((b) => (
+                      <span
+                        key={b}
+                        title={t(`reputation.badge.${b}`, b)}
+                        className="rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-800 dark:bg-amber-900/40 dark:text-amber-200"
+                      >
+                        {BADGE_ICON[b] ?? '🏅'} {t(`reputation.badge.${b}`, b)}
+                      </span>
+                    ))}
+                  </div>
                 </div>
               </div>
 

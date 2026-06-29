@@ -82,6 +82,15 @@
       "Rejected": "Відхилено"
     }
   },
+  "reputation": {
+    "points": "{{count}} балів",
+    "badge": {
+      "solver": "Вирішувач проблем",
+      "contributor": "Топ-контриб'ютор",
+      "freelancer": "Надійний фрилансер",
+      "veteran": "Ветеран"
+    }
+  },
   "auth": {
     "welcomeBack": "З поверненням",
     "createAccount": "Створіть акаунт",

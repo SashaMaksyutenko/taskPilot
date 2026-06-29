@@ -11,11 +11,15 @@ public static class WebhookEvents
     public const string ProjectArchived = "project.archived";
     public const string MarketplaceTaskCompleted = "marketplace.task.completed";
     public const string UserBanned = "user.banned";
+    public const string CommentCreated = "comment.created";
+    public const string WarningIssued = "warning.issued";
+    public const string AppealResolved = "appeal.resolved";
 
     /// <summary>All supported events (used for validation).</summary>
     public static readonly string[] All =
     {
         TaskCompleted, TaskCreated, TaskUpdated, TaskOverdue,
         ProjectCreated, ProjectArchived, MarketplaceTaskCompleted, UserBanned,
+        CommentCreated, WarningIssued, AppealResolved,
     };
 }

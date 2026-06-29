@@ -18,4 +18,7 @@ export const WEBHOOK_EVENTS = [
   'project.archived',
   'marketplace.task.completed',
   'user.banned',
+  'comment.created',
+  'warning.issued',
+  'appeal.resolved',
 ] as const

@@ -15,17 +15,20 @@ public class AppealService : IAppealService
     private readonly TaskpilotDbContext _context;
     private readonly INotificationService _notifications;
     private readonly IAuditService _audit;
+    private readonly IWebhookService _webhooks;
     private readonly ILogger<AppealService> _logger;
 
     public AppealService(
         TaskpilotDbContext context,
         INotificationService notifications,
         IAuditService audit,
+        IWebhookService webhooks,
         ILogger<AppealService> logger)
     {
         _context = context;
         _notifications = notifications;
         _audit = audit;
+        _webhooks = webhooks;
         _logger = logger;
     }
 
@@ -137,6 +140,13 @@ public class AppealService : IAppealService
             entityId: appealId.ToString(),
             details: appeal.ReviewNote,
             ipAddress: ip);
+
+        await _webhooks.DispatchAsync(WebhookEvents.AppealResolved, new
+        {
+            appealId,
+            userId = appeal.UserId,
+            approved = dto.Approve,
+        });
 
         _logger.LogInformation("Appeal resolved. AppealId: {AppealId}, Approved: {Approved}", appealId, dto.Approve);
         return Result<AppealDto>.Ok(await LoadDtoAsync(appealId));

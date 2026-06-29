@@ -19,6 +19,7 @@ public class WarningService : IWarningService
     private readonly INotificationService _notifications;
     private readonly IAuditService _audit;
     private readonly IAdminService _admin;
+    private readonly IWebhookService _webhooks;
     private readonly ILogger<WarningService> _logger;
 
     public WarningService(
@@ -26,12 +27,14 @@ public class WarningService : IWarningService
         INotificationService notifications,
         IAuditService audit,
         IAdminService admin,
+        IWebhookService webhooks,
         ILogger<WarningService> logger)
     {
         _context = context;
         _notifications = notifications;
         _audit = audit;
         _admin = admin;
+        _webhooks = webhooks;
         _logger = logger;
     }
 
@@ -76,6 +79,14 @@ public class WarningService : IWarningService
             entityId: targetUserId.ToString(),
             details: $"Warning {count}/{AutoBanThreshold}: {reason}",
             ipAddress: ip);
+
+        await _webhooks.DispatchAsync(WebhookEvents.WarningIssued, new
+        {
+            warningId = warning.Id,
+            userId = targetUserId,
+            reason,
+            count,
+        });
 
         // Escalate: auto-ban once the user reaches the threshold (if still active).
         var autoBanned = false;

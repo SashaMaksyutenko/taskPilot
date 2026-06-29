@@ -14,11 +14,13 @@ namespace Taskpilot.API.Services;
 public class TaskCommentService : ITaskCommentService
 {
     private readonly TaskpilotDbContext _context;
+    private readonly IWebhookService _webhooks;
     private readonly ILogger<TaskCommentService> _logger;
 
-    public TaskCommentService(TaskpilotDbContext context, ILogger<TaskCommentService> logger)
+    public TaskCommentService(TaskpilotDbContext context, IWebhookService webhooks, ILogger<TaskCommentService> logger)
     {
         _context = context;
+        _webhooks = webhooks;
         _logger = logger;
     }
 
@@ -80,6 +82,14 @@ public class TaskCommentService : ITaskCommentService
             .Select(c => new CommentRow(c.Id, c.TaskId, c.AuthorId, c.Author.Name, c.Author.AvatarFileId, c.Body, c.CreatedAt, c.UpdatedAt))
             .AsNoTracking()
             .FirstAsync();
+
+        await _webhooks.DispatchAsync(WebhookEvents.CommentCreated, new
+        {
+            commentId = comment.Id,
+            taskId,
+            authorId = userId,
+            body = comment.Body,
+        });
 
         return Result<TaskCommentDto>.Ok(MapDto(added));
     }

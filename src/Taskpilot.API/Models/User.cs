@@ -37,6 +37,12 @@ public class User
     /// </summary>
     public DateTime? BannedUntil { get; set; }
 
+    /// <summary>
+    /// For a mute: UTC time the mute lifts. While in the future the user can read but
+    /// not post (chat, forum, comments). null or past means not muted.
+    /// </summary>
+    public DateTime? MutedUntil { get; set; }
+
     /// <summary>Дата та час створення акаунта (UTC).</summary>
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 

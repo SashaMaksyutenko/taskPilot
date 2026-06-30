@@ -140,6 +140,41 @@ public class AdminController : BaseApiController
         return Ok(result.Value);
     }
 
+    /// <summary>Mutes a user (read-only: cannot post) for a number of days (default 1).</summary>
+    [HttpPost("users/{userId:guid}/mute")]
+    public async Task<IActionResult> Mute(Guid userId, [FromBody] MuteUserDto? dto = null)
+    {
+        var adminId = CurrentUserId();
+        if (adminId is null) return Unauthorized();
+
+        var days = dto?.Days is > 0 ? dto!.Days!.Value : 1;
+        var mutedUntil = DateTime.UtcNow.AddDays(days);
+
+        var result = await _adminService.SetMutedAsync(adminId.Value, userId, mutedUntil);
+        if (!result.Succeeded)
+            return BadRequest(new { error = result.Error });
+
+        await _audit.LogAsync("user.muted", actorId: adminId, actorEmail: CurrentUserEmail(),
+            entityType: "User", entityId: userId.ToString(), details: $"until {mutedUntil:u}", ipAddress: ClientIp());
+        return Ok(new { message = "User muted.", mutedUntil });
+    }
+
+    /// <summary>Lifts a user's mute.</summary>
+    [HttpPost("users/{userId:guid}/unmute")]
+    public async Task<IActionResult> Unmute(Guid userId)
+    {
+        var adminId = CurrentUserId();
+        if (adminId is null) return Unauthorized();
+
+        var result = await _adminService.SetMutedAsync(adminId.Value, userId, null);
+        if (!result.Succeeded)
+            return BadRequest(new { error = result.Error });
+
+        await _audit.LogAsync("user.unmuted", actorId: adminId, actorEmail: CurrentUserEmail(),
+            entityType: "User", entityId: userId.ToString(), ipAddress: ClientIp());
+        return Ok(new { message = "User unmuted." });
+    }
+
     /// <summary>Lists moderation appeals (pending first), optionally filtered by status.</summary>
     [HttpGet("appeals")]
     public async Task<IActionResult> GetAppeals([FromQuery] string? status = null)

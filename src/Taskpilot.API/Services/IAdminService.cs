@@ -20,4 +20,7 @@ public interface IAdminService
     /// refresh tokens so they cannot keep their session alive.
     /// </summary>
     Task<Result> SetActiveAsync(Guid adminId, Guid targetUserId, bool isActive, DateTime? bannedUntil = null);
+
+    /// <summary>Mutes a user until the given UTC time, or clears the mute when null.</summary>
+    Task<Result> SetMutedAsync(Guid adminId, Guid targetUserId, DateTime? mutedUntil);
 }

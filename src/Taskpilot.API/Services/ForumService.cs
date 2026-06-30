@@ -33,6 +33,9 @@ public class ForumService : IForumService
     {
         _logger.LogInformation("CreateTopic. AuthorId: {AuthorId}", authorId);
 
+        if (await MuteGuard.CheckAsync(_context, authorId) is { } muted)
+            return Result<TopicDetailDto>.Fail(muted);
+
         try
         {
             var topic = new ForumTopic
@@ -261,6 +264,9 @@ public class ForumService : IForumService
 
         if (topic.IsLocked)
             return Result<ReplyDto>.Fail("This topic is locked.");
+
+        if (await MuteGuard.CheckAsync(_context, authorId) is { } muted)
+            return Result<ReplyDto>.Fail(muted);
 
         // If replying to another reply, it must belong to the same topic.
         if (dto.ParentReplyId.HasValue)

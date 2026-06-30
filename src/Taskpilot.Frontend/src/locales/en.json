@@ -289,7 +289,10 @@
     "ban": "Ban",
     "unban": "Unban",
     "warn": "Warn",
+    "mute": "Mute",
+    "unmute": "Unmute",
     "bannedUntil": "until {{date}}",
+    "mutedUntil": "muted until {{date}}",
     "banDuration": {
       "d1": "1 day",
       "d7": "7 days",

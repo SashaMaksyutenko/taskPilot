@@ -161,6 +161,9 @@ public class ChatService : IChatService
         if (!await IsParticipantAsync(dto.ConversationId, senderId))
             return Result<MessageDto>.Fail("You are not a participant of this conversation.");
 
+        if (await MuteGuard.CheckAsync(_context, senderId) is { } muted)
+            return Result<MessageDto>.Fail(muted);
+
         // If a file is attached, make sure it exists before linking it.
         FileAttachment? attachment = null;
         if (dto.FileAttachmentId is { } fileId)

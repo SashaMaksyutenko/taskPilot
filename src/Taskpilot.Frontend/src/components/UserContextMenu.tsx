@@ -17,6 +17,9 @@ export default function UserContextMenu({
   onBan,
   onUnban,
   onWarn,
+  isMuted,
+  onMute,
+  onUnmute,
 }: {
   children: ReactNode
   isActive: boolean
@@ -26,6 +29,9 @@ export default function UserContextMenu({
   onBan: (days?: number) => void
   onUnban: () => void
   onWarn: () => void
+  isMuted: boolean
+  onMute: (days?: number) => void
+  onUnmute: () => void
 }) {
   const { t } = useTranslation()
 
@@ -61,6 +67,32 @@ export default function UserContextMenu({
               <ContextMenu.Item className={`${itemClass} text-amber-600`} onSelect={onWarn}>
                 {t('admin.warn')}
               </ContextMenu.Item>
+
+              {isMuted ? (
+                <ContextMenu.Item className={`${itemClass} text-green-600`} onSelect={onUnmute}>
+                  {t('admin.unmute')}
+                </ContextMenu.Item>
+              ) : (
+                <ContextMenu.Sub>
+                  <ContextMenu.SubTrigger className={`${itemClass} flex items-center justify-between gap-4 text-amber-600`}>
+                    {t('admin.mute')}
+                    <span className="text-slate-400">▸</span>
+                  </ContextMenu.SubTrigger>
+                  <ContextMenu.Portal>
+                    <ContextMenu.SubContent className={contentClass}>
+                      <ContextMenu.Item className={itemClass} onSelect={() => onMute(1)}>
+                        {t('admin.banDuration.d1')}
+                      </ContextMenu.Item>
+                      <ContextMenu.Item className={itemClass} onSelect={() => onMute(7)}>
+                        {t('admin.banDuration.d7')}
+                      </ContextMenu.Item>
+                      <ContextMenu.Item className={itemClass} onSelect={() => onMute(30)}>
+                        {t('admin.banDuration.d30')}
+                      </ContextMenu.Item>
+                    </ContextMenu.SubContent>
+                  </ContextMenu.Portal>
+                </ContextMenu.Sub>
+              )}
 
               {isActive ? (
                 <ContextMenu.Sub>

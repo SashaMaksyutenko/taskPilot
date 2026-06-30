@@ -29,6 +29,14 @@ export const adminService = {
     return api.post(`/api/admin/users/${userId}/unban`).then(() => undefined)
   },
 
+  mute(userId: string, days?: number): Promise<void> {
+    return api.post(`/api/admin/users/${userId}/mute`, { days }).then(() => undefined)
+  },
+
+  unmute(userId: string): Promise<void> {
+    return api.post(`/api/admin/users/${userId}/unmute`).then(() => undefined)
+  },
+
   issueWarning(userId: string, reason: string): Promise<IssueWarningResult> {
     return api
       .post<IssueWarningResult>(`/api/admin/users/${userId}/warnings`, { reason })

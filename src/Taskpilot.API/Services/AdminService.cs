@@ -108,4 +108,23 @@ public class AdminService : IAdminService
         _logger.LogInformation("User {Status}. UserId: {UserId}", isActive ? "unbanned" : "banned", targetUserId);
         return Result.Ok();
     }
+
+    /// <inheritdoc />
+    public async Task<Result> SetMutedAsync(Guid adminId, Guid targetUserId, DateTime? mutedUntil)
+    {
+        // An admin must not mute themselves.
+        if (mutedUntil is not null && adminId == targetUserId)
+            return Result.Fail("You cannot mute yourself.");
+
+        var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == targetUserId);
+        if (user is null)
+            return Result.Fail("User not found.");
+
+        user.MutedUntil = mutedUntil;
+        user.UpdatedAt = DateTime.UtcNow;
+        await _context.SaveChangesAsync();
+
+        _logger.LogInformation("User {Status}. UserId: {UserId}", mutedUntil is null ? "unmuted" : "muted", targetUserId);
+        return Result.Ok();
+    }
 }

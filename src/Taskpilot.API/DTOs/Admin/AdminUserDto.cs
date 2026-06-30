@@ -13,5 +13,8 @@ public class AdminUserDto
     /// <summary>When a temporary ban lifts; null for active or permanently banned users.</summary>
     public DateTime? BannedUntil { get; set; }
 
+    /// <summary>When a mute lifts; null when not muted.</summary>
+    public DateTime? MutedUntil { get; set; }
+
     public DateTime CreatedAt { get; set; }
 }

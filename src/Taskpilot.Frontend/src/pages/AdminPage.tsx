@@ -73,6 +73,18 @@ export default function AdminPage() {
     load(page)
   }
 
+  const isMuted = (u: AdminUser) => u.mutedUntil != null && new Date(u.mutedUntil) > new Date()
+
+  const muteUser = async (u: AdminUser, days?: number) => {
+    await adminService.mute(u.id, days).catch(() => {})
+    load(page)
+  }
+
+  const unmuteUser = async (u: AdminUser) => {
+    await adminService.unmute(u.id).catch(() => {})
+    load(page)
+  }
+
   // Warn flow: target user for the modal + transient feedback message.
   const [warnTarget, setWarnTarget] = useState<AdminUser | null>(null)
   const [warnMsg, setWarnMsg] = useState('')
@@ -179,6 +191,9 @@ export default function AdminPage() {
                   onBan={(days) => banUser(u, days)}
                   onUnban={() => unbanUser(u)}
                   onWarn={() => setWarnTarget(u)}
+                  isMuted={isMuted(u)}
+                  onMute={(days) => muteUser(u, days)}
+                  onUnmute={() => unmuteUser(u)}
                 >
                 <tr>
                   <td className="px-4 py-3 font-medium">
@@ -212,6 +227,11 @@ export default function AdminPage() {
                     {!u.isActive && u.bannedUntil && (
                       <div className="mt-1 text-[11px] text-slate-400">
                         {t('admin.bannedUntil', { date: new Date(u.bannedUntil).toLocaleDateString() })}
+                      </div>
+                    )}
+                    {isMuted(u) && (
+                      <div className="mt-1 text-[11px] font-semibold text-amber-600">
+                        🔇 {t('admin.mutedUntil', { date: new Date(u.mutedUntil!).toLocaleDateString() })}
                       </div>
                     )}
                   </td>

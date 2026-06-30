@@ -72,6 +72,7 @@ public static class UserMapper
         Role = u.Role.ToString(),
         IsActive = u.IsActive,
         BannedUntil = u.BannedUntil,
+        MutedUntil = u.MutedUntil,
         CreatedAt = u.CreatedAt,
     };
 }

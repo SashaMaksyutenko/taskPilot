@@ -7,6 +7,7 @@ export interface AdminUser {
   role: string
   isActive: boolean
   bannedUntil: string | null
+  mutedUntil: string | null
   createdAt: string
 }
 

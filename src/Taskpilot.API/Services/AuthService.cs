@@ -121,6 +121,15 @@ public class AuthService : IAuthService
                 return Result<AuthResponseDto>.Fail("Invalid email or password.");
             }
 
+            // A temporary ban auto-lifts once it expires (checked lazily at login).
+            if (!user.IsActive && user.BannedUntil is { } until && until <= DateTime.UtcNow)
+            {
+                user.IsActive = true;
+                user.BannedUntil = null;
+                user.UpdatedAt = DateTime.UtcNow;
+                _logger.LogInformation("Temporary ban expired; reactivating. UserId: {UserId}", user.Id);
+            }
+
             // Disabled/blocked accounts cannot log in.
             if (!user.IsActive)
             {

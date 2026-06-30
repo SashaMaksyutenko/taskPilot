@@ -30,6 +30,13 @@ public class User
     /// </summary>
     public bool IsActive { get; set; } = true;
 
+    /// <summary>
+    /// For a temporary ban: UTC time the ban lifts (the account auto-reactivates on the
+    /// next login attempt afterwards). null means a permanent ban or no ban.
+    /// Only meaningful while <see cref="IsActive"/> is false.
+    /// </summary>
+    public DateTime? BannedUntil { get; set; }
+
     /// <summary>Дата та час створення акаунта (UTC).</summary>
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 

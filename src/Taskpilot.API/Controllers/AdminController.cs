@@ -79,20 +79,24 @@ public class AdminController : BaseApiController
         return Ok(new { message = $"Role changed to {dto.Role}." });
     }
 
-    /// <summary>Bans (deactivates) a user.</summary>
+    /// <summary>Bans (deactivates) a user, permanently or for a number of days.</summary>
     [HttpPost("users/{userId:guid}/ban")]
-    public async Task<IActionResult> Ban(Guid userId)
+    public async Task<IActionResult> Ban(Guid userId, [FromBody] BanUserDto? dto = null)
     {
         var adminId = CurrentUserId();
         if (adminId is null) return Unauthorized();
 
-        var result = await _adminService.SetActiveAsync(adminId.Value, userId, isActive: false);
+        // A positive day count makes it temporary; otherwise it is permanent.
+        DateTime? bannedUntil = dto?.Days is > 0 ? DateTime.UtcNow.AddDays(dto!.Days!.Value) : null;
+
+        var result = await _adminService.SetActiveAsync(adminId.Value, userId, isActive: false, bannedUntil);
         if (!result.Succeeded)
             return BadRequest(new { error = result.Error });
 
         await _audit.LogAsync("user.banned", actorId: adminId, actorEmail: CurrentUserEmail(),
-            entityType: "User", entityId: userId.ToString(), ipAddress: ClientIp());
-        return Ok(new { message = "User banned." });
+            entityType: "User", entityId: userId.ToString(),
+            details: bannedUntil is { } until ? $"until {until:u}" : "permanent", ipAddress: ClientIp());
+        return Ok(new { message = "User banned.", bannedUntil });
     }
 
     /// <summary>Unbans (reactivates) a user.</summary>

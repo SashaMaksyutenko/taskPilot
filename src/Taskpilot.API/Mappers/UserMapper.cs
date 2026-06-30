@@ -71,6 +71,7 @@ public static class UserMapper
         Email = u.Email,
         Role = u.Role.ToString(),
         IsActive = u.IsActive,
+        BannedUntil = u.BannedUntil,
         CreatedAt = u.CreatedAt,
     };
 }

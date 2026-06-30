@@ -289,6 +289,13 @@
     "ban": "Ban",
     "unban": "Unban",
     "warn": "Warn",
+    "bannedUntil": "until {{date}}",
+    "banDuration": {
+      "d1": "1 day",
+      "d7": "7 days",
+      "d30": "30 days",
+      "permanent": "Permanent"
+    },
     "viewProfile": "View profile",
     "changeRole": "Change role",
     "roles": {

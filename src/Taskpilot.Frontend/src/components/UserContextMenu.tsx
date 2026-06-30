@@ -14,7 +14,8 @@ export default function UserContextMenu({
   canModerate,
   onViewProfile,
   onChangeRole,
-  onToggleBan,
+  onBan,
+  onUnban,
   onWarn,
 }: {
   children: ReactNode
@@ -22,7 +23,8 @@ export default function UserContextMenu({
   canModerate: boolean
   onViewProfile: () => void
   onChangeRole: (role: string) => void
-  onToggleBan: () => void
+  onBan: (days?: number) => void
+  onUnban: () => void
   onWarn: () => void
 }) {
   const { t } = useTranslation()
@@ -59,9 +61,35 @@ export default function UserContextMenu({
               <ContextMenu.Item className={`${itemClass} text-amber-600`} onSelect={onWarn}>
                 {t('admin.warn')}
               </ContextMenu.Item>
-              <ContextMenu.Item className={`${itemClass} text-red-600`} onSelect={onToggleBan}>
-                {isActive ? t('admin.ban') : t('admin.unban')}
-              </ContextMenu.Item>
+
+              {isActive ? (
+                <ContextMenu.Sub>
+                  <ContextMenu.SubTrigger className={`${itemClass} flex items-center justify-between gap-4 text-red-600`}>
+                    {t('admin.ban')}
+                    <span className="text-slate-400">▸</span>
+                  </ContextMenu.SubTrigger>
+                  <ContextMenu.Portal>
+                    <ContextMenu.SubContent className={contentClass}>
+                      <ContextMenu.Item className={itemClass} onSelect={() => onBan(1)}>
+                        {t('admin.banDuration.d1')}
+                      </ContextMenu.Item>
+                      <ContextMenu.Item className={itemClass} onSelect={() => onBan(7)}>
+                        {t('admin.banDuration.d7')}
+                      </ContextMenu.Item>
+                      <ContextMenu.Item className={itemClass} onSelect={() => onBan(30)}>
+                        {t('admin.banDuration.d30')}
+                      </ContextMenu.Item>
+                      <ContextMenu.Item className={`${itemClass} text-red-600`} onSelect={() => onBan()}>
+                        {t('admin.banDuration.permanent')}
+                      </ContextMenu.Item>
+                    </ContextMenu.SubContent>
+                  </ContextMenu.Portal>
+                </ContextMenu.Sub>
+              ) : (
+                <ContextMenu.Item className={`${itemClass} text-green-600`} onSelect={onUnban}>
+                  {t('admin.unban')}
+                </ContextMenu.Item>
+              )}
             </>
           )}
         </ContextMenu.Content>

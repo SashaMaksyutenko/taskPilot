@@ -69,7 +69,7 @@ public class AdminService : IAdminService
     }
 
     /// <inheritdoc />
-    public async Task<Result> SetActiveAsync(Guid adminId, Guid targetUserId, bool isActive)
+    public async Task<Result> SetActiveAsync(Guid adminId, Guid targetUserId, bool isActive, DateTime? bannedUntil = null)
     {
         // An admin must not lock themselves out.
         if (!isActive && adminId == targetUserId)
@@ -80,6 +80,9 @@ public class AdminService : IAdminService
             return Result.Fail("User not found.");
 
         user.IsActive = isActive;
+        // A ban may be temporary (BannedUntil set) or permanent (null). Clearing the
+        // ban (unban) always resets the expiry.
+        user.BannedUntil = isActive ? null : bannedUntil;
         user.UpdatedAt = DateTime.UtcNow;
 
         // When banning, revoke all active refresh tokens so the session truly ends.

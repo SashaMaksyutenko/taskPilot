@@ -289,6 +289,13 @@
     "ban": "Забанити",
     "unban": "Розбанити",
     "warn": "Попередити",
+    "bannedUntil": "до {{date}}",
+    "banDuration": {
+      "d1": "1 день",
+      "d7": "7 днів",
+      "d30": "30 днів",
+      "permanent": "Назавжди"
+    },
     "viewProfile": "Профіль",
     "changeRole": "Змінити роль",
     "roles": {

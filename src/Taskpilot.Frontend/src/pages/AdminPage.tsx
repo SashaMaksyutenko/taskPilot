@@ -63,9 +63,13 @@ export default function AdminPage() {
     load(page)
   }
 
-  const toggleBan = async (u: AdminUser) => {
-    if (u.isActive) await adminService.ban(u.id).catch(() => {})
-    else await adminService.unban(u.id).catch(() => {})
+  const banUser = async (u: AdminUser, days?: number) => {
+    await adminService.ban(u.id, days).catch(() => {})
+    load(page)
+  }
+
+  const unbanUser = async (u: AdminUser) => {
+    await adminService.unban(u.id).catch(() => {})
     load(page)
   }
 
@@ -172,7 +176,8 @@ export default function AdminPage() {
                   canModerate={u.id !== currentUserId}
                   onViewProfile={() => navigate(`/users/${u.id}`)}
                   onChangeRole={(role) => changeRole(u.id, role)}
-                  onToggleBan={() => toggleBan(u)}
+                  onBan={(days) => banUser(u, days)}
+                  onUnban={() => unbanUser(u)}
                   onWarn={() => setWarnTarget(u)}
                 >
                 <tr>
@@ -204,11 +209,16 @@ export default function AdminPage() {
                     >
                       {u.isActive ? t('admin.active') : t('admin.banned')}
                     </span>
+                    {!u.isActive && u.bannedUntil && (
+                      <div className="mt-1 text-[11px] text-slate-400">
+                        {t('admin.bannedUntil', { date: new Date(u.bannedUntil).toLocaleDateString() })}
+                      </div>
+                    )}
                   </td>
                   <td className="px-4 py-3 text-right">
                     {u.id !== currentUserId && (
                       <button
-                        onClick={() => toggleBan(u)}
+                        onClick={() => (u.isActive ? banUser(u) : unbanUser(u))}
                         className={`rounded-lg px-3 py-1 text-xs font-semibold ${
                           u.isActive
                             ? 'border border-red-300 text-red-600 hover:bg-red-50 dark:border-red-700 dark:hover:bg-red-950'

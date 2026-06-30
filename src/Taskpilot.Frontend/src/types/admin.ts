@@ -6,6 +6,7 @@ export interface AdminUser {
   email: string
   role: string
   isActive: boolean
+  bannedUntil: string | null
   createdAt: string
 }
 

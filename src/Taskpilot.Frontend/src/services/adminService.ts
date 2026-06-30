@@ -21,8 +21,8 @@ export const adminService = {
     return api.put(`/api/admin/users/${userId}/role`, { role }).then(() => undefined)
   },
 
-  ban(userId: string): Promise<void> {
-    return api.post(`/api/admin/users/${userId}/ban`).then(() => undefined)
+  ban(userId: string, days?: number): Promise<void> {
+    return api.post(`/api/admin/users/${userId}/ban`, { days }).then(() => undefined)
   },
 
   unban(userId: string): Promise<void> {

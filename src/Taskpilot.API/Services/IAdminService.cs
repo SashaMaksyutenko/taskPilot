@@ -19,5 +19,5 @@ public interface IAdminService
     /// Activates or deactivates a user (unban/ban). Banning also revokes the user's
     /// refresh tokens so they cannot keep their session alive.
     /// </summary>
-    Task<Result> SetActiveAsync(Guid adminId, Guid targetUserId, bool isActive);
+    Task<Result> SetActiveAsync(Guid adminId, Guid targetUserId, bool isActive, DateTime? bannedUntil = null);
 }

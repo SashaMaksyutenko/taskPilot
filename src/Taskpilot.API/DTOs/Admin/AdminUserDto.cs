@@ -9,5 +9,9 @@ public class AdminUserDto
     public string Email { get; set; } = string.Empty;
     public string Role { get; set; } = string.Empty;
     public bool IsActive { get; set; }
+
+    /// <summary>When a temporary ban lifts; null for active or permanently banned users.</summary>
+    public DateTime? BannedUntil { get; set; }
+
     public DateTime CreatedAt { get; set; }
 }

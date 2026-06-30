@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { AxiosError } from 'axios'
 import Avatar from '../components/Avatar'
 import Navbar from '../components/Navbar'
+import { notificationService } from '../services/notificationService'
 import { userService, type UpdateProfileData } from '../services/userService'
 import { webhookService } from '../services/webhookService'
 import { fetchMe } from '../store/authSlice'
@@ -10,6 +11,9 @@ import { useAppDispatch, useAppSelector } from '../store/hooks'
 import { WEBHOOK_EVENTS, type Webhook } from '../types/webhook'
 import type { Appeal, Warning } from '../types/admin'
 import AppealModal from '../components/AppealModal'
+
+// Notification types the user can toggle (mirror the backend NotificationType enum).
+const NOTIF_TYPES = ['Task', 'Chat', 'Forum', 'Marketplace', 'Moderation', 'General'] as const
 
 const emptyForm: UpdateProfileData = {
   name: '',
@@ -44,6 +48,20 @@ export default function SettingsPage() {
   const [webhooks, setWebhooks] = useState<Webhook[]>([])
   const [hookUrl, setHookUrl] = useState('')
   const [hookEvent, setHookEvent] = useState<string>(WEBHOOK_EVENTS[0])
+
+  // Notification preferences (opt-out set).
+  const [disabledNotif, setDisabledNotif] = useState<string[]>([])
+  useEffect(() => {
+    notificationService.getPreferences().then(setDisabledNotif).catch(() => {})
+  }, [])
+
+  const toggleNotif = async (type: string) => {
+    const next = disabledNotif.includes(type)
+      ? disabledNotif.filter((x) => x !== type)
+      : [...disabledNotif, type]
+    setDisabledNotif(next)
+    notificationService.updatePreferences(next).catch(() => {})
+  }
 
   const [warnings, setWarnings] = useState<Warning[]>([])
   const [appeals, setAppeals] = useState<Appeal[]>([])
@@ -308,6 +326,24 @@ export default function SettingsPage() {
               {t('settings.changePassword')}
             </button>
             {pwMsg && <span className="text-sm text-slate-500 dark:text-slate-400">{pwMsg}</span>}
+          </div>
+        </section>
+
+        {/* Notification preferences */}
+        <section className="mt-8 rounded-xl border border-slate-200 bg-white p-6 dark:border-slate-700 dark:bg-slate-800">
+          <h2 className="mb-1 font-bold">{t('notifPrefs.title')}</h2>
+          <p className="mb-4 text-sm text-slate-500 dark:text-slate-400">{t('notifPrefs.desc')}</p>
+          <div className="grid gap-2 sm:grid-cols-2">
+            {NOTIF_TYPES.map((type) => (
+              <label key={type} className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={!disabledNotif.includes(type)}
+                  onChange={() => toggleNotif(type)}
+                />
+                {t(`notifPrefs.type.${type}`, type)}
+              </label>
+            ))}
           </div>
         </section>
 

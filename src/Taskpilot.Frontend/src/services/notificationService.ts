@@ -20,4 +20,18 @@ export const notificationService = {
   markAllRead(): Promise<void> {
     return api.post('/api/notifications/read-all').then(() => undefined)
   },
+
+  /** Notification type names the user has disabled. */
+  getPreferences(): Promise<string[]> {
+    return api
+      .get<{ disabledTypes: string[] }>('/api/notifications/preferences')
+      .then((r) => r.data.disabledTypes)
+  },
+
+  /** Replaces the user's disabled notification types. */
+  updatePreferences(disabledTypes: string[]): Promise<string[]> {
+    return api
+      .put<{ disabledTypes: string[] }>('/api/notifications/preferences', { disabledTypes })
+      .then((r) => r.data.disabledTypes)
+  },
 }

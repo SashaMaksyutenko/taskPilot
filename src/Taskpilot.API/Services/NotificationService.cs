@@ -31,6 +31,13 @@ public class NotificationService : INotificationService
     /// <inheritdoc />
     public async Task CreateAsync(Guid recipientId, NotificationType type, string message, string? link = null)
     {
+        // Respect the recipient's preferences: skip types they have opted out of.
+        if (await _context.NotificationPreferences.AnyAsync(p => p.UserId == recipientId && p.Type == type))
+        {
+            _logger.LogInformation("Notification suppressed by preference. RecipientId: {RecipientId}, Type: {Type}", recipientId, type);
+            return;
+        }
+
         var notification = new Notification
         {
             Id = Guid.NewGuid(),
@@ -109,5 +116,47 @@ public class NotificationService : INotificationService
             .Where(n => n.RecipientId == userId && !n.IsRead)
             .ExecuteUpdateAsync(s => s.SetProperty(n => n.IsRead, true));
         return Result.Ok();
+    }
+
+    /// <inheritdoc />
+    public async Task<Result<List<string>>> GetDisabledTypesAsync(Guid userId)
+    {
+        var types = await _context.NotificationPreferences
+            .Where(p => p.UserId == userId)
+            .Select(p => p.Type)
+            .ToListAsync();
+
+        return Result<List<string>>.Ok(types.Select(t => t.ToString()).ToList());
+    }
+
+    /// <inheritdoc />
+    public async Task<Result<List<string>>> SetDisabledTypesAsync(Guid userId, IEnumerable<string> typeNames)
+    {
+        // Keep only valid, distinct type names.
+        var disabled = typeNames
+            .Select(n => Enum.TryParse<NotificationType>(n, ignoreCase: true, out var t) ? t : (NotificationType?)null)
+            .Where(t => t.HasValue)
+            .Select(t => t!.Value)
+            .Distinct()
+            .ToList();
+
+        // Replace the user's opt-out set entirely.
+        var existing = await _context.NotificationPreferences
+            .Where(p => p.UserId == userId)
+            .ToListAsync();
+        _context.NotificationPreferences.RemoveRange(existing);
+
+        foreach (var type in disabled)
+            _context.NotificationPreferences.Add(new NotificationPreference
+            {
+                Id = Guid.NewGuid(),
+                UserId = userId,
+                Type = type,
+            });
+
+        await _context.SaveChangesAsync();
+        _logger.LogInformation("Notification preferences updated. UserId: {UserId}, Disabled: {Count}", userId, disabled.Count);
+
+        return Result<List<string>>.Ok(disabled.Select(t => t.ToString()).ToList());
     }
 }

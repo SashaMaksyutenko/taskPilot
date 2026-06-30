@@ -82,6 +82,18 @@
       "Rejected": "Rejected"
     }
   },
+  "notifPrefs": {
+    "title": "Notifications",
+    "desc": "Choose which notifications you want to receive.",
+    "type": {
+      "Task": "Tasks & deadlines",
+      "Chat": "Chat messages",
+      "Forum": "Forum activity",
+      "Marketplace": "Marketplace",
+      "Moderation": "Moderation",
+      "General": "General"
+    }
+  },
   "reputation": {
     "points": "{{count}} pts",
     "badge": {

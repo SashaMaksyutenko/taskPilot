@@ -24,4 +24,10 @@ public interface INotificationService
 
     /// <summary>Marks all of a user's notifications as read.</summary>
     Task<Result> MarkAllReadAsync(Guid userId);
+
+    /// <summary>Returns the notification type names the user has opted out of.</summary>
+    Task<Result<List<string>>> GetDisabledTypesAsync(Guid userId);
+
+    /// <summary>Replaces the user's opt-out set; returns the applied disabled types.</summary>
+    Task<Result<List<string>>> SetDisabledTypesAsync(Guid userId, IEnumerable<string> typeNames);
 }

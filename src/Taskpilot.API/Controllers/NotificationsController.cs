@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Taskpilot.API.DTOs.Notifications;
 using Taskpilot.API.Services;
 
 namespace Taskpilot.API.Controllers;
@@ -63,5 +64,27 @@ public class NotificationsController : BaseApiController
 
         await _notifications.MarkAllReadAsync(userId.Value);
         return Ok(new { message = "All marked as read." });
+    }
+
+    /// <summary>Returns the notification types the current user has disabled.</summary>
+    [HttpGet("preferences")]
+    public async Task<IActionResult> GetPreferences()
+    {
+        var userId = CurrentUserId();
+        if (userId is null) return Unauthorized();
+
+        var result = await _notifications.GetDisabledTypesAsync(userId.Value);
+        return Ok(new { disabledTypes = result.Value });
+    }
+
+    /// <summary>Replaces the current user's notification opt-outs.</summary>
+    [HttpPut("preferences")]
+    public async Task<IActionResult> UpdatePreferences([FromBody] UpdatePreferencesDto dto)
+    {
+        var userId = CurrentUserId();
+        if (userId is null) return Unauthorized();
+
+        var result = await _notifications.SetDisabledTypesAsync(userId.Value, dto.DisabledTypes ?? new List<string>());
+        return Ok(new { disabledTypes = result.Value });
     }
 }

@@ -83,6 +83,9 @@ public class TaskpilotDbContext : DbContext
     /// <summary>Appeals against moderation warnings.</summary>
     public DbSet<Appeal> Appeals => Set<Appeal>();
 
+    /// <summary>Per-user notification type opt-outs.</summary>
+    public DbSet<NotificationPreference> NotificationPreferences => Set<NotificationPreference>();
+
     /// <summary>
     /// Налаштування моделі (Fluent API): обмеження, індекси, перетворення типів.
     /// Викликається EF Core під час побудови моделі та генерації міграцій.
@@ -600,6 +603,24 @@ public class TaskpilotDbContext : DbContext
                   .WithMany()
                   .HasForeignKey(a => a.ReviewedById)
                   .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        // NotificationPreference entity configuration
+        modelBuilder.Entity<NotificationPreference>(entity =>
+        {
+            entity.HasKey(p => p.Id);
+
+            entity.Property(p => p.Type)
+                  .HasConversion<string>().HasMaxLength(20).IsRequired();
+
+            // One opt-out row per (user, type); also the lookup used when sending.
+            entity.HasIndex(p => new { p.UserId, p.Type }).IsUnique();
+
+            // Deleting the user removes their preferences.
+            entity.HasOne(p => p.User)
+                  .WithMany()
+                  .HasForeignKey(p => p.UserId)
+                  .OnDelete(DeleteBehavior.Cascade);
         });
     }
 }

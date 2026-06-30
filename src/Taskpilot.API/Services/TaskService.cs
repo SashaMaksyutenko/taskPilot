@@ -19,19 +19,38 @@ public class TaskService : ITaskService
 {
     private readonly TaskpilotDbContext _context;
     private readonly IWebhookService _webhooks;
+    private readonly INotificationService _notifications;
     private readonly ILogger<TaskService> _logger;
 
-    public TaskService(TaskpilotDbContext context, IWebhookService webhooks, ILogger<TaskService> logger)
+    public TaskService(
+        TaskpilotDbContext context,
+        IWebhookService webhooks,
+        INotificationService notifications,
+        ILogger<TaskService> logger)
     {
         _context = context;
         _webhooks = webhooks;
+        _notifications = notifications;
         _logger = logger;
+    }
+
+    /// <summary>Notifies an assignee they were given a task (skips self-assignment).</summary>
+    private async Task NotifyAssignedAsync(Guid? assigneeId, Guid actorId, ProjectTask task)
+    {
+        if (assigneeId is not { } id || id == actorId)
+            return;
+
+        await _notifications.CreateAsync(
+            id,
+            NotificationType.Task,
+            $"You were assigned the task \"{task.Title}\".",
+            $"/projects/{task.ProjectId}");
     }
 
     /// <inheritdoc />
     public async Task<Result<TaskDto>> CreateTaskAsync(Guid userId, Guid projectId, CreateTaskDto dto)
     {
-        var ownsProject = await _context.Projects.AnyAsync(p => p.Id == projectId && p.OwnerId == userId);
+        var ownsProject = await ProjectAccess.CanAccessAsync(_context, projectId, userId);
         if (!ownsProject)
             return Result<TaskDto>.Fail("Project not found.");
 
@@ -76,6 +95,9 @@ public class TaskService : ITaskService
             priority = task.Priority.ToString(),
         });
 
+        // Notify the assignee (if someone other than the creator).
+        await NotifyAssignedAsync(task.AssigneeId, userId, task);
+
         _logger.LogInformation("Task created. TaskId: {TaskId}, ProjectId: {ProjectId}", task.Id, projectId);
         return Result<TaskDto>.Ok(await LoadDtoAsync(task.Id));
     }
@@ -83,7 +105,7 @@ public class TaskService : ITaskService
     /// <inheritdoc />
     public async Task<Result<List<TaskDto>>> GetTasksAsync(Guid userId, Guid projectId, string? status)
     {
-        var ownsProject = await _context.Projects.AnyAsync(p => p.Id == projectId && p.OwnerId == userId);
+        var ownsProject = await ProjectAccess.CanAccessAsync(_context, projectId, userId);
         if (!ownsProject)
             return Result<List<TaskDto>>.Fail("Project not found.");
 
@@ -109,7 +131,7 @@ public class TaskService : ITaskService
     /// <inheritdoc />
     public async Task<Result<TaskDto>> GetTaskAsync(Guid userId, Guid taskId)
     {
-        var task = await LoadOwnedAsync(taskId, userId);
+        var task = await LoadAccessibleAsync(taskId, userId);
         return task is null
             ? Result<TaskDto>.Fail("Task not found.")
             : Result<TaskDto>.Ok(MapDto(task));
@@ -118,7 +140,7 @@ public class TaskService : ITaskService
     /// <inheritdoc />
     public async Task<Result<TaskDto>> UpdateTaskAsync(Guid userId, Guid taskId, UpdateTaskDto dto)
     {
-        var task = await LoadOwnedAsync(taskId, userId);
+        var task = await LoadAccessibleAsync(taskId, userId);
         if (task is null)
             return Result<TaskDto>.Fail("Task not found.");
 
@@ -130,6 +152,9 @@ public class TaskService : ITaskService
         if (dto.AssigneeId.HasValue &&
             !await _context.Users.AnyAsync(u => u.Id == dto.AssigneeId.Value))
             return Result<TaskDto>.Fail("Assignee not found.");
+
+        // Remember the previous assignee so we only notify on an actual change.
+        var previousAssigneeId = task.AssigneeId;
 
         task.Title = dto.Title.Trim();
         task.Description = dto.Description?.Trim();
@@ -150,6 +175,10 @@ public class TaskService : ITaskService
             updatedAt = task.UpdatedAt,
         });
 
+        // Notify the assignee only when it changed to a new person.
+        if (task.AssigneeId != previousAssigneeId)
+            await NotifyAssignedAsync(task.AssigneeId, userId, task);
+
         return Result<TaskDto>.Ok(await LoadDtoAsync(task.Id));
     }
 
@@ -159,7 +188,7 @@ public class TaskService : ITaskService
         if (!Enum.TryParse<ProjectTaskStatus>(status, ignoreCase: true, out var parsed))
             return Result<TaskDto>.Fail("Invalid status.");
 
-        var task = await LoadOwnedAsync(taskId, userId);
+        var task = await LoadAccessibleAsync(taskId, userId);
         if (task is null)
             return Result<TaskDto>.Fail("Task not found.");
 
@@ -188,7 +217,7 @@ public class TaskService : ITaskService
     /// <inheritdoc />
     public async Task<Result> DeleteTaskAsync(Guid userId, Guid taskId)
     {
-        var task = await LoadOwnedAsync(taskId, userId);
+        var task = await LoadAccessibleAsync(taskId, userId);
         if (task is null)
             return Result.Fail("Task not found.");
 
@@ -204,7 +233,7 @@ public class TaskService : ITaskService
 
         var tasks = await _context.ProjectTasks
             // Overdue = has a past deadline and is not yet Done.
-            .Where(t => t.Project.OwnerId == userId
+            .Where(t => (t.Project.OwnerId == userId || t.Project.Members.Any(m => m.UserId == userId))
                         && t.Deadline != null
                         && t.Deadline < now
                         && t.Status != ProjectTaskStatus.Done)
@@ -231,7 +260,7 @@ public class TaskService : ITaskService
     public async Task<Result<List<CalendarTaskDto>>> GetCalendarTasksAsync(Guid userId, DateTime from, DateTime to)
     {
         var tasks = await _context.ProjectTasks
-            .Where(t => t.Project.OwnerId == userId
+            .Where(t => (t.Project.OwnerId == userId || t.Project.Members.Any(m => m.UserId == userId))
                         && t.Deadline != null
                         && t.Deadline >= from
                         && t.Deadline <= to)
@@ -257,7 +286,7 @@ public class TaskService : ITaskService
     /// <inheritdoc />
     public async Task<Result<string>> ExportTasksCsvAsync(Guid userId, Guid projectId)
     {
-        var ownsProject = await _context.Projects.AnyAsync(p => p.Id == projectId && p.OwnerId == userId);
+        var ownsProject = await ProjectAccess.CanAccessAsync(_context, projectId, userId);
         if (!ownsProject)
             return Result<string>.Fail("Project not found.");
 
@@ -288,7 +317,7 @@ public class TaskService : ITaskService
     /// <inheritdoc />
     public async Task<Result<byte[]>> ExportTasksXlsxAsync(Guid userId, Guid projectId)
     {
-        var ownsProject = await _context.Projects.AnyAsync(p => p.Id == projectId && p.OwnerId == userId);
+        var ownsProject = await ProjectAccess.CanAccessAsync(_context, projectId, userId);
         if (!ownsProject)
             return Result<byte[]>.Fail("Project not found.");
 
@@ -333,7 +362,7 @@ public class TaskService : ITaskService
     public async Task<Result<byte[]>> ExportTasksPdfAsync(Guid userId, Guid projectId)
     {
         var project = await _context.Projects
-            .Where(p => p.Id == projectId && p.OwnerId == userId)
+            .Where(p => p.Id == projectId && (p.OwnerId == userId || p.Members.Any(m => m.UserId == userId)))
             .Select(p => new { p.Name })
             .FirstOrDefaultAsync();
         if (project is null)
@@ -403,16 +432,19 @@ public class TaskService : ITaskService
         return value;
     }
 
-    /// <summary>Loads a task (with assignee/creator) only if the caller owns its project.</summary>
-    private async Task<ProjectTask?> LoadOwnedAsync(Guid taskId, Guid userId)
+    /// <summary>Loads a task (with assignee/creator) only if the caller owns or collaborates on its project.</summary>
+    private async Task<ProjectTask?> LoadAccessibleAsync(Guid taskId, Guid userId)
     {
         var task = await _context.ProjectTasks
-            .Include(t => t.Project)
+            .Include(t => t.Project).ThenInclude(p => p.Members)
             .Include(t => t.Assignee)
             .Include(t => t.Creator)
             .FirstOrDefaultAsync(t => t.Id == taskId);
 
-        return task is not null && task.Project.OwnerId == userId ? task : null;
+        return task is not null
+               && (task.Project.OwnerId == userId || task.Project.Members.Any(m => m.UserId == userId))
+            ? task
+            : null;
     }
 
     /// <summary>Reloads a task as a DTO (with assignee/creator names).</summary>

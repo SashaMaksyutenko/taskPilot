@@ -32,6 +32,13 @@ export interface Task {
   completedAt: string | null
 }
 
+export interface ProjectMember {
+  userId: string
+  name: string
+  avatarUrl: string | null
+  isOwner: boolean
+}
+
 export interface TaskComment {
   id: string
   taskId: string

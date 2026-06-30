@@ -20,4 +20,13 @@ public interface IProjectService
 
     /// <summary>Archives (archived = true) or restores (false) a project.</summary>
     Task<Result> SetArchivedAsync(Guid ownerId, Guid projectId, bool archived);
+
+    /// <summary>Lists a project's members (owner first); accessible to owner and members.</summary>
+    Task<Result<List<ProjectMemberDto>>> GetMembersAsync(Guid userId, Guid projectId);
+
+    /// <summary>Adds a collaborator to a project (owner only).</summary>
+    Task<Result<ProjectMemberDto>> AddMemberAsync(Guid ownerId, Guid projectId, Guid targetUserId);
+
+    /// <summary>Removes a collaborator from a project (owner only).</summary>
+    Task<Result> RemoveMemberAsync(Guid ownerId, Guid projectId, Guid targetUserId);
 }

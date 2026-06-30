@@ -11,7 +11,7 @@ namespace Taskpilot.API.Tests;
 public class ProjectServiceTests
 {
     private static ProjectService Create(Taskpilot.API.Data.TaskpilotDbContext ctx) =>
-        new(ctx, new Mock<IWebhookService>().Object, NullLogger<ProjectService>.Instance);
+        new(ctx, new Mock<IWebhookService>().Object, new Mock<INotificationService>().Object, NullLogger<ProjectService>.Instance);
 
     [Fact]
     public async Task CreateProject_StoresProjectForOwner()

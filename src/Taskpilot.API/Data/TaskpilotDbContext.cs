@@ -86,6 +86,9 @@ public class TaskpilotDbContext : DbContext
     /// <summary>Per-user notification type opt-outs.</summary>
     public DbSet<NotificationPreference> NotificationPreferences => Set<NotificationPreference>();
 
+    /// <summary>Project collaborators (shared access).</summary>
+    public DbSet<ProjectMember> ProjectMembers => Set<ProjectMember>();
+
     /// <summary>
     /// Налаштування моделі (Fluent API): обмеження, індекси, перетворення типів.
     /// Викликається EF Core під час побудови моделі та генерації міграцій.
@@ -602,6 +605,27 @@ public class TaskpilotDbContext : DbContext
             entity.HasOne(a => a.ReviewedBy)
                   .WithMany()
                   .HasForeignKey(a => a.ReviewedById)
+                  .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        // ProjectMember entity configuration
+        modelBuilder.Entity<ProjectMember>(entity =>
+        {
+            entity.HasKey(m => m.Id);
+
+            // One membership per (project, user); also the access lookup.
+            entity.HasIndex(m => new { m.ProjectId, m.UserId }).IsUnique();
+
+            // Deleting the project removes its memberships.
+            entity.HasOne(m => m.Project)
+                  .WithMany(p => p.Members)
+                  .HasForeignKey(m => m.ProjectId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            // User link is restricted to avoid multiple cascade paths.
+            entity.HasOne(m => m.User)
+                  .WithMany()
+                  .HasForeignKey(m => m.UserId)
                   .OnDelete(DeleteBehavior.Restrict);
         });
 

@@ -15,12 +15,18 @@ public class TaskCommentService : ITaskCommentService
 {
     private readonly TaskpilotDbContext _context;
     private readonly IWebhookService _webhooks;
+    private readonly INotificationService _notifications;
     private readonly ILogger<TaskCommentService> _logger;
 
-    public TaskCommentService(TaskpilotDbContext context, IWebhookService webhooks, ILogger<TaskCommentService> logger)
+    public TaskCommentService(
+        TaskpilotDbContext context,
+        IWebhookService webhooks,
+        INotificationService notifications,
+        ILogger<TaskCommentService> logger)
     {
         _context = context;
         _webhooks = webhooks;
+        _notifications = notifications;
         _logger = logger;
     }
 
@@ -94,6 +100,26 @@ public class TaskCommentService : ITaskCommentService
             body = comment.Body,
         });
 
+        // Notify everyone with access to the project (owner + members) except the author.
+        var ctx = await _context.ProjectTasks
+            .Where(t => t.Id == taskId)
+            .Select(t => new
+            {
+                t.ProjectId,
+                t.Title,
+                t.Project.OwnerId,
+                MemberIds = t.Project.Members.Select(m => m.UserId).ToList(),
+            })
+            .FirstAsync();
+
+        var recipients = ctx.MemberIds.Append(ctx.OwnerId).Distinct().Where(id => id != userId);
+        foreach (var recipientId in recipients)
+            await _notifications.CreateAsync(
+                recipientId,
+                NotificationType.Task,
+                $"{added.AuthorName} commented on \"{ctx.Title}\".",
+                $"/projects/{ctx.ProjectId}");
+
         return Result<TaskCommentDto>.Ok(MapDto(added));
     }
 
@@ -115,7 +141,8 @@ public class TaskCommentService : ITaskCommentService
         return Result.Ok();
     }
 
-    /// <summary>True if the task exists and its project belongs to the caller.</summary>
+    /// <summary>True if the task exists and the caller owns or collaborates on its project.</summary>
     private Task<bool> OwnsTaskAsync(Guid taskId, Guid userId) =>
-        _context.ProjectTasks.AnyAsync(t => t.Id == taskId && t.Project.OwnerId == userId);
+        _context.ProjectTasks.AnyAsync(t => t.Id == taskId &&
+            (t.Project.OwnerId == userId || t.Project.Members.Any(m => m.UserId == userId)));
 }

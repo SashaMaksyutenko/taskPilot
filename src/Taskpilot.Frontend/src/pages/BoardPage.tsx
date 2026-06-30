@@ -5,6 +5,8 @@ import Navbar from '../components/Navbar'
 import TaskActionsDropdown from '../components/TaskActionsDropdown'
 import TaskContextMenu from '../components/TaskContextMenu'
 import TaskDetailModal from '../components/TaskDetailModal'
+import ProjectMembersModal from '../components/ProjectMembersModal'
+import { useAppSelector } from '../store/hooks'
 import { projectService } from '../services/projectService'
 import { taskService } from '../services/taskService'
 import { STATUS_COLUMNS, type Project, type Task, type TaskStatus } from '../types/project'
@@ -22,11 +24,15 @@ const priorityClasses: Record<string, string> = {
 export default function BoardPage() {
   const { t } = useTranslation()
   const { projectId = '' } = useParams()
+  const currentUserId = useAppSelector((s) => s.auth.user?.id)
   const [project, setProject] = useState<Project | null>(null)
   const [tasks, setTasks] = useState<Task[]>([])
   const [newTitle, setNewTitle] = useState('')
   const [selectedTask, setSelectedTask] = useState<Task | null>(null)
+  const [membersOpen, setMembersOpen] = useState(false)
   const draggingId = useRef<string | null>(null)
+
+  const isOwner = !!project && project.ownerId === currentUserId
 
   useEffect(() => {
     if (!projectId) return
@@ -106,8 +112,14 @@ export default function BoardPage() {
           </Link>
           <h1 className="text-xl font-bold">{project?.name ?? t('board.title')}</h1>
           <button
-            onClick={exportCsv}
+            onClick={() => setMembersOpen(true)}
             className="ml-auto rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-semibold hover:bg-white dark:border-slate-600 dark:hover:bg-slate-800"
+          >
+            {t('members.button')}
+          </button>
+          <button
+            onClick={exportCsv}
+            className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-semibold hover:bg-white dark:border-slate-600 dark:hover:bg-slate-800"
           >
             {t('board.exportCsv')}
           </button>
@@ -213,6 +225,10 @@ export default function BoardPage() {
           onSaved={(updated) => setTasks((prev) => prev.map((t) => (t.id === updated.id ? updated : t)))}
           onDeleted={(taskId) => setTasks((prev) => prev.filter((t) => t.id !== taskId))}
         />
+      )}
+
+      {membersOpen && (
+        <ProjectMembersModal projectId={projectId} isOwner={isOwner} onClose={() => setMembersOpen(false)} />
       )}
     </div>
   )

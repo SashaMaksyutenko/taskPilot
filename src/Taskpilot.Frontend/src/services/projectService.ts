@@ -1,5 +1,5 @@
 import api from '../lib/api'
-import type { Project } from '../types/project'
+import type { Project, ProjectMember } from '../types/project'
 
 /** REST calls for projects. */
 export const projectService = {
@@ -23,5 +23,17 @@ export const projectService = {
 
   restore(id: string): Promise<void> {
     return api.post(`/api/projects/${id}/restore`).then(() => undefined)
+  },
+
+  getMembers(projectId: string): Promise<ProjectMember[]> {
+    return api.get<ProjectMember[]>(`/api/projects/${projectId}/members`).then((r) => r.data)
+  },
+
+  addMember(projectId: string, userId: string): Promise<ProjectMember> {
+    return api.post<ProjectMember>(`/api/projects/${projectId}/members`, { userId }).then((r) => r.data)
+  },
+
+  removeMember(projectId: string, userId: string): Promise<void> {
+    return api.delete(`/api/projects/${projectId}/members/${userId}`).then(() => undefined)
   },
 }

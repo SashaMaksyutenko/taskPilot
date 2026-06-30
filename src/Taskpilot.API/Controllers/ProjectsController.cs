@@ -82,6 +82,45 @@ public class ProjectsController : BaseApiController
     [HttpPost("{projectId:guid}/restore")]
     public Task<IActionResult> Restore(Guid projectId) => SetArchived(projectId, archived: false);
 
+    /// <summary>Lists a project's members (owner + collaborators).</summary>
+    [HttpGet("{projectId:guid}/members")]
+    public async Task<IActionResult> GetMembers(Guid projectId)
+    {
+        var userId = CurrentUserId();
+        if (userId is null) return Unauthorized();
+
+        var result = await _projects.GetMembersAsync(userId.Value, projectId);
+        return result.Succeeded
+            ? Ok(result.Value)
+            : NotFound(new { error = result.Error });
+    }
+
+    /// <summary>Adds a collaborator to a project (owner only).</summary>
+    [HttpPost("{projectId:guid}/members")]
+    public async Task<IActionResult> AddMember(Guid projectId, [FromBody] AddMemberDto dto)
+    {
+        var userId = CurrentUserId();
+        if (userId is null) return Unauthorized();
+
+        var result = await _projects.AddMemberAsync(userId.Value, projectId, dto.UserId);
+        return result.Succeeded
+            ? Ok(result.Value)
+            : BadRequest(new { error = result.Error });
+    }
+
+    /// <summary>Removes a collaborator from a project (owner only).</summary>
+    [HttpDelete("{projectId:guid}/members/{memberUserId:guid}")]
+    public async Task<IActionResult> RemoveMember(Guid projectId, Guid memberUserId)
+    {
+        var userId = CurrentUserId();
+        if (userId is null) return Unauthorized();
+
+        var result = await _projects.RemoveMemberAsync(userId.Value, projectId, memberUserId);
+        return result.Succeeded
+            ? NoContent()
+            : BadRequest(new { error = result.Error });
+    }
+
     private async Task<IActionResult> SetArchived(Guid projectId, bool archived)
     {
         var userId = CurrentUserId();

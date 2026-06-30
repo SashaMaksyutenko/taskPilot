@@ -12,7 +12,7 @@ namespace Taskpilot.API.Tests;
 public class TaskServiceTests
 {
     private static TaskService Create(TaskpilotDbContext ctx) =>
-        new(ctx, new Mock<IWebhookService>().Object, NullLogger<TaskService>.Instance);
+        new(ctx, new Mock<IWebhookService>().Object, new Mock<INotificationService>().Object, NullLogger<TaskService>.Instance);
 
     [Fact]
     public async Task CreateTask_DefaultsToBacklogAndMedium()

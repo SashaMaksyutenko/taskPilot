@@ -82,6 +82,14 @@
       "Rejected": "Rejected"
     }
   },
+  "members": {
+    "button": "Members",
+    "title": "Project members",
+    "owner": "Owner",
+    "remove": "Remove",
+    "added": "Added",
+    "searchPlaceholder": "Search a person to add…"
+  },
   "notifPrefs": {
     "title": "Notifications",
     "desc": "Choose which notifications you want to receive.",

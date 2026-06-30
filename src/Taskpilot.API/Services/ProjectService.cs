@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Taskpilot.API.Common;
 using Taskpilot.API.Data;
 using Taskpilot.API.DTOs.Projects;
+using Taskpilot.API.Mappers;
 using Taskpilot.API.Models;
 
 namespace Taskpilot.API.Services;
@@ -15,12 +16,18 @@ public class ProjectService : IProjectService
 {
     private readonly TaskpilotDbContext _context;
     private readonly IWebhookService _webhooks;
+    private readonly INotificationService _notifications;
     private readonly ILogger<ProjectService> _logger;
 
-    public ProjectService(TaskpilotDbContext context, IWebhookService webhooks, ILogger<ProjectService> logger)
+    public ProjectService(
+        TaskpilotDbContext context,
+        IWebhookService webhooks,
+        INotificationService notifications,
+        ILogger<ProjectService> logger)
     {
         _context = context;
         _webhooks = webhooks;
+        _notifications = notifications;
         _logger = logger;
     }
 
@@ -69,8 +76,10 @@ public class ProjectService : IProjectService
     /// <inheritdoc />
     public async Task<Result<List<ProjectDto>>> GetProjectsAsync(Guid ownerId, bool includeArchived)
     {
+        // Projects the user owns or collaborates on.
         var projects = await _context.Projects
-            .Where(p => p.OwnerId == ownerId && (includeArchived || p.ArchivedAt == null))
+            .Where(p => (p.OwnerId == ownerId || p.Members.Any(m => m.UserId == ownerId))
+                        && (includeArchived || p.ArchivedAt == null))
             .OrderByDescending(p => p.CreatedAt)
             .Select(ToDto)
             .AsNoTracking()
@@ -83,7 +92,7 @@ public class ProjectService : IProjectService
     public async Task<Result<ProjectDto>> GetProjectAsync(Guid projectId, Guid userId)
     {
         var dto = await _context.Projects
-            .Where(p => p.Id == projectId && p.OwnerId == userId)
+            .Where(p => p.Id == projectId && (p.OwnerId == userId || p.Members.Any(m => m.UserId == userId)))
             .Select(ToDto)
             .AsNoTracking()
             .FirstOrDefaultAsync();
@@ -140,4 +149,113 @@ public class ProjectService : IProjectService
     /// <summary>Reloads a project as a DTO (with owner name and task count).</summary>
     private async Task<ProjectDto> LoadDtoAsync(Guid projectId) =>
         await _context.Projects.Where(p => p.Id == projectId).Select(ToDto).AsNoTracking().FirstAsync();
+
+    /// <inheritdoc />
+    public async Task<Result<List<ProjectMemberDto>>> GetMembersAsync(Guid userId, Guid projectId)
+    {
+        var project = await _context.Projects
+            .Include(p => p.Owner)
+            .Include(p => p.Members).ThenInclude(m => m.User)
+            .AsNoTracking()
+            .FirstOrDefaultAsync(p => p.Id == projectId);
+
+        // Only the owner or a member may view the roster.
+        if (project is null || (project.OwnerId != userId && project.Members.All(m => m.UserId != userId)))
+            return Result<List<ProjectMemberDto>>.Fail("Project not found.");
+
+        var members = new List<ProjectMemberDto>
+        {
+            new()
+            {
+                UserId = project.OwnerId,
+                Name = project.Owner.Name,
+                AvatarUrl = UserMapper.AvatarUrl(project.Owner),
+                IsOwner = true,
+            },
+        };
+        members.AddRange(project.Members
+            .OrderBy(m => m.User.Name)
+            .Select(m => new ProjectMemberDto
+            {
+                UserId = m.UserId,
+                Name = m.User.Name,
+                AvatarUrl = UserMapper.AvatarUrl(m.User),
+                IsOwner = false,
+            }));
+
+        return Result<List<ProjectMemberDto>>.Ok(members);
+    }
+
+    /// <inheritdoc />
+    public async Task<Result<ProjectMemberDto>> AddMemberAsync(Guid ownerId, Guid projectId, Guid targetUserId)
+    {
+        // Only the owner manages members.
+        var project = await GetOwnedAsync(projectId, ownerId);
+        if (project is null)
+            return Result<ProjectMemberDto>.Fail("Project not found.");
+
+        if (targetUserId == ownerId)
+            return Result<ProjectMemberDto>.Fail("The owner already has access.");
+
+        var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == targetUserId);
+        if (user is null)
+            return Result<ProjectMemberDto>.Fail("User not found.");
+
+        var already = await _context.ProjectMembers
+            .AnyAsync(m => m.ProjectId == projectId && m.UserId == targetUserId);
+        if (already)
+            return Result<ProjectMemberDto>.Fail("This user is already a member.");
+
+        _context.ProjectMembers.Add(new ProjectMember
+        {
+            Id = Guid.NewGuid(),
+            ProjectId = projectId,
+            UserId = targetUserId,
+            CreatedAt = DateTime.UtcNow,
+        });
+        await _context.SaveChangesAsync();
+
+        // Let the new collaborator know (in-app + real-time via the hub).
+        await _notifications.CreateAsync(
+            targetUserId,
+            NotificationType.General,
+            $"You were added to the project \"{project.Name}\".",
+            $"/projects/{projectId}");
+
+        _logger.LogInformation("Member added. ProjectId: {ProjectId}, UserId: {UserId}", projectId, targetUserId);
+        return Result<ProjectMemberDto>.Ok(new ProjectMemberDto
+        {
+            UserId = user.Id,
+            Name = user.Name,
+            AvatarUrl = UserMapper.AvatarUrl(user),
+            IsOwner = false,
+        });
+    }
+
+    /// <inheritdoc />
+    public async Task<Result> RemoveMemberAsync(Guid ownerId, Guid projectId, Guid targetUserId)
+    {
+        // Only the owner manages members.
+        var project = await GetOwnedAsync(projectId, ownerId);
+        if (project is null)
+            return Result.Fail("Project not found.");
+
+        var membership = await _context.ProjectMembers
+            .FirstOrDefaultAsync(m => m.ProjectId == projectId && m.UserId == targetUserId);
+        if (membership is null)
+            return Result.Fail("Member not found.");
+
+        _context.ProjectMembers.Remove(membership);
+        await _context.SaveChangesAsync();
+
+        // Tell the removed user (they no longer have access, so link to the projects list).
+        await _notifications.CreateAsync(
+            targetUserId,
+            NotificationType.General,
+            $"You were removed from the project \"{project.Name}\".",
+            "/projects");
+
+        _logger.LogInformation("Member removed. ProjectId: {ProjectId}, UserId: {UserId}", projectId, targetUserId);
+        return Result.Ok();
+    }
 }

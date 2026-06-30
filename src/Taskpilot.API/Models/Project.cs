@@ -31,4 +31,7 @@ public class Project
 
     /// <summary>Tasks belonging to this project.</summary>
     public ICollection<ProjectTask> Tasks { get; set; } = new List<ProjectTask>();
+
+    /// <summary>Collaborators with shared access to this project (besides the owner).</summary>
+    public ICollection<ProjectMember> Members { get; set; } = new List<ProjectMember>();
 }

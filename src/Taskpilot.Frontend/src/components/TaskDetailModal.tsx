@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import Avatar from './Avatar'
+import { apiErrorMessage } from '../lib/apiError'
 import { taskService } from '../services/taskService'
 import { userService, type UserSearchResult } from '../services/userService'
 import type { Task, TaskComment } from '../types/project'
@@ -45,6 +46,7 @@ export default function TaskDetailModal({
   const [comments, setComments] = useState<TaskComment[]>([])
   const [newComment, setNewComment] = useState('')
   const [posting, setPosting] = useState(false)
+  const [commentError, setCommentError] = useState('')
 
   // Load the task's comments when the modal opens.
   useEffect(() => {
@@ -55,10 +57,13 @@ export default function TaskDetailModal({
     const body = newComment.trim()
     if (!body || posting) return
     setPosting(true)
+    setCommentError('')
     try {
       const created = await taskService.addComment(task.id, body)
       setComments((prev) => [...prev, created])
       setNewComment('')
+    } catch (e) {
+      setCommentError(apiErrorMessage(e))
     } finally {
       setPosting(false)
     }
@@ -281,6 +286,7 @@ export default function TaskDetailModal({
               {t('taskModal.addComment')}
             </button>
           </div>
+          {commentError && <p className="mt-2 text-sm font-medium text-red-600">{commentError}</p>}
         </div>
 
         <div className="flex items-center gap-3">

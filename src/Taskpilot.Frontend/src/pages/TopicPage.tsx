@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { Link, useParams } from 'react-router-dom'
 import Avatar from '../components/Avatar'
 import Navbar from '../components/Navbar'
+import { apiErrorMessage } from '../lib/apiError'
 import { forumService } from '../services/forumService'
 import { useAppSelector } from '../store/hooks'
 import type { Reply, TopicDetail } from '../types/forum'
@@ -17,6 +18,7 @@ export default function TopicPage() {
   const currentUserId = useAppSelector((s) => s.auth.user?.id)
   const [topic, setTopic] = useState<TopicDetail | null>(null)
   const [body, setBody] = useState('')
+  const [error, setError] = useState('')
 
   const load = () => {
     if (topicId) forumService.getTopic(topicId).then(setTopic).catch(() => {})
@@ -44,9 +46,14 @@ export default function TopicPage() {
 
   const submitReply = async () => {
     if (!body.trim() || !topic) return
-    await forumService.addReply({ topicId: topic.id, body: body.trim() }).catch(() => {})
-    setBody('')
-    load()
+    setError('')
+    try {
+      await forumService.addReply({ topicId: topic.id, body: body.trim() })
+      setBody('')
+      load()
+    } catch (e) {
+      setError(apiErrorMessage(e))
+    }
   }
 
   if (!topic) {
@@ -146,12 +153,15 @@ export default function TopicPage() {
               rows={3}
               className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 outline-none focus:border-[#1E2A44] dark:border-slate-600 dark:bg-slate-800"
             />
-            <button
-              onClick={submitReply}
-              className="mt-2 rounded-lg bg-[#1E2A44] px-5 py-2 font-semibold text-white transition hover:bg-[#27345a]"
-            >
-              {t('topic.reply')}
-            </button>
+            <div className="mt-2 flex items-center gap-3">
+              <button
+                onClick={submitReply}
+                className="rounded-lg bg-[#1E2A44] px-5 py-2 font-semibold text-white transition hover:bg-[#27345a]"
+              >
+                {t('topic.reply')}
+              </button>
+              {error && <span className="text-sm font-medium text-red-600">{error}</span>}
+            </div>
           </div>
         )}
       </main>

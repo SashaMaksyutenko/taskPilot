@@ -5,6 +5,7 @@ import AttachmentPreview from '../components/AttachmentPreview'
 import Avatar from '../components/Avatar'
 import MessageContextMenu from '../components/MessageContextMenu'
 import Navbar from '../components/Navbar'
+import { apiErrorMessage } from '../lib/apiError'
 import { createChatConnection } from '../lib/chatHub'
 import { chatService } from '../services/chatService'
 import { fileService } from '../services/fileService'
@@ -27,6 +28,7 @@ export default function ChatPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [messages, setMessages] = useState<Message[]>([])
   const [text, setText] = useState('')
+  const [sendError, setSendError] = useState('')
   const [search, setSearch] = useState('')
   const [results, setResults] = useState<UserSearchResult[]>([])
 
@@ -79,8 +81,14 @@ export default function ChatPage() {
     const content = text.trim()
     if (!selectedId || !content) return
     setText('')
+    setSendError('')
     // The message is echoed back to us via the hub, so we do not append it here.
-    await chatService.sendMessage(selectedId, content).catch(() => {})
+    try {
+      await chatService.sendMessage(selectedId, content)
+    } catch (e) {
+      setText(content) // keep the unsent text so it isn't lost
+      setSendError(apiErrorMessage(e))
+    }
   }
 
   const deleteMessage = async (id: string) => {
@@ -247,6 +255,12 @@ export default function ChatPage() {
                 })}
                 <div ref={bottomRef} />
               </div>
+
+              {sendError && (
+                <div className="border-t border-red-200 bg-red-50 px-4 py-2 text-sm font-medium text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-300">
+                  {sendError}
+                </div>
+              )}
 
               <div className="flex items-center gap-2 border-t border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-800">
                 {/* Attach a file */}

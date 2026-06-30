@@ -4,6 +4,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import Avatar from '../components/Avatar'
 import Navbar from '../components/Navbar'
 import TopicContextMenu from '../components/TopicContextMenu'
+import { apiErrorMessage } from '../lib/apiError'
 import { forumService } from '../services/forumService'
 import { useAppSelector } from '../store/hooks'
 import type { TopicListItem } from '../types/forum'
@@ -22,6 +23,7 @@ export default function ForumPage() {
   const [title, setTitle] = useState('')
   const [body, setBody] = useState('')
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
 
@@ -40,6 +42,7 @@ export default function ForumPage() {
   const create = async () => {
     if (!title.trim() || !body.trim()) return
     setLoading(true)
+    setError('')
     try {
       await forumService.createTopic({ title: title.trim(), body: body.trim() })
       setTitle('')
@@ -47,6 +50,8 @@ export default function ForumPage() {
       // Jump to the first page to show the new topic (reload if already there).
       if (page === 1) load(1)
       else setPage(1)
+    } catch (e) {
+      setError(apiErrorMessage(e))
     } finally {
       setLoading(false)
     }
@@ -79,13 +84,16 @@ export default function ForumPage() {
             rows={3}
             className="mb-3 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 outline-none focus:border-[#1E2A44] dark:border-slate-600 dark:bg-slate-900"
           />
-          <button
-            onClick={create}
-            disabled={loading}
-            className="rounded-lg bg-[#1E2A44] px-5 py-2 font-semibold text-white transition hover:bg-[#27345a] disabled:opacity-60"
-          >
-            {t('forum.postTopic')}
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={create}
+              disabled={loading}
+              className="rounded-lg bg-[#1E2A44] px-5 py-2 font-semibold text-white transition hover:bg-[#27345a] disabled:opacity-60"
+            >
+              {t('forum.postTopic')}
+            </button>
+            {error && <span className="text-sm font-medium text-red-600">{error}</span>}
+          </div>
         </div>
 
         {/* Topic list */}

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import Navbar from '../components/Navbar'
 import TaskActionsDropdown from '../components/TaskActionsDropdown'
 import TaskContextMenu from '../components/TaskContextMenu'
@@ -24,6 +24,7 @@ const priorityClasses: Record<string, string> = {
 export default function BoardPage() {
   const { t } = useTranslation()
   const { projectId = '' } = useParams()
+  const navigate = useNavigate()
   const currentUserId = useAppSelector((s) => s.auth.user?.id)
   const [project, setProject] = useState<Project | null>(null)
   const [tasks, setTasks] = useState<Task[]>([])
@@ -228,7 +229,13 @@ export default function BoardPage() {
       )}
 
       {membersOpen && (
-        <ProjectMembersModal projectId={projectId} isOwner={isOwner} onClose={() => setMembersOpen(false)} />
+        <ProjectMembersModal
+          projectId={projectId}
+          isOwner={isOwner}
+          currentUserId={currentUserId}
+          onClose={() => setMembersOpen(false)}
+          onLeft={() => navigate('/projects')}
+        />
       )}
     </div>
   )

@@ -259,4 +259,35 @@ public class ProjectService : IProjectService
         _logger.LogInformation("Member removed. ProjectId: {ProjectId}, UserId: {UserId}", projectId, targetUserId);
         return Result.Ok();
     }
+
+    /// <inheritdoc />
+    public async Task<Result> LeaveAsync(Guid userId, Guid projectId)
+    {
+        var project = await _context.Projects.FirstOrDefaultAsync(p => p.Id == projectId);
+        if (project is null)
+            return Result.Fail("Project not found.");
+
+        // The owner manages the project; they archive/delete rather than leave.
+        if (project.OwnerId == userId)
+            return Result.Fail("The owner cannot leave their own project.");
+
+        var membership = await _context.ProjectMembers
+            .FirstOrDefaultAsync(m => m.ProjectId == projectId && m.UserId == userId);
+        if (membership is null)
+            return Result.Fail("You are not a member of this project.");
+
+        _context.ProjectMembers.Remove(membership);
+        await _context.SaveChangesAsync();
+
+        // Let the owner know a collaborator left.
+        var userName = await _context.Users.Where(u => u.Id == userId).Select(u => u.Name).FirstAsync();
+        await _notifications.CreateAsync(
+            project.OwnerId,
+            NotificationType.General,
+            $"{userName} left the project \"{project.Name}\".",
+            $"/projects/{projectId}");
+
+        _logger.LogInformation("Member left. ProjectId: {ProjectId}, UserId: {UserId}", projectId, userId);
+        return Result.Ok();
+    }
 }

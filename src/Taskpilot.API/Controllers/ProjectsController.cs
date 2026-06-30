@@ -121,6 +121,19 @@ public class ProjectsController : BaseApiController
             : BadRequest(new { error = result.Error });
     }
 
+    /// <summary>Leaves a project the current user collaborates on (not the owner).</summary>
+    [HttpPost("{projectId:guid}/leave")]
+    public async Task<IActionResult> Leave(Guid projectId)
+    {
+        var userId = CurrentUserId();
+        if (userId is null) return Unauthorized();
+
+        var result = await _projects.LeaveAsync(userId.Value, projectId);
+        return result.Succeeded
+            ? Ok(new { message = "You left the project." })
+            : BadRequest(new { error = result.Error });
+    }
+
     private async Task<IActionResult> SetArchived(Guid projectId, bool archived)
     {
         var userId = CurrentUserId();

@@ -36,4 +36,8 @@ export const projectService = {
   removeMember(projectId: string, userId: string): Promise<void> {
     return api.delete(`/api/projects/${projectId}/members/${userId}`).then(() => undefined)
   },
+
+  leaveProject(projectId: string): Promise<void> {
+    return api.post(`/api/projects/${projectId}/leave`).then(() => undefined)
+  },
 }

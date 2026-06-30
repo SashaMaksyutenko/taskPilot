@@ -88,7 +88,8 @@
     "owner": "Власник",
     "remove": "Прибрати",
     "added": "Додано",
-    "searchPlaceholder": "Знайти людину для додавання…"
+    "searchPlaceholder": "Знайти людину для додавання…",
+    "leave": "Вийти з проєкту"
   },
   "notifPrefs": {
     "title": "Сповіщення",

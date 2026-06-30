@@ -29,4 +29,7 @@ public interface IProjectService
 
     /// <summary>Removes a collaborator from a project (owner only).</summary>
     Task<Result> RemoveMemberAsync(Guid ownerId, Guid projectId, Guid targetUserId);
+
+    /// <summary>Lets a member leave a project they collaborate on (not the owner).</summary>
+    Task<Result> LeaveAsync(Guid userId, Guid projectId);
 }

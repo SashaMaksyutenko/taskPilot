@@ -88,7 +88,8 @@
     "owner": "Owner",
     "remove": "Remove",
     "added": "Added",
-    "searchPlaceholder": "Search a person to add…"
+    "searchPlaceholder": "Search a person to add…",
+    "leave": "Leave project"
   },
   "notifPrefs": {
     "title": "Notifications",

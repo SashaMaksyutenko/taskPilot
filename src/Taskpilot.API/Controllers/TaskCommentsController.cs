@@ -1,7 +1,9 @@
 using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Taskpilot.API.DTOs.Projects;
+using Taskpilot.API.Hubs;
 using Taskpilot.API.Services;
 
 namespace Taskpilot.API.Controllers;
@@ -17,11 +19,16 @@ public class TaskCommentsController : BaseApiController
 {
     private readonly ITaskCommentService _comments;
     private readonly IValidator<CreateCommentDto> _createValidator;
+    private readonly IHubContext<TaskHub> _taskHub;
 
-    public TaskCommentsController(ITaskCommentService comments, IValidator<CreateCommentDto> createValidator)
+    public TaskCommentsController(
+        ITaskCommentService comments,
+        IValidator<CreateCommentDto> createValidator,
+        IHubContext<TaskHub> taskHub)
     {
         _comments = comments;
         _createValidator = createValidator;
+        _taskHub = taskHub;
     }
 
     /// <summary>Lists a task's comments, oldest first.</summary>
@@ -49,9 +56,12 @@ public class TaskCommentsController : BaseApiController
             return BadRequest(new { error = validation.Errors[0].ErrorMessage });
 
         var result = await _comments.AddAsync(userId.Value, taskId, dto);
-        return result.Succeeded
-            ? Ok(result.Value)
-            : BadRequest(new { error = result.Error });
+        if (!result.Succeeded)
+            return BadRequest(new { error = result.Error });
+
+        // Push the new comment to anyone viewing this task in real time.
+        await _taskHub.Clients.Group(TaskHub.GroupName(taskId)).SendAsync("ReceiveComment", result.Value);
+        return Ok(result.Value);
     }
 
     /// <summary>Deletes a comment the caller authored.</summary>
@@ -62,8 +72,11 @@ public class TaskCommentsController : BaseApiController
         if (userId is null) return Unauthorized();
 
         var result = await _comments.DeleteAsync(userId.Value, commentId);
-        return result.Succeeded
-            ? NoContent()
-            : BadRequest(new { error = result.Error });
+        if (!result.Succeeded)
+            return BadRequest(new { error = result.Error });
+
+        // Tell other viewers to drop the deleted comment.
+        await _taskHub.Clients.Group(TaskHub.GroupName(result.Value)).SendAsync("RemoveComment", commentId);
+        return NoContent();
     }
 }

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import Avatar from './Avatar'
 import { apiErrorMessage } from '../lib/apiError'
+import { createTaskConnection } from '../lib/taskHub'
 import { taskService } from '../services/taskService'
 import { userService, type UserSearchResult } from '../services/userService'
 import type { Task, TaskComment } from '../types/project'
@@ -53,6 +54,28 @@ export default function TaskDetailModal({
     taskService.getComments(task.id).then(setComments).catch(() => setComments([]))
   }, [task.id])
 
+  // Subscribe to real-time comment updates for this task (other collaborators).
+  useEffect(() => {
+    const connection = createTaskConnection()
+
+    connection.on('ReceiveComment', (comment: TaskComment) => {
+      // Append only if we don't already have it (the author appended locally).
+      setComments((prev) => (prev.some((c) => c.id === comment.id) ? prev : [...prev, comment]))
+    })
+    connection.on('RemoveComment', (commentId: string) => {
+      setComments((prev) => prev.filter((c) => c.id !== commentId))
+    })
+
+    connection
+      .start()
+      .then(() => connection.invoke('JoinTask', task.id))
+      .catch(() => {})
+
+    return () => {
+      connection.stop().catch(() => {})
+    }
+  }, [task.id])
+
   const addComment = async () => {
     const body = newComment.trim()
     if (!body || posting) return
@@ -60,7 +83,8 @@ export default function TaskDetailModal({
     setCommentError('')
     try {
       const created = await taskService.addComment(task.id, body)
-      setComments((prev) => [...prev, created])
+      // The real-time broadcast may have already appended this comment (race), so dedupe by id.
+      setComments((prev) => (prev.some((c) => c.id === created.id) ? prev : [...prev, created]))
       setNewComment('')
     } catch (e) {
       setCommentError(apiErrorMessage(e))

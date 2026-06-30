@@ -124,21 +124,22 @@ public class TaskCommentService : ITaskCommentService
     }
 
     /// <inheritdoc />
-    public async Task<Result> DeleteAsync(Guid userId, Guid commentId)
+    public async Task<Result<Guid>> DeleteAsync(Guid userId, Guid commentId)
     {
         var comment = await _context.TaskComments.FirstOrDefaultAsync(c => c.Id == commentId);
         if (comment is null)
-            return Result.Fail("Comment not found.");
+            return Result<Guid>.Fail("Comment not found.");
 
         // Only the author may delete their own comment.
         if (comment.AuthorId != userId)
-            return Result.Fail("You can only delete your own comments.");
+            return Result<Guid>.Fail("You can only delete your own comments.");
 
+        var taskId = comment.TaskId;
         _context.TaskComments.Remove(comment);
         await _context.SaveChangesAsync();
 
         _logger.LogInformation("Comment deleted. CommentId: {CommentId}", commentId);
-        return Result.Ok();
+        return Result<Guid>.Ok(taskId);
     }
 
     /// <summary>True if the task exists and the caller owns or collaborates on its project.</summary>

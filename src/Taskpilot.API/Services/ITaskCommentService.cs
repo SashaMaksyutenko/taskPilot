@@ -15,6 +15,6 @@ public interface ITaskCommentService
     /// <summary>Adds a comment authored by the caller to a task.</summary>
     Task<Result<TaskCommentDto>> AddAsync(Guid userId, Guid taskId, CreateCommentDto dto);
 
-    /// <summary>Deletes a comment the caller authored.</summary>
-    Task<Result> DeleteAsync(Guid userId, Guid commentId);
+    /// <summary>Deletes a comment the caller authored; returns the task id for broadcasting.</summary>
+    Task<Result<Guid>> DeleteAsync(Guid userId, Guid commentId);
 }

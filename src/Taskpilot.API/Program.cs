@@ -289,6 +289,7 @@ app.MapControllers();
 // Map the SignalR hubs. Clients connect for real-time messages and notifications.
 app.MapHub<ChatHub>("/hubs/chat");
 app.MapHub<NotificationHub>("/hubs/notifications");
+app.MapHub<TaskHub>("/hubs/tasks");
 
 // Run the application (starts listening for HTTP requests).
 app.Run();

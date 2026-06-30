@@ -178,7 +178,9 @@
     "empty": "No projects yet. Create your first one above.",
     "tasks": "{{count}} tasks",
     "progress": "{{done}}/{{total}} done",
-    "archive": "Archive"
+    "archive": "Archive",
+    "shared": "Shared",
+    "members": "{{count}} collaborator(s)"
   },
   "board": {
     "backToProjects": "← Projects",

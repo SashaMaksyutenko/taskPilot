@@ -9,6 +9,7 @@ export interface Project {
   ownerName: string
   taskCount: number
   completedTaskCount: number
+  memberCount: number
   isArchived: boolean
   createdAt: string
   archivedAt: string | null

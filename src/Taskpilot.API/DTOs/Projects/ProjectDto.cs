@@ -14,6 +14,9 @@ public class ProjectDto
     /// <summary>Number of tasks in the Done status (for the progress bar).</summary>
     public int CompletedTaskCount { get; set; }
 
+    /// <summary>Number of collaborators (excluding the owner).</summary>
+    public int MemberCount { get; set; }
+
     public bool IsArchived { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime? ArchivedAt { get; set; }

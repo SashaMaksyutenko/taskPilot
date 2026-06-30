@@ -178,7 +178,9 @@
     "empty": "Проєктів ще немає. Створіть перший вище.",
     "tasks": "Завдань: {{count}}",
     "progress": "{{done}}/{{total}} виконано",
-    "archive": "Архівувати"
+    "archive": "Архівувати",
+    "shared": "Спільний",
+    "members": "Учасників: {{count}}"
   },
   "board": {
     "backToProjects": "← Проєкти",

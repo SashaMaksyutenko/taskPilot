@@ -5,6 +5,7 @@ import Navbar from '../components/Navbar'
 import ProjectContextMenu from '../components/ProjectContextMenu'
 import { projectService } from '../services/projectService'
 import { taskService } from '../services/taskService'
+import { useAppSelector } from '../store/hooks'
 import type { Project } from '../types/project'
 
 /**
@@ -13,6 +14,7 @@ import type { Project } from '../types/project'
  */
 export default function ProjectsPage() {
   const { t } = useTranslation()
+  const currentUserId = useAppSelector((s) => s.auth.user?.id)
   const [projects, setProjects] = useState<Project[]>([])
   const [name, setName] = useState('')
   const [loading, setLoading] = useState(false)
@@ -90,6 +92,16 @@ export default function ProjectsPage() {
                 <div className="flex items-center gap-2">
                   <span className="inline-block h-3 w-3 rounded-full" style={{ background: p.color ?? '#94a3b8' }} />
                   <span className="font-semibold">{p.name}</span>
+                  {p.ownerId !== currentUserId && (
+                    <span className="rounded-full bg-sky-100 px-2 py-0.5 text-[11px] font-semibold text-sky-700 dark:bg-sky-900/40 dark:text-sky-300">
+                      {t('projects.shared')}
+                    </span>
+                  )}
+                  {p.memberCount > 0 && (
+                    <span className="ml-auto text-xs text-slate-400" title={t('projects.members', { count: p.memberCount })}>
+                      👥 {p.memberCount + 1}
+                    </span>
+                  )}
                 </div>
                 <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">{t('projects.tasks', { count: p.taskCount })}</p>
 

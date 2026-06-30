@@ -102,7 +102,20 @@ public class ProjectsController : BaseApiController
         var userId = CurrentUserId();
         if (userId is null) return Unauthorized();
 
-        var result = await _projects.AddMemberAsync(userId.Value, projectId, dto.UserId);
+        var result = await _projects.AddMemberAsync(userId.Value, projectId, dto.UserId, dto.Role);
+        return result.Succeeded
+            ? Ok(result.Value)
+            : BadRequest(new { error = result.Error });
+    }
+
+    /// <summary>Changes a collaborator's role (owner only).</summary>
+    [HttpPut("{projectId:guid}/members/{memberUserId:guid}/role")]
+    public async Task<IActionResult> SetMemberRole(Guid projectId, Guid memberUserId, [FromBody] SetMemberRoleDto dto)
+    {
+        var userId = CurrentUserId();
+        if (userId is null) return Unauthorized();
+
+        var result = await _projects.SetMemberRoleAsync(userId.Value, projectId, memberUserId, dto.Role);
         return result.Succeeded
             ? Ok(result.Value)
             : BadRequest(new { error = result.Error });

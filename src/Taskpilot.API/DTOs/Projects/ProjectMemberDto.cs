@@ -7,6 +7,9 @@ public class ProjectMemberDto
     public string Name { get; set; } = string.Empty;
     public string? AvatarUrl { get; set; }
 
+    /// <summary>Permission level: "Editor" or "Viewer" (owner is always full access).</summary>
+    public string Role { get; set; } = "Editor";
+
     /// <summary>True for the project owner (shown but not removable).</summary>
     public bool IsOwner { get; set; }
 }

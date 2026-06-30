@@ -29,8 +29,16 @@ export const projectService = {
     return api.get<ProjectMember[]>(`/api/projects/${projectId}/members`).then((r) => r.data)
   },
 
-  addMember(projectId: string, userId: string): Promise<ProjectMember> {
-    return api.post<ProjectMember>(`/api/projects/${projectId}/members`, { userId }).then((r) => r.data)
+  addMember(projectId: string, userId: string, role: string): Promise<ProjectMember> {
+    return api
+      .post<ProjectMember>(`/api/projects/${projectId}/members`, { userId, role })
+      .then((r) => r.data)
+  },
+
+  setMemberRole(projectId: string, userId: string, role: string): Promise<ProjectMember> {
+    return api
+      .put<ProjectMember>(`/api/projects/${projectId}/members/${userId}/role`, { role })
+      .then((r) => r.data)
   },
 
   removeMember(projectId: string, userId: string): Promise<void> {

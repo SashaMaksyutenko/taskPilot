@@ -46,11 +46,17 @@ export default function ProjectMembersModal({
   }, [search])
 
   const memberIds = new Set(members.map((m) => m.userId))
+  const [roleToAdd, setRoleToAdd] = useState('Editor')
 
   const add = async (userId: string) => {
-    await projectService.addMember(projectId, userId).catch(() => {})
+    await projectService.addMember(projectId, userId, roleToAdd).catch(() => {})
     setSearch('')
     setResults([])
+    load()
+  }
+
+  const changeRole = async (userId: string, role: string) => {
+    await projectService.setMemberRole(projectId, userId, role).catch(() => {})
     load()
   }
 
@@ -89,15 +95,27 @@ export default function ProjectMembersModal({
                 <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-600 dark:bg-slate-700 dark:text-slate-300">
                   {t('members.owner')}
                 </span>
-              ) : (
-                isOwner && (
+              ) : isOwner ? (
+                <>
+                  <select
+                    value={m.role}
+                    onChange={(e) => changeRole(m.userId, e.target.value)}
+                    className="rounded border border-slate-300 bg-white px-1.5 py-0.5 text-xs outline-none dark:border-slate-600 dark:bg-slate-900"
+                  >
+                    <option value="Editor">{t('members.role.Editor')}</option>
+                    <option value="Viewer">{t('members.role.Viewer')}</option>
+                  </select>
                   <button
                     onClick={() => remove(m.userId)}
                     className="text-xs font-semibold text-red-600 hover:underline"
                   >
                     {t('members.remove')}
                   </button>
-                )
+                </>
+              ) : (
+                <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-600 dark:bg-slate-700 dark:text-slate-300">
+                  {t(`members.role.${m.role}`)}
+                </span>
               )}
             </li>
           ))}
@@ -105,6 +123,17 @@ export default function ProjectMembersModal({
 
         {isOwner && (
           <div className="relative">
+            <div className="mb-2 flex items-center gap-2 text-sm">
+              <span className="text-slate-500 dark:text-slate-400">{t('members.addAs')}</span>
+              <select
+                value={roleToAdd}
+                onChange={(e) => setRoleToAdd(e.target.value)}
+                className="rounded border border-slate-300 bg-white px-2 py-1 text-xs outline-none dark:border-slate-600 dark:bg-slate-900"
+              >
+                <option value="Editor">{t('members.role.Editor')}</option>
+                <option value="Viewer">{t('members.role.Viewer')}</option>
+              </select>
+            </div>
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}

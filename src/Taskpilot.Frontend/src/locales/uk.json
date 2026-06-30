@@ -89,7 +89,12 @@
     "remove": "Прибрати",
     "added": "Додано",
     "searchPlaceholder": "Знайти людину для додавання…",
-    "leave": "Вийти з проєкту"
+    "leave": "Вийти з проєкту",
+    "addAs": "Додати як:",
+    "role": {
+      "Editor": "Редактор",
+      "Viewer": "Глядач"
+    }
   },
   "notifPrefs": {
     "title": "Сповіщення",
@@ -185,6 +190,7 @@
   },
   "board": {
     "backToProjects": "← Проєкти",
+    "readOnly": "У вас доступ лише для перегляду цього проєкту.",
     "title": "Дошка",
     "exportCsv": "Експорт CSV",
     "exportXlsx": "Експорт Excel",

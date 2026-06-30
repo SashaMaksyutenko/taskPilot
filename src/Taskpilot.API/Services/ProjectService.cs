@@ -171,6 +171,7 @@ public class ProjectService : IProjectService
                 UserId = project.OwnerId,
                 Name = project.Owner.Name,
                 AvatarUrl = UserMapper.AvatarUrl(project.Owner),
+                Role = nameof(ProjectMemberRole.Editor),
                 IsOwner = true,
             },
         };
@@ -181,6 +182,7 @@ public class ProjectService : IProjectService
                 UserId = m.UserId,
                 Name = m.User.Name,
                 AvatarUrl = UserMapper.AvatarUrl(m.User),
+                Role = m.Role.ToString(),
                 IsOwner = false,
             }));
 
@@ -188,7 +190,7 @@ public class ProjectService : IProjectService
     }
 
     /// <inheritdoc />
-    public async Task<Result<ProjectMemberDto>> AddMemberAsync(Guid ownerId, Guid projectId, Guid targetUserId)
+    public async Task<Result<ProjectMemberDto>> AddMemberAsync(Guid ownerId, Guid projectId, Guid targetUserId, string? role)
     {
         // Only the owner manages members.
         var project = await GetOwnedAsync(projectId, ownerId);
@@ -197,6 +199,11 @@ public class ProjectService : IProjectService
 
         if (targetUserId == ownerId)
             return Result<ProjectMemberDto>.Fail("The owner already has access.");
+
+        // Default to Editor; only "Viewer" downgrades.
+        var memberRole = Enum.TryParse<ProjectMemberRole>(role, ignoreCase: true, out var parsed)
+            ? parsed
+            : ProjectMemberRole.Editor;
 
         var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == targetUserId);
         if (user is null)
@@ -212,6 +219,7 @@ public class ProjectService : IProjectService
             Id = Guid.NewGuid(),
             ProjectId = projectId,
             UserId = targetUserId,
+            Role = memberRole,
             CreatedAt = DateTime.UtcNow,
         });
         await _context.SaveChangesAsync();
@@ -223,12 +231,44 @@ public class ProjectService : IProjectService
             $"You were added to the project \"{project.Name}\".",
             $"/projects/{projectId}");
 
-        _logger.LogInformation("Member added. ProjectId: {ProjectId}, UserId: {UserId}", projectId, targetUserId);
+        _logger.LogInformation("Member added. ProjectId: {ProjectId}, UserId: {UserId}, Role: {Role}", projectId, targetUserId, memberRole);
         return Result<ProjectMemberDto>.Ok(new ProjectMemberDto
         {
             UserId = user.Id,
             Name = user.Name,
             AvatarUrl = UserMapper.AvatarUrl(user),
+            Role = memberRole.ToString(),
+            IsOwner = false,
+        });
+    }
+
+    /// <inheritdoc />
+    public async Task<Result<ProjectMemberDto>> SetMemberRoleAsync(Guid ownerId, Guid projectId, Guid targetUserId, string role)
+    {
+        if (!Enum.TryParse<ProjectMemberRole>(role, ignoreCase: true, out var memberRole))
+            return Result<ProjectMemberDto>.Fail("Invalid role.");
+
+        // Only the owner manages members.
+        var owns = await _context.Projects.AnyAsync(p => p.Id == projectId && p.OwnerId == ownerId);
+        if (!owns)
+            return Result<ProjectMemberDto>.Fail("Project not found.");
+
+        var membership = await _context.ProjectMembers
+            .Include(m => m.User)
+            .FirstOrDefaultAsync(m => m.ProjectId == projectId && m.UserId == targetUserId);
+        if (membership is null)
+            return Result<ProjectMemberDto>.Fail("Member not found.");
+
+        membership.Role = memberRole;
+        await _context.SaveChangesAsync();
+
+        _logger.LogInformation("Member role changed. ProjectId: {ProjectId}, UserId: {UserId}, Role: {Role}", projectId, targetUserId, memberRole);
+        return Result<ProjectMemberDto>.Ok(new ProjectMemberDto
+        {
+            UserId = membership.UserId,
+            Name = membership.User.Name,
+            AvatarUrl = UserMapper.AvatarUrl(membership.User),
+            Role = memberRole.ToString(),
             IsOwner = false,
         });
     }

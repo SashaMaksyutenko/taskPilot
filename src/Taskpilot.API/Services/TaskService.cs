@@ -50,9 +50,11 @@ public class TaskService : ITaskService
     /// <inheritdoc />
     public async Task<Result<TaskDto>> CreateTaskAsync(Guid userId, Guid projectId, CreateTaskDto dto)
     {
-        var ownsProject = await ProjectAccess.CanAccessAsync(_context, projectId, userId);
-        if (!ownsProject)
+        // Read access is required to even see the project; writing needs Editor/owner.
+        if (!await ProjectAccess.CanAccessAsync(_context, projectId, userId))
             return Result<TaskDto>.Fail("Project not found.");
+        if (!await ProjectAccess.CanWriteAsync(_context, projectId, userId))
+            return Result<TaskDto>.Fail("You have read-only access to this project.");
 
         // Priority defaults to Medium.
         var priority = TaskPriority.Medium;
@@ -143,6 +145,8 @@ public class TaskService : ITaskService
         var task = await LoadAccessibleAsync(taskId, userId);
         if (task is null)
             return Result<TaskDto>.Fail("Task not found.");
+        if (!await ProjectAccess.CanWriteTaskAsync(_context, taskId, userId))
+            return Result<TaskDto>.Fail("You have read-only access to this project.");
 
         var priority = task.Priority;
         if (!string.IsNullOrWhiteSpace(dto.Priority) &&
@@ -191,6 +195,8 @@ public class TaskService : ITaskService
         var task = await LoadAccessibleAsync(taskId, userId);
         if (task is null)
             return Result<TaskDto>.Fail("Task not found.");
+        if (!await ProjectAccess.CanWriteTaskAsync(_context, taskId, userId))
+            return Result<TaskDto>.Fail("You have read-only access to this project.");
 
         task.Status = parsed;
         // Track completion time when moving to/away from Done.
@@ -220,6 +226,8 @@ public class TaskService : ITaskService
         var task = await LoadAccessibleAsync(taskId, userId);
         if (task is null)
             return Result.Fail("Task not found.");
+        if (!await ProjectAccess.CanWriteTaskAsync(_context, taskId, userId))
+            return Result.Fail("You have read-only access to this project.");
 
         _context.ProjectTasks.Remove(task);
         await _context.SaveChangesAsync();

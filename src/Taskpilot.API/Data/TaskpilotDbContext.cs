@@ -613,6 +613,9 @@ public class TaskpilotDbContext : DbContext
         {
             entity.HasKey(m => m.Id);
 
+            entity.Property(m => m.Role)
+                  .HasConversion<string>().HasMaxLength(20).IsRequired();
+
             // One membership per (project, user); also the access lookup.
             entity.HasIndex(m => new { m.ProjectId, m.UserId }).IsUnique();
 

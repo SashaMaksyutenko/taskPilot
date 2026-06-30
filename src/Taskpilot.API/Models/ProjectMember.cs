@@ -21,6 +21,9 @@ public class ProjectMember
     /// <summary>Navigation to the member user.</summary>
     public User User { get; set; } = null!;
 
+    /// <summary>Permission level (Editor by default).</summary>
+    public ProjectMemberRole Role { get; set; } = ProjectMemberRole.Editor;
+
     /// <summary>UTC time the user was added to the project.</summary>
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 }

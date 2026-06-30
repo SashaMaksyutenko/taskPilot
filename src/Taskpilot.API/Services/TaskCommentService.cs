@@ -69,6 +69,9 @@ public class TaskCommentService : ITaskCommentService
         if (!await OwnsTaskAsync(taskId, userId))
             return Result<TaskCommentDto>.Fail("Task not found.");
 
+        if (!await ProjectAccess.CanWriteTaskAsync(_context, taskId, userId))
+            return Result<TaskCommentDto>.Fail("You have read-only access to this project.");
+
         if (await MuteGuard.CheckAsync(_context, userId) is { } muted)
             return Result<TaskCommentDto>.Fail(muted);
 

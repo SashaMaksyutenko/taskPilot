@@ -31,6 +31,7 @@ export default function BoardPage() {
   const [newTitle, setNewTitle] = useState('')
   const [selectedTask, setSelectedTask] = useState<Task | null>(null)
   const [membersOpen, setMembersOpen] = useState(false)
+  const [canWrite, setCanWrite] = useState(true)
   const draggingId = useRef<string | null>(null)
 
   const isOwner = !!project && project.ownerId === currentUserId
@@ -39,7 +40,15 @@ export default function BoardPage() {
     if (!projectId) return
     projectService.getProject(projectId).then(setProject).catch(() => {})
     taskService.getTasks(projectId).then(setTasks).catch(() => {})
-  }, [projectId])
+    // Determine my write permission (owner or Editor member; Viewers are read-only).
+    projectService
+      .getMembers(projectId)
+      .then((ms) => {
+        const me = ms.find((m) => m.userId === currentUserId)
+        setCanWrite(!!me && (me.isOwner || me.role === 'Editor'))
+      })
+      .catch(() => {})
+  }, [projectId, currentUserId])
 
   const addTask = async () => {
     const title = newTitle.trim()
@@ -138,19 +147,23 @@ export default function BoardPage() {
           </button>
         </div>
 
-        {/* Add task */}
-        <div className="mb-5 flex max-w-md gap-2">
-          <input
-            value={newTitle}
-            onChange={(e) => setNewTitle(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && addTask()}
-            placeholder={t('board.addPlaceholder')}
-            className="flex-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-[#1E2A44] dark:border-slate-600 dark:bg-slate-800"
-          />
-          <button onClick={addTask} className="rounded-lg bg-[#1E2A44] px-4 text-sm font-semibold text-white">
-            {t('board.add')}
-          </button>
-        </div>
+        {/* Add task (Editors and the owner only) */}
+        {canWrite ? (
+          <div className="mb-5 flex max-w-md gap-2">
+            <input
+              value={newTitle}
+              onChange={(e) => setNewTitle(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && addTask()}
+              placeholder={t('board.addPlaceholder')}
+              className="flex-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-[#1E2A44] dark:border-slate-600 dark:bg-slate-800"
+            />
+            <button onClick={addTask} className="rounded-lg bg-[#1E2A44] px-4 text-sm font-semibold text-white">
+              {t('board.add')}
+            </button>
+          </div>
+        ) : (
+          <p className="mb-5 text-sm text-slate-400">👁️ {t('board.readOnly')}</p>
+        )}
 
         {/* Columns */}
         <div className="grid grid-cols-1 gap-4 md:grid-cols-4">

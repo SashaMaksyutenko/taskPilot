@@ -89,7 +89,12 @@
     "remove": "Remove",
     "added": "Added",
     "searchPlaceholder": "Search a person to add…",
-    "leave": "Leave project"
+    "leave": "Leave project",
+    "addAs": "Add as:",
+    "role": {
+      "Editor": "Editor",
+      "Viewer": "Viewer"
+    }
   },
   "notifPrefs": {
     "title": "Notifications",
@@ -185,6 +190,7 @@
   },
   "board": {
     "backToProjects": "← Projects",
+    "readOnly": "You have read-only access to this project.",
     "title": "Board",
     "exportCsv": "Export CSV",
     "exportXlsx": "Export Excel",

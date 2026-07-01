@@ -153,7 +153,7 @@
     "disable": "Disable 2FA",
     "confirm": "Enable",
     "cancel": "Cancel",
-    "scanHint": "Add this key to your authenticator app (or scan the otpauth link), then enter the current code.",
+    "scanHint": "Scan this QR code with your authenticator app (or enter the key manually), then type the current code.",
     "codePlaceholder": "6-digit code"
   },
   "dashboard": {

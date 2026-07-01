@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { AxiosError } from 'axios'
+import QRCode from 'qrcode'
 import Avatar from '../components/Avatar'
 import Navbar from '../components/Navbar'
 import { authService } from '../services/authService'
@@ -98,8 +99,20 @@ export default function SettingsPage() {
 
   // Two-factor auth.
   const [twoFaSetup, setTwoFaSetup] = useState<{ secret: string; otpauthUri: string } | null>(null)
+  const [twoFaQr, setTwoFaQr] = useState('')
   const [twoFaCode, setTwoFaCode] = useState('')
   const [twoFaMsg, setTwoFaMsg] = useState('')
+
+  // Render the otpauth URI as a scannable QR image.
+  useEffect(() => {
+    if (!twoFaSetup) {
+      setTwoFaQr('')
+      return
+    }
+    QRCode.toDataURL(twoFaSetup.otpauthUri, { margin: 1, width: 180 })
+      .then(setTwoFaQr)
+      .catch(() => setTwoFaQr(''))
+  }, [twoFaSetup])
 
   const startTwoFa = async () => {
     setTwoFaMsg('')
@@ -465,6 +478,15 @@ export default function SettingsPage() {
           ) : twoFaSetup ? (
             <div className="space-y-3">
               <p className="text-sm text-slate-600 dark:text-slate-300">{t('twoFa.scanHint')}</p>
+              {twoFaQr && (
+                <img
+                  src={twoFaQr}
+                  alt="2FA QR code"
+                  className="rounded-lg border border-slate-200 bg-white p-2 dark:border-slate-700"
+                  width={180}
+                  height={180}
+                />
+              )}
               <div className="rounded-lg bg-slate-50 p-3 text-sm dark:bg-slate-900">
                 <div className="font-mono break-all text-[#1E2A44] dark:text-slate-200">{twoFaSetup.secret}</div>
                 <a href={twoFaSetup.otpauthUri} className="mt-1 block break-all text-xs text-slate-400 hover:underline">

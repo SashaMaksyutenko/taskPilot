@@ -2,8 +2,10 @@ import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import Avatar from './Avatar'
 import MentionText from './MentionText'
+import MentionTextarea, { type MentionCandidate } from './MentionTextarea'
 import { apiErrorMessage } from '../lib/apiError'
 import { createTaskConnection } from '../lib/taskHub'
+import { projectService } from '../services/projectService'
 import { taskService } from '../services/taskService'
 import { userService, type UserSearchResult } from '../services/userService'
 import type { Task, TaskComment } from '../types/project'
@@ -49,6 +51,15 @@ export default function TaskDetailModal({
   const [newComment, setNewComment] = useState('')
   const [posting, setPosting] = useState(false)
   const [commentError, setCommentError] = useState('')
+
+  // Project members — used as @mention candidates.
+  const [mentionCandidates, setMentionCandidates] = useState<MentionCandidate[]>([])
+  useEffect(() => {
+    projectService
+      .getMembers(task.projectId)
+      .then((ms) => setMentionCandidates(ms.map((m) => ({ id: m.userId, name: m.name, avatarUrl: m.avatarUrl }))))
+      .catch(() => {})
+  }, [task.projectId])
 
   // Load the task's comments when the modal opens.
   useEffect(() => {
@@ -289,9 +300,10 @@ export default function TaskDetailModal({
           )}
 
           <div className="flex items-start gap-2">
-            <textarea
+            <MentionTextarea
               value={newComment}
-              onChange={(e) => setNewComment(e.target.value)}
+              onChange={setNewComment}
+              candidates={mentionCandidates}
               onKeyDown={(e) => {
                 // Ctrl/Cmd+Enter posts the comment.
                 if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
@@ -301,7 +313,7 @@ export default function TaskDetailModal({
               }}
               rows={2}
               placeholder={t('taskModal.commentPlaceholder')}
-              className="flex-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-[#1E2A44] dark:border-slate-600 dark:bg-slate-900"
+              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-[#1E2A44] dark:border-slate-600 dark:bg-slate-900"
             />
             <button
               onClick={addComment}

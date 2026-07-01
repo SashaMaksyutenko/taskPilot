@@ -277,6 +277,7 @@
     "bodyPlaceholder": "What do you want to discuss?",
     "postTopic": "Post topic",
     "empty": "No topics yet. Be the first to post!",
+    "markdownHint": "Markdown supported: **bold**, *italic*, lists, `code`, links.",
     "by": "by",
     "replies": "replies",
     "views": "views",

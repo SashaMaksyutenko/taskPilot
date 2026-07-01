@@ -24,6 +24,7 @@
     "react-dom": "^19.2.6",
     "react-hook-form": "^7.79.0",
     "react-i18next": "^17.0.8",
+    "react-markdown": "^10.1.0",
     "react-redux": "^9.3.0",
     "react-router-dom": "^7.18.0",
     "recharts": "^3.9.0",

@@ -82,8 +82,9 @@ export default function ForumPage() {
             onChange={(e) => setBody(e.target.value)}
             placeholder={t('forum.bodyPlaceholder')}
             rows={3}
-            className="mb-3 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 outline-none focus:border-[#1E2A44] dark:border-slate-600 dark:bg-slate-900"
+            className="mb-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 outline-none focus:border-[#1E2A44] dark:border-slate-600 dark:bg-slate-900"
           />
+          <p className="mb-3 text-xs text-slate-400">{t('forum.markdownHint')}</p>
           <div className="flex items-center gap-3">
             <button
               onClick={create}

@@ -126,6 +126,22 @@ public class UsersController : BaseApiController
         return Ok(result.Value);
     }
 
+    /// <summary>Downloads all of the current user's personal data as a JSON file (GDPR export).</summary>
+    [HttpGet("me/export")]
+    public async Task<IActionResult> ExportData()
+    {
+        var userId = CurrentUserId();
+        if (userId is null) return Unauthorized();
+
+        var result = await _userService.ExportDataAsync(userId.Value);
+        if (!result.Succeeded)
+            return NotFound(new { error = result.Error });
+
+        var bytes = System.Text.Json.JsonSerializer.SerializeToUtf8Bytes(result.Value,
+            new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+        return File(bytes, "application/json", "taskpilot-data.json");
+    }
+
     /// <summary>Lists the current user's appeals (newest first).</summary>
     [HttpGet("me/appeals")]
     public async Task<IActionResult> GetMyAppeals()

@@ -93,4 +93,9 @@ export const userService = {
   createAppeal(data: { warningId?: string; message: string }): Promise<Appeal> {
     return api.post<Appeal>('/api/users/me/appeals', data).then((r) => r.data)
   },
+
+  /** Downloads all of the user's personal data as a JSON blob (GDPR export). */
+  exportData(): Promise<Blob> {
+    return api.get('/api/users/me/export', { responseType: 'blob' }).then((r) => r.data as Blob)
+  },
 }

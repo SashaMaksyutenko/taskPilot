@@ -218,6 +218,85 @@ public class UserService : IUserService
     }
 
     /// <inheritdoc />
+    public async Task<Result<object>> ExportDataAsync(Guid userId)
+    {
+        var user = await _context.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == userId);
+        if (user is null)
+            return Result<object>.Fail("User not found.");
+
+        var profile = new
+        {
+            user.Id,
+            user.Name,
+            user.Email,
+            user.Role,
+            user.Title,
+            user.Bio,
+            user.Location,
+            user.Website,
+            user.LinkedIn,
+            user.GitHub,
+            user.Phone,
+            user.CreatedAt,
+        };
+
+        var notes = await _context.Notes
+            .Where(n => n.OwnerId == userId)
+            .OrderBy(n => n.CreatedAt)
+            .Select(n => new { n.Title, n.Content, n.IsPinned, n.CreatedAt })
+            .AsNoTracking().ToListAsync();
+
+        var projects = await _context.Projects
+            .Where(p => p.OwnerId == userId)
+            .OrderBy(p => p.CreatedAt)
+            .Select(p => new
+            {
+                p.Name,
+                p.Description,
+                p.CreatedAt,
+                Tasks = p.Tasks.OrderBy(t => t.CreatedAt).Select(t => new
+                {
+                    t.Title,
+                    Status = t.Status.ToString(),
+                    Priority = t.Priority.ToString(),
+                    t.Deadline,
+                    t.CreatedAt,
+                }).ToList(),
+            })
+            .AsNoTracking().ToListAsync();
+
+        var forumTopics = await _context.ForumTopics
+            .Where(f => f.AuthorId == userId)
+            .OrderBy(f => f.CreatedAt)
+            .Select(f => new { f.Title, f.Body, f.CreatedAt })
+            .AsNoTracking().ToListAsync();
+
+        var forumReplies = await _context.ForumReplies
+            .Where(r => r.AuthorId == userId)
+            .OrderBy(r => r.CreatedAt)
+            .Select(r => new { r.Body, r.CreatedAt })
+            .AsNoTracking().ToListAsync();
+
+        var taskComments = await _context.TaskComments
+            .Where(c => c.AuthorId == userId)
+            .OrderBy(c => c.CreatedAt)
+            .Select(c => new { c.Body, c.CreatedAt })
+            .AsNoTracking().ToListAsync();
+
+        _logger.LogInformation("Data export built. UserId: {UserId}", userId);
+        return Result<object>.Ok(new
+        {
+            exportedAt = DateTime.UtcNow,
+            profile,
+            notes,
+            projects,
+            forumTopics,
+            forumReplies,
+            taskComments,
+        });
+    }
+
+    /// <inheritdoc />
     public async Task<Result<FileDownload>> GetAvatarAsync(Guid userId)
     {
         var fileId = await _context.Users

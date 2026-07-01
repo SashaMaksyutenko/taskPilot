@@ -96,6 +96,17 @@ export default function SettingsPage() {
     loadSessions()
   }
 
+  const downloadData = async () => {
+    const blob = await userService.exportData().catch(() => null)
+    if (!blob) return
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'taskpilot-data.json'
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
   const [warnings, setWarnings] = useState<Warning[]>([])
   const [appeals, setAppeals] = useState<Appeal[]>([])
   const [appealTarget, setAppealTarget] = useState<Warning | null>(null)
@@ -396,6 +407,18 @@ export default function SettingsPage() {
               </li>
             ))}
           </ul>
+        </section>
+
+        {/* Data & privacy */}
+        <section className="mt-8 rounded-xl border border-slate-200 bg-white p-6 dark:border-slate-700 dark:bg-slate-800">
+          <h2 className="mb-1 font-bold">{t('privacy.title')}</h2>
+          <p className="mb-4 text-sm text-slate-500 dark:text-slate-400">{t('privacy.exportDesc')}</p>
+          <button
+            onClick={downloadData}
+            className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold hover:bg-slate-50 dark:border-slate-600 dark:hover:bg-slate-700"
+          >
+            {t('privacy.export')}
+          </button>
         </section>
 
         {/* Notification preferences */}

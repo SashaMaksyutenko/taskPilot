@@ -29,4 +29,7 @@ public interface IUserService
 
     /// <summary>Resolves a user's avatar image for download (public).</summary>
     Task<Result<FileDownload>> GetAvatarAsync(Guid userId);
+
+    /// <summary>Builds a portable copy of the user's personal data (GDPR export).</summary>
+    Task<Result<object>> ExportDataAsync(Guid userId);
 }

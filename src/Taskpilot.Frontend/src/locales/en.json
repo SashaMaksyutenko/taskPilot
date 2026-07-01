@@ -96,6 +96,11 @@
       "Viewer": "Viewer"
     }
   },
+  "privacy": {
+    "title": "Data & privacy",
+    "exportDesc": "Download a copy of your personal data (profile, notes, projects, forum posts, comments) as JSON.",
+    "export": "Download my data"
+  },
   "sessions": {
     "title": "Active sessions",
     "current": "This device",

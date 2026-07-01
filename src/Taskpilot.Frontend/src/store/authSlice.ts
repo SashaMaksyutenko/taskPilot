@@ -108,6 +108,9 @@ const authSlice = createSlice({
       .addCase(login.fulfilled, (state, action) => {
         const data = action.payload as AuthResponse
         state.status = 'idle'
+        // A 2FA-pending response carries no tokens — stay logged out until the
+        // client resubmits with the code.
+        if (data.requiresTwoFactor) return
         state.accessToken = data.accessToken
         state.refreshToken = data.refreshToken
         state.isAuthenticated = true

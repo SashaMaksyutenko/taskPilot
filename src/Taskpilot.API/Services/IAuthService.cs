@@ -50,6 +50,15 @@ public interface IAuthService
     /// <summary>Revokes all of the user's sessions except the one matching currentToken.</summary>
     Task<Result> RevokeOtherSessionsAsync(Guid userId, string? currentToken);
 
+    /// <summary>Starts 2FA enrollment: generates and stores a secret (not yet enabled).</summary>
+    Task<Result<TwoFactorSetupDto>> SetupTwoFactorAsync(Guid userId);
+
+    /// <summary>Enables 2FA after verifying a code against the enrolled secret.</summary>
+    Task<Result> EnableTwoFactorAsync(Guid userId, string code);
+
+    /// <summary>Disables 2FA after verifying a code.</summary>
+    Task<Result> DisableTwoFactorAsync(Guid userId, string code);
+
     /// <summary>
     /// Returns the public profile of the user with the given id.
     /// </summary>

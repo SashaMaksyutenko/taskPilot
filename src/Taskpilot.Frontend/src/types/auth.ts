@@ -12,6 +12,7 @@ export interface RegisterRequest {
 export interface LoginRequest {
   email: string
   password: string
+  twoFactorCode?: string
 }
 
 /** Response from login / refresh (mirrors AuthResponseDto on the backend). */
@@ -23,6 +24,7 @@ export interface AuthResponse {
   userId: string
   email: string
   role: string
+  requiresTwoFactor: boolean
 }
 
 /** An active login session (mirrors SessionDto). */
@@ -42,6 +44,7 @@ export interface User {
   email: string
   role: string
   isActive: boolean
+  twoFactorEnabled: boolean
   avatarUrl: string | null
   title: string | null
   bio: string | null

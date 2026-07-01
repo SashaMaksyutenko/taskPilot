@@ -145,6 +145,19 @@ public class AuthService : IAuthService
                 return Result<AuthResponseDto>.Fail("Invalid email or password.");
             }
 
+            // Second factor: when 2FA is on, a valid TOTP code is required as well.
+            if (user.TwoFactorEnabled)
+            {
+                if (string.IsNullOrWhiteSpace(dto.TwoFactorCode))
+                    return Result<AuthResponseDto>.Ok(new AuthResponseDto { RequiresTwoFactor = true });
+
+                if (!Totp.Verify(user.TwoFactorSecret ?? string.Empty, dto.TwoFactorCode))
+                {
+                    _logger.LogWarning("Login failed: bad 2FA code. UserId: {UserId}", user.Id);
+                    return Result<AuthResponseDto>.Fail("Invalid authentication code.");
+                }
+            }
+
             // Credentials are valid — issue a signed JWT access token and a refresh token.
             var (accessToken, accessExpiresAtUtc) = _tokenService.GenerateAccessToken(user);
             var refreshToken = CreateRefreshToken(user.Id, ip, userAgent);
@@ -310,6 +323,72 @@ public class AuthService : IAuthService
             .ExecuteUpdateAsync(s => s.SetProperty(rt => rt.RevokedAtUtc, DateTime.UtcNow));
 
         _logger.LogInformation("Other sessions revoked. UserId: {UserId}", userId);
+        return Result.Ok();
+    }
+
+    /// <inheritdoc />
+    public async Task<Result<TwoFactorSetupDto>> SetupTwoFactorAsync(Guid userId)
+    {
+        var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
+        if (user is null)
+            return Result<TwoFactorSetupDto>.Fail("User not found.");
+
+        if (user.TwoFactorEnabled)
+            return Result<TwoFactorSetupDto>.Fail("Two-factor authentication is already enabled.");
+
+        // Fresh secret each time enrollment starts (until confirmed).
+        var secret = Totp.GenerateSecret();
+        user.TwoFactorSecret = secret;
+        user.UpdatedAt = DateTime.UtcNow;
+        await _context.SaveChangesAsync();
+
+        return Result<TwoFactorSetupDto>.Ok(new TwoFactorSetupDto
+        {
+            Secret = secret,
+            OtpauthUri = Totp.BuildUri(secret, user.Email),
+        });
+    }
+
+    /// <inheritdoc />
+    public async Task<Result> EnableTwoFactorAsync(Guid userId, string code)
+    {
+        var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
+        if (user is null)
+            return Result.Fail("User not found.");
+
+        if (string.IsNullOrWhiteSpace(user.TwoFactorSecret))
+            return Result.Fail("Start setup first.");
+
+        if (!Totp.Verify(user.TwoFactorSecret, code))
+            return Result.Fail("Invalid authentication code.");
+
+        user.TwoFactorEnabled = true;
+        user.UpdatedAt = DateTime.UtcNow;
+        await _context.SaveChangesAsync();
+
+        _logger.LogInformation("2FA enabled. UserId: {UserId}", userId);
+        return Result.Ok();
+    }
+
+    /// <inheritdoc />
+    public async Task<Result> DisableTwoFactorAsync(Guid userId, string code)
+    {
+        var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
+        if (user is null)
+            return Result.Fail("User not found.");
+
+        if (!user.TwoFactorEnabled)
+            return Result.Fail("Two-factor authentication is not enabled.");
+
+        if (!Totp.Verify(user.TwoFactorSecret ?? string.Empty, code))
+            return Result.Fail("Invalid authentication code.");
+
+        user.TwoFactorEnabled = false;
+        user.TwoFactorSecret = null;
+        user.UpdatedAt = DateTime.UtcNow;
+        await _context.SaveChangesAsync();
+
+        _logger.LogInformation("2FA disabled. UserId: {UserId}", userId);
         return Result.Ok();
     }
 

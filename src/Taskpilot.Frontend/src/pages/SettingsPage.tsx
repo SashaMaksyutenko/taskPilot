@@ -96,6 +96,36 @@ export default function SettingsPage() {
     loadSessions()
   }
 
+  // Two-factor auth.
+  const [twoFaSetup, setTwoFaSetup] = useState<{ secret: string; otpauthUri: string } | null>(null)
+  const [twoFaCode, setTwoFaCode] = useState('')
+  const [twoFaMsg, setTwoFaMsg] = useState('')
+
+  const startTwoFa = async () => {
+    setTwoFaMsg('')
+    const setup = await authService.setupTwoFactor().catch(() => null)
+    if (setup) setTwoFaSetup(setup)
+  }
+  const confirmTwoFa = async () => {
+    try {
+      await authService.enableTwoFactor(twoFaCode.trim())
+      setTwoFaSetup(null)
+      setTwoFaCode('')
+      dispatch(fetchMe())
+    } catch (e) {
+      setTwoFaMsg(e instanceof AxiosError ? (e.response?.data?.error ?? t('settings.failed')) : t('settings.failed'))
+    }
+  }
+  const disableTwoFa = async () => {
+    try {
+      await authService.disableTwoFactor(twoFaCode.trim())
+      setTwoFaCode('')
+      dispatch(fetchMe())
+    } catch (e) {
+      setTwoFaMsg(e instanceof AxiosError ? (e.response?.data?.error ?? t('settings.failed')) : t('settings.failed'))
+    }
+  }
+
   const downloadData = async () => {
     const blob = await userService.exportData().catch(() => null)
     if (!blob) return
@@ -407,6 +437,63 @@ export default function SettingsPage() {
               </li>
             ))}
           </ul>
+        </section>
+
+        {/* Two-factor authentication */}
+        <section className="mt-8 rounded-xl border border-slate-200 bg-white p-6 dark:border-slate-700 dark:bg-slate-800">
+          <h2 className="mb-1 font-bold">{t('twoFa.title')}</h2>
+          <p className="mb-4 text-sm text-slate-500 dark:text-slate-400">{t('twoFa.desc')}</p>
+
+          {user?.twoFactorEnabled ? (
+            <div className="space-y-3">
+              <div className="inline-flex items-center gap-2 rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-700 dark:bg-green-900/40 dark:text-green-300">
+                ✓ {t('twoFa.enabled')}
+              </div>
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <input
+                  value={twoFaCode}
+                  onChange={(e) => setTwoFaCode(e.target.value)}
+                  inputMode="numeric"
+                  placeholder={t('twoFa.codePlaceholder')}
+                  className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm tracking-widest outline-none dark:border-slate-600 dark:bg-slate-900"
+                />
+                <button onClick={disableTwoFa} className="rounded-lg border border-red-300 px-4 py-2 text-sm font-semibold text-red-600 hover:bg-red-50 dark:border-red-700 dark:hover:bg-red-950">
+                  {t('twoFa.disable')}
+                </button>
+              </div>
+            </div>
+          ) : twoFaSetup ? (
+            <div className="space-y-3">
+              <p className="text-sm text-slate-600 dark:text-slate-300">{t('twoFa.scanHint')}</p>
+              <div className="rounded-lg bg-slate-50 p-3 text-sm dark:bg-slate-900">
+                <div className="font-mono break-all text-[#1E2A44] dark:text-slate-200">{twoFaSetup.secret}</div>
+                <a href={twoFaSetup.otpauthUri} className="mt-1 block break-all text-xs text-slate-400 hover:underline">
+                  {twoFaSetup.otpauthUri}
+                </a>
+              </div>
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <input
+                  value={twoFaCode}
+                  onChange={(e) => setTwoFaCode(e.target.value)}
+                  inputMode="numeric"
+                  autoFocus
+                  placeholder={t('twoFa.codePlaceholder')}
+                  className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm tracking-widest outline-none dark:border-slate-600 dark:bg-slate-900"
+                />
+                <button onClick={confirmTwoFa} className="rounded-lg bg-[#1E2A44] px-5 py-2 text-sm font-semibold text-white hover:bg-[#27345a]">
+                  {t('twoFa.confirm')}
+                </button>
+                <button onClick={() => { setTwoFaSetup(null); setTwoFaCode(''); setTwoFaMsg('') }} className="text-sm font-semibold text-slate-500 hover:text-[#1E2A44] dark:text-slate-300">
+                  {t('twoFa.cancel')}
+                </button>
+              </div>
+            </div>
+          ) : (
+            <button onClick={startTwoFa} className="rounded-lg bg-[#1E2A44] px-5 py-2 text-sm font-semibold text-white hover:bg-[#27345a]">
+              {t('twoFa.enable')}
+            </button>
+          )}
+          {twoFaMsg && <p className="mt-2 text-sm text-red-600">{twoFaMsg}</p>}
         </section>
 
         {/* Data & privacy */}

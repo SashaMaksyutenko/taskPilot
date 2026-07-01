@@ -54,4 +54,19 @@ export const authService = {
   revokeOtherSessions(): Promise<void> {
     return api.post('/api/auth/sessions/revoke-others', {}, currentTokenHeader()).then(() => undefined)
   },
+
+  /** Starts 2FA enrollment; returns the secret + otpauth URI. */
+  setupTwoFactor(): Promise<{ secret: string; otpauthUri: string }> {
+    return api.post<{ secret: string; otpauthUri: string }>('/api/auth/2fa/setup').then((r) => r.data)
+  },
+
+  /** Enables 2FA after verifying a code. */
+  enableTwoFactor(code: string): Promise<void> {
+    return api.post('/api/auth/2fa/enable', { code }).then(() => undefined)
+  },
+
+  /** Disables 2FA after verifying a code. */
+  disableTwoFactor(code: string): Promise<void> {
+    return api.post('/api/auth/2fa/disable', { code }).then(() => undefined)
+  },
 }

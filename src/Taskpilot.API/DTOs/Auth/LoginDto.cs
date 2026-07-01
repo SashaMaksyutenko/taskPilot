@@ -16,4 +16,7 @@ public class LoginDto
     /// BCrypt hash during login and is never persisted or logged.
     /// </summary>
     public string Password { get; set; } = string.Empty;
+
+    /// <summary>Optional TOTP code, required on the second step when 2FA is enabled.</summary>
+    public string? TwoFactorCode { get; set; }
 }

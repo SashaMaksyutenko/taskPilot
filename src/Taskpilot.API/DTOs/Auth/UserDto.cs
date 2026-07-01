@@ -21,6 +21,9 @@ public class UserDto
     /// <summary>Whether the account is active.</summary>
     public bool IsActive { get; set; }
 
+    /// <summary>Whether two-factor authentication is enabled.</summary>
+    public bool TwoFactorEnabled { get; set; }
+
     /// <summary>Public URL of the avatar image; null when none set.</summary>
     public string? AvatarUrl { get; set; }
 

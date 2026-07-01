@@ -43,6 +43,15 @@ public class User
     /// </summary>
     public DateTime? MutedUntil { get; set; }
 
+    /// <summary>
+    /// Base32 TOTP secret for two-factor auth. Set once the user starts enrolling;
+    /// cleared when 2FA is disabled. Null when never enrolled.
+    /// </summary>
+    public string? TwoFactorSecret { get; set; }
+
+    /// <summary>True once the user has confirmed and enabled two-factor authentication.</summary>
+    public bool TwoFactorEnabled { get; set; }
+
     /// <summary>Дата та час створення акаунта (UTC).</summary>
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 

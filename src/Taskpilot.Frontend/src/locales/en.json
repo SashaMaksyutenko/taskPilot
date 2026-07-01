@@ -140,7 +140,21 @@
     "signup": "Sign up",
     "creating": "Creating…",
     "needAccount": "Need an account?",
-    "haveAccount": "Already have an account?"
+    "haveAccount": "Already have an account?",
+    "twoFactorCode": "Authentication code",
+    "twoFactorHint": "Enter the 6-digit code from your authenticator app.",
+    "verify": "Verify"
+  },
+  "twoFa": {
+    "title": "Two-factor authentication",
+    "desc": "Add a second step at login using an authenticator app (TOTP).",
+    "enabled": "Enabled",
+    "enable": "Enable 2FA",
+    "disable": "Disable 2FA",
+    "confirm": "Enable",
+    "cancel": "Cancel",
+    "scanHint": "Add this key to your authenticator app (or scan the otpauth link), then enter the current code.",
+    "codePlaceholder": "6-digit code"
   },
   "dashboard": {
     "welcome": "Welcome back",

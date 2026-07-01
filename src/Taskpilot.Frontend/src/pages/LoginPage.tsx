@@ -41,9 +41,19 @@ export default function LoginPage() {
     formState: { errors },
   } = useForm<FormValues>({ resolver: zodResolver(schema) })
 
+  // Two-factor step: shown when the server asks for a TOTP code.
+  const [needCode, setNeedCode] = useState(false)
+  const [code, setCode] = useState('')
+
   const onSubmit = async (values: FormValues) => {
     try {
-      await dispatch(login(values)).unwrap()
+      const res = await dispatch(
+        login({ ...values, twoFactorCode: needCode ? code : undefined }),
+      ).unwrap()
+      if (res.requiresTwoFactor) {
+        setNeedCode(true)
+        return
+      }
       // Tokens are stored now; load the full profile, then go home.
       await dispatch(fetchMe())
       navigate('/')
@@ -95,12 +105,27 @@ export default function LoginPage() {
             )}
           </div>
 
+          {needCode && (
+            <div>
+              <label className="mb-1 block text-sm font-medium text-slate-700">{t('auth.twoFactorCode')}</label>
+              <input
+                value={code}
+                onChange={(e) => setCode(e.target.value)}
+                inputMode="numeric"
+                autoFocus
+                placeholder="123456"
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 tracking-widest outline-none focus:border-[#1E2A44]"
+              />
+              <p className="mt-1 text-xs text-slate-500">{t('auth.twoFactorHint')}</p>
+            </div>
+          )}
+
           <button
             type="submit"
             disabled={status === 'loading'}
             className="w-full rounded-lg bg-[#1E2A44] py-2.5 font-semibold text-white transition hover:bg-[#27345a] disabled:opacity-60"
           >
-            {status === 'loading' ? t('auth.loggingIn') : t('auth.login')}
+            {status === 'loading' ? t('auth.loggingIn') : needCode ? t('auth.verify') : t('auth.login')}
           </button>
         </form>
 

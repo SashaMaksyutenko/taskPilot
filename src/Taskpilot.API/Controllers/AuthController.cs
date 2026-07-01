@@ -121,7 +121,11 @@ public class AuthController : BaseApiController
             return Unauthorized(new { error = result.Error });
         }
 
-        _logger.LogInformation("Login successful via endpoint. UserId: {UserId}", result.Value!.UserId);
+        // Password ok but a TOTP code is still required — no tokens issued yet.
+        if (result.Value!.RequiresTwoFactor)
+            return Ok(result.Value);
+
+        _logger.LogInformation("Login successful via endpoint. UserId: {UserId}", result.Value.UserId);
         // Record the successful login in the audit trail.
         await _audit.LogAsync("auth.login.success", actorId: result.Value.UserId, actorEmail: dto.Email,
             entityType: "User", entityId: result.Value.UserId.ToString(), ipAddress: ClientIp());
@@ -199,6 +203,48 @@ public class AuthController : BaseApiController
         var result = await _authService.RevokeOtherSessionsAsync(userId.Value, CurrentRefreshToken());
         return result.Succeeded
             ? Ok(new { message = "Other sessions revoked." })
+            : BadRequest(new { error = result.Error });
+    }
+
+    /// <summary>Starts 2FA enrollment; returns the secret + otpauth URI.</summary>
+    [Authorize]
+    [HttpPost("2fa/setup")]
+    public async Task<IActionResult> SetupTwoFactor()
+    {
+        var userId = CurrentUserId();
+        if (userId is null) return Unauthorized();
+
+        var result = await _authService.SetupTwoFactorAsync(userId.Value);
+        return result.Succeeded
+            ? Ok(result.Value)
+            : BadRequest(new { error = result.Error });
+    }
+
+    /// <summary>Enables 2FA after verifying a code.</summary>
+    [Authorize]
+    [HttpPost("2fa/enable")]
+    public async Task<IActionResult> EnableTwoFactor([FromBody] TwoFactorCodeDto dto)
+    {
+        var userId = CurrentUserId();
+        if (userId is null) return Unauthorized();
+
+        var result = await _authService.EnableTwoFactorAsync(userId.Value, dto.Code);
+        return result.Succeeded
+            ? Ok(new { message = "Two-factor authentication enabled." })
+            : BadRequest(new { error = result.Error });
+    }
+
+    /// <summary>Disables 2FA after verifying a code.</summary>
+    [Authorize]
+    [HttpPost("2fa/disable")]
+    public async Task<IActionResult> DisableTwoFactor([FromBody] TwoFactorCodeDto dto)
+    {
+        var userId = CurrentUserId();
+        if (userId is null) return Unauthorized();
+
+        var result = await _authService.DisableTwoFactorAsync(userId.Value, dto.Code);
+        return result.Succeeded
+            ? Ok(new { message = "Two-factor authentication disabled." })
             : BadRequest(new { error = result.Error });
     }
 

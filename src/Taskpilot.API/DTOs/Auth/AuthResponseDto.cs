@@ -27,4 +27,10 @@ public class AuthResponseDto
 
     /// <summary>Role of the authenticated user (e.g. "Developer").</summary>
     public string Role { get; set; } = string.Empty;
+
+    /// <summary>
+    /// True when the password was correct but a TOTP code is still required. In this
+    /// case the token fields are empty and the client must resubmit with the code.
+    /// </summary>
+    public bool RequiresTwoFactor { get; set; }
 }

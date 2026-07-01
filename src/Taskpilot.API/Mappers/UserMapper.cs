@@ -29,6 +29,7 @@ public static class UserMapper
         Email = u.Email,
         Role = u.Role.ToString(),
         IsActive = u.IsActive,
+        TwoFactorEnabled = u.TwoFactorEnabled,
         AvatarUrl = AvatarUrl(u),
         Title = u.Title,
         Bio = u.Bio,

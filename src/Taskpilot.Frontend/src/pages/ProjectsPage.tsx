@@ -92,7 +92,7 @@ export default function ProjectsPage() {
                 <div className="flex items-center gap-2">
                   <span className="inline-block h-3 w-3 rounded-full" style={{ background: p.color ?? '#94a3b8' }} />
                   <span className="font-semibold">{p.name}</span>
-                  {p.ownerId !== currentUserId && (
+                  {!!currentUserId && p.ownerId !== currentUserId && (
                     <span className="rounded-full bg-sky-100 px-2 py-0.5 text-[11px] font-semibold text-sky-700 dark:bg-sky-900/40 dark:text-sky-300">
                       {t('projects.shared')}
                     </span>

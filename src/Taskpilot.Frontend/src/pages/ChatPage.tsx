@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import type { HubConnection } from '@microsoft/signalr'
 import AttachmentPreview from '../components/AttachmentPreview'
 import Avatar from '../components/Avatar'
+import MentionField from '../components/MentionField'
 import MentionText from '../components/MentionText'
 import MessageContextMenu from '../components/MessageContextMenu'
 import Navbar from '../components/Navbar'
@@ -154,6 +155,11 @@ export default function ChatPage() {
     return conv.participants.find((p) => p.userId !== currentUser?.id)?.avatarUrl ?? null
   }
 
+  // @mention candidates: the current conversation's other participants.
+  const mentionCandidates = (conversations.find((c) => c.id === selectedId)?.participants ?? [])
+    .filter((p) => p.userId !== currentUser?.id)
+    .map((p) => ({ id: p.userId, name: p.name, avatarUrl: p.avatarUrl }))
+
   return (
     <div className="flex h-screen flex-col bg-slate-50 text-[#1E2A44] dark:bg-slate-900 dark:text-slate-100">
       <Navbar />
@@ -286,12 +292,14 @@ export default function ChatPage() {
                 >
                   📎
                 </button>
-                <input
+                <MentionField
                   value={text}
-                  onChange={(e) => setText(e.target.value)}
+                  onChange={setText}
+                  candidates={mentionCandidates}
+                  multiline={false}
                   onKeyDown={(e) => e.key === 'Enter' && send()}
                   placeholder={t('chat.messagePlaceholder')}
-                  className="flex-1 rounded-lg border border-slate-300 px-3 py-2 outline-none focus:border-[#1E2A44] dark:border-slate-600 dark:bg-slate-900"
+                  className="w-full rounded-lg border border-slate-300 px-3 py-2 outline-none focus:border-[#1E2A44] dark:border-slate-600 dark:bg-slate-900"
                 />
                 <button
                   onClick={send}

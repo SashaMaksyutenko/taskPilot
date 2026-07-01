@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import Avatar from './Avatar'
 import MentionText from './MentionText'
-import MentionTextarea, { type MentionCandidate } from './MentionTextarea'
+import MentionField, { type MentionCandidate } from './MentionField'
 import { apiErrorMessage } from '../lib/apiError'
 import { createTaskConnection } from '../lib/taskHub'
 import { projectService } from '../services/projectService'
@@ -300,7 +300,7 @@ export default function TaskDetailModal({
           )}
 
           <div className="flex items-start gap-2">
-            <MentionTextarea
+            <MentionField
               value={newComment}
               onChange={setNewComment}
               candidates={mentionCandidates}

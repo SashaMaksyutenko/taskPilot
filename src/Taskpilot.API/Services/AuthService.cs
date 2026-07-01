@@ -145,13 +145,15 @@ public class AuthService : IAuthService
                 return Result<AuthResponseDto>.Fail("Invalid email or password.");
             }
 
-            // Second factor: when 2FA is on, a valid TOTP code is required as well.
+            // Second factor: when 2FA is on, a valid TOTP or backup code is required too.
             if (user.TwoFactorEnabled)
             {
                 if (string.IsNullOrWhiteSpace(dto.TwoFactorCode))
                     return Result<AuthResponseDto>.Ok(new AuthResponseDto { RequiresTwoFactor = true });
 
-                if (!Totp.Verify(user.TwoFactorSecret ?? string.Empty, dto.TwoFactorCode))
+                var totpOk = Totp.Verify(user.TwoFactorSecret ?? string.Empty, dto.TwoFactorCode);
+                var backupOk = !totpOk && await TryConsumeBackupCodeAsync(user.Id, dto.TwoFactorCode);
+                if (!totpOk && !backupOk)
                 {
                     _logger.LogWarning("Login failed: bad 2FA code. UserId: {UserId}", user.Id);
                     return Result<AuthResponseDto>.Fail("Invalid authentication code.");
@@ -350,24 +352,25 @@ public class AuthService : IAuthService
     }
 
     /// <inheritdoc />
-    public async Task<Result> EnableTwoFactorAsync(Guid userId, string code)
+    public async Task<Result<List<string>>> EnableTwoFactorAsync(Guid userId, string code)
     {
         var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
         if (user is null)
-            return Result.Fail("User not found.");
+            return Result<List<string>>.Fail("User not found.");
 
         if (string.IsNullOrWhiteSpace(user.TwoFactorSecret))
-            return Result.Fail("Start setup first.");
+            return Result<List<string>>.Fail("Start setup first.");
 
         if (!Totp.Verify(user.TwoFactorSecret, code))
-            return Result.Fail("Invalid authentication code.");
+            return Result<List<string>>.Fail("Invalid authentication code.");
 
         user.TwoFactorEnabled = true;
         user.UpdatedAt = DateTime.UtcNow;
+        var codes = ReplaceBackupCodes(userId);
         await _context.SaveChangesAsync();
 
         _logger.LogInformation("2FA enabled. UserId: {UserId}", userId);
-        return Result.Ok();
+        return Result<List<string>>.Ok(codes);
     }
 
     /// <inheritdoc />
@@ -386,10 +389,89 @@ public class AuthService : IAuthService
         user.TwoFactorEnabled = false;
         user.TwoFactorSecret = null;
         user.UpdatedAt = DateTime.UtcNow;
+        // Drop any remaining recovery codes.
+        _context.UserBackupCodes.RemoveRange(_context.UserBackupCodes.Where(c => c.UserId == userId));
         await _context.SaveChangesAsync();
 
         _logger.LogInformation("2FA disabled. UserId: {UserId}", userId);
         return Result.Ok();
+    }
+
+    /// <inheritdoc />
+    public async Task<Result<List<string>>> RegenerateBackupCodesAsync(Guid userId)
+    {
+        var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
+        if (user is null)
+            return Result<List<string>>.Fail("User not found.");
+        if (!user.TwoFactorEnabled)
+            return Result<List<string>>.Fail("Two-factor authentication is not enabled.");
+
+        var codes = ReplaceBackupCodes(userId);
+        await _context.SaveChangesAsync();
+
+        _logger.LogInformation("Backup codes regenerated. UserId: {UserId}", userId);
+        return Result<List<string>>.Ok(codes);
+    }
+
+    /// <inheritdoc />
+    public async Task<Result<int>> RemainingBackupCodesAsync(Guid userId)
+    {
+        var count = await _context.UserBackupCodes.CountAsync(c => c.UserId == userId && c.UsedAt == null);
+        return Result<int>.Ok(count);
+    }
+
+    /// <summary>Removes the user's codes and generates 10 fresh ones (plaintext returned, hashes stored).</summary>
+    private List<string> ReplaceBackupCodes(Guid userId)
+    {
+        _context.UserBackupCodes.RemoveRange(_context.UserBackupCodes.Where(c => c.UserId == userId));
+
+        var codes = new List<string>();
+        for (var i = 0; i < 10; i++)
+        {
+            var code = GenerateBackupCode();
+            codes.Add(code);
+            _context.UserBackupCodes.Add(new UserBackupCode
+            {
+                Id = Guid.NewGuid(),
+                UserId = userId,
+                CodeHash = HashCode(code),
+            });
+        }
+        return codes;
+    }
+
+    // Unambiguous alphabet (no 0/O/1/I) for readable recovery codes.
+    private const string BackupAlphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+
+    private static string GenerateBackupCode()
+    {
+        var bytes = System.Security.Cryptography.RandomNumberGenerator.GetBytes(10);
+        var chars = bytes.Select(b => BackupAlphabet[b % BackupAlphabet.Length]).ToArray();
+        // Format as XXXXX-XXXXX for readability.
+        return new string(chars, 0, 5) + "-" + new string(chars, 5, 5);
+    }
+
+    /// <summary>Normalizes a code (strip dashes, uppercase) and returns its SHA-256 hex hash.</summary>
+    private static string HashCode(string code)
+    {
+        var normalized = code.Replace("-", string.Empty).Trim().ToUpperInvariant();
+        var hash = System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(normalized));
+        return Convert.ToHexString(hash);
+    }
+
+    /// <summary>Consumes a matching unused backup code; true if one was found and marked used.</summary>
+    private async Task<bool> TryConsumeBackupCodeAsync(Guid userId, string code)
+    {
+        var hash = HashCode(code);
+        var match = await _context.UserBackupCodes
+            .FirstOrDefaultAsync(c => c.UserId == userId && c.UsedAt == null && c.CodeHash == hash);
+        if (match is null)
+            return false;
+
+        match.UsedAt = DateTime.UtcNow;
+        await _context.SaveChangesAsync();
+        _logger.LogInformation("Backup code consumed. UserId: {UserId}", userId);
+        return true;
     }
 
     /// <summary>

@@ -53,11 +53,17 @@ public interface IAuthService
     /// <summary>Starts 2FA enrollment: generates and stores a secret (not yet enabled).</summary>
     Task<Result<TwoFactorSetupDto>> SetupTwoFactorAsync(Guid userId);
 
-    /// <summary>Enables 2FA after verifying a code against the enrolled secret.</summary>
-    Task<Result> EnableTwoFactorAsync(Guid userId, string code);
+    /// <summary>Enables 2FA after verifying a code; returns one-time backup codes to save.</summary>
+    Task<Result<List<string>>> EnableTwoFactorAsync(Guid userId, string code);
 
     /// <summary>Disables 2FA after verifying a code.</summary>
     Task<Result> DisableTwoFactorAsync(Guid userId, string code);
+
+    /// <summary>Replaces the user's backup codes with a fresh set (2FA must be enabled).</summary>
+    Task<Result<List<string>>> RegenerateBackupCodesAsync(Guid userId);
+
+    /// <summary>Number of unused backup codes the user has left.</summary>
+    Task<Result<int>> RemainingBackupCodesAsync(Guid userId);
 
     /// <summary>
     /// Returns the public profile of the user with the given id.

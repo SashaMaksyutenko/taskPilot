@@ -60,13 +60,29 @@ export const authService = {
     return api.post<{ secret: string; otpauthUri: string }>('/api/auth/2fa/setup').then((r) => r.data)
   },
 
-  /** Enables 2FA after verifying a code. */
-  enableTwoFactor(code: string): Promise<void> {
-    return api.post('/api/auth/2fa/enable', { code }).then(() => undefined)
+  /** Enables 2FA after verifying a code; returns one-time backup codes. */
+  enableTwoFactor(code: string): Promise<string[]> {
+    return api
+      .post<{ backupCodes: string[] }>('/api/auth/2fa/enable', { code })
+      .then((r) => r.data.backupCodes)
   },
 
   /** Disables 2FA after verifying a code. */
   disableTwoFactor(code: string): Promise<void> {
     return api.post('/api/auth/2fa/disable', { code }).then(() => undefined)
+  },
+
+  /** Regenerates 2FA backup codes; returns the new set. */
+  regenerateBackupCodes(): Promise<string[]> {
+    return api
+      .post<{ backupCodes: string[] }>('/api/auth/2fa/backup-codes')
+      .then((r) => r.data.backupCodes)
+  },
+
+  /** How many unused backup codes remain. */
+  backupCodesCount(): Promise<number> {
+    return api
+      .get<{ remaining: number }>('/api/auth/2fa/backup-codes/count')
+      .then((r) => r.data.remaining)
   },
 }

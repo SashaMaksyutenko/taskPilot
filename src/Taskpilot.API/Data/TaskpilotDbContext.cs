@@ -89,6 +89,9 @@ public class TaskpilotDbContext : DbContext
     /// <summary>Project collaborators (shared access).</summary>
     public DbSet<ProjectMember> ProjectMembers => Set<ProjectMember>();
 
+    /// <summary>Two-factor recovery codes.</summary>
+    public DbSet<UserBackupCode> UserBackupCodes => Set<UserBackupCode>();
+
     /// <summary>
     /// Налаштування моделі (Fluent API): обмеження, індекси, перетворення типів.
     /// Викликається EF Core під час побудови моделі та генерації міграцій.
@@ -630,6 +633,22 @@ public class TaskpilotDbContext : DbContext
                   .WithMany()
                   .HasForeignKey(m => m.UserId)
                   .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        // UserBackupCode entity configuration
+        modelBuilder.Entity<UserBackupCode>(entity =>
+        {
+            entity.HasKey(c => c.Id);
+
+            entity.Property(c => c.CodeHash).IsRequired().HasMaxLength(128);
+
+            entity.HasIndex(c => c.UserId);
+
+            // Deleting the user removes their backup codes.
+            entity.HasOne(c => c.User)
+                  .WithMany()
+                  .HasForeignKey(c => c.UserId)
+                  .OnDelete(DeleteBehavior.Cascade);
         });
 
         // NotificationPreference entity configuration

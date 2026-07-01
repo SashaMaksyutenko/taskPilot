@@ -154,7 +154,11 @@
     "confirm": "Enable",
     "cancel": "Cancel",
     "scanHint": "Scan this QR code with your authenticator app (or enter the key manually), then type the current code.",
-    "codePlaceholder": "6-digit code"
+    "codePlaceholder": "6-digit code",
+    "backupTitle": "Save these backup codes — each works once if you lose your authenticator.",
+    "backupSaved": "I've saved them",
+    "backupRemaining": "{{count}} backup codes left",
+    "regenerate": "Regenerate backup codes"
   },
   "dashboard": {
     "welcome": "Welcome back",

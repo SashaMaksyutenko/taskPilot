@@ -102,6 +102,22 @@ export default function SettingsPage() {
   const [twoFaQr, setTwoFaQr] = useState('')
   const [twoFaCode, setTwoFaCode] = useState('')
   const [twoFaMsg, setTwoFaMsg] = useState('')
+  const [backupCodes, setBackupCodes] = useState<string[]>([])
+  const [backupRemaining, setBackupRemaining] = useState<number | null>(null)
+
+  // Load remaining backup-code count when 2FA is on.
+  useEffect(() => {
+    if (user?.twoFactorEnabled) authService.backupCodesCount().then(setBackupRemaining).catch(() => {})
+    else setBackupRemaining(null)
+  }, [user?.twoFactorEnabled])
+
+  const regenerateBackup = async () => {
+    const codes = await authService.regenerateBackupCodes().catch(() => null)
+    if (codes) {
+      setBackupCodes(codes)
+      setBackupRemaining(codes.length)
+    }
+  }
 
   // Render the otpauth URI as a scannable QR image.
   useEffect(() => {
@@ -121,7 +137,8 @@ export default function SettingsPage() {
   }
   const confirmTwoFa = async () => {
     try {
-      await authService.enableTwoFactor(twoFaCode.trim())
+      const codes = await authService.enableTwoFactor(twoFaCode.trim())
+      setBackupCodes(codes)
       setTwoFaSetup(null)
       setTwoFaCode('')
       dispatch(fetchMe())
@@ -462,6 +479,14 @@ export default function SettingsPage() {
               <div className="inline-flex items-center gap-2 rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-700 dark:bg-green-900/40 dark:text-green-300">
                 ✓ {t('twoFa.enabled')}
               </div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-slate-500 dark:text-slate-400">
+                  {t('twoFa.backupRemaining', { count: backupRemaining ?? 0 })}
+                </span>
+                <button onClick={regenerateBackup} className="font-semibold text-[#1E2A44] hover:underline dark:text-slate-300">
+                  {t('twoFa.regenerate')}
+                </button>
+              </div>
               <div className="flex flex-col gap-2 sm:flex-row">
                 <input
                   value={twoFaCode}
@@ -515,6 +540,21 @@ export default function SettingsPage() {
               {t('twoFa.enable')}
             </button>
           )}
+
+          {backupCodes.length > 0 && (
+            <div className="mt-4 rounded-lg border border-amber-300 bg-amber-50 p-4 dark:border-amber-700 dark:bg-amber-950/30">
+              <p className="mb-2 text-sm font-semibold text-amber-800 dark:text-amber-200">⚠️ {t('twoFa.backupTitle')}</p>
+              <div className="grid grid-cols-2 gap-x-6 gap-y-1 font-mono text-sm text-amber-900 dark:text-amber-100">
+                {backupCodes.map((c) => (
+                  <span key={c}>{c}</span>
+                ))}
+              </div>
+              <button onClick={() => setBackupCodes([])} className="mt-3 text-xs font-semibold text-amber-700 hover:underline dark:text-amber-300">
+                {t('twoFa.backupSaved')}
+              </button>
+            </div>
+          )}
+
           {twoFaMsg && <p className="mt-2 text-sm text-red-600">{twoFaMsg}</p>}
         </section>
 

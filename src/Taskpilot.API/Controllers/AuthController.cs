@@ -230,8 +230,34 @@ public class AuthController : BaseApiController
 
         var result = await _authService.EnableTwoFactorAsync(userId.Value, dto.Code);
         return result.Succeeded
-            ? Ok(new { message = "Two-factor authentication enabled." })
+            ? Ok(new { message = "Two-factor authentication enabled.", backupCodes = result.Value })
             : BadRequest(new { error = result.Error });
+    }
+
+    /// <summary>Replaces the user's 2FA backup codes with a fresh set.</summary>
+    [Authorize]
+    [HttpPost("2fa/backup-codes")]
+    public async Task<IActionResult> RegenerateBackupCodes()
+    {
+        var userId = CurrentUserId();
+        if (userId is null) return Unauthorized();
+
+        var result = await _authService.RegenerateBackupCodesAsync(userId.Value);
+        return result.Succeeded
+            ? Ok(new { backupCodes = result.Value })
+            : BadRequest(new { error = result.Error });
+    }
+
+    /// <summary>Returns how many unused backup codes remain.</summary>
+    [Authorize]
+    [HttpGet("2fa/backup-codes/count")]
+    public async Task<IActionResult> BackupCodesCount()
+    {
+        var userId = CurrentUserId();
+        if (userId is null) return Unauthorized();
+
+        var result = await _authService.RemainingBackupCodesAsync(userId.Value);
+        return Ok(new { remaining = result.Value });
     }
 
     /// <summary>Disables 2FA after verifying a code.</summary>

@@ -27,6 +27,12 @@ public class RefreshToken
     /// <summary>UTC time when the token was created.</summary>
     public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;
 
+    /// <summary>IP address the session was created from (for the sessions view).</summary>
+    public string? IpAddress { get; set; }
+
+    /// <summary>User-agent string of the client that created the session.</summary>
+    public string? UserAgent { get; set; }
+
     /// <summary>UTC time when the token was revoked; null while still valid.</summary>
     public DateTime? RevokedAtUtc { get; set; }
 

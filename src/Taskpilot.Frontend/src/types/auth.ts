@@ -25,6 +25,16 @@ export interface AuthResponse {
   role: string
 }
 
+/** An active login session (mirrors SessionDto). */
+export interface Session {
+  id: string
+  createdAtUtc: string
+  expiresAtUtc: string
+  ipAddress: string | null
+  userAgent: string | null
+  isCurrent: boolean
+}
+
 /** Self user profile (mirrors UserDto, returned by GET /api/auth/me). */
 export interface User {
   id: string

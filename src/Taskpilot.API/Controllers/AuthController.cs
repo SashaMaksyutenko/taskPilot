@@ -110,7 +110,7 @@ public class AuthController : BaseApiController
         }
 
         // Delegate to the service (lookup, password check, token generation).
-        var result = await _authService.LoginAsync(dto);
+        var result = await _authService.LoginAsync(dto, ClientIp(), UserAgent());
         if (!result.Succeeded)
         {
             // Invalid credentials / disabled account -> 401 Unauthorized.
@@ -151,7 +151,7 @@ public class AuthController : BaseApiController
             return BadRequest(new { error = "Refresh token is required." });
         }
 
-        var result = await _authService.RefreshAsync(dto.RefreshToken);
+        var result = await _authService.RefreshAsync(dto.RefreshToken, ClientIp(), UserAgent());
         if (!result.Succeeded)
         {
             _logger.LogWarning("Refresh failed. Reason: {Error}", result.Error);
@@ -160,6 +160,60 @@ public class AuthController : BaseApiController
 
         _logger.LogInformation("Refresh successful via endpoint. UserId: {UserId}", result.Value!.UserId);
         return Ok(result.Value);
+    }
+
+    /// <summary>Lists the current user's active sessions.</summary>
+    [Authorize]
+    [HttpGet("sessions")]
+    public async Task<IActionResult> GetSessions()
+    {
+        var userId = CurrentUserId();
+        if (userId is null) return Unauthorized();
+
+        var result = await _authService.GetSessionsAsync(userId.Value, CurrentRefreshToken());
+        return Ok(result.Value);
+    }
+
+    /// <summary>Revokes one of the current user's sessions.</summary>
+    [Authorize]
+    [HttpPost("sessions/{sessionId:guid}/revoke")]
+    public async Task<IActionResult> RevokeSession(Guid sessionId)
+    {
+        var userId = CurrentUserId();
+        if (userId is null) return Unauthorized();
+
+        var result = await _authService.RevokeSessionAsync(userId.Value, sessionId);
+        return result.Succeeded
+            ? Ok(new { message = "Session revoked." })
+            : BadRequest(new { error = result.Error });
+    }
+
+    /// <summary>Revokes all of the current user's sessions except this one.</summary>
+    [Authorize]
+    [HttpPost("sessions/revoke-others")]
+    public async Task<IActionResult> RevokeOtherSessions()
+    {
+        var userId = CurrentUserId();
+        if (userId is null) return Unauthorized();
+
+        var result = await _authService.RevokeOtherSessionsAsync(userId.Value, CurrentRefreshToken());
+        return result.Succeeded
+            ? Ok(new { message = "Other sessions revoked." })
+            : BadRequest(new { error = result.Error });
+    }
+
+    /// <summary>The client's current refresh token, sent in the X-Refresh-Token header.</summary>
+    private string? CurrentRefreshToken()
+    {
+        var value = Request.Headers["X-Refresh-Token"].ToString();
+        return string.IsNullOrWhiteSpace(value) ? null : value;
+    }
+
+    /// <summary>The caller's User-Agent header (or null).</summary>
+    private string? UserAgent()
+    {
+        var value = Request.Headers.UserAgent.ToString();
+        return string.IsNullOrWhiteSpace(value) ? null : value;
     }
 
     /// <summary>

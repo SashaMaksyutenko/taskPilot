@@ -96,6 +96,12 @@
       "Viewer": "Viewer"
     }
   },
+  "sessions": {
+    "title": "Active sessions",
+    "current": "This device",
+    "revoke": "Revoke",
+    "revokeOthers": "Revoke all other sessions"
+  },
   "notifPrefs": {
     "title": "Notifications",
     "desc": "Choose which notifications you want to receive.",

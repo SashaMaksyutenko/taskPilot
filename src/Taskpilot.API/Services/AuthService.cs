@@ -100,7 +100,7 @@ public class AuthService : IAuthService
     /// </summary>
     /// <param name="dto">Validated login data.</param>
     /// <returns>Success with token + user info, or failure with a generic message.</returns>
-    public async Task<Result<AuthResponseDto>> LoginAsync(LoginDto dto)
+    public async Task<Result<AuthResponseDto>> LoginAsync(LoginDto dto, string? ip = null, string? userAgent = null)
     {
         // Log method entry (email only — never log the password).
         _logger.LogInformation("LoginAsync started. Email: {Email}", dto.Email);
@@ -147,7 +147,7 @@ public class AuthService : IAuthService
 
             // Credentials are valid — issue a signed JWT access token and a refresh token.
             var (accessToken, accessExpiresAtUtc) = _tokenService.GenerateAccessToken(user);
-            var refreshToken = CreateRefreshToken(user.Id);
+            var refreshToken = CreateRefreshToken(user.Id, ip, userAgent);
             _context.RefreshTokens.Add(refreshToken);
             await _context.SaveChangesAsync();
 
@@ -168,7 +168,7 @@ public class AuthService : IAuthService
     /// </summary>
     /// <param name="refreshToken">The refresh token previously issued to the client.</param>
     /// <returns>Success with fresh tokens, or failure when the token is invalid/expired/revoked.</returns>
-    public async Task<Result<AuthResponseDto>> RefreshAsync(string refreshToken)
+    public async Task<Result<AuthResponseDto>> RefreshAsync(string refreshToken, string? ip = null, string? userAgent = null)
     {
         _logger.LogInformation("RefreshAsync started.");
 
@@ -193,9 +193,10 @@ public class AuthService : IAuthService
                 return Result<AuthResponseDto>.Fail("Account is disabled.");
             }
 
-            // Rotate: revoke the presented token and issue a brand-new one.
+            // Rotate: revoke the presented token and issue a brand-new one, keeping the
+            // session's origin (fall back to the presented token's if not supplied).
             stored.RevokedAtUtc = DateTime.UtcNow;
-            var newRefreshToken = CreateRefreshToken(user.Id);
+            var newRefreshToken = CreateRefreshToken(user.Id, ip ?? stored.IpAddress, userAgent ?? stored.UserAgent);
             _context.RefreshTokens.Add(newRefreshToken);
 
             // Issue a new access token and persist the rotation in one transaction.
@@ -247,14 +248,70 @@ public class AuthService : IAuthService
     /// <summary>
     /// Creates a new refresh-token entity for a user with a random value and a 7-day expiry.
     /// </summary>
-    private RefreshToken CreateRefreshToken(Guid userId) => new()
+    private RefreshToken CreateRefreshToken(Guid userId, string? ip = null, string? userAgent = null) => new()
     {
         Id = Guid.NewGuid(),
         Token = _tokenService.GenerateRefreshToken(),
         UserId = userId,
         CreatedAtUtc = DateTime.UtcNow,
-        ExpiresAtUtc = DateTime.UtcNow.AddDays(_jwtSettings.RefreshTokenDays)
+        ExpiresAtUtc = DateTime.UtcNow.AddDays(_jwtSettings.RefreshTokenDays),
+        IpAddress = ip,
+        // Cap the user-agent to a sane length.
+        UserAgent = userAgent is { Length: > 400 } ua ? ua[..400] : userAgent,
     };
+
+    /// <inheritdoc />
+    public async Task<Result<List<SessionDto>>> GetSessionsAsync(Guid userId, string? currentToken)
+    {
+        var now = DateTime.UtcNow;
+        var sessions = await _context.RefreshTokens
+            .Where(rt => rt.UserId == userId && rt.RevokedAtUtc == null && rt.ExpiresAtUtc > now)
+            .OrderByDescending(rt => rt.CreatedAtUtc)
+            .Select(rt => new SessionDto
+            {
+                Id = rt.Id,
+                CreatedAtUtc = rt.CreatedAtUtc,
+                ExpiresAtUtc = rt.ExpiresAtUtc,
+                IpAddress = rt.IpAddress,
+                UserAgent = rt.UserAgent,
+                IsCurrent = currentToken != null && rt.Token == currentToken,
+            })
+            .AsNoTracking()
+            .ToListAsync();
+
+        return Result<List<SessionDto>>.Ok(sessions);
+    }
+
+    /// <inheritdoc />
+    public async Task<Result> RevokeSessionAsync(Guid userId, Guid sessionId)
+    {
+        var session = await _context.RefreshTokens
+            .FirstOrDefaultAsync(rt => rt.Id == sessionId && rt.UserId == userId);
+        if (session is null)
+            return Result.Fail("Session not found.");
+
+        if (session.RevokedAtUtc is null)
+        {
+            session.RevokedAtUtc = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
+        }
+
+        _logger.LogInformation("Session revoked. UserId: {UserId}, SessionId: {SessionId}", userId, sessionId);
+        return Result.Ok();
+    }
+
+    /// <inheritdoc />
+    public async Task<Result> RevokeOtherSessionsAsync(Guid userId, string? currentToken)
+    {
+        // Revoke every active session except the caller's current one.
+        await _context.RefreshTokens
+            .Where(rt => rt.UserId == userId && rt.RevokedAtUtc == null
+                         && (currentToken == null || rt.Token != currentToken))
+            .ExecuteUpdateAsync(s => s.SetProperty(rt => rt.RevokedAtUtc, DateTime.UtcNow));
+
+        _logger.LogInformation("Other sessions revoked. UserId: {UserId}", userId);
+        return Result.Ok();
+    }
 
     /// <summary>
     /// Builds the auth response returned to the client from the user and freshly issued tokens.

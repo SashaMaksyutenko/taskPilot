@@ -3,8 +3,15 @@ import type {
   AuthResponse,
   LoginRequest,
   RegisterRequest,
+  Session,
   User,
 } from '../types/auth'
+
+/** Header carrying the client's current refresh token, so the API can flag "this session". */
+function currentTokenHeader() {
+  const token = localStorage.getItem('refreshToken')
+  return token ? { headers: { 'X-Refresh-Token': token } } : {}
+}
 
 /**
  * Thin wrapper around the backend auth endpoints.
@@ -31,5 +38,20 @@ export const authService = {
   /** GET /api/auth/me — returns the current user (requires a valid access token). */
   getMe(): Promise<User> {
     return api.get<User>('/api/auth/me').then((r) => r.data)
+  },
+
+  /** GET /api/auth/sessions — active sessions (current one flagged). */
+  getSessions(): Promise<Session[]> {
+    return api.get<Session[]>('/api/auth/sessions', currentTokenHeader()).then((r) => r.data)
+  },
+
+  /** Revokes one session by id. */
+  revokeSession(sessionId: string): Promise<void> {
+    return api.post(`/api/auth/sessions/${sessionId}/revoke`).then(() => undefined)
+  },
+
+  /** Revokes all sessions except the current one. */
+  revokeOtherSessions(): Promise<void> {
+    return api.post('/api/auth/sessions/revoke-others', {}, currentTokenHeader()).then(() => undefined)
   },
 }

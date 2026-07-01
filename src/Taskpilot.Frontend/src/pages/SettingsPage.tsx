@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { AxiosError } from 'axios'
 import Avatar from '../components/Avatar'
 import Navbar from '../components/Navbar'
+import { authService } from '../services/authService'
 import { notificationService } from '../services/notificationService'
 import { userService, type UpdateProfileData } from '../services/userService'
 import { webhookService } from '../services/webhookService'
@@ -10,10 +11,26 @@ import { fetchMe } from '../store/authSlice'
 import { useAppDispatch, useAppSelector } from '../store/hooks'
 import { WEBHOOK_EVENTS, type Webhook } from '../types/webhook'
 import type { Appeal, Warning } from '../types/admin'
+import type { Session } from '../types/auth'
 import AppealModal from '../components/AppealModal'
 
 // Notification types the user can toggle (mirror the backend NotificationType enum).
 const NOTIF_TYPES = ['Task', 'Chat', 'Forum', 'Marketplace', 'Moderation', 'General'] as const
+
+/** Friendly "Browser on OS" label from a user-agent string. */
+function deviceLabel(ua: string | null): string {
+  if (!ua) return 'Unknown device'
+  const browser = /Edg/.test(ua) ? 'Edge'
+    : /Chrome/.test(ua) ? 'Chrome'
+    : /Firefox/.test(ua) ? 'Firefox'
+    : /Safari/.test(ua) ? 'Safari' : 'Browser'
+  const os = /Windows/.test(ua) ? 'Windows'
+    : /Android/.test(ua) ? 'Android'
+    : /iPhone|iPad|iOS/.test(ua) ? 'iOS'
+    : /Mac OS/.test(ua) ? 'macOS'
+    : /Linux/.test(ua) ? 'Linux' : ''
+  return os ? `${browser} · ${os}` : browser
+}
 
 const emptyForm: UpdateProfileData = {
   name: '',
@@ -61,6 +78,22 @@ export default function SettingsPage() {
       : [...disabledNotif, type]
     setDisabledNotif(next)
     notificationService.updatePreferences(next).catch(() => {})
+  }
+
+  // Active sessions.
+  const [sessions, setSessions] = useState<Session[]>([])
+  const loadSessions = () => authService.getSessions().then(setSessions).catch(() => {})
+  useEffect(() => {
+    loadSessions()
+  }, [])
+
+  const revokeSession = async (id: string) => {
+    await authService.revokeSession(id).catch(() => {})
+    loadSessions()
+  }
+  const revokeOthers = async () => {
+    await authService.revokeOtherSessions().catch(() => {})
+    loadSessions()
   }
 
   const [warnings, setWarnings] = useState<Warning[]>([])
@@ -327,6 +360,42 @@ export default function SettingsPage() {
             </button>
             {pwMsg && <span className="text-sm text-slate-500 dark:text-slate-400">{pwMsg}</span>}
           </div>
+        </section>
+
+        {/* Active sessions */}
+        <section className="mt-8 rounded-xl border border-slate-200 bg-white p-6 dark:border-slate-700 dark:bg-slate-800">
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="font-bold">{t('sessions.title')}</h2>
+            {sessions.length > 1 && (
+              <button onClick={revokeOthers} className="text-sm font-semibold text-red-600 hover:underline">
+                {t('sessions.revokeOthers')}
+              </button>
+            )}
+          </div>
+          <ul className="space-y-2">
+            {sessions.map((s) => (
+              <li key={s.id} className="flex items-center gap-3 rounded-lg border border-slate-200 px-3 py-2 text-sm dark:border-slate-700">
+                <div className="min-w-0 flex-1">
+                  <div className="font-medium">
+                    {deviceLabel(s.userAgent)}
+                    {s.isCurrent && (
+                      <span className="ml-2 rounded-full bg-green-100 px-2 py-0.5 text-[11px] font-semibold text-green-700 dark:bg-green-900/40 dark:text-green-300">
+                        {t('sessions.current')}
+                      </span>
+                    )}
+                  </div>
+                  <div className="text-xs text-slate-400">
+                    {s.ipAddress ?? '—'} · {new Date(s.createdAtUtc).toLocaleString()}
+                  </div>
+                </div>
+                {!s.isCurrent && (
+                  <button onClick={() => revokeSession(s.id)} className="flex-none text-xs font-semibold text-red-600 hover:underline">
+                    {t('sessions.revoke')}
+                  </button>
+                )}
+              </li>
+            ))}
+          </ul>
         </section>
 
         {/* Notification preferences */}

@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import type { HubConnection } from '@microsoft/signalr'
 import AttachmentPreview from '../components/AttachmentPreview'
 import Avatar from '../components/Avatar'
+import MentionText from '../components/MentionText'
 import MessageContextMenu from '../components/MessageContextMenu'
 import Navbar from '../components/Navbar'
 import { apiErrorMessage } from '../lib/apiError'
@@ -238,7 +239,11 @@ export default function ChatPage() {
                               {m.senderName}
                             </div>
                           )}
-                          {m.content && <div className="whitespace-pre-wrap break-words">{m.content}</div>}
+                          {m.content && (
+                            <div className="whitespace-pre-wrap break-words">
+                              <MentionText text={m.content} />
+                            </div>
+                          )}
                           {m.fileId && (
                             <AttachmentPreview
                               fileId={m.fileId}

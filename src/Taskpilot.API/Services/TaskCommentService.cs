@@ -103,25 +103,49 @@ public class TaskCommentService : ITaskCommentService
             body = comment.Body,
         });
 
-        // Notify everyone with access to the project (owner + members) except the author.
+        // Gather the audience (owner + members) with names, so we can resolve @mentions.
         var ctx = await _context.ProjectTasks
             .Where(t => t.Id == taskId)
             .Select(t => new
             {
                 t.ProjectId,
                 t.Title,
-                t.Project.OwnerId,
-                MemberIds = t.Project.Members.Select(m => m.UserId).ToList(),
+                Owner = new { t.Project.OwnerId, Name = t.Project.Owner.Name },
+                Members = t.Project.Members.Select(m => new { m.UserId, m.User.Name }).ToList(),
             })
             .FirstAsync();
 
-        var recipients = ctx.MemberIds.Append(ctx.OwnerId).Distinct().Where(id => id != userId);
-        foreach (var recipientId in recipients)
+        var audience = ctx.Members
+            .Select(m => (Id: m.UserId, m.Name))
+            .Append((Id: ctx.Owner.OwnerId, ctx.Owner.Name))
+            .Where(a => a.Id != userId)
+            .DistinctBy(a => a.Id)
+            .ToList();
+
+        // Resolve @mentions among the audience.
+        var mentioned = MentionParser.Extract(comment.Body, audience);
+
+        foreach (var (id, _) in audience)
+        {
+            var isMention = mentioned.Contains(id);
             await _notifications.CreateAsync(
-                recipientId,
+                id,
                 NotificationType.Task,
-                $"{added.AuthorName} commented on \"{ctx.Title}\".",
+                isMention
+                    ? $"{added.AuthorName} mentioned you in \"{ctx.Title}\"."
+                    : $"{added.AuthorName} commented on \"{ctx.Title}\".",
                 $"/projects/{ctx.ProjectId}");
+        }
+
+        if (mentioned.Count > 0)
+            await _webhooks.DispatchAsync(WebhookEvents.MentionTriggered, new
+            {
+                source = "task-comment",
+                taskId,
+                projectId = ctx.ProjectId,
+                authorId = userId,
+                mentionedUserIds = mentioned,
+            });
 
         return Result<TaskCommentDto>.Ok(MapDto(added));
     }

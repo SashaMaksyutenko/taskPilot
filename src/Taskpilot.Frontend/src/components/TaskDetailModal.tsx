@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import Avatar from './Avatar'
+import MentionText from './MentionText'
 import { apiErrorMessage } from '../lib/apiError'
 import { createTaskConnection } from '../lib/taskHub'
 import { taskService } from '../services/taskService'
@@ -280,7 +281,7 @@ export default function TaskDetailModal({
                     </div>
                   </div>
                   <p className="mt-1 whitespace-pre-wrap break-words text-slate-600 dark:text-slate-300">
-                    {c.body}
+                    <MentionText text={c.body} />
                   </p>
                 </li>
               ))}

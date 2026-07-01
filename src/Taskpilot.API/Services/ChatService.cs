@@ -17,17 +17,20 @@ public class ChatService : IChatService
 {
     private readonly TaskpilotDbContext _context;
     private readonly INotificationService _notifications;
+    private readonly IWebhookService _webhooks;
     private readonly PresenceTracker _presence;
     private readonly ILogger<ChatService> _logger;
 
     public ChatService(
         TaskpilotDbContext context,
         INotificationService notifications,
+        IWebhookService webhooks,
         PresenceTracker presence,
         ILogger<ChatService> logger)
     {
         _context = context;
         _notifications = notifications;
+        _webhooks = webhooks;
         _presence = presence;
         _logger = logger;
     }
@@ -194,23 +197,35 @@ public class ChatService : IChatService
                 .FirstAsync();
             var senderName = sender.Name;
 
-            // Notify only the OFFLINE participants. Online users already receive the
-            // message in real time over the hub, so an in-app notification would be noise.
-            var otherParticipantIds = await _context.ConversationParticipants
+            // Other participants (with names, to resolve @mentions).
+            var others = await _context.ConversationParticipants
                 .Where(p => p.ConversationId == dto.ConversationId && p.UserId != senderId)
-                .Select(p => p.UserId)
+                .Select(p => new { p.UserId, p.User.Name })
                 .ToListAsync();
-            foreach (var participantId in otherParticipantIds)
-            {
-                if (_presence.IsOnline(participantId))
-                    continue;
 
-                await _notifications.CreateAsync(
-                    participantId,
-                    NotificationType.Chat,
-                    $"New message from {senderName}",
-                    "/chat");
+            var mentioned = MentionParser.Extract(message.Content ?? string.Empty,
+                others.Select(o => (o.UserId, o.Name)));
+
+            foreach (var p in others)
+            {
+                // A mention always notifies (even if online); otherwise only offline users,
+                // since online users already receive the message over the hub.
+                if (mentioned.Contains(p.UserId))
+                    await _notifications.CreateAsync(p.UserId, NotificationType.Chat,
+                        $"{senderName} mentioned you in chat", "/chat");
+                else if (!_presence.IsOnline(p.UserId))
+                    await _notifications.CreateAsync(p.UserId, NotificationType.Chat,
+                        $"New message from {senderName}", "/chat");
             }
+
+            if (mentioned.Count > 0)
+                await _webhooks.DispatchAsync(WebhookEvents.MentionTriggered, new
+                {
+                    source = "chat",
+                    conversationId = dto.ConversationId,
+                    authorId = senderId,
+                    mentionedUserIds = mentioned,
+                });
 
             _logger.LogInformation("Message sent. MessageId: {MessageId}", message.Id);
             return Result<MessageDto>.Ok(new MessageDto

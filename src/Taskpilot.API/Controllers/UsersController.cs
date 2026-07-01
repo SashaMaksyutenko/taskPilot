@@ -18,6 +18,7 @@ public class UsersController : BaseApiController
     private readonly IUserService _userService;
     private readonly IWarningService _warnings;
     private readonly IAppealService _appeals;
+    private readonly IAuditService _audit;
     private readonly IValidator<UpdateProfileDto> _updateProfileValidator;
     private readonly IValidator<ChangePasswordDto> _changePasswordValidator;
     private readonly IValidator<CreateAppealDto> _createAppealValidator;
@@ -26,6 +27,7 @@ public class UsersController : BaseApiController
         IUserService userService,
         IWarningService warnings,
         IAppealService appeals,
+        IAuditService audit,
         IValidator<UpdateProfileDto> updateProfileValidator,
         IValidator<ChangePasswordDto> changePasswordValidator,
         IValidator<CreateAppealDto> createAppealValidator)
@@ -33,6 +35,7 @@ public class UsersController : BaseApiController
         _userService = userService;
         _warnings = warnings;
         _appeals = appeals;
+        _audit = audit;
         _updateProfileValidator = updateProfileValidator;
         _changePasswordValidator = changePasswordValidator;
         _createAppealValidator = createAppealValidator;
@@ -124,6 +127,22 @@ public class UsersController : BaseApiController
 
         var result = await _warnings.GetForUserAsync(userId.Value);
         return Ok(result.Value);
+    }
+
+    /// <summary>Closes (anonymizes) the current account after password confirmation.</summary>
+    [HttpPost("me/delete")]
+    public async Task<IActionResult> DeleteAccount([FromBody] DeleteAccountDto dto)
+    {
+        var userId = CurrentUserId();
+        if (userId is null) return Unauthorized();
+
+        var result = await _userService.DeleteAccountAsync(userId.Value, dto.Password);
+        if (!result.Succeeded)
+            return BadRequest(new { error = result.Error });
+
+        await _audit.LogAsync("user.account.deleted", actorId: userId, actorEmail: CurrentUserEmail(),
+            entityType: "User", entityId: userId.Value.ToString(), ipAddress: ClientIp());
+        return Ok(new { message = "Account closed." });
     }
 
     /// <summary>Downloads all of the current user's personal data as a JSON file (GDPR export).</summary>

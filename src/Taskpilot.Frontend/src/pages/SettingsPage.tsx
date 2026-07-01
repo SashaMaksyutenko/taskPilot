@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useNavigate } from 'react-router-dom'
 import { AxiosError } from 'axios'
 import QRCode from 'qrcode'
 import Avatar from '../components/Avatar'
@@ -8,7 +9,7 @@ import { authService } from '../services/authService'
 import { notificationService } from '../services/notificationService'
 import { userService, type UpdateProfileData } from '../services/userService'
 import { webhookService } from '../services/webhookService'
-import { fetchMe } from '../store/authSlice'
+import { fetchMe, logout } from '../store/authSlice'
 import { useAppDispatch, useAppSelector } from '../store/hooks'
 import { WEBHOOK_EVENTS, type Webhook } from '../types/webhook'
 import type { Appeal, Warning } from '../types/admin'
@@ -51,8 +52,25 @@ const emptyForm: UpdateProfileData = {
  */
 export default function SettingsPage() {
   const dispatch = useAppDispatch()
+  const navigate = useNavigate()
   const { t } = useTranslation()
   const { user, isAuthenticated } = useAppSelector((s) => s.auth)
+
+  // Account closure (irreversible).
+  const [deleteOpen, setDeleteOpen] = useState(false)
+  const [deletePassword, setDeletePassword] = useState('')
+  const [deleteMsg, setDeleteMsg] = useState('')
+
+  const confirmDelete = async () => {
+    setDeleteMsg('')
+    try {
+      await userService.deleteAccount(deletePassword)
+      dispatch(logout())
+      navigate('/login')
+    } catch (e) {
+      setDeleteMsg(e instanceof AxiosError ? (e.response?.data?.error ?? t('settings.failed')) : t('settings.failed'))
+    }
+  }
 
   const [form, setForm] = useState<UpdateProfileData>(emptyForm)
   const [profileMsg, setProfileMsg] = useState('')
@@ -647,6 +665,18 @@ export default function SettingsPage() {
             </button>
           </div>
         </section>
+
+        {/* Danger zone */}
+        <section className="mt-8 rounded-xl border border-red-300 bg-red-50 p-6 dark:border-red-800 dark:bg-red-950/30">
+          <h2 className="mb-1 font-bold text-red-700 dark:text-red-300">{t('danger.title')}</h2>
+          <p className="mb-4 text-sm text-red-700/80 dark:text-red-300/80">{t('danger.deleteDesc')}</p>
+          <button
+            onClick={() => { setDeleteOpen(true); setDeletePassword(''); setDeleteMsg('') }}
+            className="rounded-lg border border-red-400 px-4 py-2 text-sm font-semibold text-red-600 hover:bg-red-100 dark:border-red-700 dark:text-red-300 dark:hover:bg-red-900/40"
+          >
+            {t('danger.delete')}
+          </button>
+        </section>
       </main>
 
       {appealTarget && (
@@ -655,6 +685,35 @@ export default function SettingsPage() {
           onClose={() => setAppealTarget(null)}
           onSubmit={submitAppeal}
         />
+      )}
+
+      {deleteOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setDeleteOpen(false)}>
+          <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl dark:bg-slate-800" onClick={(e) => e.stopPropagation()}>
+            <h2 className="mb-2 text-lg font-bold text-red-700 dark:text-red-300">{t('danger.confirmTitle')}</h2>
+            <p className="mb-4 text-sm text-slate-600 dark:text-slate-300">{t('danger.confirmDesc')}</p>
+            <input
+              type="password"
+              value={deletePassword}
+              onChange={(e) => setDeletePassword(e.target.value)}
+              placeholder={t('settings.currentPassword')}
+              className="mb-3 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-red-500 dark:border-slate-600 dark:bg-slate-900"
+            />
+            {deleteMsg && <p className="mb-3 text-sm text-red-600">{deleteMsg}</p>}
+            <div className="flex items-center justify-end gap-3">
+              <button onClick={() => setDeleteOpen(false)} className="text-sm font-semibold text-slate-500 hover:text-[#1E2A44] dark:text-slate-300">
+                {t('twoFa.cancel')}
+              </button>
+              <button
+                onClick={confirmDelete}
+                disabled={!deletePassword}
+                className="rounded-lg bg-red-600 px-5 py-2 text-sm font-semibold text-white transition hover:bg-red-700 disabled:opacity-60"
+              >
+                {t('danger.delete')}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )

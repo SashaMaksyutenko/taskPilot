@@ -98,4 +98,9 @@ export const userService = {
   exportData(): Promise<Blob> {
     return api.get('/api/users/me/export', { responseType: 'blob' }).then((r) => r.data as Blob)
   },
+
+  /** Closes (anonymizes) the account after password confirmation. */
+  deleteAccount(password: string): Promise<void> {
+    return api.post('/api/users/me/delete', { password }).then(() => undefined)
+  },
 }

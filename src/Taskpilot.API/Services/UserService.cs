@@ -218,6 +218,51 @@ public class UserService : IUserService
     }
 
     /// <inheritdoc />
+    public async Task<Result> DeleteAccountAsync(Guid userId, string password)
+    {
+        var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
+        if (user is null)
+            return Result.Fail("User not found.");
+
+        // Require the current password to confirm the (irreversible) closure.
+        if (string.IsNullOrEmpty(user.PasswordHash) || !BCrypt.Net.BCrypt.Verify(password, user.PasswordHash))
+            return Result.Fail("Password is incorrect.");
+
+        // Scrub personal data and disable login. Email is replaced with a unique
+        // placeholder so the uniqueness constraint still holds.
+        user.Name = "Deleted user";
+        user.Email = $"deleted-{user.Id:N}@deleted.local";
+        user.PasswordHash = null;
+        user.Title = null;
+        user.Bio = null;
+        user.Location = null;
+        user.Website = null;
+        user.LinkedIn = null;
+        user.GitHub = null;
+        user.Phone = null;
+        user.ShowEmail = false;
+        user.AvatarFileId = null;
+        user.TwoFactorEnabled = false;
+        user.TwoFactorSecret = null;
+        user.IsActive = false;
+        user.UpdatedAt = DateTime.UtcNow;
+
+        // Remove standalone personal records (authored content is kept, anonymized).
+        _context.Notes.RemoveRange(_context.Notes.Where(n => n.OwnerId == userId));
+        _context.NotificationPreferences.RemoveRange(_context.NotificationPreferences.Where(p => p.UserId == userId));
+        _context.UserBackupCodes.RemoveRange(_context.UserBackupCodes.Where(c => c.UserId == userId));
+        _context.RefreshTokens.RemoveRange(_context.RefreshTokens.Where(rt => rt.UserId == userId));
+        _context.ProjectMembers.RemoveRange(_context.ProjectMembers.Where(m => m.UserId == userId));
+        _context.UserWarnings.RemoveRange(_context.UserWarnings.Where(w => w.UserId == userId));
+        _context.Appeals.RemoveRange(_context.Appeals.Where(a => a.UserId == userId));
+
+        await _context.SaveChangesAsync();
+
+        _logger.LogInformation("Account closed and anonymized. UserId: {UserId}", userId);
+        return Result.Ok();
+    }
+
+    /// <inheritdoc />
     public async Task<Result<object>> ExportDataAsync(Guid userId)
     {
         var user = await _context.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == userId);

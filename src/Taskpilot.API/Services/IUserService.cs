@@ -32,4 +32,10 @@ public interface IUserService
 
     /// <summary>Builds a portable copy of the user's personal data (GDPR export).</summary>
     Task<Result<object>> ExportDataAsync(Guid userId);
+
+    /// <summary>
+    /// Closes the account: verifies the password, scrubs personal data, disables login
+    /// and removes standalone personal records. Authored content stays, anonymized.
+    /// </summary>
+    Task<Result> DeleteAccountAsync(Guid userId, string password);
 }

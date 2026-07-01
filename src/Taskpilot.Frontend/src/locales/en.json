@@ -96,6 +96,13 @@
       "Viewer": "Viewer"
     }
   },
+  "danger": {
+    "title": "Danger zone",
+    "deleteDesc": "Close your account. Your profile is anonymized and you can no longer log in. Content you authored stays but is shown as “Deleted user”.",
+    "delete": "Delete account",
+    "confirmTitle": "Delete your account?",
+    "confirmDesc": "This cannot be undone. Enter your password to confirm."
+  },
   "privacy": {
     "title": "Data & privacy",
     "exportDesc": "Download a copy of your personal data (profile, notes, projects, forum posts, comments) as JSON.",

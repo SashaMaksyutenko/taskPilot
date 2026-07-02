@@ -57,11 +57,15 @@ export default function MarkdownEditor({ value, onChange, placeholder, rows = 3,
   return (
     <div>
       <div className="mb-1 flex flex-wrap items-center gap-1">
+        <button type="button" title={t('mdToolbar.heading')} onClick={() => prefixLines('## ')} className={`${btn} font-bold`}>H</button>
         <button type="button" title={t('mdToolbar.bold')} onClick={() => wrap('**', '**', 'bold')} className={`${btn} font-bold`}>B</button>
         <button type="button" title={t('mdToolbar.italic')} onClick={() => wrap('*', '*', 'italic')} className={`${btn} italic`}>I</button>
+        <button type="button" title={t('mdToolbar.strike')} onClick={() => wrap('~~', '~~', 'text')} className={`${btn} line-through`}>S</button>
         <button type="button" title={t('mdToolbar.code')} onClick={() => wrap('`', '`', 'code')} className={`${btn} font-mono`}>{'</>'}</button>
+        <button type="button" title={t('mdToolbar.codeBlock')} onClick={() => wrap('\n```\n', '\n```\n', 'code')} className={`${btn} font-mono`}>{'{ }'}</button>
         <button type="button" title={t('mdToolbar.link')} onClick={() => wrap('[', '](https://)', 'text')} className={btn}>🔗</button>
-        <button type="button" title={t('mdToolbar.list')} onClick={() => prefixLines('- ')} className={btn}>• List</button>
+        <button type="button" title={t('mdToolbar.list')} onClick={() => prefixLines('- ')} className={btn}>•</button>
+        <button type="button" title={t('mdToolbar.numbered')} onClick={() => prefixLines('1. ')} className={btn}>1.</button>
         <button type="button" title={t('mdToolbar.quote')} onClick={() => prefixLines('> ')} className={btn}>❝</button>
       </div>
       <textarea

@@ -1,4 +1,5 @@
 import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 
 /**
  * Renders user Markdown safely (react-markdown outputs React elements, not raw HTML)
@@ -9,10 +10,19 @@ export default function Markdown({ children }: { children: string }) {
   return (
     <div className="text-sm leading-relaxed text-slate-700 dark:text-slate-200">
       <ReactMarkdown
+        remarkPlugins={[remarkGfm]}
         components={{
           p: ({ children }) => <p className="mb-2 whitespace-pre-wrap break-words last:mb-0">{children}</p>,
           strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
           em: ({ children }) => <em className="italic">{children}</em>,
+          del: ({ children }) => <del className="line-through opacity-70">{children}</del>,
+          table: ({ children }) => (
+            <div className="mb-2 overflow-x-auto">
+              <table className="border-collapse text-left">{children}</table>
+            </div>
+          ),
+          th: ({ children }) => <th className="border border-slate-300 px-2 py-1 font-semibold dark:border-slate-600">{children}</th>,
+          td: ({ children }) => <td className="border border-slate-300 px-2 py-1 dark:border-slate-600">{children}</td>,
           a: ({ children, href }) => (
             <a href={href} target="_blank" rel="noreferrer" className="text-[#1E2A44] underline hover:no-underline dark:text-sky-300">
               {children}

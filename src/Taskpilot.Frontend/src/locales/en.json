@@ -127,11 +127,15 @@
     }
   },
   "mdToolbar": {
+    "heading": "Heading",
     "bold": "Bold",
     "italic": "Italic",
-    "code": "Code",
+    "strike": "Strikethrough",
+    "code": "Inline code",
+    "codeBlock": "Code block",
     "link": "Link",
     "list": "Bulleted list",
+    "numbered": "Numbered list",
     "quote": "Quote"
   },
   "reputation": {

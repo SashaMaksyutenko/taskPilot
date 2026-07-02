@@ -87,8 +87,9 @@ export default function MarketplacePage() {
             onChange={(e) => setDescription(e.target.value)}
             placeholder={t('market.describe')}
             rows={3}
-            className="mb-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 outline-none focus:border-[#1E2A44] dark:border-slate-600 dark:bg-slate-900"
+            className="mb-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 outline-none focus:border-[#1E2A44] dark:border-slate-600 dark:bg-slate-900"
           />
+          <p className="mb-2 text-xs text-slate-400">{t('forum.markdownHint')}</p>
           <div className="mb-3 flex gap-2">
             <input
               value={budget}

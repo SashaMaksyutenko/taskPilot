@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, useParams } from 'react-router-dom'
 import Avatar from '../components/Avatar'
+import Markdown from '../components/Markdown'
 import Navbar from '../components/Navbar'
 import StarRating from '../components/StarRating'
 import { marketplaceService } from '../services/marketplaceService'
@@ -112,7 +113,9 @@ export default function MarketplaceTaskPage() {
           {task.requiredSkills && (
             <div className="mt-2 text-sm text-slate-600 dark:text-slate-300">{t('marketTask.skills')}: {task.requiredSkills}</div>
           )}
-          <p className="mt-4 whitespace-pre-wrap">{task.description}</p>
+          <div className="mt-4">
+            <Markdown>{task.description}</Markdown>
+          </div>
         </div>
 
         {/* Poster: applications */}

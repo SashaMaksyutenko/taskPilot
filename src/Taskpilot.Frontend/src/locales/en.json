@@ -136,7 +136,10 @@
     "link": "Link",
     "list": "Bulleted list",
     "numbered": "Numbered list",
-    "quote": "Quote"
+    "quote": "Quote",
+    "write": "Write",
+    "preview": "Preview",
+    "nothingToPreview": "Nothing to preview yet."
   },
   "reputation": {
     "points": "{{count}} pts",

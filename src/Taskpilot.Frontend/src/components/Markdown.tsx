@@ -1,5 +1,36 @@
+import { useEffect, useState } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
+import api from '../lib/api'
+
+/**
+ * Renders an image inside Markdown. App-hosted files (/api/...) require auth, which a
+ * plain <img> can't send, so those are fetched as a blob with the bearer token;
+ * external URLs are used directly.
+ */
+function AuthImage({ src, alt }: { src?: string; alt?: string }) {
+  const [url, setUrl] = useState<string | undefined>(
+    src && /^(https?:|data:)/.test(src) ? src : undefined,
+  )
+
+  useEffect(() => {
+    if (!src || /^(https?:|data:)/.test(src)) return
+    let objectUrl: string | undefined
+    api
+      .get(src, { responseType: 'blob' })
+      .then((r) => {
+        objectUrl = URL.createObjectURL(r.data as Blob)
+        setUrl(objectUrl)
+      })
+      .catch(() => {})
+    return () => {
+      if (objectUrl) URL.revokeObjectURL(objectUrl)
+    }
+  }, [src])
+
+  if (!url) return null
+  return <img src={url} alt={alt ?? ''} className="my-2 max-h-80 rounded-lg border border-slate-200 dark:border-slate-700" />
+}
 
 /**
  * Renders user Markdown safely (react-markdown outputs React elements, not raw HTML)
@@ -16,6 +47,7 @@ export default function Markdown({ children }: { children: string }) {
           strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
           em: ({ children }) => <em className="italic">{children}</em>,
           del: ({ children }) => <del className="line-through opacity-70">{children}</del>,
+          img: ({ src, alt }) => <AuthImage src={typeof src === 'string' ? src : undefined} alt={alt} />,
           table: ({ children }) => (
             <div className="mb-2 overflow-x-auto">
               <table className="border-collapse text-left">{children}</table>

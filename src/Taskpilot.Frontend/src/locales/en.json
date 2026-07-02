@@ -137,6 +137,7 @@
     "list": "Bulleted list",
     "numbered": "Numbered list",
     "quote": "Quote",
+    "image": "Upload image",
     "write": "Write",
     "preview": "Preview",
     "nothingToPreview": "Nothing to preview yet."

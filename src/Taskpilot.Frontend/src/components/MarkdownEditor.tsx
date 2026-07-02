@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { fileService } from '../services/fileService'
 import Markdown from './Markdown'
 
 type Props = {
@@ -17,7 +18,38 @@ type Props = {
 export default function MarkdownEditor({ value, onChange, placeholder, rows = 3, className }: Props) {
   const { t } = useTranslation()
   const ref = useRef<HTMLTextAreaElement>(null)
+  const fileRef = useRef<HTMLInputElement>(null)
   const [preview, setPreview] = useState(false)
+  const [uploading, setUploading] = useState(false)
+
+  // Insert text at the caret (or replace the selection).
+  const insertAtCursor = (text: string) => {
+    const el = ref.current
+    const start = el?.selectionStart ?? value.length
+    const end = el?.selectionEnd ?? value.length
+    const next = value.slice(0, start) + text + value.slice(end)
+    onChange(next)
+    requestAnimationFrame(() => {
+      el?.focus()
+      const pos = start + text.length
+      el?.setSelectionRange(pos, pos)
+    })
+  }
+
+  const onPickImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    e.target.value = '' // allow re-selecting the same file
+    if (!file) return
+    setUploading(true)
+    try {
+      const uploaded = await fileService.upload(file)
+      insertAtCursor(`![${file.name}](/api/files/${uploaded.id})\n`)
+    } catch {
+      // ignore upload failures
+    } finally {
+      setUploading(false)
+    }
+  }
 
   // Wrap the selection with before/after markers (using a placeholder when empty).
   const wrap = (before: string, after: string, placeholderText: string) => {
@@ -81,6 +113,10 @@ export default function MarkdownEditor({ value, onChange, placeholder, rows = 3,
             <button type="button" title={t('mdToolbar.list')} onClick={() => prefixLines('- ')} className={btn}>•</button>
             <button type="button" title={t('mdToolbar.numbered')} onClick={() => prefixLines('1. ')} className={btn}>1.</button>
             <button type="button" title={t('mdToolbar.quote')} onClick={() => prefixLines('> ')} className={`${btn} font-mono`}>&gt;</button>
+            <button type="button" title={t('mdToolbar.image')} onClick={() => fileRef.current?.click()} disabled={uploading} className={`${btn} disabled:opacity-50`}>
+              {uploading ? '…' : '🖼️'}
+            </button>
+            <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={onPickImage} />
           </>
         )}
       </div>

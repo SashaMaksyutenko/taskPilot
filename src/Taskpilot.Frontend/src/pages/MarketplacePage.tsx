@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, useNavigate } from 'react-router-dom'
 import Avatar from '../components/Avatar'
+import MarkdownEditor from '../components/MarkdownEditor'
 import Navbar from '../components/Navbar'
 import { marketplaceService } from '../services/marketplaceService'
 import { useAppSelector } from '../store/hooks'
@@ -82,14 +83,14 @@ export default function MarketplacePage() {
             placeholder={t('market.taskTitle')}
             className="mb-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 outline-none focus:border-[#1E2A44] dark:border-slate-600 dark:bg-slate-900"
           />
-          <textarea
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            placeholder={t('market.describe')}
-            rows={3}
-            className="mb-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 outline-none focus:border-[#1E2A44] dark:border-slate-600 dark:bg-slate-900"
-          />
-          <p className="mb-2 text-xs text-slate-400">{t('forum.markdownHint')}</p>
+          <div className="mb-2">
+            <MarkdownEditor
+              value={description}
+              onChange={setDescription}
+              placeholder={t('market.describe')}
+              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 outline-none focus:border-[#1E2A44] dark:border-slate-600 dark:bg-slate-900"
+            />
+          </div>
           <div className="mb-3 flex gap-2">
             <input
               value={budget}

@@ -126,6 +126,14 @@
       "General": "Загальні"
     }
   },
+  "mdToolbar": {
+    "bold": "Жирний",
+    "italic": "Курсив",
+    "code": "Код",
+    "link": "Посилання",
+    "list": "Маркований список",
+    "quote": "Цитата"
+  },
   "reputation": {
     "points": "{{count}} балів",
     "badge": {

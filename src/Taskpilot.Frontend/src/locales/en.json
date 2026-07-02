@@ -126,6 +126,14 @@
       "General": "General"
     }
   },
+  "mdToolbar": {
+    "bold": "Bold",
+    "italic": "Italic",
+    "code": "Code",
+    "link": "Link",
+    "list": "Bulleted list",
+    "quote": "Quote"
+  },
   "reputation": {
     "points": "{{count}} pts",
     "badge": {

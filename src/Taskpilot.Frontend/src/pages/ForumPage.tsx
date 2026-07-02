@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, useNavigate } from 'react-router-dom'
 import Avatar from '../components/Avatar'
+import MarkdownEditor from '../components/MarkdownEditor'
 import Navbar from '../components/Navbar'
 import TopicContextMenu from '../components/TopicContextMenu'
 import { apiErrorMessage } from '../lib/apiError'
@@ -77,14 +78,14 @@ export default function ForumPage() {
             placeholder={t('forum.topicTitle')}
             className="mb-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 outline-none focus:border-[#1E2A44] dark:border-slate-600 dark:bg-slate-900"
           />
-          <textarea
-            value={body}
-            onChange={(e) => setBody(e.target.value)}
-            placeholder={t('forum.bodyPlaceholder')}
-            rows={3}
-            className="mb-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 outline-none focus:border-[#1E2A44] dark:border-slate-600 dark:bg-slate-900"
-          />
-          <p className="mb-3 text-xs text-slate-400">{t('forum.markdownHint')}</p>
+          <div className="mb-3">
+            <MarkdownEditor
+              value={body}
+              onChange={setBody}
+              placeholder={t('forum.bodyPlaceholder')}
+              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 outline-none focus:border-[#1E2A44] dark:border-slate-600 dark:bg-slate-900"
+            />
+          </div>
           <div className="flex items-center gap-3">
             <button
               onClick={create}

@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { Link, useParams } from 'react-router-dom'
 import Avatar from '../components/Avatar'
 import Markdown from '../components/Markdown'
+import MarkdownEditor from '../components/MarkdownEditor'
 import Navbar from '../components/Navbar'
 import { apiErrorMessage } from '../lib/apiError'
 import { forumService } from '../services/forumService'
@@ -149,14 +150,12 @@ export default function TopicPage() {
           <p className="mt-6 text-sm text-slate-400">🔒 {t('topic.locked')}</p>
         ) : (
           <div className="mt-6">
-            <textarea
+            <MarkdownEditor
               value={body}
-              onChange={(e) => setBody(e.target.value)}
+              onChange={setBody}
               placeholder={t('topic.replyPlaceholder')}
-              rows={3}
               className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 outline-none focus:border-[#1E2A44] dark:border-slate-600 dark:bg-slate-800"
             />
-            <p className="mt-1 text-xs text-slate-400">{t('forum.markdownHint')}</p>
             <div className="mt-2 flex items-center gap-3">
               <button
                 onClick={submitReply}

@@ -95,15 +95,20 @@ export default function BoardPage() {
     if (copy) setTasks((prev) => [...prev, copy])
   }
 
+  // The board shows only top-level tasks; subtasks are managed inside their parent.
+  const topLevelTasks = tasks.filter((t) => !t.parentTaskId)
+
   // All distinct tags across the project's tasks, alphabetical, for the filter bar.
-  const allTags = Array.from(new Set(tasks.flatMap((t) => t.tags))).sort((a, b) => a.localeCompare(b))
+  const allTags = Array.from(new Set(topLevelTasks.flatMap((t) => t.tags))).sort((a, b) => a.localeCompare(b))
 
   const toggleTag = (tag: string) =>
     setActiveTags((prev) => (prev.includes(tag) ? prev.filter((x) => x !== tag) : [...prev, tag]))
 
   // A task passes the filter when no tag is selected or it carries any selected tag.
   const visibleTasks =
-    activeTags.length === 0 ? tasks : tasks.filter((t) => t.tags.some((tag) => activeTags.includes(tag)))
+    activeTags.length === 0
+      ? topLevelTasks
+      : topLevelTasks.filter((t) => t.tags.some((tag) => activeTags.includes(tag)))
 
   const download = (blob: Blob, ext: string) => {
     const url = URL.createObjectURL(blob)

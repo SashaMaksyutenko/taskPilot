@@ -17,6 +17,9 @@ public interface ITaskService
 
     Task<Result<TaskDto>> GetTaskAsync(Guid userId, Guid taskId);
 
+    /// <summary>Lists the subtasks (children) of a task the user can access.</summary>
+    Task<Result<List<TaskDto>>> GetSubtasksAsync(Guid userId, Guid taskId);
+
     Task<Result<TaskDto>> UpdateTaskAsync(Guid userId, Guid taskId, UpdateTaskDto dto);
 
     /// <summary>Moves a task to another status; sets/clears CompletedAt for Done.</summary>

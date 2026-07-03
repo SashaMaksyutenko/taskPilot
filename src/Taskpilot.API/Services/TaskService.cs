@@ -141,6 +141,25 @@ public class TaskService : ITaskService
     }
 
     /// <inheritdoc />
+    public async Task<Result<List<TaskDto>>> GetSubtasksAsync(Guid userId, Guid taskId)
+    {
+        // Access to the parent task implies access to its subtasks.
+        var parent = await LoadAccessibleAsync(taskId, userId);
+        if (parent is null)
+            return Result<List<TaskDto>>.Fail("Task not found.");
+
+        var subtasks = await _context.ProjectTasks
+            .Where(t => t.ParentTaskId == taskId)
+            .Include(t => t.Assignee)
+            .Include(t => t.Creator)
+            .OrderBy(t => t.CreatedAt)
+            .AsNoTracking()
+            .ToListAsync();
+
+        return Result<List<TaskDto>>.Ok(subtasks.Select(MapDto).ToList());
+    }
+
+    /// <inheritdoc />
     public async Task<Result<TaskDto>> UpdateTaskAsync(Guid userId, Guid taskId, UpdateTaskDto dto)
     {
         var task = await LoadAccessibleAsync(taskId, userId);

@@ -11,9 +11,21 @@ export const taskService = {
 
   createTask(
     projectId: string,
-    data: { title: string; description?: string; priority?: string; deadline?: string; tags?: string[] },
+    data: {
+      title: string
+      description?: string
+      priority?: string
+      deadline?: string
+      tags?: string[]
+      parentTaskId?: string
+    },
   ): Promise<Task> {
     return api.post<Task>(`/api/projects/${projectId}/tasks`, data).then((r) => r.data)
+  },
+
+  /** Lists a task's subtasks (children). */
+  getSubtasks(taskId: string): Promise<Task[]> {
+    return api.get<Task[]>(`/api/tasks/${taskId}/subtasks`).then((r) => r.data)
   },
 
   updateTask(

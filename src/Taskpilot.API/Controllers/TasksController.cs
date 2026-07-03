@@ -128,6 +128,17 @@ public class TasksController : BaseApiController
         return result.Succeeded ? Ok(result.Value) : NotFound(new { error = result.Error });
     }
 
+    /// <summary>Lists a task's subtasks (children).</summary>
+    [HttpGet("api/tasks/{taskId:guid}/subtasks")]
+    public async Task<IActionResult> GetSubtasks(Guid taskId)
+    {
+        var userId = CurrentUserId();
+        if (userId is null) return Unauthorized();
+
+        var result = await _tasks.GetSubtasksAsync(userId.Value, taskId);
+        return result.Succeeded ? Ok(result.Value) : NotFound(new { error = result.Error });
+    }
+
     /// <summary>Updates a task's editable fields.</summary>
     [HttpPut("api/tasks/{taskId:guid}")]
     public async Task<IActionResult> Update(Guid taskId, [FromBody] UpdateTaskDto dto)

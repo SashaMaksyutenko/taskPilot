@@ -282,6 +282,8 @@
     "tags": "Tags",
     "tagsPlaceholder": "Add a tag and press Enter…",
     "removeTag": "Remove tag",
+    "subtasks": "Subtasks",
+    "addSubtask": "Add a subtask and press Enter…",
     "save": "Save",
     "deleteTask": "Delete task",
     "comments": "Comments",

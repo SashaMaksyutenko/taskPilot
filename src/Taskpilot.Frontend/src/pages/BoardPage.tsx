@@ -32,6 +32,8 @@ export default function BoardPage() {
   const [selectedTask, setSelectedTask] = useState<Task | null>(null)
   const [membersOpen, setMembersOpen] = useState(false)
   const [canWrite, setCanWrite] = useState(true)
+  // Tags currently used to filter the board (empty = show everything).
+  const [activeTags, setActiveTags] = useState<string[]>([])
   const draggingId = useRef<string | null>(null)
 
   const isOwner = !!project && project.ownerId === currentUserId
@@ -87,6 +89,16 @@ export default function BoardPage() {
     await taskService.deleteTask(task.id).catch(() => {})
     setTasks((prev) => prev.filter((t) => t.id !== task.id))
   }
+
+  // All distinct tags across the project's tasks, alphabetical, for the filter bar.
+  const allTags = Array.from(new Set(tasks.flatMap((t) => t.tags))).sort((a, b) => a.localeCompare(b))
+
+  const toggleTag = (tag: string) =>
+    setActiveTags((prev) => (prev.includes(tag) ? prev.filter((x) => x !== tag) : [...prev, tag]))
+
+  // A task passes the filter when no tag is selected or it carries any selected tag.
+  const visibleTasks =
+    activeTags.length === 0 ? tasks : tasks.filter((t) => t.tags.some((tag) => activeTags.includes(tag)))
 
   const download = (blob: Blob, ext: string) => {
     const url = URL.createObjectURL(blob)
@@ -165,10 +177,43 @@ export default function BoardPage() {
           <p className="mb-5 text-sm text-slate-400">👁️ {t('board.readOnly')}</p>
         )}
 
+        {/* Tag filter bar */}
+        {allTags.length > 0 && (
+          <div className="mb-5 flex flex-wrap items-center gap-1.5">
+            <span className="mr-1 text-xs font-semibold text-slate-500 dark:text-slate-400">
+              {t('board.filterByTag')}
+            </span>
+            {allTags.map((tag) => {
+              const active = activeTags.includes(tag)
+              return (
+                <button
+                  key={tag}
+                  onClick={() => toggleTag(tag)}
+                  className={`rounded-full px-2 py-0.5 text-xs font-medium transition ${
+                    active
+                      ? 'bg-[#1E2A44] text-white dark:bg-slate-200 dark:text-slate-900'
+                      : 'bg-[#1E2A44]/10 text-[#1E2A44] hover:bg-[#1E2A44]/20 dark:bg-slate-700 dark:text-slate-200'
+                  }`}
+                >
+                  {tag}
+                </button>
+              )
+            })}
+            {activeTags.length > 0 && (
+              <button
+                onClick={() => setActiveTags([])}
+                className="ml-1 text-xs font-semibold text-slate-400 hover:text-red-600 hover:underline"
+              >
+                {t('board.clearFilter')}
+              </button>
+            )}
+          </div>
+        )}
+
         {/* Columns */}
         <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
           {STATUS_COLUMNS.map((col) => {
-            const colTasks = tasks.filter((t) => t.status === col.key)
+            const colTasks = visibleTasks.filter((t) => t.status === col.key)
             return (
               <div
                 key={col.key}

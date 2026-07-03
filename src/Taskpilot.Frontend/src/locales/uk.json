@@ -244,6 +244,8 @@
     "backToProjects": "← Проєкти",
     "readOnly": "У вас доступ лише для перегляду цього проєкту.",
     "title": "Дошка",
+    "filterByTag": "Фільтр:",
+    "clearFilter": "Скинути",
     "exportCsv": "Експорт CSV",
     "exportXlsx": "Експорт Excel",
     "exportPdf": "Експорт PDF",

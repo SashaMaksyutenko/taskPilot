@@ -244,6 +244,8 @@
     "backToProjects": "← Projects",
     "readOnly": "You have read-only access to this project.",
     "title": "Board",
+    "filterByTag": "Filter:",
+    "clearFilter": "Clear",
     "exportCsv": "Export CSV",
     "exportXlsx": "Export Excel",
     "exportPdf": "Export PDF",

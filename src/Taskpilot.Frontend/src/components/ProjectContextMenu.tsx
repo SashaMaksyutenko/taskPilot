@@ -5,16 +5,21 @@ import { menuContentClass as contentClass, menuItemClass as itemClass } from './
 
 /**
  * Right-click context menu for a project card: export its tasks as CSV and
- * archive the project. Wraps the card via Radix's ContextMenu.Trigger.
+ * archive (or restore, when already archived) the project. Wraps the card via
+ * Radix's ContextMenu.Trigger.
  */
 export default function ProjectContextMenu({
   children,
+  archived,
   onExport,
   onArchive,
+  onRestore,
 }: {
   children: ReactNode
+  archived: boolean
   onExport: () => void
   onArchive: () => void
+  onRestore: () => void
 }) {
   const { t } = useTranslation()
 
@@ -26,9 +31,15 @@ export default function ProjectContextMenu({
           <ContextMenu.Item className={itemClass} onSelect={onExport}>
             {t('board.exportCsv')}
           </ContextMenu.Item>
-          <ContextMenu.Item className={itemClass} onSelect={onArchive}>
-            {t('projects.archive')}
-          </ContextMenu.Item>
+          {archived ? (
+            <ContextMenu.Item className={itemClass} onSelect={onRestore}>
+              {t('projects.restore')}
+            </ContextMenu.Item>
+          ) : (
+            <ContextMenu.Item className={itemClass} onSelect={onArchive}>
+              {t('projects.archive')}
+            </ContextMenu.Item>
+          )}
         </ContextMenu.Content>
       </ContextMenu.Portal>
     </ContextMenu.Root>

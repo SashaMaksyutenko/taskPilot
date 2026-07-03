@@ -237,6 +237,9 @@
     "tasks": "{{count}} tasks",
     "progress": "{{done}}/{{total}} done",
     "archive": "Archive",
+    "restore": "Restore",
+    "archived": "Archived",
+    "showArchived": "Show archived",
     "shared": "Shared",
     "members": "{{count}} collaborator(s)"
   },

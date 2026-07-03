@@ -18,12 +18,14 @@ export default function ProjectsPage() {
   const [projects, setProjects] = useState<Project[]>([])
   const [name, setName] = useState('')
   const [loading, setLoading] = useState(false)
+  // When on, archived projects are listed too (and can be restored).
+  const [showArchived, setShowArchived] = useState(false)
 
   const load = () => {
-    projectService.getProjects().then(setProjects).catch(() => {})
+    projectService.getProjects(showArchived).then(setProjects).catch(() => {})
   }
 
-  useEffect(load, [])
+  useEffect(load, [showArchived])
 
   const create = async () => {
     const trimmed = name.trim()
@@ -55,11 +57,27 @@ export default function ProjectsPage() {
     load()
   }
 
+  const restore = async (project: Project) => {
+    await projectService.restore(project.id).catch(() => {})
+    load()
+  }
+
   return (
     <div className="min-h-screen bg-slate-50 text-[#1E2A44] dark:bg-slate-900 dark:text-slate-100">
       <Navbar />
       <main className="mx-auto max-w-5xl px-6 py-8">
-        <h1 className="mb-6 text-2xl font-bold">{t('projects.title')}</h1>
+        <div className="mb-6 flex items-center justify-between">
+          <h1 className="text-2xl font-bold">{t('projects.title')}</h1>
+          <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
+            <input
+              type="checkbox"
+              checked={showArchived}
+              onChange={(e) => setShowArchived(e.target.checked)}
+              className="h-4 w-4 accent-[#1E2A44]"
+            />
+            {t('projects.showArchived')}
+          </label>
+        </div>
 
         {/* Create project */}
         <div className="mb-6 flex gap-2">
@@ -84,14 +102,27 @@ export default function ProjectsPage() {
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {projects.map((p) => (
-              <ProjectContextMenu key={p.id} onExport={() => exportTasks(p)} onArchive={() => archive(p)}>
+              <ProjectContextMenu
+                key={p.id}
+                archived={p.isArchived}
+                onExport={() => exportTasks(p)}
+                onArchive={() => archive(p)}
+                onRestore={() => restore(p)}
+              >
                 <Link
                   to={`/projects/${p.id}`}
-                  className="block rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition hover:shadow-md dark:border-slate-700 dark:bg-slate-800"
+                  className={`block rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition hover:shadow-md dark:border-slate-700 dark:bg-slate-800 ${
+                    p.isArchived ? 'opacity-60' : ''
+                  }`}
                 >
                 <div className="flex items-center gap-2">
                   <span className="inline-block h-3 w-3 rounded-full" style={{ background: p.color ?? '#94a3b8' }} />
                   <span className="font-semibold">{p.name}</span>
+                  {p.isArchived && (
+                    <span className="rounded-full bg-slate-200 px-2 py-0.5 text-[11px] font-semibold text-slate-600 dark:bg-slate-700 dark:text-slate-300">
+                      {t('projects.archived')}
+                    </span>
+                  )}
                   {!!currentUserId && p.ownerId !== currentUserId && (
                     <span className="rounded-full bg-sky-100 px-2 py-0.5 text-[11px] font-semibold text-sky-700 dark:bg-sky-900/40 dark:text-sky-300">
                       {t('projects.shared')}

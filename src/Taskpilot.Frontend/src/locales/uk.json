@@ -237,6 +237,9 @@
     "tasks": "Завдань: {{count}}",
     "progress": "{{done}}/{{total}} виконано",
     "archive": "Архівувати",
+    "restore": "Відновити",
+    "archived": "В архіві",
+    "showArchived": "Показати архів",
     "shared": "Спільний",
     "members": "Учасників: {{count}}"
   },

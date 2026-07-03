@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { Fragment, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { HubConnection } from '@microsoft/signalr'
 import AttachmentPreview from '../components/AttachmentPreview'
@@ -12,7 +12,7 @@ import { createChatConnection } from '../lib/chatHub'
 import { chatService } from '../services/chatService'
 import { fileService } from '../services/fileService'
 import { userService, type UserSearchResult } from '../services/userService'
-import type { Conversation, Message, ReactionUpdate } from '../types/chat'
+import type { Conversation, ConversationRead, Message, ReactionUpdate } from '../types/chat'
 import { fetchMe } from '../store/authSlice'
 import { useAppDispatch, useAppSelector } from '../store/hooks'
 
@@ -94,6 +94,16 @@ export default function ChatPage() {
     })
     connection.on('MessageEdited', (msg: Message) => {
       setMessages((prev) => prev.map((m) => (m.id === msg.id ? msg : m)))
+    })
+    connection.on('ConversationRead', (r: ConversationRead) => {
+      // Update the reader's lastReadAt so we can show a "seen" receipt.
+      setConversations((prev) =>
+        prev.map((c) =>
+          c.id === r.conversationId
+            ? { ...c, participants: c.participants.map((p) => (p.userId === r.userId ? { ...p, lastReadAt: r.lastReadAt } : p)) }
+            : c,
+        ),
+      )
     })
     connection.on('UserTyping', (p: { conversationId: string; userId: string }) => {
       if (p.conversationId !== selectedIdRef.current || p.userId === currentUserRef.current?.id) return
@@ -296,6 +306,23 @@ export default function ChatPage() {
     return t('chat.typing', { name })
   }
 
+  // Read receipt: the newest of my messages that every other participant has read.
+  const otherParticipants = (conversations.find((c) => c.id === selectedId)?.participants ?? []).filter(
+    (p) => p.userId !== currentUser?.id,
+  )
+  const seenThreshold =
+    otherParticipants.length > 0 && otherParticipants.every((p) => p.lastReadAt)
+      ? Math.min(...otherParticipants.map((p) => new Date(p.lastReadAt as string).getTime()))
+      : null
+  let lastSeenMessageId: string | null = null
+  if (seenThreshold != null) {
+    for (const m of messages) {
+      if (m.senderId === currentUser?.id && new Date(m.createdAt).getTime() <= seenThreshold) {
+        lastSeenMessageId = m.id
+      }
+    }
+  }
+
   return (
     <div className="flex h-screen flex-col bg-slate-50 text-[#1E2A44] dark:bg-slate-900 dark:text-slate-100">
       <Navbar />
@@ -406,7 +433,8 @@ export default function ChatPage() {
                 {visibleMessages.map((m) => {
                   const mine = m.senderId === currentUser?.id
                   return (
-                    <div key={m.id} className={`flex items-end gap-2 ${mine ? 'justify-end' : 'justify-start'}`}>
+                    <Fragment key={m.id}>
+                    <div className={`flex items-end gap-2 ${mine ? 'justify-end' : 'justify-start'}`}>
                       {!mine && <Avatar name={m.senderName} src={m.senderAvatarUrl} size={28} />}
                       <MessageContextMenu
                         content={m.content}
@@ -526,6 +554,10 @@ export default function ChatPage() {
                         </div>
                       </MessageContextMenu>
                     </div>
+                    {m.id === lastSeenMessageId && (
+                      <div className="pr-1 text-right text-[11px] text-slate-400">✓ {t('chat.seen')}</div>
+                    )}
+                    </Fragment>
                   )
                 })}
                 <div ref={bottomRef} />

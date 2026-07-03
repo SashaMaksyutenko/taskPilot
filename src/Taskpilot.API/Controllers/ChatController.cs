@@ -89,9 +89,14 @@ public class ChatController : BaseApiController
         if (userId is null) return Unauthorized();
 
         var result = await _chatService.MarkConversationReadAsync(userId.Value, conversationId);
-        return result.Succeeded
-            ? Ok(new { message = "Conversation marked as read." })
-            : BadRequest(new { error = result.Error });
+        if (!result.Succeeded)
+            return BadRequest(new { error = result.Error });
+
+        // Tell the other members so they can show a "seen" receipt in real time.
+        await _chatHub.Clients
+            .Group(ChatHub.GroupName(conversationId))
+            .SendAsync("ConversationRead", new { conversationId, userId = userId.Value, lastReadAt = result.Value });
+        return Ok(new { message = "Conversation marked as read." });
     }
 
     /// <summary>Returns the messages of a conversation the current user belongs to.</summary>

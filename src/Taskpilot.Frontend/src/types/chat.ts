@@ -4,6 +4,13 @@ export interface Participant {
   userId: string
   name: string
   avatarUrl: string | null
+  lastReadAt: string | null
+}
+
+export interface ConversationRead {
+  conversationId: string
+  userId: string
+  lastReadAt: string
 }
 
 export interface Conversation {

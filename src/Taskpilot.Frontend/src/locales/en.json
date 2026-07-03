@@ -356,6 +356,7 @@
     "pinned": "Pinned",
     "searchMessages": "Search messages…",
     "noMatches": "No matching messages.",
+    "seen": "Seen",
     "edited": "edited",
     "editHint": "Enter to save · Esc to cancel",
     "typing": "{{name}} is typing…",

@@ -13,4 +13,7 @@ public class ParticipantDto
 
     /// <summary>Public URL of the participant's avatar; null when none set.</summary>
     public string? AvatarUrl { get; set; }
+
+    /// <summary>UTC time this participant last read the conversation; null if never. Used for read receipts.</summary>
+    public DateTime? LastReadAt { get; set; }
 }

@@ -155,16 +155,17 @@ public class ChatService : IChatService
     }
 
     /// <inheritdoc />
-    public async Task<Result> MarkConversationReadAsync(Guid userId, Guid conversationId)
+    public async Task<Result<DateTime>> MarkConversationReadAsync(Guid userId, Guid conversationId)
     {
         var participant = await _context.ConversationParticipants
             .FirstOrDefaultAsync(p => p.ConversationId == conversationId && p.UserId == userId);
         if (participant is null)
-            return Result.Fail("You are not a participant of this conversation.");
+            return Result<DateTime>.Fail("You are not a participant of this conversation.");
 
-        participant.LastReadAt = DateTime.UtcNow;
+        var now = DateTime.UtcNow;
+        participant.LastReadAt = now;
         await _context.SaveChangesAsync();
-        return Result.Ok();
+        return Result<DateTime>.Ok(now);
     }
 
     /// <inheritdoc />
@@ -442,6 +443,7 @@ public class ChatService : IChatService
                 UserId = p.UserId,
                 Name = p.User?.Name ?? string.Empty,
                 AvatarUrl = p.User is null ? null : UserMapper.AvatarUrl(p.User),
+                LastReadAt = p.LastReadAt,
             })
             .ToList(),
     };

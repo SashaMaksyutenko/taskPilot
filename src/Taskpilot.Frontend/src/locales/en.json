@@ -251,6 +251,7 @@
     "filterByTag": "Filter:",
     "clearFilter": "Clear",
     "duplicate": "Duplicate",
+    "moveToProject": "Move to project",
     "exportCsv": "Export CSV",
     "exportXlsx": "Export Excel",
     "exportPdf": "Export PDF",

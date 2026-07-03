@@ -28,6 +28,9 @@ public interface ITaskService
     /// <summary>Creates a copy of an existing task in the same project (status reset to Backlog).</summary>
     Task<Result<TaskDto>> DuplicateTaskAsync(Guid userId, Guid taskId);
 
+    /// <summary>Moves a task (and its subtasks) to another project the user can write to.</summary>
+    Task<Result<TaskDto>> MoveTaskAsync(Guid userId, Guid taskId, Guid targetProjectId);
+
     Task<Result> DeleteTaskAsync(Guid userId, Guid taskId);
 
     /// <summary>

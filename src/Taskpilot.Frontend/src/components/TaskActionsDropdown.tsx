@@ -12,11 +12,15 @@ export default function TaskActionsDropdown({
   onEdit,
   onDuplicate,
   onChangePriority,
+  moveTargets,
+  onMove,
   onDelete,
 }: {
   onEdit: () => void
   onDuplicate: () => void
   onChangePriority: (priority: string) => void
+  moveTargets: { id: string; name: string }[]
+  onMove: (projectId: string) => void
   onDelete: () => void
 }) {
   const { t } = useTranslation()
@@ -58,6 +62,24 @@ export default function TaskActionsDropdown({
               </DropdownMenu.SubContent>
             </DropdownMenu.Portal>
           </DropdownMenu.Sub>
+
+          {moveTargets.length > 0 && (
+            <DropdownMenu.Sub>
+              <DropdownMenu.SubTrigger className={`${menuItemClass} flex items-center justify-between gap-4`}>
+                {t('board.moveToProject')}
+                <span className="text-slate-400">▸</span>
+              </DropdownMenu.SubTrigger>
+              <DropdownMenu.Portal>
+                <DropdownMenu.SubContent className={menuContentClass}>
+                  {moveTargets.map((p) => (
+                    <DropdownMenu.Item key={p.id} className={menuItemClass} onSelect={() => onMove(p.id)}>
+                      {p.name}
+                    </DropdownMenu.Item>
+                  ))}
+                </DropdownMenu.SubContent>
+              </DropdownMenu.Portal>
+            </DropdownMenu.Sub>
+          )}
 
           <DropdownMenu.Separator className={menuSeparatorClass} />
 

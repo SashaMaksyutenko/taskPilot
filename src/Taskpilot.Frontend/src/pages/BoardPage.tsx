@@ -32,6 +32,8 @@ export default function BoardPage() {
   const [selectedTask, setSelectedTask] = useState<Task | null>(null)
   const [membersOpen, setMembersOpen] = useState(false)
   const [canWrite, setCanWrite] = useState(true)
+  // Other projects this task can be moved to (owned/active, excluding the current one).
+  const [moveTargets, setMoveTargets] = useState<{ id: string; name: string }[]>([])
   // Tags currently used to filter the board (empty = show everything).
   const [activeTags, setActiveTags] = useState<string[]>([])
   const draggingId = useRef<string | null>(null)
@@ -42,6 +44,13 @@ export default function BoardPage() {
     if (!projectId) return
     projectService.getProject(projectId).then(setProject).catch(() => {})
     taskService.getTasks(projectId).then(setTasks).catch(() => {})
+    // Other active projects the user owns can receive moved tasks.
+    projectService
+      .getProjects()
+      .then((ps) =>
+        setMoveTargets(ps.filter((p) => p.id !== projectId).map((p) => ({ id: p.id, name: p.name }))),
+      )
+      .catch(() => {})
     // Determine my write permission (owner or Editor member; Viewers are read-only).
     projectService
       .getMembers(projectId)
@@ -93,6 +102,12 @@ export default function BoardPage() {
   const duplicateTask = async (task: Task) => {
     const copy = await taskService.duplicateTask(task.id).catch(() => null)
     if (copy) setTasks((prev) => [...prev, copy])
+  }
+
+  const moveTask = async (task: Task, targetProjectId: string) => {
+    const moved = await taskService.moveTask(task.id, targetProjectId).catch(() => null)
+    // The task (and its subtasks) left this board.
+    if (moved) setTasks((prev) => prev.filter((t) => t.id !== task.id && t.parentTaskId !== task.id))
   }
 
   // The board shows only top-level tasks; subtasks are managed inside their parent.
@@ -243,6 +258,8 @@ export default function BoardPage() {
                       onEdit={() => setSelectedTask(task)}
                       onDuplicate={() => duplicateTask(task)}
                       onChangePriority={(p) => changePriority(task, p)}
+                      moveTargets={moveTargets}
+                      onMove={(pid) => moveTask(task, pid)}
                       onDelete={() => removeTask(task)}
                     >
                       <div
@@ -260,6 +277,8 @@ export default function BoardPage() {
                             onEdit={() => setSelectedTask(task)}
                             onDuplicate={() => duplicateTask(task)}
                             onChangePriority={(p) => changePriority(task, p)}
+                            moveTargets={moveTargets}
+                            onMove={(pid) => moveTask(task, pid)}
                             onDelete={() => removeTask(task)}
                           />
                         </div>

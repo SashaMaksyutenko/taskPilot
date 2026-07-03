@@ -165,6 +165,17 @@ public class TasksController : BaseApiController
         return result.Succeeded ? Ok(result.Value) : BadRequest(new { error = result.Error });
     }
 
+    /// <summary>Moves a task to another project.</summary>
+    [HttpPost("api/tasks/{taskId:guid}/move")]
+    public async Task<IActionResult> Move(Guid taskId, [FromBody] MoveTaskDto dto)
+    {
+        var userId = CurrentUserId();
+        if (userId is null) return Unauthorized();
+
+        var result = await _tasks.MoveTaskAsync(userId.Value, taskId, dto.ProjectId);
+        return result.Succeeded ? Ok(result.Value) : BadRequest(new { error = result.Error });
+    }
+
     /// <summary>Creates a copy of a task in the same project.</summary>
     [HttpPost("api/tasks/{taskId:guid}/duplicate")]
     public async Task<IActionResult> Duplicate(Guid taskId)

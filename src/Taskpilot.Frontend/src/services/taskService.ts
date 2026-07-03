@@ -51,6 +51,11 @@ export const taskService = {
     return api.post<Task>(`/api/tasks/${taskId}/duplicate`).then((r) => r.data)
   },
 
+  /** Moves a task to another project. */
+  moveTask(taskId: string, projectId: string): Promise<Task> {
+    return api.post<Task>(`/api/tasks/${taskId}/move`, { projectId }).then((r) => r.data)
+  },
+
   deleteTask(taskId: string): Promise<void> {
     return api.delete(`/api/tasks/${taskId}`).then(() => undefined)
   },

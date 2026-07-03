@@ -287,6 +287,44 @@ public class TaskService : ITaskService
     }
 
     /// <inheritdoc />
+    public async Task<Result<TaskDto>> MoveTaskAsync(Guid userId, Guid taskId, Guid targetProjectId)
+    {
+        var task = await LoadAccessibleAsync(taskId, userId);
+        if (task is null)
+            return Result<TaskDto>.Fail("Task not found.");
+        if (!await ProjectAccess.CanWriteTaskAsync(_context, taskId, userId))
+            return Result<TaskDto>.Fail("You have read-only access to this project.");
+
+        if (task.ProjectId == targetProjectId)
+            return Result<TaskDto>.Ok(await LoadDtoAsync(task.Id)); // already there
+
+        // The target must be a project the user can write to.
+        if (!await ProjectAccess.CanAccessAsync(_context, targetProjectId, userId))
+            return Result<TaskDto>.Fail("Target project not found.");
+        if (!await ProjectAccess.CanWriteAsync(_context, targetProjectId, userId))
+            return Result<TaskDto>.Fail("You have read-only access to the target project.");
+
+        // Move the task itself; it detaches from any parent (which stays behind).
+        task.ProjectId = targetProjectId;
+        task.ParentTaskId = null;
+        task.UpdatedAt = DateTime.UtcNow;
+
+        // Keep subtasks with their parent by moving them too.
+        var children = await _context.ProjectTasks.Where(t => t.ParentTaskId == taskId).ToListAsync();
+        foreach (var child in children)
+        {
+            child.ProjectId = targetProjectId;
+            child.UpdatedAt = DateTime.UtcNow;
+        }
+
+        await _context.SaveChangesAsync();
+
+        _logger.LogInformation("Task moved. TaskId: {TaskId}, TargetProjectId: {TargetProjectId}, Subtasks: {Count}",
+            taskId, targetProjectId, children.Count);
+        return Result<TaskDto>.Ok(await LoadDtoAsync(task.Id));
+    }
+
+    /// <inheritdoc />
     public async Task<Result> DeleteTaskAsync(Guid userId, Guid taskId)
     {
         var task = await LoadAccessibleAsync(taskId, userId);

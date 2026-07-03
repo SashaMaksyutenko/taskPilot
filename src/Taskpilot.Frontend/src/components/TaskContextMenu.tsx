@@ -18,12 +18,16 @@ export default function TaskContextMenu({
   onEdit,
   onDuplicate,
   onChangePriority,
+  moveTargets,
+  onMove,
   onDelete,
 }: {
   children: ReactNode
   onEdit: () => void
   onDuplicate: () => void
   onChangePriority: (priority: string) => void
+  moveTargets: { id: string; name: string }[]
+  onMove: (projectId: string) => void
   onDelete: () => void
 }) {
   const { t } = useTranslation()
@@ -57,6 +61,25 @@ export default function TaskContextMenu({
               </ContextMenu.SubContent>
             </ContextMenu.Portal>
           </ContextMenu.Sub>
+
+          {/* Move to another project */}
+          {moveTargets.length > 0 && (
+            <ContextMenu.Sub>
+              <ContextMenu.SubTrigger className={`${itemClass} flex items-center justify-between gap-4`}>
+                {t('board.moveToProject')}
+                <span className="text-slate-400">▸</span>
+              </ContextMenu.SubTrigger>
+              <ContextMenu.Portal>
+                <ContextMenu.SubContent className={contentClass}>
+                  {moveTargets.map((p) => (
+                    <ContextMenu.Item key={p.id} className={itemClass} onSelect={() => onMove(p.id)}>
+                      {p.name}
+                    </ContextMenu.Item>
+                  ))}
+                </ContextMenu.SubContent>
+              </ContextMenu.Portal>
+            </ContextMenu.Sub>
+          )}
 
           <ContextMenu.Separator className={separatorClass} />
 

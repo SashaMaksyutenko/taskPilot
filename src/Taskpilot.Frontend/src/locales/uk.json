@@ -251,6 +251,7 @@
     "filterByTag": "Фільтр:",
     "clearFilter": "Скинути",
     "duplicate": "Дублювати",
+    "moveToProject": "Перемістити в проєкт",
     "exportCsv": "Експорт CSV",
     "exportXlsx": "Експорт Excel",
     "exportPdf": "Експорт PDF",

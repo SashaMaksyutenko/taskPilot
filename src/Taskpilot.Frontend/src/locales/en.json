@@ -239,6 +239,7 @@
     "progress": "{{done}}/{{total}} done",
     "edit": "Edit",
     "editTitle": "Edit project",
+    "duplicate": "Duplicate",
     "save": "Save",
     "cancel": "Cancel",
     "archive": "Archive",

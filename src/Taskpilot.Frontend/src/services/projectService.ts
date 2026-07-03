@@ -24,6 +24,11 @@ export const projectService = {
     return api.put<Project>(`/api/projects/${id}`, data).then((r) => r.data)
   },
 
+  /** Creates a copy of a project (cloning its tasks). */
+  duplicate(id: string): Promise<Project> {
+    return api.post<Project>(`/api/projects/${id}/duplicate`).then((r) => r.data)
+  },
+
   archive(id: string): Promise<void> {
     return api.post(`/api/projects/${id}/archive`).then(() => undefined)
   },

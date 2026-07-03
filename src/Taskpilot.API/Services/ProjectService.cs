@@ -119,6 +119,64 @@ public class ProjectService : IProjectService
     }
 
     /// <inheritdoc />
+    public async Task<Result<ProjectDto>> DuplicateProjectAsync(Guid ownerId, Guid projectId)
+    {
+        var source = await GetOwnedAsync(projectId, ownerId);
+        if (source is null)
+            return Result<ProjectDto>.Fail("Project not found.");
+
+        var copy = new Project
+        {
+            Id = Guid.NewGuid(),
+            Name = $"{source.Name} (copy)",
+            Description = source.Description,
+            Color = source.Color,
+            OwnerId = ownerId,
+            CreatedAt = DateTime.UtcNow,
+        };
+        _context.Projects.Add(copy);
+
+        // Clone the tasks, remapping ids so subtask relationships survive the copy.
+        var sourceTasks = await _context.ProjectTasks
+            .Where(t => t.ProjectId == projectId)
+            .AsNoTracking()
+            .ToListAsync();
+
+        var idMap = sourceTasks.ToDictionary(t => t.Id, _ => Guid.NewGuid());
+        foreach (var t in sourceTasks)
+        {
+            _context.ProjectTasks.Add(new ProjectTask
+            {
+                Id = idMap[t.Id],
+                ProjectId = copy.Id,
+                Title = t.Title,
+                Description = t.Description,
+                Status = ProjectTaskStatus.Backlog, // a fresh copy starts clean
+                Priority = t.Priority,
+                AssigneeId = t.AssigneeId,
+                CreatorId = ownerId,
+                ParentTaskId = t.ParentTaskId is { } pid && idMap.TryGetValue(pid, out var newPid) ? newPid : null,
+                Deadline = t.Deadline,
+                Tags = new List<string>(t.Tags ?? new List<string>()),
+                CreatedAt = DateTime.UtcNow,
+            });
+        }
+
+        await _context.SaveChangesAsync();
+
+        await _webhooks.DispatchAsync(WebhookEvents.ProjectCreated, new
+        {
+            projectId = copy.Id,
+            name = copy.Name,
+            ownerId,
+        });
+
+        _logger.LogInformation("Project duplicated. SourceProjectId: {SourceProjectId}, NewProjectId: {NewProjectId}, Tasks: {Count}",
+            projectId, copy.Id, sourceTasks.Count);
+        return Result<ProjectDto>.Ok(await LoadDtoAsync(copy.Id));
+    }
+
+    /// <inheritdoc />
     public async Task<Result> SetArchivedAsync(Guid ownerId, Guid projectId, bool archived)
     {
         var project = await GetOwnedAsync(projectId, ownerId);

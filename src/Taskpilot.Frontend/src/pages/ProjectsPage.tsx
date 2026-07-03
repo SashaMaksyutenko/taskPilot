@@ -59,6 +59,11 @@ export default function ProjectsPage() {
     URL.revokeObjectURL(url)
   }
 
+  const duplicate = async (project: Project) => {
+    await projectService.duplicate(project.id).catch(() => {})
+    load()
+  }
+
   const archive = async (project: Project) => {
     await projectService.archive(project.id).catch(() => {})
     load()
@@ -130,6 +135,7 @@ export default function ProjectsPage() {
                 key={p.id}
                 archived={p.isArchived}
                 onEdit={() => openEdit(p)}
+                onDuplicate={() => duplicate(p)}
                 onExport={() => exportTasks(p)}
                 onArchive={() => archive(p)}
                 onRestore={() => restore(p)}

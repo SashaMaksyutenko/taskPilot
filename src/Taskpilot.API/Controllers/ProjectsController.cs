@@ -74,6 +74,19 @@ public class ProjectsController : BaseApiController
             : NotFound(new { error = result.Error });
     }
 
+    /// <summary>Creates a copy of a project (cloning its tasks).</summary>
+    [HttpPost("{projectId:guid}/duplicate")]
+    public async Task<IActionResult> Duplicate(Guid projectId)
+    {
+        var userId = CurrentUserId();
+        if (userId is null) return Unauthorized();
+
+        var result = await _projects.DuplicateProjectAsync(userId.Value, projectId);
+        return result.Succeeded
+            ? StatusCode(StatusCodes.Status201Created, result.Value)
+            : BadRequest(new { error = result.Error });
+    }
+
     /// <summary>Archives a project.</summary>
     [HttpPost("{projectId:guid}/archive")]
     public Task<IActionResult> Archive(Guid projectId) => SetArchived(projectId, archived: true);

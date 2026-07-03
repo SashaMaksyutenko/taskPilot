@@ -12,6 +12,7 @@ export default function ProjectContextMenu({
   children,
   archived,
   onEdit,
+  onDuplicate,
   onExport,
   onArchive,
   onRestore,
@@ -19,6 +20,7 @@ export default function ProjectContextMenu({
   children: ReactNode
   archived: boolean
   onEdit: () => void
+  onDuplicate: () => void
   onExport: () => void
   onArchive: () => void
   onRestore: () => void
@@ -32,6 +34,9 @@ export default function ProjectContextMenu({
         <ContextMenu.Content className={contentClass}>
           <ContextMenu.Item className={itemClass} onSelect={onEdit}>
             {t('projects.edit')}
+          </ContextMenu.Item>
+          <ContextMenu.Item className={itemClass} onSelect={onDuplicate}>
+            {t('projects.duplicate')}
           </ContextMenu.Item>
           <ContextMenu.Item className={itemClass} onSelect={onExport}>
             {t('board.exportCsv')}

@@ -342,6 +342,8 @@
     "delete": "Видалити",
     "edited": "змінено",
     "editHint": "Enter — зберегти · Esc — скасувати",
+    "typing": "{{name}} друкує…",
+    "typingMany": "кілька людей друкують…",
     "type": {
       "Group": "Група",
       "Direct": "Особистий"

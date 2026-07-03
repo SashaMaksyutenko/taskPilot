@@ -71,6 +71,31 @@ public class ChatHub : Hub
     public Task LeaveConversation(Guid conversationId) =>
         Groups.RemoveFromGroupAsync(Context.ConnectionId, GroupName(conversationId));
 
+    /// <summary>
+    /// Notifies the other members of a conversation that the current user is typing.
+    /// Broadcast only; nothing is persisted. Clients map the user id to a name.
+    /// </summary>
+    public Task StartTyping(Guid conversationId)
+    {
+        var userId = GetUserId();
+        if (userId is null)
+            return Task.CompletedTask;
+
+        return Clients.OthersInGroup(GroupName(conversationId))
+            .SendAsync("UserTyping", new { conversationId, userId });
+    }
+
+    /// <summary>Notifies the other members that the current user stopped typing.</summary>
+    public Task StopTyping(Guid conversationId)
+    {
+        var userId = GetUserId();
+        if (userId is null)
+            return Task.CompletedTask;
+
+        return Clients.OthersInGroup(GroupName(conversationId))
+            .SendAsync("UserStoppedTyping", new { conversationId, userId });
+    }
+
     /// <summary>SignalR group name for a conversation.</summary>
     public static string GroupName(Guid conversationId) => $"conversation-{conversationId}";
 

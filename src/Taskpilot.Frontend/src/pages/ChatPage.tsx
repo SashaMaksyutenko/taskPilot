@@ -47,6 +47,8 @@ export default function ChatPage() {
   // Message currently being edited inline, and its draft text.
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editText, setEditText] = useState('')
+  // Ids of other participants currently typing in the open conversation.
+  const [typingUserIds, setTypingUserIds] = useState<string[]>([])
 
   const connectionRef = useRef<HubConnection | null>(null)
   // Ref mirror of selectedId so the SignalR callback always sees the latest value.
@@ -56,6 +58,11 @@ export default function ChatPage() {
   currentUserRef.current = currentUser
   const bottomRef = useRef<HTMLDivElement | null>(null)
   const fileInputRef = useRef<HTMLInputElement | null>(null)
+  // Typing indicator bookkeeping: per-user auto-expiry timers, last StartTyping
+  // send time (throttle), and the debounced StopTyping timer.
+  const typingTimersRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({})
+  const lastTypingSentRef = useRef(0)
+  const stopTypingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // Make sure we know who the current user is (to label direct chats).
   useEffect(() => {
@@ -86,6 +93,26 @@ export default function ChatPage() {
     connection.on('MessageEdited', (msg: Message) => {
       setMessages((prev) => prev.map((m) => (m.id === msg.id ? msg : m)))
     })
+    connection.on('UserTyping', (p: { conversationId: string; userId: string }) => {
+      if (p.conversationId !== selectedIdRef.current || p.userId === currentUserRef.current?.id) return
+      setTypingUserIds((prev) => (prev.includes(p.userId) ? prev : [...prev, p.userId]))
+      const timers = typingTimersRef.current
+      if (timers[p.userId]) clearTimeout(timers[p.userId])
+      // Drop the indicator if no fresh "typing" arrives shortly.
+      timers[p.userId] = setTimeout(() => {
+        setTypingUserIds((prev) => prev.filter((id) => id !== p.userId))
+        delete timers[p.userId]
+      }, 4000)
+    })
+    connection.on('UserStoppedTyping', (p: { conversationId: string; userId: string }) => {
+      if (p.conversationId !== selectedIdRef.current) return
+      setTypingUserIds((prev) => prev.filter((id) => id !== p.userId))
+      const timers = typingTimersRef.current
+      if (timers[p.userId]) {
+        clearTimeout(timers[p.userId])
+        delete timers[p.userId]
+      }
+    })
     connection.start().catch(() => {})
 
     return () => {
@@ -105,6 +132,7 @@ export default function ChatPage() {
     }
     selectedIdRef.current = id
     setSelectedId(id)
+    setTypingUserIds([]) // typing state is per-conversation
     setMessages(await chatService.getMessages(id))
     if (connection) await connection.invoke('JoinConversation', id).catch(() => {})
     // Opening a conversation clears its unread badge.
@@ -112,11 +140,40 @@ export default function ChatPage() {
     setConversations((prev) => prev.map((c) => (c.id === id ? { ...c, unreadCount: 0 } : c)))
   }
 
+  // Tell the other members we are typing, throttled, with a debounced "stopped".
+  const notifyTyping = () => {
+    const connection = connectionRef.current
+    const id = selectedIdRef.current
+    if (!connection || !id) return
+    const now = Date.now()
+    if (now - lastTypingSentRef.current > 2000) {
+      lastTypingSentRef.current = now
+      connection.invoke('StartTyping', id).catch(() => {})
+    }
+    if (stopTypingTimerRef.current) clearTimeout(stopTypingTimerRef.current)
+    stopTypingTimerRef.current = setTimeout(() => {
+      connection.invoke('StopTyping', id).catch(() => {})
+      lastTypingSentRef.current = 0
+    }, 2500)
+  }
+
+  const stopTyping = () => {
+    const connection = connectionRef.current
+    const id = selectedIdRef.current
+    if (stopTypingTimerRef.current) {
+      clearTimeout(stopTypingTimerRef.current)
+      stopTypingTimerRef.current = null
+    }
+    lastTypingSentRef.current = 0
+    if (connection && id) connection.invoke('StopTyping', id).catch(() => {})
+  }
+
   const send = async () => {
     const content = text.trim()
     if (!selectedId || !content) return
     setText('')
     setSendError('')
+    stopTyping()
     // The message is echoed back to us via the hub, so we do not append it here.
     try {
       await chatService.sendMessage(selectedId, content)
@@ -215,6 +272,15 @@ export default function ChatPage() {
   const mentionCandidates = (conversations.find((c) => c.id === selectedId)?.participants ?? [])
     .filter((p) => p.userId !== currentUser?.id)
     .map((p) => ({ id: p.userId, name: p.name, avatarUrl: p.avatarUrl }))
+
+  // "X is typing…" label for the open conversation.
+  const typingLabel = (): string | null => {
+    if (typingUserIds.length === 0) return null
+    if (typingUserIds.length > 1) return t('chat.typingMany')
+    const participants = conversations.find((c) => c.id === selectedId)?.participants ?? []
+    const name = participants.find((p) => p.userId === typingUserIds[0])?.name ?? '…'
+    return t('chat.typing', { name })
+  }
 
   return (
     <div className="flex h-screen flex-col bg-slate-50 text-[#1E2A44] dark:bg-slate-900 dark:text-slate-100">
@@ -408,6 +474,12 @@ export default function ChatPage() {
                 <div ref={bottomRef} />
               </div>
 
+              {typingLabel() && (
+                <div className="px-6 pb-1 text-xs italic text-slate-400 dark:text-slate-500">
+                  {typingLabel()}
+                </div>
+              )}
+
               {sendError && (
                 <div className="border-t border-red-200 bg-red-50 px-4 py-2 text-sm font-medium text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-300">
                   {sendError}
@@ -435,7 +507,10 @@ export default function ChatPage() {
                 </button>
                 <MentionField
                   value={text}
-                  onChange={setText}
+                  onChange={(v) => {
+                    setText(v)
+                    notifyTyping()
+                  }}
                   candidates={mentionCandidates}
                   multiline={false}
                   onKeyDown={(e) => e.key === 'Enter' && send()}

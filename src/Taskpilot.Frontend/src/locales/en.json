@@ -342,6 +342,8 @@
     "delete": "Delete",
     "edited": "edited",
     "editHint": "Enter to save · Esc to cancel",
+    "typing": "{{name}} is typing…",
+    "typingMany": "several people are typing…",
     "type": {
       "Group": "Group",
       "Direct": "Direct"

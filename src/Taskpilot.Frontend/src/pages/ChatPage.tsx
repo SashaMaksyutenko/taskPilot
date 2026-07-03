@@ -49,6 +49,8 @@ export default function ChatPage() {
   const [editText, setEditText] = useState('')
   // Ids of other participants currently typing in the open conversation.
   const [typingUserIds, setTypingUserIds] = useState<string[]>([])
+  // Free-text filter over the open conversation's messages.
+  const [messageSearch, setMessageSearch] = useState('')
 
   const connectionRef = useRef<HubConnection | null>(null)
   // Ref mirror of selectedId so the SignalR callback always sees the latest value.
@@ -133,6 +135,7 @@ export default function ChatPage() {
     selectedIdRef.current = id
     setSelectedId(id)
     setTypingUserIds([]) // typing state is per-conversation
+    setMessageSearch('') // clear the search when switching conversations
     setMessages(await chatService.getMessages(id))
     if (connection) await connection.invoke('JoinConversation', id).catch(() => {})
     // Opening a conversation clears its unread badge.
@@ -278,6 +281,12 @@ export default function ChatPage() {
     .filter((p) => p.userId !== currentUser?.id)
     .map((p) => ({ id: p.userId, name: p.name, avatarUrl: p.avatarUrl }))
 
+  // Messages shown in the thread: filtered by the search box when it's non-empty.
+  const searchQuery = messageSearch.trim().toLowerCase()
+  const visibleMessages = searchQuery
+    ? messages.filter((m) => !m.isDeleted && m.content.toLowerCase().includes(searchQuery))
+    : messages
+
   // "X is typing…" label for the open conversation.
   const typingLabel = (): string | null => {
     if (typingUserIds.length === 0) return null
@@ -380,8 +389,21 @@ export default function ChatPage() {
                 </div>
               )}
 
+              {/* Search within the conversation */}
+              <div className="border-b border-slate-200 px-4 py-2 dark:border-slate-700">
+                <input
+                  value={messageSearch}
+                  onChange={(e) => setMessageSearch(e.target.value)}
+                  placeholder={t('chat.searchMessages')}
+                  className="w-full rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm outline-none focus:border-[#1E2A44] dark:border-slate-600 dark:bg-slate-900"
+                />
+              </div>
+
               <div className="flex-1 space-y-3 overflow-y-auto p-6">
-                {messages.map((m) => {
+                {searchQuery && visibleMessages.length === 0 && (
+                  <p className="py-6 text-center text-sm text-slate-400">{t('chat.noMatches')}</p>
+                )}
+                {visibleMessages.map((m) => {
                   const mine = m.senderId === currentUser?.id
                   return (
                     <div key={m.id} className={`flex items-end gap-2 ${mine ? 'justify-end' : 'justify-start'}`}>

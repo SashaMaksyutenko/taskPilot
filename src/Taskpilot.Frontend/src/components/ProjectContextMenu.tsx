@@ -11,12 +11,14 @@ import { menuContentClass as contentClass, menuItemClass as itemClass } from './
 export default function ProjectContextMenu({
   children,
   archived,
+  onEdit,
   onExport,
   onArchive,
   onRestore,
 }: {
   children: ReactNode
   archived: boolean
+  onEdit: () => void
   onExport: () => void
   onArchive: () => void
   onRestore: () => void
@@ -28,6 +30,9 @@ export default function ProjectContextMenu({
       <ContextMenu.Trigger asChild>{children}</ContextMenu.Trigger>
       <ContextMenu.Portal>
         <ContextMenu.Content className={contentClass}>
+          <ContextMenu.Item className={itemClass} onSelect={onEdit}>
+            {t('projects.edit')}
+          </ContextMenu.Item>
           <ContextMenu.Item className={itemClass} onSelect={onExport}>
             {t('board.exportCsv')}
           </ContextMenu.Item>

@@ -17,6 +17,13 @@ export const projectService = {
     return api.post<Project>('/api/projects', data).then((r) => r.data)
   },
 
+  updateProject(
+    id: string,
+    data: { name: string; description?: string | null; color?: string | null },
+  ): Promise<Project> {
+    return api.put<Project>(`/api/projects/${id}`, data).then((r) => r.data)
+  },
+
   archive(id: string): Promise<void> {
     return api.post(`/api/projects/${id}/archive`).then(() => undefined)
   },

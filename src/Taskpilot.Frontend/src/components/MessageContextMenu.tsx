@@ -10,16 +10,20 @@ import { menuContentClass as contentClass, menuItemClass as itemClass, menuSepar
 export default function MessageContextMenu({
   children,
   content,
+  isPinned,
   canDelete,
   canEdit,
   onEdit,
+  onTogglePin,
   onDelete,
 }: {
   children: ReactNode
   content: string
+  isPinned: boolean
   canDelete: boolean
   canEdit?: boolean
   onEdit?: () => void
+  onTogglePin: () => void
   onDelete: () => void
 }) {
   const { t } = useTranslation()
@@ -35,6 +39,9 @@ export default function MessageContextMenu({
         <ContextMenu.Content className={contentClass}>
           <ContextMenu.Item className={itemClass} onSelect={copy}>
             {t('chat.copy')}
+          </ContextMenu.Item>
+          <ContextMenu.Item className={itemClass} onSelect={onTogglePin}>
+            {isPinned ? t('chat.unpin') : t('chat.pin')}
           </ContextMenu.Item>
           {canEdit && onEdit && (
             <ContextMenu.Item className={itemClass} onSelect={onEdit}>

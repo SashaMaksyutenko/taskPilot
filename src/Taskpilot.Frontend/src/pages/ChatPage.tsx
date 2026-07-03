@@ -193,6 +193,11 @@ export default function ChatPage() {
     if (upd) setMessages((prev) => prev.map((m) => (m.id === messageId ? { ...m, reactions: upd.reactions } : m)))
   }
 
+  const togglePin = async (messageId: string) => {
+    const updated = await chatService.togglePin(messageId).catch(() => null)
+    if (updated) setMessages((prev) => prev.map((m) => (m.id === messageId ? updated : m)))
+  }
+
   const startEdit = (m: Message) => {
     setEditingId(m.id)
     setEditText(m.content)
@@ -352,6 +357,29 @@ export default function ChatPage() {
         <main className="flex min-h-0 flex-1 flex-col">
           {selectedId ? (
             <>
+              {/* Pinned messages strip */}
+              {messages.some((m) => m.isPinned && !m.isDeleted) && (
+                <div className="border-b border-slate-200 bg-amber-50 px-4 py-2 dark:border-slate-700 dark:bg-amber-950/20">
+                  {messages
+                    .filter((m) => m.isPinned && !m.isDeleted)
+                    .map((m) => (
+                      <div key={m.id} className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-300">
+                        <span className="flex-none">📌</span>
+                        <span className="min-w-0 flex-1 truncate">
+                          <span className="font-semibold">{m.senderName}:</span> {m.content}
+                        </span>
+                        <button
+                          onClick={() => togglePin(m.id)}
+                          className="flex-none text-slate-400 hover:text-red-600"
+                          title={t('chat.unpin')}
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ))}
+                </div>
+              )}
+
               <div className="flex-1 space-y-3 overflow-y-auto p-6">
                 {messages.map((m) => {
                   const mine = m.senderId === currentUser?.id
@@ -360,9 +388,11 @@ export default function ChatPage() {
                       {!mine && <Avatar name={m.senderName} src={m.senderAvatarUrl} size={28} />}
                       <MessageContextMenu
                         content={m.content}
+                        isPinned={m.isPinned}
                         canDelete={mine}
                         canEdit={mine && !m.isDeleted}
                         onEdit={() => startEdit(m)}
+                        onTogglePin={() => togglePin(m.id)}
                         onDelete={() => deleteMessage(m.id)}
                       >
                         <div
@@ -372,6 +402,11 @@ export default function ChatPage() {
                               : 'bg-white text-[#1E2A44] shadow dark:bg-slate-800 dark:text-slate-100'
                           }`}
                         >
+                          {m.isPinned && (
+                            <div className={`mb-0.5 flex items-center gap-1 text-[11px] font-semibold ${mine ? 'text-white/70' : 'text-[#F97316]'}`}>
+                              📌 {t('chat.pinned')}
+                            </div>
+                          )}
                           {!mine && (
                             <div className="mb-0.5 text-xs font-semibold text-slate-500 dark:text-slate-400">
                               {m.senderName}

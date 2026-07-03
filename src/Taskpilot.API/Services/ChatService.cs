@@ -321,6 +321,29 @@ public class ChatService : IChatService
     }
 
     /// <inheritdoc />
+    public async Task<Result<MessageDto>> TogglePinAsync(Guid userId, Guid messageId)
+    {
+        var message = await _context.Messages
+            .Include(m => m.Sender)
+            .Include(m => m.FileAttachment)
+            .Include(m => m.Reactions)
+            .FirstOrDefaultAsync(m => m.Id == messageId);
+        if (message is null)
+            return Result<MessageDto>.Fail("Message not found.");
+
+        // Any participant of the conversation may pin/unpin a message.
+        if (!await IsParticipantAsync(message.ConversationId, userId))
+            return Result<MessageDto>.Fail("You are not a participant of this conversation.");
+
+        message.IsPinned = !message.IsPinned;
+        await _context.SaveChangesAsync();
+
+        _logger.LogInformation("Message pin toggled. MessageId: {MessageId}, IsPinned: {IsPinned}, UserId: {UserId}",
+            messageId, message.IsPinned, userId);
+        return Result<MessageDto>.Ok(MapMessage(message, userId));
+    }
+
+    /// <inheritdoc />
     public async Task<Result> DeleteMessageAsync(Guid messageId, Guid userId)
     {
         var message = await _context.Messages.FirstOrDefaultAsync(m => m.Id == messageId);
@@ -434,6 +457,7 @@ public class ChatService : IChatService
         CreatedAt = m.CreatedAt,
         EditedAt = m.EditedAt,
         IsDeleted = m.IsDeleted,
+        IsPinned = m.IsPinned,
         FileId = m.FileAttachmentId,
         FileName = m.FileAttachment?.FileName,
         FileContentType = m.FileAttachment?.ContentType,

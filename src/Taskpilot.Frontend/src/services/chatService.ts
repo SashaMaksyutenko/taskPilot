@@ -46,6 +46,11 @@ export const chatService = {
     return api.delete(`/api/chat/messages/${messageId}`).then(() => undefined)
   },
 
+  /** POST /api/chat/messages/{id}/pin — pin or unpin a message. */
+  togglePin(messageId: string): Promise<Message> {
+    return api.post<Message>(`/api/chat/messages/${messageId}/pin`).then((r) => r.data)
+  },
+
   /** POST /api/chat/messages/{id}/reactions — toggle an emoji reaction. */
   react(messageId: string, emoji: string): Promise<ReactionUpdate> {
     return api

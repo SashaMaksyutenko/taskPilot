@@ -25,6 +25,7 @@ export interface Message {
   createdAt: string
   editedAt: string | null
   isDeleted: boolean
+  isPinned: boolean
   fileId: string | null
   fileName: string | null
   fileContentType: string | null

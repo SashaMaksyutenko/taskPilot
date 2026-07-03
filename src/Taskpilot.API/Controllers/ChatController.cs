@@ -153,6 +153,25 @@ public class ChatController : BaseApiController
         return Ok(result.Value);
     }
 
+    /// <summary>Pins or unpins a message (any participant).</summary>
+    [HttpPost("messages/{messageId:guid}/pin")]
+    public async Task<IActionResult> TogglePin(Guid messageId)
+    {
+        var userId = CurrentUserId();
+        if (userId is null) return Unauthorized();
+
+        var result = await _chatService.TogglePinAsync(userId.Value, messageId);
+        if (!result.Succeeded)
+            return BadRequest(new { error = result.Error });
+
+        // Reuse the "MessageEdited" channel: clients replace the message by id,
+        // which also picks up the new pinned state.
+        await _chatHub.Clients
+            .Group(ChatHub.GroupName(result.Value!.ConversationId))
+            .SendAsync("MessageEdited", result.Value);
+        return Ok(result.Value);
+    }
+
     /// <summary>Deletes a message (sender only).</summary>
     [HttpDelete("messages/{messageId:guid}")]
     public async Task<IActionResult> DeleteMessage(Guid messageId)

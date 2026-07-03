@@ -35,6 +35,9 @@ public interface IChatService
     /// <summary>Edits a message's text. Only its sender may edit it.</summary>
     Task<Result<MessageDto>> EditMessageAsync(Guid messageId, Guid userId, string content);
 
+    /// <summary>Toggles the pinned state of a message; any participant may pin/unpin.</summary>
+    Task<Result<MessageDto>> TogglePinAsync(Guid userId, Guid messageId);
+
     /// <summary>Deletes a message. Only its sender may delete it.</summary>
     Task<Result> DeleteMessageAsync(Guid messageId, Guid userId);
 

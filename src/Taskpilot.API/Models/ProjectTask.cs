@@ -64,4 +64,7 @@ public class ProjectTask
     /// then. Prevents the background overdue check from notifying repeatedly.
     /// </summary>
     public DateTime? OverdueNotifiedAt { get; set; }
+
+    /// <summary>Free-form labels attached to the task (stored as a Postgres text[]).</summary>
+    public List<string> Tags { get; set; } = new();
 }

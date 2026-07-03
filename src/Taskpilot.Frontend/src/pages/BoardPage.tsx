@@ -219,6 +219,18 @@ export default function BoardPage() {
                             <span className="text-[11px] text-slate-500 dark:text-slate-400">@{task.assigneeName}</span>
                           )}
                         </div>
+                        {task.tags.length > 0 && (
+                          <div className="mt-2 flex flex-wrap gap-1">
+                            {task.tags.map((tag) => (
+                              <span
+                                key={tag}
+                                className="rounded-full bg-[#1E2A44]/10 px-1.5 py-0.5 text-[10px] font-medium text-[#1E2A44] dark:bg-slate-700 dark:text-slate-200"
+                              >
+                                {tag}
+                              </span>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     </TaskContextMenu>
                   ))}

@@ -18,4 +18,7 @@ public class TaskDto
     public DateTime CreatedAt { get; set; }
     public DateTime? UpdatedAt { get; set; }
     public DateTime? CompletedAt { get; set; }
+
+    /// <summary>Free-form labels attached to the task.</summary>
+    public List<string> Tags { get; set; } = new();
 }

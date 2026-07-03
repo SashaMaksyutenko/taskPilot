@@ -11,7 +11,7 @@ export const taskService = {
 
   createTask(
     projectId: string,
-    data: { title: string; description?: string; priority?: string; deadline?: string },
+    data: { title: string; description?: string; priority?: string; deadline?: string; tags?: string[] },
   ): Promise<Task> {
     return api.post<Task>(`/api/projects/${projectId}/tasks`, data).then((r) => r.data)
   },
@@ -24,6 +24,7 @@ export const taskService = {
       priority?: string
       assigneeId?: string | null
       deadline?: string | null
+      tags?: string[]
     },
   ): Promise<Task> {
     return api.put<Task>(`/api/tasks/${taskId}`, data).then((r) => r.data)

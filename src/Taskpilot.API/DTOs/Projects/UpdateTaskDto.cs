@@ -11,4 +11,7 @@ public class UpdateTaskDto
 
     public Guid? AssigneeId { get; set; }
     public DateTime? Deadline { get; set; }
+
+    /// <summary>Free-form labels; null leaves the existing tags unchanged.</summary>
+    public List<string>? Tags { get; set; }
 }

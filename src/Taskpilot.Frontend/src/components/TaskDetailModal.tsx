@@ -37,6 +37,8 @@ export default function TaskDetailModal({
   const [description, setDescription] = useState(task.description ?? '')
   const [priority, setPriority] = useState(task.priority)
   const [deadline, setDeadline] = useState(toDateInput(task.deadline))
+  const [tags, setTags] = useState<string[]>(task.tags ?? [])
+  const [tagInput, setTagInput] = useState('')
 
   // Assignee: track id + display name; null when unassigned.
   const [assigneeId, setAssigneeId] = useState<string | null>(task.assigneeId)
@@ -135,6 +137,18 @@ export default function TaskDetailModal({
     setAssigneeName(null)
   }
 
+  const addTag = () => {
+    const tag = tagInput.trim()
+    if (!tag) return
+    // Case-insensitive dedupe; cap the list at 15.
+    if (!tags.some((x) => x.toLowerCase() === tag.toLowerCase()) && tags.length < 15) {
+      setTags([...tags, tag.slice(0, 30)])
+    }
+    setTagInput('')
+  }
+
+  const removeTag = (tag: string) => setTags(tags.filter((x) => x !== tag))
+
   const save = async () => {
     const trimmed = title.trim()
     if (!trimmed) return
@@ -146,6 +160,7 @@ export default function TaskDetailModal({
         priority,
         assigneeId,
         deadline: deadline ? new Date(deadline).toISOString() : null,
+        tags,
       })
       onSaved(updated)
       onClose()
@@ -215,6 +230,45 @@ export default function TaskDetailModal({
               className="w-full rounded-lg border border-slate-300 bg-white px-2 py-2 text-sm outline-none dark:border-slate-600 dark:bg-slate-900"
             />
           </div>
+        </div>
+
+        {/* Tags */}
+        <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">{t('taskModal.tags')}</label>
+        <div className="mb-4">
+          {tags.length > 0 && (
+            <div className="mb-2 flex flex-wrap gap-1.5">
+              {tags.map((tag) => (
+                <span
+                  key={tag}
+                  className="flex items-center gap-1 rounded-full bg-[#1E2A44]/10 px-2 py-0.5 text-xs font-medium text-[#1E2A44] dark:bg-slate-700 dark:text-slate-200"
+                >
+                  {tag}
+                  <button
+                    onClick={() => removeTag(tag)}
+                    className="text-slate-400 hover:text-red-600"
+                    title={t('taskModal.removeTag')}
+                  >
+                    ✕
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
+          <input
+            value={tagInput}
+            onChange={(e) => setTagInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ',') {
+                e.preventDefault()
+                addTag()
+              } else if (e.key === 'Backspace' && !tagInput && tags.length > 0) {
+                removeTag(tags[tags.length - 1])
+              }
+            }}
+            onBlur={addTag}
+            placeholder={t('taskModal.tagsPlaceholder')}
+            className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-[#1E2A44] dark:border-slate-600 dark:bg-slate-900"
+          />
         </div>
 
         {/* Assignee */}

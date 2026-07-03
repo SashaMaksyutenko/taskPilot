@@ -432,6 +432,11 @@ public class TaskpilotDbContext : DbContext
             entity.Property(t => t.Priority)
                   .HasConversion<string>().HasMaxLength(20).IsRequired();
 
+            // Tags are stored as a Postgres text[] and never null.
+            entity.Property(t => t.Tags)
+                  .HasColumnType("text[]")
+                  .HasDefaultValueSql("'{}'::text[]");
+
             // Common queries: a project's tasks by status.
             entity.HasIndex(t => new { t.ProjectId, t.Status });
 

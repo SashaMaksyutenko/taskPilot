@@ -84,6 +84,7 @@ public class TaskService : ITaskService
             CreatorId = userId,
             ParentTaskId = dto.ParentTaskId,
             Deadline = dto.Deadline,
+            Tags = NormalizeTags(dto.Tags),
             CreatedAt = DateTime.UtcNow,
         };
         _context.ProjectTasks.Add(task);
@@ -165,6 +166,8 @@ public class TaskService : ITaskService
         task.Priority = priority;
         task.AssigneeId = dto.AssigneeId;
         task.Deadline = dto.Deadline;
+        if (dto.Tags is not null)
+            task.Tags = NormalizeTags(dto.Tags);
         task.UpdatedAt = DateTime.UtcNow;
         await _context.SaveChangesAsync();
 
@@ -483,5 +486,31 @@ public class TaskService : ITaskService
         CreatedAt = t.CreatedAt,
         UpdatedAt = t.UpdatedAt,
         CompletedAt = t.CompletedAt,
+        Tags = t.Tags ?? new List<string>(),
     };
+
+    /// <summary>
+    /// Cleans up a raw tag list: trims, drops blanks, removes case-insensitive
+    /// duplicates (keeping the first spelling), caps each tag at 30 chars and the
+    /// whole list at 15 tags.
+    /// </summary>
+    private static List<string> NormalizeTags(IEnumerable<string>? tags)
+    {
+        if (tags is null)
+            return new List<string>();
+
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var result = new List<string>();
+        foreach (var raw in tags)
+        {
+            var tag = raw?.Trim();
+            if (string.IsNullOrEmpty(tag))
+                continue;
+            if (tag.Length > 30)
+                tag = tag[..30];
+            if (seen.Add(tag) && result.Count < 15)
+                result.Add(tag);
+        }
+        return result;
+    }
 }

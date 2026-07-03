@@ -17,4 +17,7 @@ public class CreateTaskDto
 
     /// <summary>Optional parent task id for subtasks.</summary>
     public Guid? ParentTaskId { get; set; }
+
+    /// <summary>Optional free-form labels.</summary>
+    public List<string>? Tags { get; set; }
 }

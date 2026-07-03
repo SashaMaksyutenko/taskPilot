@@ -31,6 +31,7 @@ export interface Task {
   createdAt: string
   updatedAt: string | null
   completedAt: string | null
+  tags: string[]
 }
 
 export type ProjectMemberRole = 'Editor' | 'Viewer'

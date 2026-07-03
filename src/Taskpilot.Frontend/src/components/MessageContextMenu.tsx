@@ -5,17 +5,21 @@ import { menuContentClass as contentClass, menuItemClass as itemClass, menuSepar
 
 /**
  * Right-click context menu for a chat message: copy its text and (for your own
- * messages) delete it.
+ * messages) edit or delete it.
  */
 export default function MessageContextMenu({
   children,
   content,
   canDelete,
+  canEdit,
+  onEdit,
   onDelete,
 }: {
   children: ReactNode
   content: string
   canDelete: boolean
+  canEdit?: boolean
+  onEdit?: () => void
   onDelete: () => void
 }) {
   const { t } = useTranslation()
@@ -32,6 +36,11 @@ export default function MessageContextMenu({
           <ContextMenu.Item className={itemClass} onSelect={copy}>
             {t('chat.copy')}
           </ContextMenu.Item>
+          {canEdit && onEdit && (
+            <ContextMenu.Item className={itemClass} onSelect={onEdit}>
+              {t('chat.edit')}
+            </ContextMenu.Item>
+          )}
           {canDelete && (
             <>
               <ContextMenu.Separator className={separatorClass} />

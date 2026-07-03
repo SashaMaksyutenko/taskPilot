@@ -27,4 +27,17 @@ export interface Message {
   fileId: string | null
   fileName: string | null
   fileContentType: string | null
+  reactions: Reaction[]
+}
+
+export interface Reaction {
+  emoji: string
+  count: number
+  mine: boolean
+}
+
+export interface ReactionUpdate {
+  messageId: string
+  conversationId: string
+  reactions: Reaction[]
 }

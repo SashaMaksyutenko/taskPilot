@@ -26,8 +26,14 @@ public interface IChatService
     /// <summary>Posts a new message to a conversation the user belongs to.</summary>
     Task<Result<MessageDto>> SendMessageAsync(Guid senderId, SendMessageDto dto);
 
+    /// <summary>Edits a message's text. Only its sender may edit it.</summary>
+    Task<Result<MessageDto>> EditMessageAsync(Guid messageId, Guid userId, string content);
+
     /// <summary>Deletes a message. Only its sender may delete it.</summary>
     Task<Result> DeleteMessageAsync(Guid messageId, Guid userId);
+
+    /// <summary>Toggles an emoji reaction on a message; returns the updated reactions.</summary>
+    Task<Result<ReactionUpdateDto>> ToggleReactionAsync(Guid userId, Guid messageId, string emoji);
 
     /// <summary>Checks whether a user is a participant of a conversation.</summary>
     Task<bool> IsParticipantAsync(Guid conversationId, Guid userId);

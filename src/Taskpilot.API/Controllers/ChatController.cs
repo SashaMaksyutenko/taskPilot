@@ -122,6 +122,24 @@ public class ChatController : BaseApiController
         return StatusCode(StatusCodes.Status201Created, result.Value);
     }
 
+    /// <summary>Edits a message's text (sender only).</summary>
+    [HttpPut("messages/{messageId:guid}")]
+    public async Task<IActionResult> EditMessage(Guid messageId, [FromBody] EditMessageDto dto)
+    {
+        var userId = CurrentUserId();
+        if (userId is null) return Unauthorized();
+
+        var result = await _chatService.EditMessageAsync(messageId, userId.Value, dto.Content);
+        if (!result.Succeeded)
+            return BadRequest(new { error = result.Error });
+
+        // Push the updated message to everyone viewing the conversation.
+        await _chatHub.Clients
+            .Group(ChatHub.GroupName(result.Value!.ConversationId))
+            .SendAsync("MessageEdited", result.Value);
+        return Ok(result.Value);
+    }
+
     /// <summary>Deletes a message (sender only).</summary>
     [HttpDelete("messages/{messageId:guid}")]
     public async Task<IActionResult> DeleteMessage(Guid messageId)
@@ -133,5 +151,23 @@ public class ChatController : BaseApiController
         return result.Succeeded
             ? Ok(new { message = "Message deleted." })
             : BadRequest(new { error = result.Error });
+    }
+
+    /// <summary>Toggles an emoji reaction on a message.</summary>
+    [HttpPost("messages/{messageId:guid}/reactions")]
+    public async Task<IActionResult> React(Guid messageId, [FromBody] ReactDto dto)
+    {
+        var userId = CurrentUserId();
+        if (userId is null) return Unauthorized();
+
+        var result = await _chatService.ToggleReactionAsync(userId.Value, messageId, dto.Emoji);
+        if (!result.Succeeded)
+            return BadRequest(new { error = result.Error });
+
+        // Push the updated reactions to everyone viewing the conversation.
+        await _chatHub.Clients
+            .Group(ChatHub.GroupName(result.Value!.ConversationId))
+            .SendAsync("ReceiveReaction", result.Value);
+        return Ok(result.Value);
     }
 }

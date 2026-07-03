@@ -150,10 +150,11 @@ public class ChatService : IChatService
             .OrderBy(m => m.CreatedAt)
             .Include(m => m.Sender)
             .Include(m => m.FileAttachment)
+            .Include(m => m.Reactions)
             .AsNoTracking()
             .ToListAsync();
 
-        return Result<List<MessageDto>>.Ok(messages.Select(MapMessage).ToList());
+        return Result<List<MessageDto>>.Ok(messages.Select(m => MapMessage(m, userId)).ToList());
     }
 
     /// <inheritdoc />
@@ -252,6 +253,37 @@ public class ChatService : IChatService
     }
 
     /// <inheritdoc />
+    public async Task<Result<MessageDto>> EditMessageAsync(Guid messageId, Guid userId, string content)
+    {
+        content = content?.Trim() ?? string.Empty;
+        if (string.IsNullOrEmpty(content))
+            return Result<MessageDto>.Fail("Message content cannot be empty.");
+        if (content.Length > 4000)
+            return Result<MessageDto>.Fail("Message must not exceed 4000 characters.");
+
+        var message = await _context.Messages
+            .Include(m => m.Sender)
+            .Include(m => m.FileAttachment)
+            .Include(m => m.Reactions)
+            .FirstOrDefaultAsync(m => m.Id == messageId);
+        if (message is null)
+            return Result<MessageDto>.Fail("Message not found.");
+
+        // Only the author of a message may edit it.
+        if (message.SenderId != userId)
+            return Result<MessageDto>.Fail("You can only edit your own messages.");
+        if (message.IsDeleted)
+            return Result<MessageDto>.Fail("Cannot edit a deleted message.");
+
+        message.Content = content;
+        message.EditedAt = DateTime.UtcNow;
+        await _context.SaveChangesAsync();
+
+        _logger.LogInformation("Message edited. MessageId: {MessageId}, UserId: {UserId}", messageId, userId);
+        return Result<MessageDto>.Ok(MapMessage(message, userId));
+    }
+
+    /// <inheritdoc />
     public async Task<Result> DeleteMessageAsync(Guid messageId, Guid userId)
     {
         var message = await _context.Messages.FirstOrDefaultAsync(m => m.Id == messageId);
@@ -267,6 +299,49 @@ public class ChatService : IChatService
 
         _logger.LogInformation("Message deleted. MessageId: {MessageId}, UserId: {UserId}", messageId, userId);
         return Result.Ok();
+    }
+
+    /// <inheritdoc />
+    public async Task<Result<ReactionUpdateDto>> ToggleReactionAsync(Guid userId, Guid messageId, string emoji)
+    {
+        emoji = emoji.Trim();
+        if (string.IsNullOrEmpty(emoji) || emoji.Length > 16)
+            return Result<ReactionUpdateDto>.Fail("Invalid emoji.");
+
+        var message = await _context.Messages.FirstOrDefaultAsync(m => m.Id == messageId);
+        if (message is null)
+            return Result<ReactionUpdateDto>.Fail("Message not found.");
+
+        if (!await IsParticipantAsync(message.ConversationId, userId))
+            return Result<ReactionUpdateDto>.Fail("You are not a participant of this conversation.");
+
+        var existing = await _context.MessageReactions
+            .FirstOrDefaultAsync(r => r.MessageId == messageId && r.UserId == userId && r.Emoji == emoji);
+        if (existing is null)
+            _context.MessageReactions.Add(new MessageReaction
+            {
+                Id = Guid.NewGuid(),
+                MessageId = messageId,
+                UserId = userId,
+                Emoji = emoji,
+                CreatedAt = DateTime.UtcNow,
+            });
+        else
+            _context.MessageReactions.Remove(existing);
+
+        await _context.SaveChangesAsync();
+
+        var reactions = await _context.MessageReactions
+            .Where(r => r.MessageId == messageId)
+            .AsNoTracking()
+            .ToListAsync();
+
+        return Result<ReactionUpdateDto>.Ok(new ReactionUpdateDto
+        {
+            MessageId = messageId,
+            ConversationId = message.ConversationId,
+            Reactions = MapReactions(reactions, userId),
+        });
     }
 
     /// <inheritdoc />
@@ -311,7 +386,7 @@ public class ChatService : IChatService
             .ToList(),
     };
 
-    private static MessageDto MapMessage(Message m) => new()
+    private static MessageDto MapMessage(Message m, Guid currentUserId) => new()
     {
         Id = m.Id,
         ConversationId = m.ConversationId,
@@ -325,5 +400,19 @@ public class ChatService : IChatService
         FileId = m.FileAttachmentId,
         FileName = m.FileAttachment?.FileName,
         FileContentType = m.FileAttachment?.ContentType,
+        Reactions = MapReactions(m.Reactions, currentUserId),
     };
+
+    /// <summary>Groups reactions by emoji and flags the current user's own.</summary>
+    private static List<ReactionDto> MapReactions(IEnumerable<MessageReaction> reactions, Guid currentUserId) =>
+        reactions
+            .GroupBy(r => r.Emoji)
+            .OrderBy(g => g.Min(r => r.CreatedAt))
+            .Select(g => new ReactionDto
+            {
+                Emoji = g.Key,
+                Count = g.Count(),
+                Mine = g.Any(r => r.UserId == currentUserId),
+            })
+            .ToList();
 }

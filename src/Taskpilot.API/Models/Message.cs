@@ -37,4 +37,7 @@ public class Message
 
     /// <summary>Soft-delete flag: true means the message was deleted but kept for history.</summary>
     public bool IsDeleted { get; set; }
+
+    /// <summary>Emoji reactions on this message.</summary>
+    public ICollection<MessageReaction> Reactions { get; set; } = new List<MessageReaction>();
 }

@@ -1,5 +1,5 @@
 import api from '../lib/api'
-import type { Conversation, Message } from '../types/chat'
+import type { Conversation, Message, ReactionUpdate } from '../types/chat'
 
 /**
  * Wrapper around the backend chat REST endpoints.
@@ -31,8 +31,20 @@ export const chatService = {
       .then((r) => r.data)
   },
 
+  /** PUT /api/chat/messages/{id} — edit own message text. */
+  editMessage(messageId: string, content: string): Promise<Message> {
+    return api.put<Message>(`/api/chat/messages/${messageId}`, { content }).then((r) => r.data)
+  },
+
   /** DELETE /api/chat/messages/{id} — delete own message. */
   deleteMessage(messageId: string): Promise<void> {
     return api.delete(`/api/chat/messages/${messageId}`).then(() => undefined)
+  },
+
+  /** POST /api/chat/messages/{id}/reactions — toggle an emoji reaction. */
+  react(messageId: string, emoji: string): Promise<ReactionUpdate> {
+    return api
+      .post<ReactionUpdate>(`/api/chat/messages/${messageId}/reactions`, { emoji })
+      .then((r) => r.data)
   },
 }

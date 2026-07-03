@@ -338,7 +338,10 @@
     "send": "Send",
     "selectConversation": "Select a conversation to start chatting",
     "copy": "Copy text",
+    "edit": "Edit",
     "delete": "Delete",
+    "edited": "edited",
+    "editHint": "Enter to save · Esc to cancel",
     "type": {
       "Group": "Group",
       "Direct": "Direct"

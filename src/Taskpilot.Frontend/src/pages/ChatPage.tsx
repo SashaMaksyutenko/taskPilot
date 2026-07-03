@@ -12,9 +12,18 @@ import { createChatConnection } from '../lib/chatHub'
 import { chatService } from '../services/chatService'
 import { fileService } from '../services/fileService'
 import { userService, type UserSearchResult } from '../services/userService'
-import type { Conversation, Message } from '../types/chat'
+import type { Conversation, Message, ReactionUpdate } from '../types/chat'
 import { fetchMe } from '../store/authSlice'
 import { useAppDispatch, useAppSelector } from '../store/hooks'
+
+// Curated set of emojis offered by the reaction picker (shown in a scrollable grid).
+const REACTION_EMOJIS = [
+  '👍', '👎', '❤️', '🧡', '💛', '💚', '💙', '💜',
+  '🔥', '🎉', '😂', '🤣', '😊', '😍', '🥰', '😎',
+  '😮', '😢', '😭', '😡', '🤔', '🙄', '😴', '🤯',
+  '🙏', '👏', '🙌', '🤝', '💪', '🫶', '👀', '🚀',
+  '💯', '✅', '❌', '⭐', '🎯', '💡', '☕', '🍕',
+]
 
 /**
  * Chat page: a list of conversations on the left and the selected conversation's
@@ -33,6 +42,11 @@ export default function ChatPage() {
   const [sendError, setSendError] = useState('')
   const [search, setSearch] = useState('')
   const [results, setResults] = useState<UserSearchResult[]>([])
+  // Message id whose emoji picker is currently open (only one at a time).
+  const [pickerFor, setPickerFor] = useState<string | null>(null)
+  // Message currently being edited inline, and its draft text.
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editText, setEditText] = useState('')
 
   const connectionRef = useRef<HubConnection | null>(null)
   // Ref mirror of selectedId so the SignalR callback always sees the latest value.
@@ -55,6 +69,12 @@ export default function ChatPage() {
       if (msg.conversationId === selectedIdRef.current) {
         setMessages((prev) => [...prev, msg])
       }
+    })
+    connection.on('ReceiveReaction', (upd: ReactionUpdate) => {
+      setMessages((prev) => prev.map((m) => (m.id === upd.messageId ? { ...m, reactions: upd.reactions } : m)))
+    })
+    connection.on('MessageEdited', (msg: Message) => {
+      setMessages((prev) => prev.map((m) => (m.id === msg.id ? msg : m)))
     })
     connection.start().catch(() => {})
 
@@ -96,6 +116,29 @@ export default function ChatPage() {
   const deleteMessage = async (id: string) => {
     await chatService.deleteMessage(id).catch(() => {})
     setMessages((prev) => prev.filter((m) => m.id !== id))
+  }
+
+  const toggleReaction = async (messageId: string, emoji: string) => {
+    const upd = await chatService.react(messageId, emoji).catch(() => null)
+    if (upd) setMessages((prev) => prev.map((m) => (m.id === messageId ? { ...m, reactions: upd.reactions } : m)))
+  }
+
+  const startEdit = (m: Message) => {
+    setEditingId(m.id)
+    setEditText(m.content)
+  }
+
+  const cancelEdit = () => {
+    setEditingId(null)
+    setEditText('')
+  }
+
+  const saveEdit = async (messageId: string) => {
+    const content = editText.trim()
+    if (!content) return
+    const updated = await chatService.editMessage(messageId, content).catch(() => null)
+    if (updated) setMessages((prev) => prev.map((m) => (m.id === messageId ? updated : m)))
+    cancelEdit()
   }
 
   // Upload the chosen file, then send it as a message attachment.
@@ -231,6 +274,8 @@ export default function ChatPage() {
                       <MessageContextMenu
                         content={m.content}
                         canDelete={mine}
+                        canEdit={mine && !m.isDeleted}
+                        onEdit={() => startEdit(m)}
                         onDelete={() => deleteMessage(m.id)}
                       >
                         <div
@@ -245,10 +290,39 @@ export default function ChatPage() {
                               {m.senderName}
                             </div>
                           )}
-                          {m.content && (
-                            <div className="whitespace-pre-wrap break-words">
-                              <MentionText text={m.content} />
+                          {editingId === m.id ? (
+                            <div>
+                              <textarea
+                                autoFocus
+                                value={editText}
+                                onChange={(e) => setEditText(e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter' && !e.shiftKey) {
+                                    e.preventDefault()
+                                    saveEdit(m.id)
+                                  } else if (e.key === 'Escape') {
+                                    e.preventDefault()
+                                    cancelEdit()
+                                  }
+                                }}
+                                rows={2}
+                                className="w-64 resize-none rounded-lg border border-slate-300 bg-white px-2 py-1 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#F97316] dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100"
+                              />
+                              <div className={`mt-1 text-[11px] ${mine ? 'text-white/60' : 'text-slate-400'}`}>
+                                {t('chat.editHint')}
+                              </div>
                             </div>
+                          ) : (
+                            m.content && (
+                              <div className="whitespace-pre-wrap break-words">
+                                <MentionText text={m.content} />
+                                {m.editedAt && (
+                                  <span className={`ml-1 text-[11px] italic ${mine ? 'text-white/50' : 'text-slate-400'}`}>
+                                    ({t('chat.edited')})
+                                  </span>
+                                )}
+                              </div>
+                            )
                           )}
                           {m.fileId && (
                             <AttachmentPreview
@@ -259,6 +333,52 @@ export default function ChatPage() {
                               onDownload={downloadAttachment}
                             />
                           )}
+                          {/* Reaction chips + picker */}
+                          <div className="mt-1 flex flex-wrap items-center gap-1">
+                            {m.reactions.map((r) => (
+                              <button
+                                key={r.emoji}
+                                onClick={() => toggleReaction(m.id, r.emoji)}
+                                className={`flex items-center gap-0.5 rounded-full border px-1.5 py-0.5 text-xs transition ${
+                                  r.mine
+                                    ? 'border-[#F97316] bg-[#F97316]/15 text-[#F97316] dark:text-orange-300'
+                                    : mine
+                                      ? 'border-white/30 bg-white/10 text-white/90'
+                                      : 'border-slate-300 bg-slate-100 text-slate-600 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200'
+                                }`}
+                              >
+                                <span>{r.emoji}</span>
+                                <span>{r.count}</span>
+                              </button>
+                            ))}
+                            <div className="relative">
+                              <button
+                                onClick={() => setPickerFor((p) => (p === m.id ? null : m.id))}
+                                title="Add reaction"
+                                className={`flex h-5 w-5 items-center justify-center rounded-full text-xs opacity-60 transition hover:opacity-100 ${
+                                  mine ? 'text-white/80 hover:bg-white/10' : 'text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-700'
+                                }`}
+                              >
+                                +
+                              </button>
+                              {pickerFor === m.id && (
+                                <div className="absolute bottom-6 left-0 z-10 grid max-h-40 w-52 grid-cols-8 gap-0.5 overflow-y-auto rounded-xl border border-slate-200 bg-white p-1.5 shadow-lg dark:border-slate-600 dark:bg-slate-800">
+                                  {REACTION_EMOJIS.map((e) => (
+                                    <button
+                                      key={e}
+                                      onClick={() => {
+                                        toggleReaction(m.id, e)
+                                        setPickerFor(null)
+                                      }}
+                                      className="flex h-6 w-6 items-center justify-center rounded text-base leading-none transition hover:scale-125 hover:bg-slate-100 dark:hover:bg-slate-700"
+                                    >
+                                      {e}
+                                    </button>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          </div>
                         </div>
                       </MessageContextMenu>
                     </div>

@@ -92,6 +92,9 @@ public class TaskpilotDbContext : DbContext
     /// <summary>Two-factor recovery codes.</summary>
     public DbSet<UserBackupCode> UserBackupCodes => Set<UserBackupCode>();
 
+    /// <summary>Emoji reactions on chat messages.</summary>
+    public DbSet<MessageReaction> MessageReactions => Set<MessageReaction>();
+
     /// <summary>
     /// Налаштування моделі (Fluent API): обмеження, індекси, перетворення типів.
     /// Викликається EF Core під час побудови моделі та генерації міграцій.
@@ -632,6 +635,29 @@ public class TaskpilotDbContext : DbContext
             entity.HasOne(m => m.User)
                   .WithMany()
                   .HasForeignKey(m => m.UserId)
+                  .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        // MessageReaction entity configuration
+        modelBuilder.Entity<MessageReaction>(entity =>
+        {
+            entity.HasKey(r => r.Id);
+
+            entity.Property(r => r.Emoji).IsRequired().HasMaxLength(16);
+
+            // One reaction per (message, user, emoji); also the lookup for a message.
+            entity.HasIndex(r => new { r.MessageId, r.UserId, r.Emoji }).IsUnique();
+
+            // Deleting a message removes its reactions.
+            entity.HasOne(r => r.Message)
+                  .WithMany(m => m.Reactions)
+                  .HasForeignKey(r => r.MessageId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            // User link is restricted to avoid multiple cascade paths.
+            entity.HasOne(r => r.User)
+                  .WithMany()
+                  .HasForeignKey(r => r.UserId)
                   .OnDelete(DeleteBehavior.Restrict);
         });
 

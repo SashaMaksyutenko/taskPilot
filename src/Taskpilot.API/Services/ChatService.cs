@@ -134,8 +134,45 @@ public class ChatService : IChatService
             .AsNoTracking()
             .ToListAsync();
 
-        return Result<List<ConversationDto>>.Ok(conversations.Select(MapConversation).ToList());
+        // Count unread messages per conversation for this user: messages from
+        // other people posted after the user's LastReadAt (or all, if never read).
+        var convIds = conversations.Select(c => c.Id).ToList();
+        var unread = await _context.Messages
+            .Where(m => convIds.Contains(m.ConversationId) && m.SenderId != userId && !m.IsDeleted)
+            .Where(m => _context.ConversationParticipants.Any(p =>
+                p.ConversationId == m.ConversationId && p.UserId == userId &&
+                (p.LastReadAt == null || m.CreatedAt > p.LastReadAt)))
+            .GroupBy(m => m.ConversationId)
+            .Select(g => new { ConversationId = g.Key, Count = g.Count() })
+            .ToListAsync();
+        var unreadMap = unread.ToDictionary(x => x.ConversationId, x => x.Count);
+
+        var dtos = conversations.Select(MapConversation).ToList();
+        foreach (var d in dtos)
+            d.UnreadCount = unreadMap.GetValueOrDefault(d.Id);
+
+        return Result<List<ConversationDto>>.Ok(dtos);
     }
+
+    /// <inheritdoc />
+    public async Task<Result> MarkConversationReadAsync(Guid userId, Guid conversationId)
+    {
+        var participant = await _context.ConversationParticipants
+            .FirstOrDefaultAsync(p => p.ConversationId == conversationId && p.UserId == userId);
+        if (participant is null)
+            return Result.Fail("You are not a participant of this conversation.");
+
+        participant.LastReadAt = DateTime.UtcNow;
+        await _context.SaveChangesAsync();
+        return Result.Ok();
+    }
+
+    /// <inheritdoc />
+    public Task<List<Guid>> GetConversationIdsAsync(Guid userId) =>
+        _context.Conversations
+            .Where(c => c.Participants.Any(p => p.UserId == userId))
+            .Select(c => c.Id)
+            .ToListAsync();
 
     /// <inheritdoc />
     public async Task<Result<List<MessageDto>>> GetMessagesAsync(Guid conversationId, Guid userId)

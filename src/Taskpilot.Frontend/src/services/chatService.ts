@@ -17,6 +17,11 @@ export const chatService = {
       .then((r) => r.data)
   },
 
+  /** POST /api/chat/conversations/{id}/read — mark a conversation as read. */
+  markRead(conversationId: string): Promise<void> {
+    return api.post(`/api/chat/conversations/${conversationId}/read`).then(() => undefined)
+  },
+
   /** GET /api/chat/conversations/{id}/messages — message history. */
   getMessages(conversationId: string): Promise<Message[]> {
     return api

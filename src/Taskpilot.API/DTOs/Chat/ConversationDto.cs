@@ -10,4 +10,7 @@ public class ConversationDto
     public string? Name { get; set; }
     public DateTime CreatedAt { get; set; }
     public List<ParticipantDto> Participants { get; set; } = new();
+
+    /// <summary>Number of messages in this conversation the current user has not read yet.</summary>
+    public int UnreadCount { get; set; }
 }

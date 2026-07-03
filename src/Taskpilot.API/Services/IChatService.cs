@@ -20,6 +20,12 @@ public interface IChatService
     /// <summary>Lists all conversations the user takes part in.</summary>
     Task<Result<List<ConversationDto>>> GetUserConversationsAsync(Guid userId);
 
+    /// <summary>Marks a conversation as read up to now for the given user.</summary>
+    Task<Result> MarkConversationReadAsync(Guid userId, Guid conversationId);
+
+    /// <summary>Returns the ids of every conversation the user takes part in.</summary>
+    Task<List<Guid>> GetConversationIdsAsync(Guid userId);
+
     /// <summary>Returns the messages of a conversation the user belongs to (oldest first).</summary>
     Task<Result<List<MessageDto>>> GetMessagesAsync(Guid conversationId, Guid userId);
 

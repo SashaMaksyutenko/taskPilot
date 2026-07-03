@@ -22,7 +22,7 @@ const REACTION_EMOJIS = [
   '🔥', '🎉', '😂', '🤣', '😊', '😍', '🥰', '😎',
   '😮', '😢', '😭', '😡', '🤔', '🙄', '😴', '🤯',
   '🙏', '👏', '🙌', '🤝', '💪', '🫶', '👀', '🚀',
-  '💯', '✅', '❌', '⭐', '🎯', '💡', '☕', '🍕',
+  '💯', '✅', '❌', '⭐', '🎯', '💡', '☕', '🍕', '🍺',
 ]
 
 /**
@@ -51,6 +51,9 @@ export default function ChatPage() {
   const connectionRef = useRef<HubConnection | null>(null)
   // Ref mirror of selectedId so the SignalR callback always sees the latest value.
   const selectedIdRef = useRef<string | null>(null)
+  // Ref mirror of the current user so the once-registered SignalR handler stays current.
+  const currentUserRef = useRef(currentUser)
+  currentUserRef.current = currentUser
   const bottomRef = useRef<HTMLDivElement | null>(null)
   const fileInputRef = useRef<HTMLInputElement | null>(null)
 
@@ -68,6 +71,13 @@ export default function ChatPage() {
     connection.on('ReceiveMessage', (msg: Message) => {
       if (msg.conversationId === selectedIdRef.current) {
         setMessages((prev) => [...prev, msg])
+        // We are looking at this conversation, so keep it marked as read.
+        chatService.markRead(msg.conversationId).catch(() => {})
+      } else if (msg.senderId !== currentUserRef.current?.id) {
+        // A message arrived in a conversation we are not viewing: bump its badge.
+        setConversations((prev) =>
+          prev.map((c) => (c.id === msg.conversationId ? { ...c, unreadCount: c.unreadCount + 1 } : c)),
+        )
       }
     })
     connection.on('ReceiveReaction', (upd: ReactionUpdate) => {
@@ -97,6 +107,9 @@ export default function ChatPage() {
     setSelectedId(id)
     setMessages(await chatService.getMessages(id))
     if (connection) await connection.invoke('JoinConversation', id).catch(() => {})
+    // Opening a conversation clears its unread badge.
+    chatService.markRead(id).catch(() => {})
+    setConversations((prev) => prev.map((c) => (c.id === id ? { ...c, unreadCount: 0 } : c)))
   }
 
   const send = async () => {
@@ -254,8 +267,16 @@ export default function ChatPage() {
                 }`}
               >
                 <Avatar name={conversationTitle(conv)} src={conversationAvatar(conv)} size={32} />
-                <span className="min-w-0 flex-1 truncate">{conversationTitle(conv)}</span>
-                <span className="flex-none text-xs text-slate-400">{t(`chat.type.${conv.type}`, conv.type)}</span>
+                <span className={`min-w-0 flex-1 truncate ${conv.unreadCount > 0 && selectedId !== conv.id ? 'font-semibold' : ''}`}>
+                  {conversationTitle(conv)}
+                </span>
+                {conv.unreadCount > 0 && selectedId !== conv.id ? (
+                  <span className="flex-none rounded-full bg-[#F97316] px-1.5 py-0.5 text-xs font-semibold leading-none text-white">
+                    {conv.unreadCount > 99 ? '99+' : conv.unreadCount}
+                  </span>
+                ) : (
+                  <span className="flex-none text-xs text-slate-400">{t(`chat.type.${conv.type}`, conv.type)}</span>
+                )}
               </button>
             ))}
           </div>

@@ -12,6 +12,7 @@ export interface Conversation {
   name: string | null
   createdAt: string
   participants: Participant[]
+  unreadCount: number
 }
 
 export interface Message {

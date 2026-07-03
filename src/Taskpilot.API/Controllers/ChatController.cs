@@ -81,6 +81,19 @@ public class ChatController : BaseApiController
             : BadRequest(new { error = result.Error });
     }
 
+    /// <summary>Marks a conversation as read up to now for the current user.</summary>
+    [HttpPost("conversations/{conversationId:guid}/read")]
+    public async Task<IActionResult> MarkRead(Guid conversationId)
+    {
+        var userId = CurrentUserId();
+        if (userId is null) return Unauthorized();
+
+        var result = await _chatService.MarkConversationReadAsync(userId.Value, conversationId);
+        return result.Succeeded
+            ? Ok(new { message = "Conversation marked as read." })
+            : BadRequest(new { error = result.Error });
+    }
+
     /// <summary>Returns the messages of a conversation the current user belongs to.</summary>
     [HttpGet("conversations/{conversationId:guid}/messages")]
     public async Task<IActionResult> GetMessages(Guid conversationId)

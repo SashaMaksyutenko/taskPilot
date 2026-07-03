@@ -30,7 +30,14 @@ public class ChatHub : Hub
     {
         var userId = GetUserId();
         if (userId is not null)
+        {
             _presence.Connected(userId.Value, Context.ConnectionId);
+            // Subscribe to every conversation the user belongs to, so new messages
+            // and unread counts update in real time even for conversations that
+            // are not currently open.
+            foreach (var conversationId in await _chatService.GetConversationIdsAsync(userId.Value))
+                await Groups.AddToGroupAsync(Context.ConnectionId, GroupName(conversationId));
+        }
         await base.OnConnectedAsync();
     }
 

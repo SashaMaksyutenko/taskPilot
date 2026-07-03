@@ -18,4 +18,9 @@ export const noteService = {
   remove(id: string): Promise<void> {
     return api.delete(`/api/notes/${id}`).then(() => undefined)
   },
+
+  /** Downloads a note as a PDF blob. */
+  exportPdf(id: string): Promise<Blob> {
+    return api.get(`/api/notes/${id}/pdf`, { responseType: 'blob' }).then((r) => r.data as Blob)
+  },
 }

@@ -29,6 +29,7 @@
     "searchPlaceholder": "Пошук нотаток…",
     "clearFilter": "Скинути",
     "noMatches": "Немає нотаток за фільтром.",
+    "exportPdf": "PDF",
     "add": "Додати",
     "save": "Зберегти",
     "cancel": "Скасувати",

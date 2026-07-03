@@ -17,4 +17,7 @@ public interface INoteService
 
     /// <summary>Deletes the owner's note.</summary>
     Task<Result> DeleteAsync(Guid ownerId, Guid noteId);
+
+    /// <summary>Renders the owner's note as a PDF document.</summary>
+    Task<Result<byte[]>> ExportPdfAsync(Guid ownerId, Guid noteId);
 }

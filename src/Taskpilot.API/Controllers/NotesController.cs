@@ -69,4 +69,17 @@ public class NotesController : BaseApiController
             ? Ok(new { message = "Note deleted." })
             : BadRequest(new { error = result.Error });
     }
+
+    /// <summary>Exports a note as a PDF file.</summary>
+    [HttpGet("{noteId:guid}/pdf")]
+    public async Task<IActionResult> ExportPdf(Guid noteId)
+    {
+        var userId = CurrentUserId();
+        if (userId is null) return Unauthorized();
+
+        var result = await _notes.ExportPdfAsync(userId.Value, noteId);
+        return result.Succeeded
+            ? File(result.Value!, "application/pdf", $"note-{noteId}.pdf")
+            : NotFound(new { error = result.Error });
+    }
 }

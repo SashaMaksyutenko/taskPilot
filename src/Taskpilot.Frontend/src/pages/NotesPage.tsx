@@ -90,6 +90,17 @@ export default function NotesPage() {
     load()
   }
 
+  const exportPdf = async (note: Note) => {
+    const blob = await noteService.exportPdf(note.id).catch(() => null)
+    if (!blob) return
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `${note.title.trim() || 'note'}.pdf`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
   // All distinct tags across notes, alphabetical, for the filter bar.
   const allTags = Array.from(new Set(notes.flatMap((n) => n.tags))).sort((a, b) => a.localeCompare(b))
 
@@ -263,6 +274,9 @@ export default function NotesPage() {
                 <div className="mt-3 flex gap-3 text-xs font-semibold">
                   <button onClick={() => startEdit(note)} className="text-[#1E2A44] hover:underline">
                     {t('notes.edit')}
+                  </button>
+                  <button onClick={() => exportPdf(note)} className="text-[#1E2A44] hover:underline">
+                    {t('notes.exportPdf')}
                   </button>
                   <button onClick={() => remove(note.id)} className="text-red-600 hover:underline">
                     {t('notes.delete')}

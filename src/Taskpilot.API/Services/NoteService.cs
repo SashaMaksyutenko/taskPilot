@@ -1,5 +1,7 @@
 using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
+using QuestPDF.Fluent;
+using QuestPDF.Helpers;
 using Taskpilot.API.Common;
 using Taskpilot.API.Data;
 using Taskpilot.API.DTOs.Notes;
@@ -130,6 +132,47 @@ public class NoteService : INoteService
         _context.Notes.Remove(note);
         await _context.SaveChangesAsync();
         return Result.Ok();
+    }
+
+    /// <inheritdoc />
+    public async Task<Result<byte[]>> ExportPdfAsync(Guid ownerId, Guid noteId)
+    {
+        var note = await _context.Notes
+            .AsNoTracking()
+            .FirstOrDefaultAsync(n => n.Id == noteId && n.OwnerId == ownerId);
+        if (note is null)
+            return Result<byte[]>.Fail("Note not found.");
+
+        var pdf = Document.Create(container =>
+        {
+            container.Page(page =>
+            {
+                page.Margin(40);
+                page.Size(PageSizes.A4);
+                page.DefaultTextStyle(x => x.FontSize(11));
+
+                page.Header().Text(string.IsNullOrWhiteSpace(note.Title) ? "Note" : note.Title)
+                    .FontSize(20).Bold();
+
+                page.Content().PaddingVertical(12).Column(col =>
+                {
+                    col.Spacing(8);
+
+                    if (note.Tags.Count > 0)
+                        col.Item().Text($"Tags: {string.Join(", ", note.Tags)}")
+                            .FontSize(9).FontColor(Colors.Grey.Medium);
+
+                    col.Item().Text(note.Content);
+                });
+
+                page.Footer().AlignRight()
+                    .Text($"Created {note.CreatedAt:u}" + (note.UpdatedAt is { } u ? $" · Updated {u:u}" : ""))
+                    .FontSize(8).FontColor(Colors.Grey.Medium);
+            });
+        }).GeneratePdf();
+
+        _logger.LogInformation("Note exported to PDF. NoteId: {NoteId}, OwnerId: {OwnerId}", noteId, ownerId);
+        return Result<byte[]>.Ok(pdf);
     }
 
     // A note needs at least a title or some content.

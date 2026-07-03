@@ -29,6 +29,7 @@
     "searchPlaceholder": "Search notes…",
     "clearFilter": "Clear",
     "noMatches": "No notes match your filters.",
+    "exportPdf": "PDF",
     "add": "Add",
     "save": "Save",
     "cancel": "Cancel",

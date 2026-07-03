@@ -34,6 +34,11 @@ export const taskService = {
     return api.post<Task>(`/api/tasks/${taskId}/status`, { status }).then((r) => r.data)
   },
 
+  /** Creates a copy of a task in the same project. */
+  duplicateTask(taskId: string): Promise<Task> {
+    return api.post<Task>(`/api/tasks/${taskId}/duplicate`).then((r) => r.data)
+  },
+
   deleteTask(taskId: string): Promise<void> {
     return api.delete(`/api/tasks/${taskId}`).then(() => undefined)
   },

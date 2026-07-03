@@ -22,6 +22,9 @@ public interface ITaskService
     /// <summary>Moves a task to another status; sets/clears CompletedAt for Done.</summary>
     Task<Result<TaskDto>> ChangeStatusAsync(Guid userId, Guid taskId, string status);
 
+    /// <summary>Creates a copy of an existing task in the same project (status reset to Backlog).</summary>
+    Task<Result<TaskDto>> DuplicateTaskAsync(Guid userId, Guid taskId);
+
     Task<Result> DeleteTaskAsync(Guid userId, Guid taskId);
 
     /// <summary>

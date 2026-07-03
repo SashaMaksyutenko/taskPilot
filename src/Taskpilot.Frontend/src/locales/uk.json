@@ -246,6 +246,7 @@
     "title": "Дошка",
     "filterByTag": "Фільтр:",
     "clearFilter": "Скинути",
+    "duplicate": "Дублювати",
     "exportCsv": "Експорт CSV",
     "exportXlsx": "Експорт Excel",
     "exportPdf": "Експорт PDF",

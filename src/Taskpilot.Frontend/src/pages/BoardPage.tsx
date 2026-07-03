@@ -90,6 +90,11 @@ export default function BoardPage() {
     setTasks((prev) => prev.filter((t) => t.id !== task.id))
   }
 
+  const duplicateTask = async (task: Task) => {
+    const copy = await taskService.duplicateTask(task.id).catch(() => null)
+    if (copy) setTasks((prev) => [...prev, copy])
+  }
+
   // All distinct tags across the project's tasks, alphabetical, for the filter bar.
   const allTags = Array.from(new Set(tasks.flatMap((t) => t.tags))).sort((a, b) => a.localeCompare(b))
 
@@ -231,6 +236,7 @@ export default function BoardPage() {
                     <TaskContextMenu
                       key={task.id}
                       onEdit={() => setSelectedTask(task)}
+                      onDuplicate={() => duplicateTask(task)}
                       onChangePriority={(p) => changePriority(task, p)}
                       onDelete={() => removeTask(task)}
                     >
@@ -247,6 +253,7 @@ export default function BoardPage() {
                         <div className="absolute right-1 top-1 opacity-0 transition group-hover:opacity-100">
                           <TaskActionsDropdown
                             onEdit={() => setSelectedTask(task)}
+                            onDuplicate={() => duplicateTask(task)}
                             onChangePriority={(p) => changePriority(task, p)}
                             onDelete={() => removeTask(task)}
                           />

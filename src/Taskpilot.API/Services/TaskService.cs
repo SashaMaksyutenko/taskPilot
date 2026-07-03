@@ -224,6 +224,50 @@ public class TaskService : ITaskService
     }
 
     /// <inheritdoc />
+    public async Task<Result<TaskDto>> DuplicateTaskAsync(Guid userId, Guid taskId)
+    {
+        var source = await LoadAccessibleAsync(taskId, userId);
+        if (source is null)
+            return Result<TaskDto>.Fail("Task not found.");
+        if (!await ProjectAccess.CanWriteTaskAsync(_context, taskId, userId))
+            return Result<TaskDto>.Fail("You have read-only access to this project.");
+
+        // Copy the editable fields; the clone starts fresh in Backlog and is
+        // owned by whoever duplicated it.
+        var copy = new ProjectTask
+        {
+            Id = Guid.NewGuid(),
+            ProjectId = source.ProjectId,
+            Title = $"{source.Title} (copy)",
+            Description = source.Description,
+            Status = ProjectTaskStatus.Backlog,
+            Priority = source.Priority,
+            AssigneeId = source.AssigneeId,
+            CreatorId = userId,
+            ParentTaskId = source.ParentTaskId,
+            Deadline = source.Deadline,
+            Tags = new List<string>(source.Tags ?? new List<string>()),
+            CreatedAt = DateTime.UtcNow,
+        };
+        _context.ProjectTasks.Add(copy);
+        await _context.SaveChangesAsync();
+
+        await _webhooks.DispatchAsync(WebhookEvents.TaskCreated, new
+        {
+            taskId = copy.Id,
+            title = copy.Title,
+            projectId = copy.ProjectId,
+            priority = copy.Priority.ToString(),
+        });
+
+        // Notify the assignee (if someone other than the duplicator).
+        await NotifyAssignedAsync(copy.AssigneeId, userId, copy);
+
+        _logger.LogInformation("Task duplicated. SourceTaskId: {SourceTaskId}, NewTaskId: {NewTaskId}", taskId, copy.Id);
+        return Result<TaskDto>.Ok(await LoadDtoAsync(copy.Id));
+    }
+
+    /// <inheritdoc />
     public async Task<Result> DeleteTaskAsync(Guid userId, Guid taskId)
     {
         var task = await LoadAccessibleAsync(taskId, userId);

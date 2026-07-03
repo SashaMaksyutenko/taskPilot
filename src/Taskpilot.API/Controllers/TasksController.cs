@@ -154,6 +154,19 @@ public class TasksController : BaseApiController
         return result.Succeeded ? Ok(result.Value) : BadRequest(new { error = result.Error });
     }
 
+    /// <summary>Creates a copy of a task in the same project.</summary>
+    [HttpPost("api/tasks/{taskId:guid}/duplicate")]
+    public async Task<IActionResult> Duplicate(Guid taskId)
+    {
+        var userId = CurrentUserId();
+        if (userId is null) return Unauthorized();
+
+        var result = await _tasks.DuplicateTaskAsync(userId.Value, taskId);
+        return result.Succeeded
+            ? StatusCode(StatusCodes.Status201Created, result.Value)
+            : BadRequest(new { error = result.Error });
+    }
+
     /// <summary>Deletes a task.</summary>
     [HttpDelete("api/tasks/{taskId:guid}")]
     public async Task<IActionResult> Delete(Guid taskId)

@@ -10,10 +10,12 @@ const PRIORITIES = ['High', 'Medium', 'Low']
  */
 export default function TaskActionsDropdown({
   onEdit,
+  onDuplicate,
   onChangePriority,
   onDelete,
 }: {
   onEdit: () => void
+  onDuplicate: () => void
   onChangePriority: (priority: string) => void
   onDelete: () => void
 }) {
@@ -35,6 +37,10 @@ export default function TaskActionsDropdown({
         <DropdownMenu.Content align="end" className={menuContentClass}>
           <DropdownMenu.Item className={menuItemClass} onSelect={onEdit}>
             {t('board.edit')}
+          </DropdownMenu.Item>
+
+          <DropdownMenu.Item className={menuItemClass} onSelect={onDuplicate}>
+            {t('board.duplicate')}
           </DropdownMenu.Item>
 
           <DropdownMenu.Sub>

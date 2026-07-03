@@ -16,11 +16,13 @@ const PRIORITIES = ['High', 'Medium', 'Low']
 export default function TaskContextMenu({
   children,
   onEdit,
+  onDuplicate,
   onChangePriority,
   onDelete,
 }: {
   children: ReactNode
   onEdit: () => void
+  onDuplicate: () => void
   onChangePriority: (priority: string) => void
   onDelete: () => void
 }) {
@@ -33,6 +35,10 @@ export default function TaskContextMenu({
         <ContextMenu.Content className={contentClass}>
           <ContextMenu.Item className={itemClass} onSelect={onEdit}>
             {t('board.edit')}
+          </ContextMenu.Item>
+
+          <ContextMenu.Item className={itemClass} onSelect={onDuplicate}>
+            {t('board.duplicate')}
           </ContextMenu.Item>
 
           {/* Change priority submenu */}

@@ -246,6 +246,7 @@
     "title": "Board",
     "filterByTag": "Filter:",
     "clearFilter": "Clear",
+    "duplicate": "Duplicate",
     "exportCsv": "Export CSV",
     "exportXlsx": "Export Excel",
     "exportPdf": "Export PDF",

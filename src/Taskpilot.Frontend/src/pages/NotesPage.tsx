@@ -19,6 +19,9 @@ export default function NotesPage() {
   const [tags, setTags] = useState<string[]>([])
   const [tagInput, setTagInput] = useState('')
   const [editingId, setEditingId] = useState<string | null>(null)
+  // Filters over the notes grid.
+  const [search, setSearch] = useState('')
+  const [activeTags, setActiveTags] = useState<string[]>([])
 
   const load = () => {
     noteService.getMine().then(setNotes).catch(() => {})
@@ -86,6 +89,20 @@ export default function NotesPage() {
     if (editingId === id) resetForm()
     load()
   }
+
+  // All distinct tags across notes, alphabetical, for the filter bar.
+  const allTags = Array.from(new Set(notes.flatMap((n) => n.tags))).sort((a, b) => a.localeCompare(b))
+
+  const toggleFilterTag = (tag: string) =>
+    setActiveTags((prev) => (prev.includes(tag) ? prev.filter((x) => x !== tag) : [...prev, tag]))
+
+  // Notes shown after applying the text search and tag filter.
+  const q = search.trim().toLowerCase()
+  const visibleNotes = notes.filter((n) => {
+    const matchesText = !q || n.title.toLowerCase().includes(q) || n.content.toLowerCase().includes(q)
+    const matchesTags = activeTags.length === 0 || n.tags.some((tag) => activeTags.includes(tag))
+    return matchesText && matchesTags
+  })
 
   return (
     <div className="min-h-screen bg-slate-50 text-[#1E2A44] dark:bg-slate-900 dark:text-slate-100">
@@ -168,12 +185,54 @@ export default function NotesPage() {
           </div>
         </div>
 
+        {/* Filters: text search + tag chips */}
+        {notes.length > 0 && (
+          <div className="mb-5 space-y-2">
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder={t('notes.searchPlaceholder')}
+              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-[#1E2A44] dark:border-slate-600 dark:bg-slate-800"
+            />
+            {allTags.length > 0 && (
+              <div className="flex flex-wrap items-center gap-1.5">
+                {allTags.map((tag) => {
+                  const active = activeTags.includes(tag)
+                  return (
+                    <button
+                      key={tag}
+                      onClick={() => toggleFilterTag(tag)}
+                      className={`rounded-full px-2 py-0.5 text-xs font-medium transition ${
+                        active
+                          ? 'bg-[#1E2A44] text-white dark:bg-slate-200 dark:text-slate-900'
+                          : 'bg-[#1E2A44]/10 text-[#1E2A44] hover:bg-[#1E2A44]/20 dark:bg-slate-700 dark:text-slate-200'
+                      }`}
+                    >
+                      {tag}
+                    </button>
+                  )
+                })}
+                {activeTags.length > 0 && (
+                  <button
+                    onClick={() => setActiveTags([])}
+                    className="ml-1 text-xs font-semibold text-slate-400 hover:text-red-600 hover:underline"
+                  >
+                    {t('notes.clearFilter')}
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Notes grid */}
         {notes.length === 0 ? (
           <p className="text-slate-400">{t('notes.empty')}</p>
+        ) : visibleNotes.length === 0 ? (
+          <p className="text-slate-400">{t('notes.noMatches')}</p>
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {notes.map((note) => (
+            {visibleNotes.map((note) => (
               <div
                 key={note.id}
                 className="flex flex-col rounded-xl border border-slate-200 p-4 shadow-sm dark:border-slate-700"

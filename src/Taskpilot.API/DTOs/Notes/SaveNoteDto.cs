@@ -7,4 +7,7 @@ public class SaveNoteDto
     public string Content { get; set; } = string.Empty;
     public string? Color { get; set; }
     public bool IsPinned { get; set; }
+
+    /// <summary>Optional free-form labels.</summary>
+    public List<string>? Tags { get; set; }
 }

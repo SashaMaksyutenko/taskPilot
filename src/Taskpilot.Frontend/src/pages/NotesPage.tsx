@@ -16,6 +16,8 @@ export default function NotesPage() {
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
   const [color, setColor] = useState<string | null>(COLORS[0])
+  const [tags, setTags] = useState<string[]>([])
+  const [tagInput, setTagInput] = useState('')
   const [editingId, setEditingId] = useState<string | null>(null)
 
   const load = () => {
@@ -27,12 +29,26 @@ export default function NotesPage() {
     setTitle('')
     setContent('')
     setColor(COLORS[0])
+    setTags([])
+    setTagInput('')
     setEditingId(null)
   }
 
+  const addTag = () => {
+    const tag = tagInput.trim()
+    if (!tag) return
+    // Case-insensitive dedupe; cap the list at 15.
+    if (!tags.some((x) => x.toLowerCase() === tag.toLowerCase()) && tags.length < 15) {
+      setTags([...tags, tag.slice(0, 30)])
+    }
+    setTagInput('')
+  }
+
+  const removeTag = (tag: string) => setTags(tags.filter((x) => x !== tag))
+
   const save = async () => {
     if (!title.trim() && !content.trim()) return
-    const data = { title: title.trim(), content: content.trim(), color, isPinned: false }
+    const data = { title: title.trim(), content: content.trim(), color, isPinned: false, tags }
     if (editingId) {
       // Keep the note's pinned state when editing.
       const current = notes.find((n) => n.id === editingId)
@@ -49,6 +65,7 @@ export default function NotesPage() {
     setTitle(note.title)
     setContent(note.content)
     setColor(note.color ?? COLORS[0])
+    setTags(note.tags ?? [])
   }
 
   const togglePin = async (note: Note) => {
@@ -58,6 +75,7 @@ export default function NotesPage() {
         content: note.content,
         color: note.color,
         isPinned: !note.isPinned,
+        tags: note.tags,
       })
       .catch(() => {})
     load()
@@ -90,6 +108,40 @@ export default function NotesPage() {
             rows={3}
             className="mb-3 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-[#1E2A44] dark:border-slate-600 dark:bg-slate-900"
           />
+          {/* Tags */}
+          <div className="mb-3">
+            {tags.length > 0 && (
+              <div className="mb-2 flex flex-wrap gap-1.5">
+                {tags.map((tag) => (
+                  <span
+                    key={tag}
+                    className="flex items-center gap-1 rounded-full bg-[#1E2A44]/10 px-2 py-0.5 text-xs font-medium text-[#1E2A44] dark:bg-slate-700 dark:text-slate-200"
+                  >
+                    {tag}
+                    <button onClick={() => removeTag(tag)} className="text-slate-400 hover:text-red-600">
+                      ✕
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
+            <input
+              value={tagInput}
+              onChange={(e) => setTagInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ',') {
+                  e.preventDefault()
+                  addTag()
+                } else if (e.key === 'Backspace' && !tagInput && tags.length > 0) {
+                  removeTag(tags[tags.length - 1])
+                }
+              }}
+              onBlur={addTag}
+              placeholder={t('notes.tagsPlaceholder')}
+              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-[#1E2A44] dark:border-slate-600 dark:bg-slate-900"
+            />
+          </div>
+
           <div className="flex items-center gap-3">
             <div className="flex gap-1.5">
               {COLORS.map((c) => (
@@ -139,6 +191,15 @@ export default function NotesPage() {
                 </div>
                 {note.content && (
                   <p className="flex-1 whitespace-pre-wrap break-words text-sm text-slate-700">{note.content}</p>
+                )}
+                {note.tags.length > 0 && (
+                  <div className="mt-2 flex flex-wrap gap-1">
+                    {note.tags.map((tag) => (
+                      <span key={tag} className="rounded-full bg-black/10 px-1.5 py-0.5 text-[10px] font-medium text-[#1E2A44]">
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
                 )}
                 <div className="mt-3 flex gap-3 text-xs font-semibold">
                   <button onClick={() => startEdit(note)} className="text-[#1E2A44] hover:underline">

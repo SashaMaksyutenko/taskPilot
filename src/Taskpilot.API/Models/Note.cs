@@ -31,4 +31,7 @@ public class Note
 
     /// <summary>UTC time the note was last edited; null if never.</summary>
     public DateTime? UpdatedAt { get; set; }
+
+    /// <summary>Free-form labels attached to the note (stored as a Postgres text[]).</summary>
+    public List<string> Tags { get; set; } = new();
 }

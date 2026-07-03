@@ -7,6 +7,7 @@ export interface Note {
   isPinned: boolean
   createdAt: string
   updatedAt: string | null
+  tags: string[]
 }
 
 /** Input for creating/updating a note. */
@@ -15,4 +16,5 @@ export interface SaveNote {
   content: string
   color?: string | null
   isPinned: boolean
+  tags?: string[]
 }

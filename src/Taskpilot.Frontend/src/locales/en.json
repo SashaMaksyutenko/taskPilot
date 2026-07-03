@@ -25,6 +25,7 @@
     "title": "Notes",
     "titlePlaceholder": "Title",
     "contentPlaceholder": "Write a note…",
+    "tagsPlaceholder": "Add a tag and press Enter…",
     "add": "Add",
     "save": "Save",
     "cancel": "Cancel",

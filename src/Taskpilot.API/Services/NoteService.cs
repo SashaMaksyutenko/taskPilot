@@ -32,7 +32,32 @@ public class NoteService : INoteService
         IsPinned = n.IsPinned,
         CreatedAt = n.CreatedAt,
         UpdatedAt = n.UpdatedAt,
+        Tags = n.Tags,
     };
+
+    /// <summary>
+    /// Cleans up a raw tag list: trims, drops blanks, removes case-insensitive
+    /// duplicates, caps each tag at 30 chars and the whole list at 15 tags.
+    /// </summary>
+    private static List<string> NormalizeTags(IEnumerable<string>? tags)
+    {
+        if (tags is null)
+            return new List<string>();
+
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var result = new List<string>();
+        foreach (var raw in tags)
+        {
+            var tag = raw?.Trim();
+            if (string.IsNullOrEmpty(tag))
+                continue;
+            if (tag.Length > 30)
+                tag = tag[..30];
+            if (seen.Add(tag) && result.Count < 15)
+                result.Add(tag);
+        }
+        return result;
+    }
 
     /// <inheritdoc />
     public async Task<Result<List<NoteDto>>> GetMineAsync(Guid ownerId)
@@ -63,6 +88,7 @@ public class NoteService : INoteService
             Content = dto.Content.Trim(),
             Color = string.IsNullOrWhiteSpace(dto.Color) ? null : dto.Color.Trim(),
             IsPinned = dto.IsPinned,
+            Tags = NormalizeTags(dto.Tags),
             CreatedAt = DateTime.UtcNow,
         };
         _context.Notes.Add(note);
@@ -87,6 +113,7 @@ public class NoteService : INoteService
         note.Content = dto.Content.Trim();
         note.Color = string.IsNullOrWhiteSpace(dto.Color) ? null : dto.Color.Trim();
         note.IsPinned = dto.IsPinned;
+        note.Tags = NormalizeTags(dto.Tags);
         note.UpdatedAt = DateTime.UtcNow;
         await _context.SaveChangesAsync();
 

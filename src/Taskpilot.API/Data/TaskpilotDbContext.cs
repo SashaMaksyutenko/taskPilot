@@ -530,6 +530,11 @@ public class TaskpilotDbContext : DbContext
             entity.Property(n => n.Content).HasMaxLength(10000);
             entity.Property(n => n.Color).HasMaxLength(20);
 
+            // Tags are stored as a Postgres text[] and never null.
+            entity.Property(n => n.Tags)
+                  .HasColumnType("text[]")
+                  .HasDefaultValueSql("'{}'::text[]");
+
             // List a user's notes quickly.
             entity.HasIndex(n => n.OwnerId);
 

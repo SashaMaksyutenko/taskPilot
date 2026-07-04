@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import Navbar from '../components/Navbar'
 import TaskActionsDropdown from '../components/TaskActionsDropdown'
 import TaskContextMenu from '../components/TaskContextMenu'
@@ -27,6 +27,7 @@ export default function BoardPage() {
   const { t } = useTranslation()
   const { projectId = '' } = useParams()
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
   const currentUserId = useAppSelector((s) => s.auth.user?.id)
   const [project, setProject] = useState<Project | null>(null)
   const [tasks, setTasks] = useState<Task[]>([])
@@ -66,6 +67,19 @@ export default function BoardPage() {
       })
       .catch(() => {})
   }, [projectId, currentUserId])
+
+  // Open a task's details when arriving via a shared "?task=" deep link.
+  useEffect(() => {
+    const taskId = searchParams.get('task')
+    if (!taskId || tasks.length === 0) return
+    const target = tasks.find((t) => t.id === taskId)
+    if (target) {
+      setSelectedTask(target)
+      // Drop the query param so refresh/close doesn't re-open it.
+      searchParams.delete('task')
+      setSearchParams(searchParams, { replace: true })
+    }
+  }, [tasks, searchParams, setSearchParams])
 
   const addTask = async () => {
     const title = newTitle.trim()
@@ -120,6 +134,13 @@ export default function BoardPage() {
       setTasks((prev) => prev.filter((t) => t.id !== task.id && t.parentTaskId !== task.id))
       notify.success(t('toast.taskMoved'))
     }
+  }
+
+  const copyLink = (task: Task) => {
+    // A shareable deep link that opens this task's details on the board.
+    const url = `${window.location.origin}/projects/${projectId}?task=${task.id}`
+    navigator.clipboard?.writeText(url).catch(() => {})
+    notify.success(t('toast.linkCopied'))
   }
 
   // Bulk selection helpers.
@@ -328,6 +349,7 @@ export default function BoardPage() {
                       key={task.id}
                       onEdit={() => setSelectedTask(task)}
                       onDuplicate={() => duplicateTask(task)}
+                      onCopyLink={() => copyLink(task)}
                       onChangePriority={(p) => changePriority(task, p)}
                       moveTargets={moveTargets}
                       onMove={(pid) => moveTask(task, pid)}
@@ -347,6 +369,7 @@ export default function BoardPage() {
                           <TaskActionsDropdown
                             onEdit={() => setSelectedTask(task)}
                             onDuplicate={() => duplicateTask(task)}
+                            onCopyLink={() => copyLink(task)}
                             onChangePriority={(p) => changePriority(task, p)}
                             moveTargets={moveTargets}
                             onMove={(pid) => moveTask(task, pid)}

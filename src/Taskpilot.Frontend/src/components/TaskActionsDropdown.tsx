@@ -11,6 +11,7 @@ const PRIORITIES = ['High', 'Medium', 'Low']
 export default function TaskActionsDropdown({
   onEdit,
   onDuplicate,
+  onCopyLink,
   onChangePriority,
   moveTargets,
   onMove,
@@ -18,6 +19,7 @@ export default function TaskActionsDropdown({
 }: {
   onEdit: () => void
   onDuplicate: () => void
+  onCopyLink: () => void
   onChangePriority: (priority: string) => void
   moveTargets: { id: string; name: string }[]
   onMove: (projectId: string) => void
@@ -45,6 +47,10 @@ export default function TaskActionsDropdown({
 
           <DropdownMenu.Item className={menuItemClass} onSelect={onDuplicate}>
             {t('board.duplicate')}
+          </DropdownMenu.Item>
+
+          <DropdownMenu.Item className={menuItemClass} onSelect={onCopyLink}>
+            {t('board.copyLink')}
           </DropdownMenu.Item>
 
           <DropdownMenu.Sub>

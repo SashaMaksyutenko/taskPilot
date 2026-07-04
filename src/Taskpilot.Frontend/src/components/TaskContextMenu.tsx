@@ -17,6 +17,7 @@ export default function TaskContextMenu({
   children,
   onEdit,
   onDuplicate,
+  onCopyLink,
   onChangePriority,
   moveTargets,
   onMove,
@@ -25,6 +26,7 @@ export default function TaskContextMenu({
   children: ReactNode
   onEdit: () => void
   onDuplicate: () => void
+  onCopyLink: () => void
   onChangePriority: (priority: string) => void
   moveTargets: { id: string; name: string }[]
   onMove: (projectId: string) => void
@@ -43,6 +45,10 @@ export default function TaskContextMenu({
 
           <ContextMenu.Item className={itemClass} onSelect={onDuplicate}>
             {t('board.duplicate')}
+          </ContextMenu.Item>
+
+          <ContextMenu.Item className={itemClass} onSelect={onCopyLink}>
+            {t('board.copyLink')}
           </ContextMenu.Item>
 
           {/* Change priority submenu */}

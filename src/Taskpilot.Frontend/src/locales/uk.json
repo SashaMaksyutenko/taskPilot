@@ -12,6 +12,7 @@
     "tasksUpdated": "Оновлено задач: {{count}}",
     "tasksDeleted": "Видалено задач: {{count}}",
     "pdfReady": "PDF завантажено",
+    "linkCopied": "Посилання скопійовано",
     "actionFailed": "Щось пішло не так. Спробуйте ще раз."
   },
   "nav": {
@@ -280,6 +281,7 @@
     "filterByTag": "Фільтр:",
     "clearFilter": "Скинути",
     "duplicate": "Дублювати",
+    "copyLink": "Копіювати посилання",
     "moveToProject": "Перемістити в проєкт",
     "selected": "Вибрано: {{count}}",
     "bulkMoveTo": "Перемістити в…",

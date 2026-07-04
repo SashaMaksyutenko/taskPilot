@@ -190,7 +190,11 @@
     "haveAccount": "Already have an account?",
     "twoFactorCode": "Authentication code",
     "twoFactorHint": "Enter the 6-digit code from your authenticator app.",
-    "verify": "Verify"
+    "verify": "Verify",
+    "or": "or",
+    "googleSignIn": "Sign in with Google",
+    "googleSigningIn": "Signing you in…",
+    "googleFailed": "Google sign-in failed"
   },
   "twoFa": {
     "title": "Two-factor authentication",

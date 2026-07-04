@@ -190,7 +190,11 @@
     "haveAccount": "Вже є акаунт?",
     "twoFactorCode": "Код автентифікації",
     "twoFactorHint": "Введіть 6-значний код із застосунку-автентифікатора.",
-    "verify": "Підтвердити"
+    "verify": "Підтвердити",
+    "or": "або",
+    "googleSignIn": "Увійти через Google",
+    "googleSigningIn": "Виконуємо вхід…",
+    "googleFailed": "Не вдалося увійти через Google"
   },
   "twoFa": {
     "title": "Двофакторна автентифікація",

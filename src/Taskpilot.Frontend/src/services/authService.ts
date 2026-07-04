@@ -28,6 +28,11 @@ export const authService = {
     return api.post<AuthResponse>('/api/auth/login', data).then((r) => r.data)
   },
 
+  /** POST /api/auth/google — signs in with a Google authorization code. */
+  google(code: string): Promise<AuthResponse> {
+    return api.post<AuthResponse>('/api/auth/google', { code }).then((r) => r.data)
+  },
+
   /** POST /api/auth/refresh — exchanges a refresh token for new tokens. */
   refresh(refreshToken: string): Promise<AuthResponse> {
     return api

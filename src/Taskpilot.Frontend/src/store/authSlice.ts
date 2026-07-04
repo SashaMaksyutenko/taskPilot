@@ -57,6 +57,17 @@ export const login = createAsyncThunk(
   },
 )
 
+export const googleLogin = createAsyncThunk(
+  'auth/googleLogin',
+  async (code: string, { rejectWithValue }) => {
+    try {
+      return await authService.google(code)
+    } catch (error) {
+      return rejectWithValue(toErrorMessage(error))
+    }
+  },
+)
+
 export const register = createAsyncThunk(
   'auth/register',
   async (data: RegisterRequest, { rejectWithValue }) => {
@@ -117,6 +128,24 @@ const authSlice = createSlice({
         // Persist tokens so the axios interceptor and refreshes can use them.
         localStorage.setItem('accessToken', data.accessToken)
         localStorage.setItem('refreshToken', data.refreshToken)
+      })
+      // Google login shares the same token-storing behaviour as a normal login.
+      .addCase(googleLogin.pending, (state) => {
+        state.status = 'loading'
+        state.error = null
+      })
+      .addCase(googleLogin.fulfilled, (state, action) => {
+        const data = action.payload as AuthResponse
+        state.status = 'idle'
+        state.accessToken = data.accessToken
+        state.refreshToken = data.refreshToken
+        state.isAuthenticated = true
+        localStorage.setItem('accessToken', data.accessToken)
+        localStorage.setItem('refreshToken', data.refreshToken)
+      })
+      .addCase(googleLogin.rejected, (state, action) => {
+        state.status = 'idle'
+        state.error = (action.payload as string) ?? 'Google sign-in failed'
       })
       .addCase(login.rejected, (state, action) => {
         state.status = 'idle'

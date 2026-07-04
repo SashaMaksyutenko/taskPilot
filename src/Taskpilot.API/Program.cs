@@ -74,6 +74,10 @@ builder.Services.AddValidatorsFromAssemblyContaining<RegisterValidator>();
 // Bind JWT settings from the "Jwt" config section (populated from .env: Jwt__*).
 builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("Jwt"));
 
+// Google OAuth credentials (populated from .env: GoogleOAuth__*).
+builder.Services.Configure<GoogleOAuthOptions>(builder.Configuration.GetSection("GoogleOAuth"));
+builder.Services.AddHttpClient<IGoogleAuthClient, GoogleAuthClient>();
+
 // Bind the initial-admin credentials (populated from .env: Admin__*).
 builder.Services.Configure<AdminSeedSettings>(builder.Configuration.GetSection("Admin"));
 

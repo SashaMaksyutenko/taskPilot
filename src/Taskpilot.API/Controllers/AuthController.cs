@@ -133,6 +133,27 @@ public class AuthController : BaseApiController
         return Ok(result.Value);
     }
 
+    /// <summary>Signs a user in with a Google OAuth authorization code.</summary>
+    [HttpPost("google")]
+    public async Task<IActionResult> Google([FromBody] GoogleLoginDto dto)
+    {
+        _logger.LogInformation("Google login endpoint called.");
+
+        if (string.IsNullOrWhiteSpace(dto.Code))
+            return BadRequest(new { error = "Authorization code is required." });
+
+        var result = await _authService.GoogleLoginAsync(dto.Code, ClientIp(), UserAgent());
+        if (!result.Succeeded)
+        {
+            await _audit.LogAsync("auth.login.google.failed", details: result.Error, ipAddress: ClientIp());
+            return Unauthorized(new { error = result.Error });
+        }
+
+        await _audit.LogAsync("auth.login.google.success", actorId: result.Value!.UserId, actorEmail: result.Value.Email,
+            entityType: "User", entityId: result.Value.UserId.ToString(), ipAddress: ClientIp());
+        return Ok(result.Value);
+    }
+
     /// <summary>
     /// Exchanges a valid refresh token for a new access token and a rotated refresh token.
     /// </summary>

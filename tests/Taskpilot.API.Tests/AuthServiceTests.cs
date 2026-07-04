@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Moq;
+using Taskpilot.API.Common;
 using Taskpilot.API.Configuration;
 using Taskpilot.API.Data;
 using Taskpilot.API.DTOs.Auth;
@@ -28,7 +29,7 @@ public class AuthServiceTests
     }
 
     /// <summary>Builds an AuthService with a stubbed token service over the given context.</summary>
-    private static AuthService CreateService(TaskpilotDbContext context)
+    private static AuthService CreateService(TaskpilotDbContext context, IGoogleAuthClient? googleClient = null)
     {
         var tokenMock = new Mock<ITokenService>();
         // Access token is a fixed stub; refresh token is unique each call.
@@ -38,7 +39,18 @@ public class AuthServiceTests
                  .Returns(() => Guid.NewGuid().ToString("N"));
 
         var jwt = Options.Create(new JwtSettings { RefreshTokenDays = 7 });
-        return new AuthService(context, tokenMock.Object, jwt, NullLogger<AuthService>.Instance);
+        // Default Google client just fails; tests that exercise Google sign-in pass their own stub.
+        var google = googleClient ?? new Mock<IGoogleAuthClient>().Object;
+        return new AuthService(context, tokenMock.Object, google, jwt, NullLogger<AuthService>.Instance);
+    }
+
+    /// <summary>A Google client stub that always returns the given profile.</summary>
+    private static IGoogleAuthClient GoogleStub(string sub, string email, string name)
+    {
+        var mock = new Mock<IGoogleAuthClient>();
+        mock.Setup(c => c.ExchangeCodeAsync(It.IsAny<string>()))
+            .ReturnsAsync(Result<GoogleUserInfo>.Ok(new GoogleUserInfo(sub, email, name)));
+        return mock.Object;
     }
 
     [Fact]
@@ -148,5 +160,48 @@ public class AuthServiceTests
 
         var reuse = await svc.RefreshAsync(oldToken);                       // reusing it now fails
         Assert.False(reuse.Succeeded);
+    }
+
+    [Fact]
+    public async Task GoogleLoginAsync_NewAccount_CreatesUserAndIssuesTokens()
+    {
+        await using var ctx = CreateContext();
+        var svc = CreateService(ctx, GoogleStub("google-123", "New.User@Gmail.com", "New User"));
+
+        var result = await svc.GoogleLoginAsync("auth-code");
+
+        Assert.True(result.Succeeded);
+        Assert.NotNull(result.Value!.AccessToken);
+        // A password-less account linked to Google was created (email normalized to lowercase).
+        var user = await ctx.Users.SingleAsync();
+        Assert.Equal("new.user@gmail.com", user.Email);
+        Assert.Equal("google-123", user.GoogleId);
+        Assert.Null(user.PasswordHash);
+    }
+
+    [Fact]
+    public async Task GoogleLoginAsync_ExistingEmail_LinksAccountWithoutDuplicate()
+    {
+        await using var ctx = CreateContext();
+        // A local account already exists with this email but no Google link yet.
+        ctx.Users.Add(new User
+        {
+            Id = Guid.NewGuid(),
+            Name = "Local User",
+            Email = "person@example.com",
+            PasswordHash = "hash",
+            Role = Role.Developer,
+            IsActive = true,
+        });
+        await ctx.SaveChangesAsync();
+
+        var svc = CreateService(ctx, GoogleStub("google-999", "person@example.com", "Person"));
+        var result = await svc.GoogleLoginAsync("auth-code");
+
+        Assert.True(result.Succeeded);
+        // No duplicate user; the existing account is linked to Google and keeps its password.
+        var user = await ctx.Users.SingleAsync();
+        Assert.Equal("google-999", user.GoogleId);
+        Assert.Equal("hash", user.PasswordHash);
     }
 }

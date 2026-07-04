@@ -17,6 +17,7 @@ public class AuthService : IAuthService
 {
     private readonly TaskpilotDbContext _context;
     private readonly ITokenService _tokenService;
+    private readonly IGoogleAuthClient _googleClient;
     private readonly JwtSettings _jwtSettings;
     private readonly ILogger<AuthService> _logger;
 
@@ -30,11 +31,13 @@ public class AuthService : IAuthService
     public AuthService(
         TaskpilotDbContext context,
         ITokenService tokenService,
+        IGoogleAuthClient googleClient,
         IOptions<JwtSettings> jwtOptions,
         ILogger<AuthService> logger)
     {
         _context = context;
         _tokenService = tokenService;
+        _googleClient = googleClient;
         _jwtSettings = jwtOptions.Value;
         _logger = logger;
     }
@@ -174,6 +177,85 @@ public class AuthService : IAuthService
         {
             _logger.LogError(ex, "Unexpected error during login. Email: {Email}", dto.Email);
             return Result<AuthResponseDto>.Fail("An unexpected error occurred during login.");
+        }
+    }
+
+    /// <summary>
+    /// Signs a user in with a Google OAuth authorization code. Exchanges the code
+    /// for the account profile, then finds or creates a matching user and issues
+    /// the usual JWT + refresh token. New Google users have no password.
+    /// </summary>
+    /// <param name="code">The authorization code returned by Google to the frontend.</param>
+    /// <returns>Success with tokens + user info, or failure when the code is invalid.</returns>
+    public async Task<Result<AuthResponseDto>> GoogleLoginAsync(string code, string? ip = null, string? userAgent = null)
+    {
+        _logger.LogInformation("GoogleLoginAsync started.");
+
+        try
+        {
+            // Verify the code with Google and read the account profile.
+            var exchange = await _googleClient.ExchangeCodeAsync(code);
+            if (!exchange.Succeeded)
+                return Result<AuthResponseDto>.Fail(exchange.Error!);
+
+            var profile = exchange.Value!;
+            var email = profile.Email.Trim().ToLowerInvariant();
+
+            // Match on the Google id first (survives an email change), then on email.
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.GoogleId == profile.Sub)
+                       ?? await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
+
+            if (user is null)
+            {
+                // First sign-in: create a password-less account linked to Google.
+                user = new User
+                {
+                    Id = Guid.NewGuid(),
+                    Name = string.IsNullOrWhiteSpace(profile.Name) ? email : profile.Name.Trim(),
+                    Email = email,
+                    GoogleId = profile.Sub,
+                    Role = Role.Developer,
+                    IsActive = true,
+                    CreatedAt = DateTime.UtcNow,
+                };
+                _context.Users.Add(user);
+                _logger.LogInformation("New user created via Google. UserId: {UserId}", user.Id);
+            }
+            else if (string.IsNullOrEmpty(user.GoogleId))
+            {
+                // Existing local account: link it to Google on first Google sign-in.
+                user.GoogleId = profile.Sub;
+                user.UpdatedAt = DateTime.UtcNow;
+            }
+
+            // A temporary ban auto-lifts once it expires.
+            if (!user.IsActive && user.BannedUntil is { } until && until <= DateTime.UtcNow)
+            {
+                user.IsActive = true;
+                user.BannedUntil = null;
+                user.UpdatedAt = DateTime.UtcNow;
+            }
+
+            if (!user.IsActive)
+            {
+                _logger.LogWarning("Google login blocked: account is inactive. UserId: {UserId}", user.Id);
+                return Result<AuthResponseDto>.Fail("Account is disabled.");
+            }
+
+            // Issue the same tokens a normal login would.
+            var (accessToken, accessExpiresAtUtc) = _tokenService.GenerateAccessToken(user);
+            var refreshToken = CreateRefreshToken(user.Id, ip, userAgent);
+            _context.RefreshTokens.Add(refreshToken);
+            await _context.SaveChangesAsync();
+
+            _logger.LogInformation("Google login successful. UserId: {UserId}", user.Id);
+            return Result<AuthResponseDto>.Ok(
+                BuildAuthResponse(user, accessToken, accessExpiresAtUtc, refreshToken));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Unexpected error during Google login.");
+            return Result<AuthResponseDto>.Fail("An unexpected error occurred during Google sign-in.");
         }
     }
 

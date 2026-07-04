@@ -22,6 +22,9 @@ public class User
     /// </summary>
     public string? PasswordHash { get; set; }
 
+    /// <summary>Google account id ("sub") for users linked to Google sign-in; null otherwise.</summary>
+    public string? GoogleId { get; set; }
+
     /// <summary>Роль користувача (RBAC). За замовчуванням — Developer.</summary>
     public Role Role { get; set; } = Role.Developer;
 

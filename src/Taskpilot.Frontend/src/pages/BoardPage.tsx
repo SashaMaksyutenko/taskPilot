@@ -6,6 +6,7 @@ import TaskActionsDropdown from '../components/TaskActionsDropdown'
 import TaskContextMenu from '../components/TaskContextMenu'
 import TaskDetailModal from '../components/TaskDetailModal'
 import ProjectMembersModal from '../components/ProjectMembersModal'
+import ConfirmDialog from '../components/ConfirmDialog'
 import { useAppSelector } from '../store/hooks'
 import { projectService } from '../services/projectService'
 import { taskService } from '../services/taskService'
@@ -38,6 +39,8 @@ export default function BoardPage() {
   const [activeTags, setActiveTags] = useState<string[]>([])
   // Ids of tasks selected for a bulk action.
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  // Task awaiting delete confirmation.
+  const [deletingTask, setDeletingTask] = useState<Task | null>(null)
   const draggingId = useRef<string | null>(null)
 
   const isOwner = !!project && project.ownerId === currentUserId
@@ -319,7 +322,7 @@ export default function BoardPage() {
                       onChangePriority={(p) => changePriority(task, p)}
                       moveTargets={moveTargets}
                       onMove={(pid) => moveTask(task, pid)}
-                      onDelete={() => removeTask(task)}
+                      onDelete={() => setDeletingTask(task)}
                     >
                       <div
                         draggable
@@ -338,7 +341,7 @@ export default function BoardPage() {
                             onChangePriority={(p) => changePriority(task, p)}
                             moveTargets={moveTargets}
                             onMove={(pid) => moveTask(task, pid)}
-                            onDelete={() => removeTask(task)}
+                            onDelete={() => setDeletingTask(task)}
                           />
                         </div>
                         {/* Bulk-select checkbox (Editors/owner) — appears on hover or when selected */}
@@ -409,6 +412,18 @@ export default function BoardPage() {
           onLeft={() => navigate('/projects')}
         />
       )}
+
+      {/* Task delete confirmation */}
+      <ConfirmDialog
+        open={!!deletingTask}
+        title={t('board.deleteTitle')}
+        message={t('board.deleteConfirm', { title: deletingTask?.title ?? '' })}
+        onConfirm={() => {
+          if (deletingTask) removeTask(deletingTask)
+          setDeletingTask(null)
+        }}
+        onCancel={() => setDeletingTask(null)}
+      />
     </div>
   )
 }

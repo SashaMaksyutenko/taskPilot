@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import Navbar from '../components/Navbar'
+import ConfirmDialog from '../components/ConfirmDialog'
 import { noteService } from '../services/noteService'
 import type { Note } from '../types/note'
 
@@ -22,6 +23,8 @@ export default function NotesPage() {
   // Filters over the notes grid.
   const [search, setSearch] = useState('')
   const [activeTags, setActiveTags] = useState<string[]>([])
+  // Note awaiting delete confirmation.
+  const [deletingNote, setDeletingNote] = useState<Note | null>(null)
 
   const load = () => {
     noteService.getMine().then(setNotes).catch(() => {})
@@ -278,7 +281,7 @@ export default function NotesPage() {
                   <button onClick={() => exportPdf(note)} className="text-[#1E2A44] hover:underline">
                     {t('notes.exportPdf')}
                   </button>
-                  <button onClick={() => remove(note.id)} className="text-red-600 hover:underline">
+                  <button onClick={() => setDeletingNote(note)} className="text-red-600 hover:underline">
                     {t('notes.delete')}
                   </button>
                 </div>
@@ -286,6 +289,18 @@ export default function NotesPage() {
             ))}
           </div>
         )}
+
+        {/* Note delete confirmation */}
+        <ConfirmDialog
+          open={!!deletingNote}
+          title={t('notes.deleteTitle')}
+          message={t('notes.deleteConfirm')}
+          onConfirm={() => {
+            if (deletingNote) remove(deletingNote.id)
+            setDeletingNote(null)
+          }}
+          onCancel={() => setDeletingNote(null)}
+        />
       </main>
     </div>
   )

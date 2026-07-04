@@ -36,6 +36,8 @@ export default function BoardPage() {
   const [moveTargets, setMoveTargets] = useState<{ id: string; name: string }[]>([])
   // Tags currently used to filter the board (empty = show everything).
   const [activeTags, setActiveTags] = useState<string[]>([])
+  // Ids of tasks selected for a bulk action.
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const draggingId = useRef<string | null>(null)
 
   const isOwner = !!project && project.ownerId === currentUserId
@@ -108,6 +110,33 @@ export default function BoardPage() {
     const moved = await taskService.moveTask(task.id, targetProjectId).catch(() => null)
     // The task (and its subtasks) left this board.
     if (moved) setTasks((prev) => prev.filter((t) => t.id !== task.id && t.parentTaskId !== task.id))
+  }
+
+  // Bulk selection helpers.
+  const toggleSelected = (id: string) =>
+    setSelectedIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+
+  const clearSelection = () => setSelectedIds(new Set())
+
+  const bulkStatus = async (status: TaskStatus) => {
+    const ids = [...selectedIds]
+    if (ids.length === 0) return
+    await taskService.bulkChangeStatus(ids, status).catch(() => {})
+    clearSelection()
+    taskService.getTasks(projectId).then(setTasks).catch(() => {})
+  }
+
+  const bulkDelete = async () => {
+    const ids = [...selectedIds]
+    if (ids.length === 0) return
+    await taskService.bulkDelete(ids).catch(() => {})
+    setTasks((prev) => prev.filter((t) => !selectedIds.has(t.id)))
+    clearSelection()
   }
 
   // The board shows only top-level tasks; subtasks are managed inside their parent.
@@ -235,6 +264,36 @@ export default function BoardPage() {
           </div>
         )}
 
+        {/* Bulk action bar (visible when tasks are selected) */}
+        {canWrite && selectedIds.size > 0 && (
+          <div className="mb-5 flex flex-wrap items-center gap-3 rounded-lg border border-[#1E2A44]/20 bg-[#1E2A44]/5 px-4 py-2 dark:border-slate-600 dark:bg-slate-800">
+            <span className="text-sm font-semibold">{t('board.selected', { count: selectedIds.size })}</span>
+            <select
+              defaultValue=""
+              onChange={(e) => {
+                if (e.target.value) bulkStatus(e.target.value as TaskStatus)
+                e.target.value = ''
+              }}
+              className="rounded-lg border border-slate-300 bg-white px-2 py-1 text-sm outline-none dark:border-slate-600 dark:bg-slate-900"
+            >
+              <option value="" disabled>
+                {t('board.bulkMoveTo')}
+              </option>
+              {STATUS_COLUMNS.map((col) => (
+                <option key={col.key} value={col.key}>
+                  {t(`board.status.${col.key}`)}
+                </option>
+              ))}
+            </select>
+            <button onClick={bulkDelete} className="text-sm font-semibold text-red-600 hover:underline">
+              {t('board.bulkDelete')}
+            </button>
+            <button onClick={clearSelection} className="text-sm font-semibold text-slate-500 hover:underline">
+              {t('board.clearSelection')}
+            </button>
+          </div>
+        )}
+
         {/* Columns */}
         <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
           {STATUS_COLUMNS.map((col) => {
@@ -282,7 +341,19 @@ export default function BoardPage() {
                             onDelete={() => removeTask(task)}
                           />
                         </div>
-                        <div className="pr-5 text-sm font-medium">{task.title}</div>
+                        {/* Bulk-select checkbox (Editors/owner) — appears on hover or when selected */}
+                        {canWrite && (
+                          <input
+                            type="checkbox"
+                            checked={selectedIds.has(task.id)}
+                            onClick={(e) => e.stopPropagation()}
+                            onChange={() => toggleSelected(task.id)}
+                            className={`absolute left-1 top-1 h-4 w-4 accent-[#1E2A44] transition ${
+                              selectedIds.has(task.id) ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+                            }`}
+                          />
+                        )}
+                        <div className={`pr-5 text-sm font-medium ${canWrite ? 'pl-5' : ''}`}>{task.title}</div>
                         <div className="mt-2 flex items-center gap-2">
                           <span
                             className={`rounded px-2 py-0.5 text-[11px] font-semibold ${

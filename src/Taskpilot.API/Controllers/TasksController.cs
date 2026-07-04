@@ -165,6 +165,32 @@ public class TasksController : BaseApiController
         return result.Succeeded ? Ok(result.Value) : BadRequest(new { error = result.Error });
     }
 
+    /// <summary>Changes the status of several tasks at once.</summary>
+    [HttpPost("api/tasks/bulk/status")]
+    public async Task<IActionResult> BulkStatus([FromBody] BulkStatusDto dto)
+    {
+        var userId = CurrentUserId();
+        if (userId is null) return Unauthorized();
+
+        var result = await _tasks.BulkChangeStatusAsync(userId.Value, dto.TaskIds, dto.Status);
+        return result.Succeeded
+            ? Ok(new { changed = result.Value })
+            : BadRequest(new { error = result.Error });
+    }
+
+    /// <summary>Deletes several tasks at once.</summary>
+    [HttpPost("api/tasks/bulk/delete")]
+    public async Task<IActionResult> BulkDelete([FromBody] BulkDeleteDto dto)
+    {
+        var userId = CurrentUserId();
+        if (userId is null) return Unauthorized();
+
+        var result = await _tasks.BulkDeleteAsync(userId.Value, dto.TaskIds);
+        return result.Succeeded
+            ? Ok(new { deleted = result.Value })
+            : BadRequest(new { error = result.Error });
+    }
+
     /// <summary>Moves a task to another project.</summary>
     [HttpPost("api/tasks/{taskId:guid}/move")]
     public async Task<IActionResult> Move(Guid taskId, [FromBody] MoveTaskDto dto)

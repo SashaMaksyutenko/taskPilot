@@ -46,6 +46,16 @@ export const taskService = {
     return api.post<Task>(`/api/tasks/${taskId}/status`, { status }).then((r) => r.data)
   },
 
+  /** Changes the status of several tasks at once. */
+  bulkChangeStatus(taskIds: string[], status: TaskStatus): Promise<{ changed: number }> {
+    return api.post<{ changed: number }>('/api/tasks/bulk/status', { taskIds, status }).then((r) => r.data)
+  },
+
+  /** Deletes several tasks at once. */
+  bulkDelete(taskIds: string[]): Promise<{ deleted: number }> {
+    return api.post<{ deleted: number }>('/api/tasks/bulk/delete', { taskIds }).then((r) => r.data)
+  },
+
   /** Creates a copy of a task in the same project. */
   duplicateTask(taskId: string): Promise<Task> {
     return api.post<Task>(`/api/tasks/${taskId}/duplicate`).then((r) => r.data)

@@ -243,6 +243,40 @@ public class TaskService : ITaskService
     }
 
     /// <inheritdoc />
+    public async Task<Result<int>> BulkChangeStatusAsync(Guid userId, IEnumerable<Guid> taskIds, string status)
+    {
+        // Validate the status once before touching any task.
+        if (!Enum.TryParse<ProjectTaskStatus>(status, ignoreCase: true, out _))
+            return Result<int>.Fail("Invalid status.");
+
+        // Reuse the single-task path so access checks, webhooks and notifications
+        // fire consistently; count only the ones that actually changed.
+        var changed = 0;
+        foreach (var id in taskIds.Distinct())
+        {
+            var result = await ChangeStatusAsync(userId, id, status);
+            if (result.Succeeded) changed++;
+        }
+
+        _logger.LogInformation("Bulk status change. UserId: {UserId}, Status: {Status}, Changed: {Changed}", userId, status, changed);
+        return Result<int>.Ok(changed);
+    }
+
+    /// <inheritdoc />
+    public async Task<Result<int>> BulkDeleteAsync(Guid userId, IEnumerable<Guid> taskIds)
+    {
+        var deleted = 0;
+        foreach (var id in taskIds.Distinct())
+        {
+            var result = await DeleteTaskAsync(userId, id);
+            if (result.Succeeded) deleted++;
+        }
+
+        _logger.LogInformation("Bulk delete. UserId: {UserId}, Deleted: {Deleted}", userId, deleted);
+        return Result<int>.Ok(deleted);
+    }
+
+    /// <inheritdoc />
     public async Task<Result<TaskDto>> DuplicateTaskAsync(Guid userId, Guid taskId)
     {
         var source = await LoadAccessibleAsync(taskId, userId);

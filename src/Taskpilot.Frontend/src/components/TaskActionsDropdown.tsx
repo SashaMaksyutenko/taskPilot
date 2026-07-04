@@ -13,6 +13,8 @@ export default function TaskActionsDropdown({
   onDuplicate,
   onCopyLink,
   onChangePriority,
+  assignTargets,
+  onAssign,
   moveTargets,
   onMove,
   onDelete,
@@ -21,6 +23,8 @@ export default function TaskActionsDropdown({
   onDuplicate: () => void
   onCopyLink: () => void
   onChangePriority: (priority: string) => void
+  assignTargets: { id: string; name: string }[]
+  onAssign: (userId: string | null) => void
   moveTargets: { id: string; name: string }[]
   onMove: (projectId: string) => void
   onDelete: () => void
@@ -68,6 +72,28 @@ export default function TaskActionsDropdown({
               </DropdownMenu.SubContent>
             </DropdownMenu.Portal>
           </DropdownMenu.Sub>
+
+          {assignTargets.length > 0 && (
+            <DropdownMenu.Sub>
+              <DropdownMenu.SubTrigger className={`${menuItemClass} flex items-center justify-between gap-4`}>
+                {t('board.assignTo')}
+                <span className="text-slate-400">▸</span>
+              </DropdownMenu.SubTrigger>
+              <DropdownMenu.Portal>
+                <DropdownMenu.SubContent className={menuContentClass}>
+                  {assignTargets.map((m) => (
+                    <DropdownMenu.Item key={m.id} className={menuItemClass} onSelect={() => onAssign(m.id)}>
+                      {m.name}
+                    </DropdownMenu.Item>
+                  ))}
+                  <DropdownMenu.Separator className={menuSeparatorClass} />
+                  <DropdownMenu.Item className={menuItemClass} onSelect={() => onAssign(null)}>
+                    {t('board.unassign')}
+                  </DropdownMenu.Item>
+                </DropdownMenu.SubContent>
+              </DropdownMenu.Portal>
+            </DropdownMenu.Sub>
+          )}
 
           {moveTargets.length > 0 && (
             <DropdownMenu.Sub>

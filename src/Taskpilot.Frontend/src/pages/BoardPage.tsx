@@ -37,6 +37,8 @@ export default function BoardPage() {
   const [canWrite, setCanWrite] = useState(true)
   // Other projects this task can be moved to (owned/active, excluding the current one).
   const [moveTargets, setMoveTargets] = useState<{ id: string; name: string }[]>([])
+  // Project members a task can be assigned to (owner + collaborators).
+  const [members, setMembers] = useState<{ id: string; name: string }[]>([])
   // Tags currently used to filter the board (empty = show everything).
   const [activeTags, setActiveTags] = useState<string[]>([])
   // Ids of tasks selected for a bulk action.
@@ -64,6 +66,7 @@ export default function BoardPage() {
       .then((ms) => {
         const me = ms.find((m) => m.userId === currentUserId)
         setCanWrite(!!me && (me.isOwner || me.role === 'Editor'))
+        setMembers(ms.map((m) => ({ id: m.userId, name: m.name })))
       })
       .catch(() => {})
   }, [projectId, currentUserId])
@@ -141,6 +144,23 @@ export default function BoardPage() {
     const url = `${window.location.origin}/projects/${projectId}?task=${task.id}`
     navigator.clipboard?.writeText(url).catch(() => {})
     notify.success(t('toast.linkCopied'))
+  }
+
+  const assign = async (task: Task, assigneeId: string | null) => {
+    const updated = await taskService
+      .updateTask(task.id, {
+        title: task.title,
+        description: task.description,
+        priority: task.priority,
+        assigneeId,
+        deadline: task.deadline,
+        tags: task.tags,
+      })
+      .catch(() => null)
+    if (updated) {
+      setTasks((prev) => prev.map((x) => (x.id === updated.id ? updated : x)))
+      notify.success(t('toast.taskAssigned'))
+    }
   }
 
   // Bulk selection helpers.
@@ -351,6 +371,8 @@ export default function BoardPage() {
                       onDuplicate={() => duplicateTask(task)}
                       onCopyLink={() => copyLink(task)}
                       onChangePriority={(p) => changePriority(task, p)}
+                      assignTargets={members}
+                      onAssign={(uid) => assign(task, uid)}
                       moveTargets={moveTargets}
                       onMove={(pid) => moveTask(task, pid)}
                       onDelete={() => setDeletingTask(task)}
@@ -371,6 +393,8 @@ export default function BoardPage() {
                             onDuplicate={() => duplicateTask(task)}
                             onCopyLink={() => copyLink(task)}
                             onChangePriority={(p) => changePriority(task, p)}
+                            assignTargets={members}
+                            onAssign={(uid) => assign(task, uid)}
                             moveTargets={moveTargets}
                             onMove={(pid) => moveTask(task, pid)}
                             onDelete={() => setDeletingTask(task)}

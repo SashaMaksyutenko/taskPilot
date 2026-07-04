@@ -13,6 +13,7 @@
     "tasksDeleted": "{{count}} task(s) deleted",
     "pdfReady": "PDF downloaded",
     "linkCopied": "Link copied to clipboard",
+    "taskAssigned": "Task assignee updated",
     "actionFailed": "Something went wrong. Please try again."
   },
   "nav": {
@@ -282,6 +283,8 @@
     "clearFilter": "Clear",
     "duplicate": "Duplicate",
     "copyLink": "Copy link",
+    "assignTo": "Assign to",
+    "unassign": "Unassign",
     "moveToProject": "Move to project",
     "selected": "{{count}} selected",
     "bulkMoveTo": "Move to…",

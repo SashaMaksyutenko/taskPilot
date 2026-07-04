@@ -19,6 +19,8 @@ export default function TaskContextMenu({
   onDuplicate,
   onCopyLink,
   onChangePriority,
+  assignTargets,
+  onAssign,
   moveTargets,
   onMove,
   onDelete,
@@ -28,6 +30,8 @@ export default function TaskContextMenu({
   onDuplicate: () => void
   onCopyLink: () => void
   onChangePriority: (priority: string) => void
+  assignTargets: { id: string; name: string }[]
+  onAssign: (userId: string | null) => void
   moveTargets: { id: string; name: string }[]
   onMove: (projectId: string) => void
   onDelete: () => void
@@ -67,6 +71,29 @@ export default function TaskContextMenu({
               </ContextMenu.SubContent>
             </ContextMenu.Portal>
           </ContextMenu.Sub>
+
+          {/* Assign to a member */}
+          {assignTargets.length > 0 && (
+            <ContextMenu.Sub>
+              <ContextMenu.SubTrigger className={`${itemClass} flex items-center justify-between gap-4`}>
+                {t('board.assignTo')}
+                <span className="text-slate-400">▸</span>
+              </ContextMenu.SubTrigger>
+              <ContextMenu.Portal>
+                <ContextMenu.SubContent className={contentClass}>
+                  {assignTargets.map((m) => (
+                    <ContextMenu.Item key={m.id} className={itemClass} onSelect={() => onAssign(m.id)}>
+                      {m.name}
+                    </ContextMenu.Item>
+                  ))}
+                  <ContextMenu.Separator className={separatorClass} />
+                  <ContextMenu.Item className={itemClass} onSelect={() => onAssign(null)}>
+                    {t('board.unassign')}
+                  </ContextMenu.Item>
+                </ContextMenu.SubContent>
+              </ContextMenu.Portal>
+            </ContextMenu.Sub>
+          )}
 
           {/* Move to another project */}
           {moveTargets.length > 0 && (

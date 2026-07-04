@@ -1,5 +1,6 @@
 import { Fragment, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useSearchParams } from 'react-router-dom'
 import type { HubConnection } from '@microsoft/signalr'
 import AttachmentPreview from '../components/AttachmentPreview'
 import Avatar from '../components/Avatar'
@@ -10,6 +11,7 @@ import Navbar from '../components/Navbar'
 import { apiErrorMessage } from '../lib/apiError'
 import { createChatConnection } from '../lib/chatHub'
 import { chatService } from '../services/chatService'
+import { notify } from '../lib/toast'
 import { fileService } from '../services/fileService'
 import { userService, type UserSearchResult } from '../services/userService'
 import type { Conversation, ConversationRead, Message, ReactionUpdate } from '../types/chat'
@@ -51,6 +53,9 @@ export default function ChatPage() {
   const [typingUserIds, setTypingUserIds] = useState<string[]>([])
   // Free-text filter over the open conversation's messages.
   const [messageSearch, setMessageSearch] = useState('')
+  // Message briefly highlighted after arriving via a shared deep link.
+  const [highlightId, setHighlightId] = useState<string | null>(null)
+  const [searchParams, setSearchParams] = useSearchParams()
 
   const connectionRef = useRef<HubConnection | null>(null)
   // Ref mirror of selectedId so the SignalR callback always sees the latest value.
@@ -152,6 +157,37 @@ export default function ChatPage() {
     chatService.markRead(id).catch(() => {})
     setConversations((prev) => prev.map((c) => (c.id === id ? { ...c, unreadCount: 0 } : c)))
   }
+
+  const copyMessageLink = (message: Message) => {
+    // A shareable deep link that opens the conversation and highlights the message.
+    const url = `${window.location.origin}/chat?c=${message.conversationId}&m=${message.id}`
+    navigator.clipboard?.writeText(url).catch(() => {})
+    notify.success(t('toast.linkCopied'))
+  }
+
+  // Open the conversation named in a "?c=" deep link once conversations have loaded.
+  useEffect(() => {
+    const convId = searchParams.get('c')
+    if (convId && conversations.some((c) => c.id === convId) && selectedIdRef.current !== convId) {
+      selectConversation(convId)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [conversations])
+
+  // Scroll to and briefly highlight the "?m=" message once it is loaded, then clear the params.
+  useEffect(() => {
+    const msgId = searchParams.get('m')
+    if (!msgId || !messages.some((m) => m.id === msgId)) return
+    const el = document.getElementById(`msg-${msgId}`)
+    el?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    setHighlightId(msgId)
+    const timer = setTimeout(() => setHighlightId(null), 2000)
+    searchParams.delete('c')
+    searchParams.delete('m')
+    setSearchParams(searchParams, { replace: true })
+    return () => clearTimeout(timer)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [messages])
 
   // Tell the other members we are typing, throttled, with a debounced "stopped".
   const notifyTyping = () => {
@@ -434,7 +470,7 @@ export default function ChatPage() {
                   const mine = m.senderId === currentUser?.id
                   return (
                     <Fragment key={m.id}>
-                    <div className={`flex items-end gap-2 ${mine ? 'justify-end' : 'justify-start'}`}>
+                    <div id={`msg-${m.id}`} className={`flex items-end gap-2 ${mine ? 'justify-end' : 'justify-start'}`}>
                       {!mine && <Avatar name={m.senderName} src={m.senderAvatarUrl} size={28} />}
                       <MessageContextMenu
                         content={m.content}
@@ -443,10 +479,13 @@ export default function ChatPage() {
                         canEdit={mine && !m.isDeleted}
                         onEdit={() => startEdit(m)}
                         onTogglePin={() => togglePin(m.id)}
+                        onCopyLink={() => copyMessageLink(m)}
                         onDelete={() => deleteMessage(m.id)}
                       >
                         <div
-                          className={`max-w-md rounded-2xl px-4 py-2 ${
+                          className={`max-w-md rounded-2xl px-4 py-2 transition-shadow ${
+                            highlightId === m.id ? 'ring-2 ring-[#F97316] ring-offset-2 dark:ring-offset-slate-900' : ''
+                          } ${
                             mine
                               ? 'bg-[#1E2A44] text-white'
                               : 'bg-white text-[#1E2A44] shadow dark:bg-slate-800 dark:text-slate-100'

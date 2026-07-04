@@ -15,6 +15,7 @@ export default function MessageContextMenu({
   canEdit,
   onEdit,
   onTogglePin,
+  onCopyLink,
   onDelete,
 }: {
   children: ReactNode
@@ -24,6 +25,7 @@ export default function MessageContextMenu({
   canEdit?: boolean
   onEdit?: () => void
   onTogglePin: () => void
+  onCopyLink: () => void
   onDelete: () => void
 }) {
   const { t } = useTranslation()
@@ -42,6 +44,9 @@ export default function MessageContextMenu({
           </ContextMenu.Item>
           <ContextMenu.Item className={itemClass} onSelect={onTogglePin}>
             {isPinned ? t('chat.unpin') : t('chat.pin')}
+          </ContextMenu.Item>
+          <ContextMenu.Item className={itemClass} onSelect={onCopyLink}>
+            {t('chat.copyLink')}
           </ContextMenu.Item>
           {canEdit && onEdit && (
             <ContextMenu.Item className={itemClass} onSelect={onEdit}>

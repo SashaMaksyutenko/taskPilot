@@ -396,6 +396,7 @@
     "pin": "Pin",
     "unpin": "Unpin",
     "pinned": "Pinned",
+    "copyLink": "Copy link",
     "searchMessages": "Search messages…",
     "noMatches": "No matching messages.",
     "seen": "Seen",

@@ -3,6 +3,17 @@
     "cancel": "Cancel",
     "delete": "Delete"
   },
+  "toast": {
+    "projectCreated": "Project created",
+    "projectDeleted": "Project deleted",
+    "projectDuplicated": "Project duplicated",
+    "taskMoved": "Task moved",
+    "taskDuplicated": "Task duplicated",
+    "tasksUpdated": "{{count}} task(s) updated",
+    "tasksDeleted": "{{count}} task(s) deleted",
+    "pdfReady": "PDF downloaded",
+    "actionFailed": "Something went wrong. Please try again."
+  },
   "nav": {
     "dashboard": "Dashboard",
     "projects": "Projects",

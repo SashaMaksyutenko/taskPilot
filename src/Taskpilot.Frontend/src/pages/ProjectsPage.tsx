@@ -6,6 +6,7 @@ import ConfirmDialog from '../components/ConfirmDialog'
 import ProjectContextMenu from '../components/ProjectContextMenu'
 import { projectService } from '../services/projectService'
 import { taskService } from '../services/taskService'
+import { notify } from '../lib/toast'
 import { useAppSelector } from '../store/hooks'
 import type { Project } from '../types/project'
 
@@ -45,6 +46,7 @@ export default function ProjectsPage() {
       await projectService.createProject({ name: trimmed })
       setName('')
       load()
+      notify.success(t('toast.projectCreated'))
     } finally {
       setLoading(false)
     }
@@ -65,6 +67,7 @@ export default function ProjectsPage() {
   const duplicate = async (project: Project) => {
     await projectService.duplicate(project.id).catch(() => {})
     load()
+    notify.success(t('toast.projectDuplicated'))
   }
 
   const archive = async (project: Project) => {
@@ -82,6 +85,7 @@ export default function ProjectsPage() {
     await projectService.remove(deleting.id).catch(() => {})
     setDeleting(null)
     load()
+    notify.success(t('toast.projectDeleted'))
   }
 
   const openEdit = (project: Project) => {

@@ -3,6 +3,17 @@
     "cancel": "Скасувати",
     "delete": "Видалити"
   },
+  "toast": {
+    "projectCreated": "Проєкт створено",
+    "projectDeleted": "Проєкт видалено",
+    "projectDuplicated": "Проєкт продубльовано",
+    "taskMoved": "Задачу переміщено",
+    "taskDuplicated": "Задачу продубльовано",
+    "tasksUpdated": "Оновлено задач: {{count}}",
+    "tasksDeleted": "Видалено задач: {{count}}",
+    "pdfReady": "PDF завантажено",
+    "actionFailed": "Щось пішло не так. Спробуйте ще раз."
+  },
   "nav": {
     "dashboard": "Головна",
     "projects": "Проєкти",

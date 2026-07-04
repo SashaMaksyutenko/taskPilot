@@ -1,4 +1,6 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
+import { ToastContainer } from 'react-toastify'
+import 'react-toastify/dist/ReactToastify.css'
 import AdminRoute from './components/AdminRoute'
 import GuestRoute from './components/GuestRoute'
 import ProtectedRoute from './components/ProtectedRoute'
@@ -28,6 +30,8 @@ import LoginPage from './pages/LoginPage'
 function App() {
   return (
     <BrowserRouter>
+      {/* Global toast notifications (top-right, auto-dismiss). */}
+      <ToastContainer position="top-right" autoClose={3000} theme="colored" newestOnTop />
       <Routes>
         {/* Guest-only pages */}
         <Route element={<GuestRoute />}>

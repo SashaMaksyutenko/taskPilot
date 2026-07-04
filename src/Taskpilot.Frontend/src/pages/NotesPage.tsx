@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import Navbar from '../components/Navbar'
 import ConfirmDialog from '../components/ConfirmDialog'
 import { noteService } from '../services/noteService'
+import { notify } from '../lib/toast'
 import type { Note } from '../types/note'
 
 // A small palette for colour-tagging notes.
@@ -95,13 +96,17 @@ export default function NotesPage() {
 
   const exportPdf = async (note: Note) => {
     const blob = await noteService.exportPdf(note.id).catch(() => null)
-    if (!blob) return
+    if (!blob) {
+      notify.error(t('toast.actionFailed'))
+      return
+    }
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
     a.download = `${note.title.trim() || 'note'}.pdf`
     a.click()
     URL.revokeObjectURL(url)
+    notify.success(t('toast.pdfReady'))
   }
 
   // All distinct tags across notes, alphabetical, for the filter bar.

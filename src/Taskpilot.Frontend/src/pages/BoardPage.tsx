@@ -10,6 +10,7 @@ import ConfirmDialog from '../components/ConfirmDialog'
 import { useAppSelector } from '../store/hooks'
 import { projectService } from '../services/projectService'
 import { taskService } from '../services/taskService'
+import { notify } from '../lib/toast'
 import { STATUS_COLUMNS, type Project, type Task, type TaskStatus } from '../types/project'
 
 const priorityClasses: Record<string, string> = {
@@ -106,13 +107,19 @@ export default function BoardPage() {
 
   const duplicateTask = async (task: Task) => {
     const copy = await taskService.duplicateTask(task.id).catch(() => null)
-    if (copy) setTasks((prev) => [...prev, copy])
+    if (copy) {
+      setTasks((prev) => [...prev, copy])
+      notify.success(t('toast.taskDuplicated'))
+    }
   }
 
   const moveTask = async (task: Task, targetProjectId: string) => {
     const moved = await taskService.moveTask(task.id, targetProjectId).catch(() => null)
     // The task (and its subtasks) left this board.
-    if (moved) setTasks((prev) => prev.filter((t) => t.id !== task.id && t.parentTaskId !== task.id))
+    if (moved) {
+      setTasks((prev) => prev.filter((t) => t.id !== task.id && t.parentTaskId !== task.id))
+      notify.success(t('toast.taskMoved'))
+    }
   }
 
   // Bulk selection helpers.
@@ -129,17 +136,19 @@ export default function BoardPage() {
   const bulkStatus = async (status: TaskStatus) => {
     const ids = [...selectedIds]
     if (ids.length === 0) return
-    await taskService.bulkChangeStatus(ids, status).catch(() => {})
+    const res = await taskService.bulkChangeStatus(ids, status).catch(() => null)
     clearSelection()
     taskService.getTasks(projectId).then(setTasks).catch(() => {})
+    if (res) notify.success(t('toast.tasksUpdated', { count: res.changed }))
   }
 
   const bulkDelete = async () => {
     const ids = [...selectedIds]
     if (ids.length === 0) return
-    await taskService.bulkDelete(ids).catch(() => {})
+    const res = await taskService.bulkDelete(ids).catch(() => null)
     setTasks((prev) => prev.filter((t) => !selectedIds.has(t.id)))
     clearSelection()
+    if (res) notify.success(t('toast.tasksDeleted', { count: res.deleted }))
   }
 
   // The board shows only top-level tasks; subtasks are managed inside their parent.

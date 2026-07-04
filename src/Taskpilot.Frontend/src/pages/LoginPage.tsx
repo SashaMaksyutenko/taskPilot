@@ -1,15 +1,12 @@
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
 import { Link, useNavigate } from 'react-router-dom'
 import { z } from 'zod'
 import LangSwitch from '../components/LangSwitch'
-import StatsPanel from '../components/StatsPanel'
-import { statsService } from '../services/statsService'
 import { fetchMe, login } from '../store/authSlice'
 import { useAppDispatch, useAppSelector } from '../store/hooks'
-import type { PublicStats } from '../types/stats'
 
 // Login validation only checks the fields are present/well-formed.
 const schema = z.object({
@@ -28,12 +25,6 @@ export default function LoginPage() {
   const navigate = useNavigate()
   const { t } = useTranslation()
   const { error: serverError, status } = useAppSelector((s) => s.auth)
-
-  // Public site stats shown below the form (visible to everyone, like a forum footer).
-  const [stats, setStats] = useState<PublicStats | null>(null)
-  useEffect(() => {
-    statsService.getPublic().then(setStats).catch(() => {})
-  }, [])
 
   const {
     register: field,
@@ -136,12 +127,6 @@ export default function LoginPage() {
           </Link>
         </p>
       </div>
-
-      {stats && (
-        <div className="w-full max-w-md">
-          <StatsPanel stats={stats} />
-        </div>
-      )}
     </div>
   )
 }

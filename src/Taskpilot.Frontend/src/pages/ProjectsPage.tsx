@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 import Navbar from '../components/Navbar'
+import ConfirmDialog from '../components/ConfirmDialog'
 import ProjectContextMenu from '../components/ProjectContextMenu'
 import { projectService } from '../services/projectService'
 import { taskService } from '../services/taskService'
@@ -23,6 +24,8 @@ export default function ProjectsPage() {
   const [loading, setLoading] = useState(false)
   // When on, archived projects are listed too (and can be restored).
   const [showArchived, setShowArchived] = useState(false)
+  // Project awaiting delete confirmation.
+  const [deleting, setDeleting] = useState<Project | null>(null)
   // Project currently being edited (rename / recolour) in the modal.
   const [editing, setEditing] = useState<Project | null>(null)
   const [editName, setEditName] = useState('')
@@ -71,6 +74,13 @@ export default function ProjectsPage() {
 
   const restore = async (project: Project) => {
     await projectService.restore(project.id).catch(() => {})
+    load()
+  }
+
+  const confirmDelete = async () => {
+    if (!deleting) return
+    await projectService.remove(deleting.id).catch(() => {})
+    setDeleting(null)
     load()
   }
 
@@ -139,6 +149,7 @@ export default function ProjectsPage() {
                 onExport={() => exportTasks(p)}
                 onArchive={() => archive(p)}
                 onRestore={() => restore(p)}
+                onDelete={() => setDeleting(p)}
               >
                 <Link
                   to={`/projects/${p.id}`}
@@ -231,6 +242,15 @@ export default function ProjectsPage() {
             </div>
           </div>
         )}
+
+        {/* Delete confirmation */}
+        <ConfirmDialog
+          open={!!deleting}
+          title={t('projects.deleteTitle')}
+          message={t('projects.deleteConfirm', { name: deleting?.name ?? '' })}
+          onConfirm={confirmDelete}
+          onCancel={() => setDeleting(null)}
+        />
       </main>
     </div>
   )

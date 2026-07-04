@@ -119,6 +119,21 @@ public class ProjectService : IProjectService
     }
 
     /// <inheritdoc />
+    public async Task<Result> DeleteProjectAsync(Guid ownerId, Guid projectId)
+    {
+        var project = await GetOwnedAsync(projectId, ownerId);
+        if (project is null)
+            return Result.Fail("Project not found.");
+
+        // Tasks and members are removed by the configured cascade deletes.
+        _context.Projects.Remove(project);
+        await _context.SaveChangesAsync();
+
+        _logger.LogInformation("Project deleted. ProjectId: {ProjectId}, OwnerId: {OwnerId}", projectId, ownerId);
+        return Result.Ok();
+    }
+
+    /// <inheritdoc />
     public async Task<Result<ProjectDto>> DuplicateProjectAsync(Guid ownerId, Guid projectId)
     {
         var source = await GetOwnedAsync(projectId, ownerId);

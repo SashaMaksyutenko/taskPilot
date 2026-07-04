@@ -21,6 +21,9 @@ public interface IProjectService
     /// <summary>Creates a copy of a project the user owns, cloning its tasks (statuses reset to Backlog).</summary>
     Task<Result<ProjectDto>> DuplicateProjectAsync(Guid ownerId, Guid projectId);
 
+    /// <summary>Permanently deletes a project the user owns (and its tasks/members).</summary>
+    Task<Result> DeleteProjectAsync(Guid ownerId, Guid projectId);
+
     /// <summary>Archives (archived = true) or restores (false) a project.</summary>
     Task<Result> SetArchivedAsync(Guid ownerId, Guid projectId, bool archived);
 

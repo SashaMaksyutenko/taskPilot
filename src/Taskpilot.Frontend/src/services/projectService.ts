@@ -29,6 +29,11 @@ export const projectService = {
     return api.post<Project>(`/api/projects/${id}/duplicate`).then((r) => r.data)
   },
 
+  /** Permanently deletes a project and its tasks. */
+  remove(id: string): Promise<void> {
+    return api.delete(`/api/projects/${id}`).then(() => undefined)
+  },
+
   archive(id: string): Promise<void> {
     return api.post(`/api/projects/${id}/archive`).then(() => undefined)
   },

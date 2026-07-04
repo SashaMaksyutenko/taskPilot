@@ -87,6 +87,19 @@ public class ProjectsController : BaseApiController
             : BadRequest(new { error = result.Error });
     }
 
+    /// <summary>Permanently deletes a project (owner only).</summary>
+    [HttpDelete("{projectId:guid}")]
+    public async Task<IActionResult> Delete(Guid projectId)
+    {
+        var userId = CurrentUserId();
+        if (userId is null) return Unauthorized();
+
+        var result = await _projects.DeleteProjectAsync(userId.Value, projectId);
+        return result.Succeeded
+            ? Ok(new { message = "Project deleted." })
+            : NotFound(new { error = result.Error });
+    }
+
     /// <summary>Archives a project.</summary>
     [HttpPost("{projectId:guid}/archive")]
     public Task<IActionResult> Archive(Guid projectId) => SetArchived(projectId, archived: true);

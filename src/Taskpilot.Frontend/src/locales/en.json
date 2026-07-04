@@ -1,4 +1,8 @@
 {
+  "common": {
+    "cancel": "Cancel",
+    "delete": "Delete"
+  },
   "nav": {
     "dashboard": "Dashboard",
     "projects": "Projects",
@@ -250,6 +254,9 @@
     "restore": "Restore",
     "archived": "Archived",
     "showArchived": "Show archived",
+    "delete": "Delete",
+    "deleteTitle": "Delete project",
+    "deleteConfirm": "Delete \"{{name}}\" and all its tasks? This cannot be undone.",
     "shared": "Shared",
     "members": "{{count}} collaborator(s)"
   },

@@ -33,6 +33,9 @@ public interface IAuthService
     /// <summary>Signs a user in with a Google OAuth authorization code (creates the account if new).</summary>
     Task<Result<AuthResponseDto>> GoogleLoginAsync(string code, string? ip = null, string? userAgent = null);
 
+    /// <summary>Signs a user in with a GitHub OAuth authorization code (creates the account if new).</summary>
+    Task<Result<AuthResponseDto>> GitHubLoginAsync(string code, string? ip = null, string? userAgent = null);
+
     /// <summary>
     /// Exchanges a valid refresh token for a new access token and a rotated
     /// refresh token (the used one is revoked).

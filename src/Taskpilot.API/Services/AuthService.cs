@@ -18,6 +18,7 @@ public class AuthService : IAuthService
     private readonly TaskpilotDbContext _context;
     private readonly ITokenService _tokenService;
     private readonly IGoogleAuthClient _googleClient;
+    private readonly IGitHubAuthClient _gitHubClient;
     private readonly JwtSettings _jwtSettings;
     private readonly ILogger<AuthService> _logger;
 
@@ -32,12 +33,14 @@ public class AuthService : IAuthService
         TaskpilotDbContext context,
         ITokenService tokenService,
         IGoogleAuthClient googleClient,
+        IGitHubAuthClient gitHubClient,
         IOptions<JwtSettings> jwtOptions,
         ILogger<AuthService> logger)
     {
         _context = context;
         _tokenService = tokenService;
         _googleClient = googleClient;
+        _gitHubClient = gitHubClient;
         _jwtSettings = jwtOptions.Value;
         _logger = logger;
     }
@@ -256,6 +259,81 @@ public class AuthService : IAuthService
         {
             _logger.LogError(ex, "Unexpected error during Google login.");
             return Result<AuthResponseDto>.Fail("An unexpected error occurred during Google sign-in.");
+        }
+    }
+
+    /// <summary>
+    /// Signs a user in with a GitHub OAuth authorization code. Exchanges the code
+    /// for the account profile, then finds or creates a matching user and issues
+    /// the usual JWT + refresh token. New GitHub users have no password.
+    /// </summary>
+    /// <param name="code">The authorization code returned by GitHub to the frontend.</param>
+    /// <returns>Success with tokens + user info, or failure when the code is invalid.</returns>
+    public async Task<Result<AuthResponseDto>> GitHubLoginAsync(string code, string? ip = null, string? userAgent = null)
+    {
+        _logger.LogInformation("GitHubLoginAsync started.");
+
+        try
+        {
+            var exchange = await _gitHubClient.ExchangeCodeAsync(code);
+            if (!exchange.Succeeded)
+                return Result<AuthResponseDto>.Fail(exchange.Error!);
+
+            var profile = exchange.Value!;
+            var email = profile.Email.Trim().ToLowerInvariant();
+
+            // Match on the GitHub id first (survives an email change), then on email.
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.GitHubId == profile.Id)
+                       ?? await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
+
+            if (user is null)
+            {
+                user = new User
+                {
+                    Id = Guid.NewGuid(),
+                    Name = string.IsNullOrWhiteSpace(profile.Name) ? email : profile.Name.Trim(),
+                    Email = email,
+                    GitHubId = profile.Id,
+                    Role = Role.Developer,
+                    IsActive = true,
+                    CreatedAt = DateTime.UtcNow,
+                };
+                _context.Users.Add(user);
+                _logger.LogInformation("New user created via GitHub. UserId: {UserId}", user.Id);
+            }
+            else if (string.IsNullOrEmpty(user.GitHubId))
+            {
+                // Existing account: link it to GitHub on first GitHub sign-in.
+                user.GitHubId = profile.Id;
+                user.UpdatedAt = DateTime.UtcNow;
+            }
+
+            if (!user.IsActive && user.BannedUntil is { } until && until <= DateTime.UtcNow)
+            {
+                user.IsActive = true;
+                user.BannedUntil = null;
+                user.UpdatedAt = DateTime.UtcNow;
+            }
+
+            if (!user.IsActive)
+            {
+                _logger.LogWarning("GitHub login blocked: account is inactive. UserId: {UserId}", user.Id);
+                return Result<AuthResponseDto>.Fail("Account is disabled.");
+            }
+
+            var (accessToken, accessExpiresAtUtc) = _tokenService.GenerateAccessToken(user);
+            var refreshToken = CreateRefreshToken(user.Id, ip, userAgent);
+            _context.RefreshTokens.Add(refreshToken);
+            await _context.SaveChangesAsync();
+
+            _logger.LogInformation("GitHub login successful. UserId: {UserId}", user.Id);
+            return Result<AuthResponseDto>.Ok(
+                BuildAuthResponse(user, accessToken, accessExpiresAtUtc, refreshToken));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Unexpected error during GitHub login.");
+            return Result<AuthResponseDto>.Fail("An unexpected error occurred during GitHub sign-in.");
         }
     }
 

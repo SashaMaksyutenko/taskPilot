@@ -78,6 +78,10 @@ builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("Jwt"))
 builder.Services.Configure<GoogleOAuthOptions>(builder.Configuration.GetSection("GoogleOAuth"));
 builder.Services.AddHttpClient<IGoogleAuthClient, GoogleAuthClient>();
 
+// GitHub OAuth credentials (populated from .env: GitHubOAuth__*).
+builder.Services.Configure<GitHubOAuthOptions>(builder.Configuration.GetSection("GitHubOAuth"));
+builder.Services.AddHttpClient<IGitHubAuthClient, GitHubAuthClient>();
+
 // Bind the initial-admin credentials (populated from .env: Admin__*).
 builder.Services.Configure<AdminSeedSettings>(builder.Configuration.GetSection("Admin"));
 

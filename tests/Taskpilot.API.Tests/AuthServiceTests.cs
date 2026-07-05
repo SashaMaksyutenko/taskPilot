@@ -29,7 +29,10 @@ public class AuthServiceTests
     }
 
     /// <summary>Builds an AuthService with a stubbed token service over the given context.</summary>
-    private static AuthService CreateService(TaskpilotDbContext context, IGoogleAuthClient? googleClient = null)
+    private static AuthService CreateService(
+        TaskpilotDbContext context,
+        IGoogleAuthClient? googleClient = null,
+        IGitHubAuthClient? gitHubClient = null)
     {
         var tokenMock = new Mock<ITokenService>();
         // Access token is a fixed stub; refresh token is unique each call.
@@ -39,9 +42,10 @@ public class AuthServiceTests
                  .Returns(() => Guid.NewGuid().ToString("N"));
 
         var jwt = Options.Create(new JwtSettings { RefreshTokenDays = 7 });
-        // Default Google client just fails; tests that exercise Google sign-in pass their own stub.
+        // Default OAuth clients just fail; tests that exercise a provider pass their own stub.
         var google = googleClient ?? new Mock<IGoogleAuthClient>().Object;
-        return new AuthService(context, tokenMock.Object, google, jwt, NullLogger<AuthService>.Instance);
+        var gitHub = gitHubClient ?? new Mock<IGitHubAuthClient>().Object;
+        return new AuthService(context, tokenMock.Object, google, gitHub, jwt, NullLogger<AuthService>.Instance);
     }
 
     /// <summary>A Google client stub that always returns the given profile.</summary>
@@ -50,6 +54,15 @@ public class AuthServiceTests
         var mock = new Mock<IGoogleAuthClient>();
         mock.Setup(c => c.ExchangeCodeAsync(It.IsAny<string>()))
             .ReturnsAsync(Result<GoogleUserInfo>.Ok(new GoogleUserInfo(sub, email, name)));
+        return mock.Object;
+    }
+
+    /// <summary>A GitHub client stub that always returns the given profile.</summary>
+    private static IGitHubAuthClient GitHubStub(string id, string email, string name)
+    {
+        var mock = new Mock<IGitHubAuthClient>();
+        mock.Setup(c => c.ExchangeCodeAsync(It.IsAny<string>()))
+            .ReturnsAsync(Result<GitHubUserInfo>.Ok(new GitHubUserInfo(id, email, name)));
         return mock.Object;
     }
 
@@ -202,6 +215,46 @@ public class AuthServiceTests
         // No duplicate user; the existing account is linked to Google and keeps its password.
         var user = await ctx.Users.SingleAsync();
         Assert.Equal("google-999", user.GoogleId);
+        Assert.Equal("hash", user.PasswordHash);
+    }
+
+    [Fact]
+    public async Task GitHubLoginAsync_NewAccount_CreatesUserAndIssuesTokens()
+    {
+        await using var ctx = CreateContext();
+        var svc = CreateService(ctx, gitHubClient: GitHubStub("gh-123", "Dev@Example.com", "Dev"));
+
+        var result = await svc.GitHubLoginAsync("auth-code");
+
+        Assert.True(result.Succeeded);
+        Assert.NotNull(result.Value!.AccessToken);
+        var user = await ctx.Users.SingleAsync();
+        Assert.Equal("dev@example.com", user.Email);   // normalized to lowercase
+        Assert.Equal("gh-123", user.GitHubId);
+        Assert.Null(user.PasswordHash);
+    }
+
+    [Fact]
+    public async Task GitHubLoginAsync_ExistingEmail_LinksAccountWithoutDuplicate()
+    {
+        await using var ctx = CreateContext();
+        ctx.Users.Add(new User
+        {
+            Id = Guid.NewGuid(),
+            Name = "Local User",
+            Email = "dev@example.com",
+            PasswordHash = "hash",
+            Role = Role.Developer,
+            IsActive = true,
+        });
+        await ctx.SaveChangesAsync();
+
+        var svc = CreateService(ctx, gitHubClient: GitHubStub("gh-777", "dev@example.com", "Dev"));
+        var result = await svc.GitHubLoginAsync("auth-code");
+
+        Assert.True(result.Succeeded);
+        var user = await ctx.Users.SingleAsync();
+        Assert.Equal("gh-777", user.GitHubId);
         Assert.Equal("hash", user.PasswordHash);
     }
 }

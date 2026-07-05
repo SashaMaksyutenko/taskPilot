@@ -25,6 +25,9 @@ public class User
     /// <summary>Google account id ("sub") for users linked to Google sign-in; null otherwise.</summary>
     public string? GoogleId { get; set; }
 
+    /// <summary>GitHub account id for users linked to GitHub sign-in; null otherwise.</summary>
+    public string? GitHubId { get; set; }
+
     /// <summary>Роль користувача (RBAC). За замовчуванням — Developer.</summary>
     public Role Role { get; set; } = Role.Developer;
 

@@ -1,3 +1,6 @@
+using Microsoft.Extensions.Caching.Distributed;
+using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Options;
 using Taskpilot.API.Data;
 using Taskpilot.API.Hubs;
 using Taskpilot.API.Models;
@@ -9,6 +12,10 @@ namespace Taskpilot.API.Tests;
 /// <summary>Unit tests for <see cref="StatsService"/> over an in-memory database.</summary>
 public class StatsServiceTests
 {
+    /// <summary>A real in-memory IDistributedCache for tests (no Redis needed).</summary>
+    private static IDistributedCache NewCache() =>
+        new MemoryDistributedCache(Options.Create(new MemoryDistributedCacheOptions()));
+
     // Adds a user with an explicit CreatedAt so "newest" ordering is deterministic.
     private static Guid AddUser(TaskpilotDbContext ctx, string name, DateTime createdAt)
     {
@@ -41,7 +48,7 @@ public class StatsServiceTests
         var presence = new PresenceTracker();
         presence.Connected(bob, "conn-1");
 
-        var svc = new StatsService(ctx, presence, new VisitorTracker());
+        var svc = new StatsService(ctx, presence, new VisitorTracker(), NewCache());
         var result = await svc.GetPublicStatsAsync();
 
         Assert.True(result.Succeeded);
@@ -66,7 +73,7 @@ public class StatsServiceTests
         visitors.Record("1.1.1.1"); // same IP
         visitors.Record("2.2.2.2");
 
-        var svc = new StatsService(ctx, new PresenceTracker(), visitors);
+        var svc = new StatsService(ctx, new PresenceTracker(), visitors, NewCache());
         var result = await svc.GetFullStatsAsync();
 
         Assert.True(result.Succeeded);

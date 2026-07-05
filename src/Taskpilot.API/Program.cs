@@ -82,6 +82,18 @@ builder.Services.AddHttpClient<IGoogleAuthClient, GoogleAuthClient>();
 builder.Services.Configure<GitHubOAuthOptions>(builder.Configuration.GetSection("GitHubOAuth"));
 builder.Services.AddHttpClient<IGitHubAuthClient, GitHubAuthClient>();
 
+// Distributed cache: use Redis when a connection string is configured (Redis__Connection),
+// otherwise an in-memory cache so the app runs the same without Redis installed.
+var redisConnection = builder.Configuration["Redis:Connection"];
+if (!string.IsNullOrWhiteSpace(redisConnection))
+    builder.Services.AddStackExchangeRedisCache(o =>
+    {
+        o.Configuration = redisConnection;
+        o.InstanceName = "taskpilot:";
+    });
+else
+    builder.Services.AddDistributedMemoryCache();
+
 // Email delivery — populated from .env: Email__*. Prefer SMTP (Gmail/Brevo/…) when
 // an SMTP host is set; otherwise fall back to the SendGrid API sender. No config =
 // both are disabled and email is silently skipped.

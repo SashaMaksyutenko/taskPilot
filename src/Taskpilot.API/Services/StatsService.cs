@@ -1,4 +1,6 @@
+using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Distributed;
 using Taskpilot.API.Common;
 using Taskpilot.API.Data;
 using Taskpilot.API.DTOs.Admin;
@@ -11,23 +13,35 @@ namespace Taskpilot.API.Services;
 /// Computes live site statistics. User/forum counts come from the database;
 /// online users from <see cref="PresenceTracker"/> (SignalR connections) and
 /// anonymous visitors from <see cref="VisitorTracker"/> (both in-memory singletons).
+/// The admin dashboard figures are cached briefly (Redis when configured) to avoid
+/// running a batch of COUNT queries on every dashboard refresh.
 /// </summary>
 public class StatsService : IStatsService
 {
+    private const string FullStatsCacheKey = "stats:full";
+    private static readonly TimeSpan FullStatsTtl = TimeSpan.FromSeconds(15);
+
     private readonly TaskpilotDbContext _context;
     private readonly PresenceTracker _presence;
     private readonly VisitorTracker _visitors;
+    private readonly IDistributedCache _cache;
 
-    public StatsService(TaskpilotDbContext context, PresenceTracker presence, VisitorTracker visitors)
+    public StatsService(TaskpilotDbContext context, PresenceTracker presence, VisitorTracker visitors, IDistributedCache cache)
     {
         _context = context;
         _presence = presence;
         _visitors = visitors;
+        _cache = cache;
     }
 
     /// <inheritdoc />
     public async Task<Result<AdminStatsDto>> GetFullStatsAsync()
     {
+        // Cache-aside: serve a recent snapshot when available.
+        var cached = await _cache.GetStringAsync(FullStatsCacheKey);
+        if (cached is not null)
+            return Result<AdminStatsDto>.Ok(JsonSerializer.Deserialize<AdminStatsDto>(cached)!);
+
         var (common, online) = await LoadCommonAsync();
 
         // Count users grouped by role for the breakdown chart (role stored as string).
@@ -36,7 +50,7 @@ public class StatsService : IStatsService
             .Select(g => new { Role = g.Key, Count = g.Count() })
             .ToListAsync();
 
-        return Result<AdminStatsDto>.Ok(new AdminStatsDto
+        var dto = new AdminStatsDto
         {
             UsersByRole = byRole.ToDictionary(x => x.Role.ToString(), x => x.Count),
             TotalUsers = common.TotalUsers,
@@ -49,7 +63,12 @@ public class StatsService : IStatsService
             // Anonymous-visitor analytics are admin-only.
             AnonymousVisitorsToday = _visitors.UniqueVisitorsToday,
             AnonymousVisitsTotal = _visitors.TotalVisits,
-        });
+        };
+
+        await _cache.SetStringAsync(FullStatsCacheKey, JsonSerializer.Serialize(dto),
+            new DistributedCacheEntryOptions { AbsoluteExpirationRelativeToNow = FullStatsTtl });
+
+        return Result<AdminStatsDto>.Ok(dto);
     }
 
     /// <inheritdoc />

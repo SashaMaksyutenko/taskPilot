@@ -195,7 +195,10 @@
     "googleContinue": "Продовжити через Google",
     "googleSignIn": "Увійти через Google",
     "googleSigningIn": "Виконуємо вхід…",
-    "googleFailed": "Не вдалося увійти через Google"
+    "googleFailed": "Не вдалося увійти через Google",
+    "githubContinue": "Продовжити через GitHub",
+    "githubSigningIn": "Виконуємо вхід…",
+    "githubFailed": "Не вдалося увійти через GitHub"
   },
   "twoFa": {
     "title": "Двофакторна автентифікація",

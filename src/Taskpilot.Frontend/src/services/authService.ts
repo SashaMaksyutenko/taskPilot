@@ -33,6 +33,11 @@ export const authService = {
     return api.post<AuthResponse>('/api/auth/google', { code }).then((r) => r.data)
   },
 
+  /** POST /api/auth/github — signs in with a GitHub authorization code. */
+  github(code: string): Promise<AuthResponse> {
+    return api.post<AuthResponse>('/api/auth/github', { code }).then((r) => r.data)
+  },
+
   /** POST /api/auth/refresh — exchanges a refresh token for new tokens. */
   refresh(refreshToken: string): Promise<AuthResponse> {
     return api

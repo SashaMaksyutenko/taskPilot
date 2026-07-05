@@ -68,6 +68,17 @@ export const googleLogin = createAsyncThunk(
   },
 )
 
+export const githubLogin = createAsyncThunk(
+  'auth/githubLogin',
+  async (code: string, { rejectWithValue }) => {
+    try {
+      return await authService.github(code)
+    } catch (error) {
+      return rejectWithValue(toErrorMessage(error))
+    }
+  },
+)
+
 export const register = createAsyncThunk(
   'auth/register',
   async (data: RegisterRequest, { rejectWithValue }) => {
@@ -146,6 +157,24 @@ const authSlice = createSlice({
       .addCase(googleLogin.rejected, (state, action) => {
         state.status = 'idle'
         state.error = (action.payload as string) ?? 'Google sign-in failed'
+      })
+      // GitHub login shares the same token-storing behaviour.
+      .addCase(githubLogin.pending, (state) => {
+        state.status = 'loading'
+        state.error = null
+      })
+      .addCase(githubLogin.fulfilled, (state, action) => {
+        const data = action.payload as AuthResponse
+        state.status = 'idle'
+        state.accessToken = data.accessToken
+        state.refreshToken = data.refreshToken
+        state.isAuthenticated = true
+        localStorage.setItem('accessToken', data.accessToken)
+        localStorage.setItem('refreshToken', data.refreshToken)
+      })
+      .addCase(githubLogin.rejected, (state, action) => {
+        state.status = 'idle'
+        state.error = (action.payload as string) ?? 'GitHub sign-in failed'
       })
       .addCase(login.rejected, (state, action) => {
         state.status = 'idle'

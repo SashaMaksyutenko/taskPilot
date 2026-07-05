@@ -195,7 +195,10 @@
     "googleContinue": "Continue with Google",
     "googleSignIn": "Sign in with Google",
     "googleSigningIn": "Signing you in…",
-    "googleFailed": "Google sign-in failed"
+    "googleFailed": "Google sign-in failed",
+    "githubContinue": "Continue with GitHub",
+    "githubSigningIn": "Signing you in…",
+    "githubFailed": "GitHub sign-in failed"
   },
   "twoFa": {
     "title": "Two-factor authentication",

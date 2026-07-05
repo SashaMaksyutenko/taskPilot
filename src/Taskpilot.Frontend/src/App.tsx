@@ -22,6 +22,7 @@ import UserProfilePage from './pages/UserProfilePage'
 import RegisterPage from './pages/RegisterPage'
 import LoginPage from './pages/LoginPage'
 import GoogleCallbackPage from './pages/GoogleCallbackPage'
+import GitHubCallbackPage from './pages/GitHubCallbackPage'
 
 /**
  * Root component. Sets up client-side routing with auth guards:
@@ -40,8 +41,9 @@ function App() {
           <Route path="/register" element={<RegisterPage />} />
         </Route>
 
-        {/* Google OAuth redirect target (handles the ?code= exchange). */}
+        {/* OAuth redirect targets (handle the ?code= exchange). */}
         <Route path="/auth/google/callback" element={<GoogleCallbackPage />} />
+        <Route path="/auth/github/callback" element={<GitHubCallbackPage />} />
 
         {/* Site root: landing for guests, dashboard for logged-in users. */}
         <Route path="/" element={<RootPage />} />

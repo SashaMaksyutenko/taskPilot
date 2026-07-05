@@ -73,18 +73,20 @@ public class NotificationsController : BaseApiController
         var userId = CurrentUserId();
         if (userId is null) return Unauthorized();
 
-        var result = await _notifications.GetDisabledTypesAsync(userId.Value);
-        return Ok(new { disabledTypes = result.Value });
+        var inApp = await _notifications.GetDisabledTypesAsync(userId.Value);
+        var email = await _notifications.GetDisabledEmailTypesAsync(userId.Value);
+        return Ok(new { disabledTypes = inApp.Value, disabledEmailTypes = email.Value });
     }
 
-    /// <summary>Replaces the current user's notification opt-outs.</summary>
+    /// <summary>Replaces the current user's notification opt-outs (in-app and email).</summary>
     [HttpPut("preferences")]
     public async Task<IActionResult> UpdatePreferences([FromBody] UpdatePreferencesDto dto)
     {
         var userId = CurrentUserId();
         if (userId is null) return Unauthorized();
 
-        var result = await _notifications.SetDisabledTypesAsync(userId.Value, dto.DisabledTypes ?? new List<string>());
-        return Ok(new { disabledTypes = result.Value });
+        var inApp = await _notifications.SetDisabledTypesAsync(userId.Value, dto.DisabledTypes ?? new List<string>());
+        var email = await _notifications.SetDisabledEmailTypesAsync(userId.Value, dto.DisabledEmailTypes ?? new List<string>());
+        return Ok(new { disabledTypes = inApp.Value, disabledEmailTypes = email.Value });
     }
 }

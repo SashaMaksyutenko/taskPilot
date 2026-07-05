@@ -140,7 +140,9 @@
   },
   "notifPrefs": {
     "title": "Notifications",
-    "desc": "Choose which notifications you want to receive.",
+    "desc": "Choose which notifications you want to receive, per channel.",
+    "inApp": "In-app",
+    "email": "Email",
     "type": {
       "Task": "Tasks & deadlines",
       "Chat": "Chat messages",

@@ -39,40 +39,45 @@ public class NotificationService : INotificationService
     /// <inheritdoc />
     public async Task CreateAsync(Guid recipientId, NotificationType type, string message, string? link = null)
     {
-        // Respect the recipient's preferences: skip types they have opted out of.
-        if (await _context.NotificationPreferences.AnyAsync(p => p.UserId == recipientId && p.Type == type))
+        // The two channels are opted out independently.
+        var muted = await _context.NotificationPreferences
+            .Where(p => p.UserId == recipientId && p.Type == type)
+            .Select(p => p.Channel)
+            .ToListAsync();
+        var inAppMuted = muted.Contains(NotificationChannel.InApp);
+        var emailMuted = muted.Contains(NotificationChannel.Email);
+
+        // In-app: store and push in real time unless muted.
+        if (!inAppMuted)
         {
-            _logger.LogInformation("Notification suppressed by preference. RecipientId: {RecipientId}, Type: {Type}", recipientId, type);
-            return;
+            var notification = new Notification
+            {
+                Id = Guid.NewGuid(),
+                RecipientId = recipientId,
+                Type = type,
+                Message = message,
+                Link = link,
+                IsRead = false,
+                CreatedAt = DateTime.UtcNow,
+            };
+            _context.Notifications.Add(notification);
+            await _context.SaveChangesAsync();
+            _logger.LogInformation("Notification created. RecipientId: {RecipientId}, Type: {Type}", recipientId, type);
+
+            await _hub.Clients.Group(NotificationHub.GroupName(recipientId)).SendAsync("ReceiveNotification", new NotificationDto
+            {
+                Id = notification.Id,
+                Type = notification.Type.ToString(),
+                Message = notification.Message,
+                Link = notification.Link,
+                IsRead = notification.IsRead,
+                CreatedAt = notification.CreatedAt,
+            });
         }
 
-        var notification = new Notification
-        {
-            Id = Guid.NewGuid(),
-            RecipientId = recipientId,
-            Type = type,
-            Message = message,
-            Link = link,
-            IsRead = false,
-            CreatedAt = DateTime.UtcNow,
-        };
-        _context.Notifications.Add(notification);
-        await _context.SaveChangesAsync();
-        _logger.LogInformation("Notification created. RecipientId: {RecipientId}, Type: {Type}", recipientId, type);
-
-        // Push to the recipient's connected clients (if any) so the bell updates live.
-        await _hub.Clients.Group(NotificationHub.GroupName(recipientId)).SendAsync("ReceiveNotification", new NotificationDto
-        {
-            Id = notification.Id,
-            Type = notification.Type.ToString(),
-            Message = notification.Message,
-            Link = notification.Link,
-            IsRead = notification.IsRead,
-            CreatedAt = notification.CreatedAt,
-        });
-
-        // Also deliver by email when a provider is configured (best-effort).
-        await SendEmailAsync(recipientId, message, link);
+        // Email: deliver when configured and not muted for this type (best-effort).
+        if (!emailMuted)
+            await SendEmailAsync(recipientId, message, link);
     }
 
     /// <summary>Emails the notification to the recipient when email delivery is enabled.</summary>
@@ -157,18 +162,34 @@ public class NotificationService : INotificationService
     }
 
     /// <inheritdoc />
-    public async Task<Result<List<string>>> GetDisabledTypesAsync(Guid userId)
+    public Task<Result<List<string>>> GetDisabledTypesAsync(Guid userId) =>
+        GetDisabledAsync(userId, NotificationChannel.InApp);
+
+    /// <inheritdoc />
+    public Task<Result<List<string>>> SetDisabledTypesAsync(Guid userId, IEnumerable<string> typeNames) =>
+        SetDisabledAsync(userId, NotificationChannel.InApp, typeNames);
+
+    /// <inheritdoc />
+    public Task<Result<List<string>>> GetDisabledEmailTypesAsync(Guid userId) =>
+        GetDisabledAsync(userId, NotificationChannel.Email);
+
+    /// <inheritdoc />
+    public Task<Result<List<string>>> SetDisabledEmailTypesAsync(Guid userId, IEnumerable<string> typeNames) =>
+        SetDisabledAsync(userId, NotificationChannel.Email, typeNames);
+
+    /// <summary>Returns the notification types the user muted on the given channel.</summary>
+    private async Task<Result<List<string>>> GetDisabledAsync(Guid userId, NotificationChannel channel)
     {
         var types = await _context.NotificationPreferences
-            .Where(p => p.UserId == userId)
+            .Where(p => p.UserId == userId && p.Channel == channel)
             .Select(p => p.Type)
             .ToListAsync();
 
         return Result<List<string>>.Ok(types.Select(t => t.ToString()).ToList());
     }
 
-    /// <inheritdoc />
-    public async Task<Result<List<string>>> SetDisabledTypesAsync(Guid userId, IEnumerable<string> typeNames)
+    /// <summary>Replaces the user's opt-out set for one channel (other channels untouched).</summary>
+    private async Task<Result<List<string>>> SetDisabledAsync(Guid userId, NotificationChannel channel, IEnumerable<string> typeNames)
     {
         // Keep only valid, distinct type names.
         var disabled = typeNames
@@ -178,9 +199,9 @@ public class NotificationService : INotificationService
             .Distinct()
             .ToList();
 
-        // Replace the user's opt-out set entirely.
+        // Replace only this channel's opt-outs.
         var existing = await _context.NotificationPreferences
-            .Where(p => p.UserId == userId)
+            .Where(p => p.UserId == userId && p.Channel == channel)
             .ToListAsync();
         _context.NotificationPreferences.RemoveRange(existing);
 
@@ -190,10 +211,11 @@ public class NotificationService : INotificationService
                 Id = Guid.NewGuid(),
                 UserId = userId,
                 Type = type,
+                Channel = channel,
             });
 
         await _context.SaveChangesAsync();
-        _logger.LogInformation("Notification preferences updated. UserId: {UserId}, Disabled: {Count}", userId, disabled.Count);
+        _logger.LogInformation("Notification preferences updated. UserId: {UserId}, Channel: {Channel}, Disabled: {Count}", userId, channel, disabled.Count);
 
         return Result<List<string>>.Ok(disabled.Select(t => t.ToString()).ToList());
     }

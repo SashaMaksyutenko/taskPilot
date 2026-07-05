@@ -30,4 +30,10 @@ public interface INotificationService
 
     /// <summary>Replaces the user's opt-out set; returns the applied disabled types.</summary>
     Task<Result<List<string>>> SetDisabledTypesAsync(Guid userId, IEnumerable<string> typeNames);
+
+    /// <summary>Returns the notification types the user muted for email delivery.</summary>
+    Task<Result<List<string>>> GetDisabledEmailTypesAsync(Guid userId);
+
+    /// <summary>Replaces the user's email-muted type set; returns the applied disabled types.</summary>
+    Task<Result<List<string>>> SetDisabledEmailTypesAsync(Guid userId, IEnumerable<string> typeNames);
 }

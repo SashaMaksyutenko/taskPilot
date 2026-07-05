@@ -85,18 +85,27 @@ export default function SettingsPage() {
   const [hookUrl, setHookUrl] = useState('')
   const [hookEvent, setHookEvent] = useState<string>(WEBHOOK_EVENTS[0])
 
-  // Notification preferences (opt-out set).
+  // Notification preferences (opt-out sets per channel).
   const [disabledNotif, setDisabledNotif] = useState<string[]>([])
+  const [disabledEmail, setDisabledEmail] = useState<string[]>([])
   useEffect(() => {
-    notificationService.getPreferences().then(setDisabledNotif).catch(() => {})
+    notificationService
+      .getPreferences()
+      .then((p) => {
+        setDisabledNotif(p.disabledTypes)
+        setDisabledEmail(p.disabledEmailTypes)
+      })
+      .catch(() => {})
   }, [])
 
-  const toggleNotif = async (type: string) => {
-    const next = disabledNotif.includes(type)
-      ? disabledNotif.filter((x) => x !== type)
-      : [...disabledNotif, type]
-    setDisabledNotif(next)
-    notificationService.updatePreferences(next).catch(() => {})
+  // channel: 'inapp' toggles the bell; 'email' toggles email delivery.
+  const toggleNotif = async (type: string, channel: 'inapp' | 'email') => {
+    const [current, setter] = channel === 'inapp' ? [disabledNotif, setDisabledNotif] : [disabledEmail, setDisabledEmail]
+    const next = current.includes(type) ? current.filter((x) => x !== type) : [...current, type]
+    setter(next)
+    const inApp = channel === 'inapp' ? next : disabledNotif
+    const email = channel === 'email' ? next : disabledEmail
+    notificationService.updatePreferences(inApp, email).catch(() => {})
   }
 
   // Active sessions.
@@ -592,16 +601,28 @@ export default function SettingsPage() {
         <section className="mt-8 rounded-xl border border-slate-200 bg-white p-6 dark:border-slate-700 dark:bg-slate-800">
           <h2 className="mb-1 font-bold">{t('notifPrefs.title')}</h2>
           <p className="mb-4 text-sm text-slate-500 dark:text-slate-400">{t('notifPrefs.desc')}</p>
-          <div className="grid gap-2 sm:grid-cols-2">
+
+          {/* A row per type with an in-app and an email toggle. */}
+          <div className="grid grid-cols-[1fr_auto_auto] items-center gap-x-6 gap-y-2 text-sm">
+            <span />
+            <span className="text-center text-xs font-semibold text-slate-500 dark:text-slate-400">{t('notifPrefs.inApp')}</span>
+            <span className="text-center text-xs font-semibold text-slate-500 dark:text-slate-400">{t('notifPrefs.email')}</span>
             {NOTIF_TYPES.map((type) => (
-              <label key={type} className="flex items-center gap-2 text-sm">
+              <div key={type} className="contents">
+                <span>{t(`notifPrefs.type.${type}`, type)}</span>
                 <input
                   type="checkbox"
+                  className="mx-auto"
                   checked={!disabledNotif.includes(type)}
-                  onChange={() => toggleNotif(type)}
+                  onChange={() => toggleNotif(type, 'inapp')}
                 />
-                {t(`notifPrefs.type.${type}`, type)}
-              </label>
+                <input
+                  type="checkbox"
+                  className="mx-auto"
+                  checked={!disabledEmail.includes(type)}
+                  onChange={() => toggleNotif(type, 'email')}
+                />
+              </div>
             ))}
           </div>
         </section>

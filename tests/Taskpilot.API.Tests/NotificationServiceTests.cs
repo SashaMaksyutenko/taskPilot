@@ -65,13 +65,14 @@ public class NotificationServiceTests
     }
 
     [Fact]
-    public async Task CreateAsync_OptedOut_SendsNothing()
+    public async Task CreateAsync_BothChannelsMuted_SendsNothing()
     {
         await using var ctx = CreateContext();
         var userId = Guid.NewGuid();
         ctx.Users.Add(new User { Id = userId, Name = "Dana", Email = "dana@example.com", Role = Role.Developer, IsActive = true });
-        // The recipient opted out of Task notifications entirely.
-        ctx.NotificationPreferences.Add(new NotificationPreference { Id = Guid.NewGuid(), UserId = userId, Type = NotificationType.Task });
+        // Opted out of Task notifications on both channels.
+        ctx.NotificationPreferences.Add(new NotificationPreference { Id = Guid.NewGuid(), UserId = userId, Type = NotificationType.Task, Channel = NotificationChannel.InApp });
+        ctx.NotificationPreferences.Add(new NotificationPreference { Id = Guid.NewGuid(), UserId = userId, Type = NotificationType.Task, Channel = NotificationChannel.Email });
         await ctx.SaveChangesAsync();
 
         var email = new Mock<IEmailSender>();
@@ -80,8 +81,28 @@ public class NotificationServiceTests
 
         await svc.CreateAsync(userId, NotificationType.Task, "You were assigned a task.", null);
 
-        // Nothing stored, nothing emailed.
         Assert.Equal(0, await ctx.Notifications.CountAsync());
+        email.Verify(e => e.SendAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task CreateAsync_EmailMutedOnly_StoresInAppButSkipsEmail()
+    {
+        await using var ctx = CreateContext();
+        var userId = Guid.NewGuid();
+        ctx.Users.Add(new User { Id = userId, Name = "Dana", Email = "dana@example.com", Role = Role.Developer, IsActive = true });
+        // Muted email for Task, but the in-app channel stays on.
+        ctx.NotificationPreferences.Add(new NotificationPreference { Id = Guid.NewGuid(), UserId = userId, Type = NotificationType.Task, Channel = NotificationChannel.Email });
+        await ctx.SaveChangesAsync();
+
+        var email = new Mock<IEmailSender>();
+        email.SetupGet(e => e.IsEnabled).Returns(true);
+        var svc = CreateService(ctx, email.Object);
+
+        await svc.CreateAsync(userId, NotificationType.Task, "You were assigned a task.", null);
+
+        // In-app notification stored; email skipped.
+        Assert.Equal(1, await ctx.Notifications.CountAsync());
         email.Verify(e => e.SendAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()), Times.Never);
     }
 }

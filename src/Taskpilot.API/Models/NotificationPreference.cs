@@ -17,4 +17,7 @@ public class NotificationPreference
 
     /// <summary>The notification type that is muted for this user.</summary>
     public NotificationType Type { get; set; }
+
+    /// <summary>The delivery channel this opt-out applies to (in-app by default).</summary>
+    public NotificationChannel Channel { get; set; } = NotificationChannel.InApp;
 }

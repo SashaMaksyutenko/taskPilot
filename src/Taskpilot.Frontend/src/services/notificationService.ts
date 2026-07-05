@@ -21,17 +21,23 @@ export const notificationService = {
     return api.post('/api/notifications/read-all').then(() => undefined)
   },
 
-  /** Notification type names the user has disabled. */
-  getPreferences(): Promise<string[]> {
+  /** Notification types the user muted, per channel. */
+  getPreferences(): Promise<{ disabledTypes: string[]; disabledEmailTypes: string[] }> {
     return api
-      .get<{ disabledTypes: string[] }>('/api/notifications/preferences')
-      .then((r) => r.data.disabledTypes)
+      .get<{ disabledTypes: string[]; disabledEmailTypes: string[] }>('/api/notifications/preferences')
+      .then((r) => r.data)
   },
 
-  /** Replaces the user's disabled notification types. */
-  updatePreferences(disabledTypes: string[]): Promise<string[]> {
+  /** Replaces the user's muted notification types for both channels. */
+  updatePreferences(
+    disabledTypes: string[],
+    disabledEmailTypes: string[],
+  ): Promise<{ disabledTypes: string[]; disabledEmailTypes: string[] }> {
     return api
-      .put<{ disabledTypes: string[] }>('/api/notifications/preferences', { disabledTypes })
-      .then((r) => r.data.disabledTypes)
+      .put<{ disabledTypes: string[]; disabledEmailTypes: string[] }>('/api/notifications/preferences', {
+        disabledTypes,
+        disabledEmailTypes,
+      })
+      .then((r) => r.data)
   },
 }

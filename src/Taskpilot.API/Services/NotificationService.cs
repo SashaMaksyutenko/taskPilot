@@ -19,6 +19,7 @@ public class NotificationService : INotificationService
     private readonly TaskpilotDbContext _context;
     private readonly IHubContext<NotificationHub> _hub;
     private readonly IEmailSender _email;
+    private readonly ITelegramSender _telegram;
     private readonly EmailOptions _emailOptions;
     private readonly ILogger<NotificationService> _logger;
 
@@ -26,12 +27,14 @@ public class NotificationService : INotificationService
         TaskpilotDbContext context,
         IHubContext<NotificationHub> hub,
         IEmailSender email,
+        ITelegramSender telegram,
         IOptions<EmailOptions> emailOptions,
         ILogger<NotificationService> logger)
     {
         _context = context;
         _hub = hub;
         _email = email;
+        _telegram = telegram;
         _emailOptions = emailOptions.Value;
         _logger = logger;
     }
@@ -78,6 +81,29 @@ public class NotificationService : INotificationService
         // Email: deliver when configured and not muted for this type (best-effort).
         if (!emailMuted)
             await SendEmailAsync(recipientId, message, link);
+
+        // Telegram: deliver to linked users (best-effort).
+        await SendTelegramAsync(recipientId, message, link);
+    }
+
+    /// <summary>Sends the notification to the recipient's linked Telegram chat, if any.</summary>
+    private async Task SendTelegramAsync(Guid recipientId, string message, string? link)
+    {
+        if (!_telegram.IsEnabled)
+            return;
+
+        var chatId = await _context.Users
+            .Where(u => u.Id == recipientId)
+            .Select(u => u.TelegramChatId)
+            .FirstOrDefaultAsync();
+        if (string.IsNullOrEmpty(chatId))
+            return;
+
+        var url = string.IsNullOrEmpty(link)
+            ? _emailOptions.FrontendBaseUrl
+            : _emailOptions.FrontendBaseUrl.TrimEnd('/') + "/" + link.TrimStart('/');
+
+        await _telegram.SendMessageAsync(chatId, $"{message}\n{url}");
     }
 
     /// <summary>Emails the notification to the recipient when email delivery is enabled.</summary>

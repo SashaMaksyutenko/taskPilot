@@ -14,10 +14,12 @@ namespace Taskpilot.API.Controllers;
 public class NotificationsController : BaseApiController
 {
     private readonly INotificationService _notifications;
+    private readonly ITelegramLinkService _telegramLink;
 
-    public NotificationsController(INotificationService notifications)
+    public NotificationsController(INotificationService notifications, ITelegramLinkService telegramLink)
     {
         _notifications = notifications;
+        _telegramLink = telegramLink;
     }
 
     /// <summary>Lists the current user's notifications (use ?unreadOnly=true for unread).</summary>
@@ -88,5 +90,40 @@ public class NotificationsController : BaseApiController
         var inApp = await _notifications.SetDisabledTypesAsync(userId.Value, dto.DisabledTypes ?? new List<string>());
         var email = await _notifications.SetDisabledEmailTypesAsync(userId.Value, dto.DisabledEmailTypes ?? new List<string>());
         return Ok(new { disabledTypes = inApp.Value, disabledEmailTypes = email.Value });
+    }
+
+    /// <summary>Whether the current user has linked Telegram (and the bot username).</summary>
+    [HttpGet("telegram")]
+    public async Task<IActionResult> TelegramStatus()
+    {
+        var userId = CurrentUserId();
+        if (userId is null) return Unauthorized();
+
+        var result = await _telegramLink.GetStatusAsync(userId.Value);
+        return Ok(new { linked = result.Value!.Linked, botUsername = result.Value.BotUsername });
+    }
+
+    /// <summary>Generates a one-time code to link Telegram; the user sends it to the bot.</summary>
+    [HttpPost("telegram/link-code")]
+    public async Task<IActionResult> TelegramLinkCode()
+    {
+        var userId = CurrentUserId();
+        if (userId is null) return Unauthorized();
+
+        var result = await _telegramLink.CreateLinkCodeAsync(userId.Value);
+        return result.Succeeded
+            ? Ok(new { code = result.Value.Code, botUsername = result.Value.BotUsername })
+            : BadRequest(new { error = result.Error });
+    }
+
+    /// <summary>Unlinks the current user's Telegram.</summary>
+    [HttpDelete("telegram")]
+    public async Task<IActionResult> TelegramUnlink()
+    {
+        var userId = CurrentUserId();
+        if (userId is null) return Unauthorized();
+
+        await _telegramLink.UnlinkAsync(userId.Value);
+        return Ok(new { message = "Telegram unlinked." });
     }
 }

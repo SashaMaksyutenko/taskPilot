@@ -17,6 +17,7 @@ using Taskpilot.API.Hubs;
 using Taskpilot.API.Middleware;
 using Taskpilot.API.Services;
 using Taskpilot.API.Validators.Auth;
+using Taskpilot.API.Workers;
 
 // Load secrets from the local .env file into environment variables BEFORE the
 // configuration is built. TraversePath() walks up the folder tree, so the file
@@ -93,6 +94,12 @@ if (!string.IsNullOrWhiteSpace(redisConnection))
     });
 else
     builder.Services.AddDistributedMemoryCache();
+
+// Telegram bot (populated from .env: Telegram__*). No token = bot disabled.
+builder.Services.Configure<TelegramOptions>(builder.Configuration.GetSection("Telegram"));
+builder.Services.AddHttpClient<ITelegramSender, TelegramSender>();
+builder.Services.AddScoped<ITelegramLinkService, TelegramLinkService>();
+builder.Services.AddHostedService<TelegramPollingService>();
 
 // Email delivery — populated from .env: Email__*. Prefer SMTP (Gmail/Brevo/…) when
 // an SMTP host is set; otherwise fall back to the SendGrid API sender. No config =

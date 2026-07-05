@@ -28,6 +28,9 @@ public class User
     /// <summary>GitHub account id for users linked to GitHub sign-in; null otherwise.</summary>
     public string? GitHubId { get; set; }
 
+    /// <summary>Telegram chat id once the user links their Telegram to receive bot messages; null otherwise.</summary>
+    public string? TelegramChatId { get; set; }
+
     /// <summary>Роль користувача (RBAC). За замовчуванням — Developer.</summary>
     public Role Role { get; set; } = Role.Developer;
 

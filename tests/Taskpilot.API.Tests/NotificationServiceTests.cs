@@ -42,7 +42,10 @@ public class NotificationServiceTests
     private static NotificationService CreateService(TaskpilotDbContext ctx, IEmailSender email)
     {
         var opts = Options.Create(new EmailOptions { FrontendBaseUrl = "http://localhost:5173" });
-        return new NotificationService(ctx, MockHub(), email, opts, NullLogger<NotificationService>.Instance);
+        // Telegram disabled in tests.
+        var telegram = new Mock<ITelegramSender>();
+        telegram.SetupGet(t => t.IsEnabled).Returns(false);
+        return new NotificationService(ctx, MockHub(), email, telegram.Object, opts, NullLogger<NotificationService>.Instance);
     }
 
     [Fact]

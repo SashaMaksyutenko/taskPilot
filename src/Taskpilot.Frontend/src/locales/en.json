@@ -192,6 +192,7 @@
     "twoFactorHint": "Enter the 6-digit code from your authenticator app.",
     "verify": "Verify",
     "or": "or",
+    "googleContinue": "Continue with Google",
     "googleSignIn": "Sign in with Google",
     "googleSigningIn": "Signing you in…",
     "googleFailed": "Google sign-in failed"

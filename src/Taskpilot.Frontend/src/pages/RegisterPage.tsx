@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { Link, useNavigate } from 'react-router-dom'
 import { z } from 'zod'
 import LangSwitch from '../components/LangSwitch'
+import GoogleSignInButton from '../components/GoogleSignInButton'
 import { useAppDispatch, useAppSelector } from '../store/hooks'
 import { register as registerThunk } from '../store/authSlice'
 
@@ -112,6 +113,8 @@ export default function RegisterPage() {
             {status === 'loading' ? t('auth.creating') : t('auth.signup')}
           </button>
         </form>
+
+        <GoogleSignInButton />
 
         <p className="mt-6 text-center text-sm text-slate-600">
           {t('auth.haveAccount')}{' '}

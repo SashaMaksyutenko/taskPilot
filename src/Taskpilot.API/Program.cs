@@ -82,6 +82,16 @@ builder.Services.AddHttpClient<IGoogleAuthClient, GoogleAuthClient>();
 builder.Services.Configure<GitHubOAuthOptions>(builder.Configuration.GetSection("GitHubOAuth"));
 builder.Services.AddHttpClient<IGitHubAuthClient, GitHubAuthClient>();
 
+// Email delivery — populated from .env: Email__*. Prefer SMTP (Gmail/Brevo/…) when
+// an SMTP host is set; otherwise fall back to the SendGrid API sender. No config =
+// both are disabled and email is silently skipped.
+builder.Services.Configure<EmailOptions>(builder.Configuration.GetSection("Email"));
+var emailSection = builder.Configuration.GetSection("Email");
+if (!string.IsNullOrWhiteSpace(emailSection["SmtpHost"]))
+    builder.Services.AddScoped<IEmailSender, SmtpEmailSender>();
+else
+    builder.Services.AddScoped<IEmailSender, SendGridEmailSender>();
+
 // Bind the initial-admin credentials (populated from .env: Admin__*).
 builder.Services.Configure<AdminSeedSettings>(builder.Configuration.GetSection("Admin"));
 

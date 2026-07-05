@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Taskpilot.API.Common;
+using Taskpilot.API.Configuration;
 using Taskpilot.API.Data;
 using Taskpilot.API.DTOs.Notifications;
 using Taskpilot.API.Hubs;
@@ -16,15 +18,21 @@ public class NotificationService : INotificationService
 {
     private readonly TaskpilotDbContext _context;
     private readonly IHubContext<NotificationHub> _hub;
+    private readonly IEmailSender _email;
+    private readonly EmailOptions _emailOptions;
     private readonly ILogger<NotificationService> _logger;
 
     public NotificationService(
         TaskpilotDbContext context,
         IHubContext<NotificationHub> hub,
+        IEmailSender email,
+        IOptions<EmailOptions> emailOptions,
         ILogger<NotificationService> logger)
     {
         _context = context;
         _hub = hub;
+        _email = email;
+        _emailOptions = emailOptions.Value;
         _logger = logger;
     }
 
@@ -62,6 +70,36 @@ public class NotificationService : INotificationService
             IsRead = notification.IsRead,
             CreatedAt = notification.CreatedAt,
         });
+
+        // Also deliver by email when a provider is configured (best-effort).
+        await SendEmailAsync(recipientId, message, link);
+    }
+
+    /// <summary>Emails the notification to the recipient when email delivery is enabled.</summary>
+    private async Task SendEmailAsync(Guid recipientId, string message, string? link)
+    {
+        if (!_email.IsEnabled)
+            return;
+
+        var recipient = await _context.Users
+            .Where(u => u.Id == recipientId)
+            .Select(u => new { u.Email, u.Name })
+            .AsNoTracking()
+            .FirstOrDefaultAsync();
+        if (recipient is null || string.IsNullOrWhiteSpace(recipient.Email))
+            return;
+
+        // Turn a relative link (e.g. "/projects/{id}") into a clickable absolute URL.
+        var url = string.IsNullOrEmpty(link)
+            ? _emailOptions.FrontendBaseUrl
+            : _emailOptions.FrontendBaseUrl.TrimEnd('/') + "/" + link.TrimStart('/');
+
+        var html =
+            $"<p>Hi {System.Net.WebUtility.HtmlEncode(recipient.Name)},</p>" +
+            $"<p>{System.Net.WebUtility.HtmlEncode(message)}</p>" +
+            $"<p><a href=\"{url}\">Open in TaskPilot</a></p>";
+
+        await _email.SendAsync(recipient.Email, recipient.Name, "TaskPilot notification", html);
     }
 
     /// <inheritdoc />

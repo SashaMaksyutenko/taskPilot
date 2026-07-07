@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import Navbar from '../components/Navbar'
 import { calendarService } from '../services/calendarService'
 import type { CalendarTask } from '../types/calendar'
+import { notify } from '../lib/toast'
 
 const STATUS_COLORS: Record<string, string> = {
   Backlog: 'bg-slate-200 text-slate-700',
@@ -26,6 +27,8 @@ export default function CalendarPage() {
   const [year, setYear] = useState(today.getFullYear())
   const [month, setMonth] = useState(today.getMonth())
   const [tasks, setTasks] = useState<CalendarTask[]>([])
+  const [feedUrl, setFeedUrl] = useState<string | null>(null)
+  const [showFeed, setShowFeed] = useState(false)
 
   useEffect(() => {
     const lastDay = new Date(year, month + 1, 0).getDate()
@@ -64,6 +67,28 @@ export default function CalendarPage() {
     a.click()
     URL.revokeObjectURL(url)
   }
+
+  const openFeed = async () => {
+    setShowFeed((s) => !s)
+    if (feedUrl) return
+    const url = await calendarService.getFeedUrl().catch(() => null)
+    if (url) setFeedUrl(url)
+  }
+
+  const copyFeed = async () => {
+    if (!feedUrl) return
+    await navigator.clipboard.writeText(feedUrl).catch(() => {})
+    notify.success(t('calendar.feedCopied'))
+  }
+
+  const regenerateFeed = async () => {
+    const url = await calendarService.regenerateFeedUrl().catch(() => null)
+    if (url) {
+      setFeedUrl(url)
+      notify.success(t('calendar.feedRegenerated'))
+    }
+  }
+
   const isToday = (d: number) =>
     year === today.getFullYear() && month === today.getMonth() && d === today.getDate()
 
@@ -73,13 +98,48 @@ export default function CalendarPage() {
       <main className="mx-auto max-w-5xl px-6 py-6">
         <div className="mb-4 flex items-center justify-between">
           <h1 className="text-2xl font-bold">{t('calendar.title')}</h1>
-          <button
-            onClick={exportIcs}
-            className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-semibold hover:bg-white dark:border-slate-600 dark:hover:bg-slate-800"
-          >
-            {t('calendar.exportIcs')}
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={openFeed}
+              className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-semibold hover:bg-white dark:border-slate-600 dark:hover:bg-slate-800"
+            >
+              {t('calendar.subscribe')}
+            </button>
+            <button
+              onClick={exportIcs}
+              className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-semibold hover:bg-white dark:border-slate-600 dark:hover:bg-slate-800"
+            >
+              {t('calendar.exportIcs')}
+            </button>
+          </div>
         </div>
+
+        {showFeed && (
+          <div className="mb-4 rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-800">
+            <p className="mb-2 text-sm text-slate-600 dark:text-slate-300">{t('calendar.subscribeHint')}</p>
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <input
+                readOnly
+                value={feedUrl ?? t('calendar.loading')}
+                onFocus={(e) => e.currentTarget.select()}
+                className="flex-1 rounded-lg border border-slate-300 bg-slate-50 px-3 py-1.5 text-sm dark:border-slate-600 dark:bg-slate-900"
+              />
+              <button
+                onClick={copyFeed}
+                disabled={!feedUrl}
+                className="rounded-lg bg-[#1E2A44] px-3 py-1.5 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50"
+              >
+                {t('calendar.copy')}
+              </button>
+              <button
+                onClick={regenerateFeed}
+                className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-semibold hover:bg-slate-50 dark:border-slate-600 dark:hover:bg-slate-700"
+              >
+                {t('calendar.regenerate')}
+              </button>
+            </div>
+          </div>
+        )}
 
         <div className="mb-4 flex items-center gap-4">
           <button onClick={prevMonth} className="rounded-lg border border-slate-300 px-3 py-1 hover:bg-white dark:border-slate-600 dark:hover:bg-slate-800">

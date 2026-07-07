@@ -16,11 +16,13 @@ namespace Taskpilot.API.Controllers;
 public class CalendarController : BaseApiController
 {
     private readonly ITaskService _tasks;
+    private readonly ICalendarFeedService _feed;
     private readonly EmailOptions _emailOptions;
 
-    public CalendarController(ITaskService tasks, IOptions<EmailOptions> emailOptions)
+    public CalendarController(ITaskService tasks, ICalendarFeedService feed, IOptions<EmailOptions> emailOptions)
     {
         _tasks = tasks;
+        _feed = feed;
         _emailOptions = emailOptions.Value;
     }
 
@@ -64,4 +66,45 @@ public class CalendarController : BaseApiController
         var ics = IcsWriter.Build(result.Value ?? new(), _emailOptions.FrontendBaseUrl);
         return File(System.Text.Encoding.UTF8.GetBytes(ics), "text/calendar", "taskpilot.ics");
     }
+
+    /// <summary>Returns the user's private, auto-updating iCal subscription URL.</summary>
+    [HttpGet("feed-url")]
+    public async Task<IActionResult> FeedUrl()
+    {
+        var userId = CurrentUserId();
+        if (userId is null) return Unauthorized();
+
+        var token = await _feed.GetOrCreateTokenAsync(userId.Value);
+        return Ok(new { url = BuildFeedUrl(token) });
+    }
+
+    /// <summary>Regenerates the feed token (invalidates the old subscription URL).</summary>
+    [HttpPost("feed-url/regenerate")]
+    public async Task<IActionResult> RegenerateFeedUrl()
+    {
+        var userId = CurrentUserId();
+        if (userId is null) return Unauthorized();
+
+        var token = await _feed.RegenerateTokenAsync(userId.Value);
+        return Ok(new { url = BuildFeedUrl(token) });
+    }
+
+    /// <summary>Public auto-updating iCal feed identified by a secret token in the URL.</summary>
+    [HttpGet("feed/{token}.ics")]
+    [AllowAnonymous]
+    public async Task<IActionResult> Feed(string token)
+    {
+        var userId = await _feed.ResolveUserIdAsync(token);
+        if (userId is null) return NotFound();
+
+        var from = DateTime.UtcNow.AddYears(-1);
+        var to = DateTime.UtcNow.AddYears(1);
+        var result = await _tasks.GetCalendarTasksAsync(userId.Value, from, to);
+
+        var ics = IcsWriter.Build(result.Value ?? new(), _emailOptions.FrontendBaseUrl);
+        return File(System.Text.Encoding.UTF8.GetBytes(ics), "text/calendar");
+    }
+
+    /// <summary>Absolute URL of this API's feed endpoint for the given token.</summary>
+    private string BuildFeedUrl(string token) => $"{Request.Scheme}://{Request.Host}/api/calendar/feed/{token}.ics";
 }

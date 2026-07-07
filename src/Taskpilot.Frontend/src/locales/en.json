@@ -372,6 +372,13 @@
   "calendar": {
     "title": "Calendar",
     "exportIcs": "Export .ics",
+    "subscribe": "Subscribe",
+    "subscribeHint": "Add this URL to Google Calendar, Apple Calendar or Outlook to keep your deadlines in sync automatically. Keep it private — anyone with the link can see your tasks.",
+    "copy": "Copy",
+    "regenerate": "Reset link",
+    "loading": "Loading…",
+    "feedCopied": "Subscription link copied",
+    "feedRegenerated": "Subscription link reset — update it in your calendar app",
     "months": ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"],
     "weekdays": ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
   },

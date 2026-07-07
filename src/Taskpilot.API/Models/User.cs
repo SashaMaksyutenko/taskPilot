@@ -31,6 +31,9 @@ public class User
     /// <summary>Telegram chat id once the user links their Telegram to receive bot messages; null otherwise.</summary>
     public string? TelegramChatId { get; set; }
 
+    /// <summary>Secret token for the user's private iCal feed URL; null until first requested.</summary>
+    public string? CalendarFeedToken { get; set; }
+
     /// <summary>Роль користувача (RBAC). За замовчуванням — Developer.</summary>
     public Role Role { get; set; } = Role.Developer;
 

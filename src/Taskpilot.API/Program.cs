@@ -222,6 +222,7 @@ builder.Services.AddScoped<IWarningService, WarningService>();
 builder.Services.AddScoped<IAppealService, AppealService>();
 builder.Services.AddScoped<IProjectService, ProjectService>();
 builder.Services.AddScoped<ITaskService, TaskService>();
+builder.Services.AddScoped<ICalendarFeedService, CalendarFeedService>();
 builder.Services.AddScoped<ITaskCommentService, TaskCommentService>();
 builder.Services.AddScoped<IWebhookService, WebhookService>();
 builder.Services.AddScoped<IAuditService, AuditService>();

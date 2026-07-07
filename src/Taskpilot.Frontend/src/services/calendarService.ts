@@ -19,4 +19,14 @@ export const calendarService = {
   exportIcs(): Promise<Blob> {
     return api.get('/api/calendar/export.ics', { responseType: 'blob' }).then((r) => r.data as Blob)
   },
+
+  /** The user's private, auto-updating iCal subscription URL. */
+  getFeedUrl(): Promise<string> {
+    return api.get<{ url: string }>('/api/calendar/feed-url').then((r) => r.data.url)
+  },
+
+  /** Regenerates the feed token, returning the new subscription URL (old one stops working). */
+  regenerateFeedUrl(): Promise<string> {
+    return api.post<{ url: string }>('/api/calendar/feed-url/regenerate').then((r) => r.data.url)
+  },
 }

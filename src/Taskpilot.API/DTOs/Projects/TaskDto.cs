@@ -21,4 +21,10 @@ public class TaskDto
 
     /// <summary>Free-form labels attached to the task.</summary>
     public List<string> Tags { get; set; } = new();
+
+    /// <summary>Total tracked time in seconds.</summary>
+    public int TimeSpentSeconds { get; set; }
+
+    /// <summary>UTC time a running timer started; null when no timer is running.</summary>
+    public DateTime? TimerStartedAt { get; set; }
 }

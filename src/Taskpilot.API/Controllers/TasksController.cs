@@ -191,6 +191,28 @@ public class TasksController : BaseApiController
             : BadRequest(new { error = result.Error });
     }
 
+    /// <summary>Starts the task's time tracker.</summary>
+    [HttpPost("api/tasks/{taskId:guid}/timer/start")]
+    public async Task<IActionResult> StartTimer(Guid taskId)
+    {
+        var userId = CurrentUserId();
+        if (userId is null) return Unauthorized();
+
+        var result = await _tasks.StartTimerAsync(userId.Value, taskId);
+        return result.Succeeded ? Ok(result.Value) : BadRequest(new { error = result.Error });
+    }
+
+    /// <summary>Stops the task's time tracker and records the elapsed time.</summary>
+    [HttpPost("api/tasks/{taskId:guid}/timer/stop")]
+    public async Task<IActionResult> StopTimer(Guid taskId)
+    {
+        var userId = CurrentUserId();
+        if (userId is null) return Unauthorized();
+
+        var result = await _tasks.StopTimerAsync(userId.Value, taskId);
+        return result.Succeeded ? Ok(result.Value) : BadRequest(new { error = result.Error });
+    }
+
     /// <summary>Moves a task to another project.</summary>
     [HttpPost("api/tasks/{taskId:guid}/move")]
     public async Task<IActionResult> Move(Guid taskId, [FromBody] MoveTaskDto dto)

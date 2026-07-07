@@ -67,4 +67,10 @@ public class ProjectTask
 
     /// <summary>Free-form labels attached to the task (stored as a Postgres text[]).</summary>
     public List<string> Tags { get; set; } = new();
+
+    /// <summary>Total tracked time in seconds (accumulated from completed timer runs).</summary>
+    public int TimeSpentSeconds { get; set; }
+
+    /// <summary>When a timer is currently running, the UTC time it started; null when stopped.</summary>
+    public DateTime? TimerStartedAt { get; set; }
 }

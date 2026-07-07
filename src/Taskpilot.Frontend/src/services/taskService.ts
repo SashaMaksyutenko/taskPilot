@@ -66,6 +66,16 @@ export const taskService = {
     return api.post<Task>(`/api/tasks/${taskId}/move`, { projectId }).then((r) => r.data)
   },
 
+  /** Starts the task's time tracker. */
+  startTimer(taskId: string): Promise<Task> {
+    return api.post<Task>(`/api/tasks/${taskId}/timer/start`).then((r) => r.data)
+  },
+
+  /** Stops the task's time tracker. */
+  stopTimer(taskId: string): Promise<Task> {
+    return api.post<Task>(`/api/tasks/${taskId}/timer/stop`).then((r) => r.data)
+  },
+
   deleteTask(taskId: string): Promise<void> {
     return api.delete(`/api/tasks/${taskId}`).then(() => undefined)
   },

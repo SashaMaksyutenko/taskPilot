@@ -359,6 +359,48 @@ public class TaskService : ITaskService
     }
 
     /// <inheritdoc />
+    public async Task<Result<TaskDto>> StartTimerAsync(Guid userId, Guid taskId)
+    {
+        var task = await LoadAccessibleAsync(taskId, userId);
+        if (task is null)
+            return Result<TaskDto>.Fail("Task not found.");
+        if (!await ProjectAccess.CanWriteTaskAsync(_context, taskId, userId))
+            return Result<TaskDto>.Fail("You have read-only access to this project.");
+
+        // Idempotent: starting an already-running timer changes nothing.
+        if (task.TimerStartedAt is null)
+        {
+            task.TimerStartedAt = DateTime.UtcNow;
+            task.UpdatedAt = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
+            _logger.LogInformation("Task timer started. TaskId: {TaskId}", taskId);
+        }
+        return Result<TaskDto>.Ok(await LoadDtoAsync(task.Id));
+    }
+
+    /// <inheritdoc />
+    public async Task<Result<TaskDto>> StopTimerAsync(Guid userId, Guid taskId)
+    {
+        var task = await LoadAccessibleAsync(taskId, userId);
+        if (task is null)
+            return Result<TaskDto>.Fail("Task not found.");
+        if (!await ProjectAccess.CanWriteTaskAsync(_context, taskId, userId))
+            return Result<TaskDto>.Fail("You have read-only access to this project.");
+
+        // Accumulate the elapsed run, then clear the running marker.
+        if (task.TimerStartedAt is { } startedAt)
+        {
+            var elapsed = (int)Math.Max(0, (DateTime.UtcNow - startedAt).TotalSeconds);
+            task.TimeSpentSeconds += elapsed;
+            task.TimerStartedAt = null;
+            task.UpdatedAt = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
+            _logger.LogInformation("Task timer stopped. TaskId: {TaskId}, Added: {Seconds}s", taskId, elapsed);
+        }
+        return Result<TaskDto>.Ok(await LoadDtoAsync(task.Id));
+    }
+
+    /// <inheritdoc />
     public async Task<Result> DeleteTaskAsync(Guid userId, Guid taskId)
     {
         var task = await LoadAccessibleAsync(taskId, userId);
@@ -622,6 +664,8 @@ public class TaskService : ITaskService
         UpdatedAt = t.UpdatedAt,
         CompletedAt = t.CompletedAt,
         Tags = t.Tags ?? new List<string>(),
+        TimeSpentSeconds = t.TimeSpentSeconds,
+        TimerStartedAt = t.TimerStartedAt,
     };
 
     /// <summary>

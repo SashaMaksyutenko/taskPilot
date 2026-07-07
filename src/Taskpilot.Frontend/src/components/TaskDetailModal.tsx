@@ -17,6 +17,14 @@ function toDateInput(iso: string | null): string {
   return iso ? iso.slice(0, 10) : ''
 }
 
+/** Formats a duration in seconds as HH:MM:SS. */
+function formatDuration(totalSeconds: number): string {
+  const h = Math.floor(totalSeconds / 3600)
+  const m = Math.floor((totalSeconds % 3600) / 60)
+  const s = totalSeconds % 60
+  return [h, m, s].map((n) => String(n).padStart(2, '0')).join(':')
+}
+
 /**
  * Modal to view and edit a single task: title, description, priority, assignee
  * (picked via user search) and deadline. Also supports deleting the task.
@@ -43,6 +51,32 @@ export default function TaskDetailModal({
   // Subtasks (children of this task).
   const [subtasks, setSubtasks] = useState<Task[]>([])
   const [newSubtask, setNewSubtask] = useState('')
+
+  // Time tracking: accumulated seconds + the start time of a running timer (if any).
+  const [timeSpent, setTimeSpent] = useState(task.timeSpentSeconds)
+  const [timerStartedAt, setTimerStartedAt] = useState<string | null>(task.timerStartedAt)
+  const [now, setNow] = useState(Date.now())
+  // Re-render every second while the timer runs so the display ticks.
+  useEffect(() => {
+    if (!timerStartedAt) return
+    const id = setInterval(() => setNow(Date.now()), 1000)
+    return () => clearInterval(id)
+  }, [timerStartedAt])
+
+  // Total seconds to show = stored time plus the current run (if running).
+  const displaySeconds =
+    timeSpent + (timerStartedAt ? Math.max(0, Math.floor((now - new Date(timerStartedAt).getTime()) / 1000)) : 0)
+
+  const toggleTimer = async () => {
+    const updated = timerStartedAt
+      ? await taskService.stopTimer(task.id).catch(() => null)
+      : await taskService.startTimer(task.id).catch(() => null)
+    if (updated) {
+      setTimeSpent(updated.timeSpentSeconds)
+      setTimerStartedAt(updated.timerStartedAt)
+      onSaved(updated)
+    }
+  }
 
   // Assignee: track id + display name; null when unassigned.
   const [assigneeId, setAssigneeId] = useState<string | null>(task.assigneeId)
@@ -256,6 +290,22 @@ export default function TaskDetailModal({
               className="w-full rounded-lg border border-slate-300 bg-white px-2 py-2 text-sm outline-none dark:border-slate-600 dark:bg-slate-900"
             />
           </div>
+        </div>
+
+        {/* Time tracking */}
+        <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">{t('taskModal.timeTracking')}</label>
+        <div className="mb-4 flex items-center gap-3">
+          <span className={`font-mono text-lg font-bold ${timerStartedAt ? 'text-[#F97316]' : 'text-[#1E2A44] dark:text-slate-100'}`}>
+            {formatDuration(displaySeconds)}
+          </span>
+          <button
+            onClick={toggleTimer}
+            className={`rounded-lg px-4 py-1.5 text-sm font-semibold text-white transition ${
+              timerStartedAt ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'
+            }`}
+          >
+            {timerStartedAt ? t('taskModal.stopTimer') : t('taskModal.startTimer')}
+          </button>
         </div>
 
         {/* Tags */}

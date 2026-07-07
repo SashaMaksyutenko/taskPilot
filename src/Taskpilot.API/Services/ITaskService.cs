@@ -37,6 +37,12 @@ public interface ITaskService
     /// <summary>Moves a task (and its subtasks) to another project the user can write to.</summary>
     Task<Result<TaskDto>> MoveTaskAsync(Guid userId, Guid taskId, Guid targetProjectId);
 
+    /// <summary>Starts the task's time tracker (no-op if already running).</summary>
+    Task<Result<TaskDto>> StartTimerAsync(Guid userId, Guid taskId);
+
+    /// <summary>Stops the task's time tracker and adds the elapsed time.</summary>
+    Task<Result<TaskDto>> StopTimerAsync(Guid userId, Guid taskId);
+
     Task<Result> DeleteTaskAsync(Guid userId, Guid taskId);
 
     /// <summary>

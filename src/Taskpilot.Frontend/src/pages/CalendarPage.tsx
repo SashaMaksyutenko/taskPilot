@@ -53,6 +53,17 @@ export default function CalendarPage() {
 
   const prevMonth = () => (month === 0 ? (setMonth(11), setYear((y) => y - 1)) : setMonth((m) => m - 1))
   const nextMonth = () => (month === 11 ? (setMonth(0), setYear((y) => y + 1)) : setMonth((m) => m + 1))
+
+  const exportIcs = async () => {
+    const blob = await calendarService.exportIcs().catch(() => null)
+    if (!blob) return
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'taskpilot.ics'
+    a.click()
+    URL.revokeObjectURL(url)
+  }
   const isToday = (d: number) =>
     year === today.getFullYear() && month === today.getMonth() && d === today.getDate()
 
@@ -60,7 +71,15 @@ export default function CalendarPage() {
     <div className="min-h-screen bg-slate-50 text-[#1E2A44] dark:bg-slate-900 dark:text-slate-100">
       <Navbar />
       <main className="mx-auto max-w-5xl px-6 py-6">
-        <h1 className="mb-4 text-2xl font-bold">{t('calendar.title')}</h1>
+        <div className="mb-4 flex items-center justify-between">
+          <h1 className="text-2xl font-bold">{t('calendar.title')}</h1>
+          <button
+            onClick={exportIcs}
+            className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-semibold hover:bg-white dark:border-slate-600 dark:hover:bg-slate-800"
+          >
+            {t('calendar.exportIcs')}
+          </button>
+        </div>
 
         <div className="mb-4 flex items-center gap-4">
           <button onClick={prevMonth} className="rounded-lg border border-slate-300 px-3 py-1 hover:bg-white dark:border-slate-600 dark:hover:bg-slate-800">

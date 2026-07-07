@@ -1,5 +1,8 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
+using Taskpilot.API.Common;
+using Taskpilot.API.Configuration;
 using Taskpilot.API.Services;
 
 namespace Taskpilot.API.Controllers;
@@ -13,10 +16,12 @@ namespace Taskpilot.API.Controllers;
 public class CalendarController : BaseApiController
 {
     private readonly ITaskService _tasks;
+    private readonly EmailOptions _emailOptions;
 
-    public CalendarController(ITaskService tasks)
+    public CalendarController(ITaskService tasks, IOptions<EmailOptions> emailOptions)
     {
         _tasks = tasks;
+        _emailOptions = emailOptions.Value;
     }
 
     /// <summary>
@@ -43,5 +48,20 @@ public class CalendarController : BaseApiController
 
         var result = await _tasks.GetCalendarTasksAsync(userId.Value, fromDate, toDate);
         return Ok(result.Value);
+    }
+
+    /// <summary>Exports the user's deadline tasks (±1 year) as an iCalendar (.ics) file.</summary>
+    [HttpGet("export.ics")]
+    public async Task<IActionResult> ExportIcs()
+    {
+        var userId = CurrentUserId();
+        if (userId is null) return Unauthorized();
+
+        var from = DateTime.UtcNow.AddYears(-1);
+        var to = DateTime.UtcNow.AddYears(1);
+        var result = await _tasks.GetCalendarTasksAsync(userId.Value, from, to);
+
+        var ics = IcsWriter.Build(result.Value ?? new(), _emailOptions.FrontendBaseUrl);
+        return File(System.Text.Encoding.UTF8.GetBytes(ics), "text/calendar", "taskpilot.ics");
     }
 }

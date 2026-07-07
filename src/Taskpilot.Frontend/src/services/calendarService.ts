@@ -14,4 +14,9 @@ export const calendarService = {
   getOverdue(): Promise<CalendarTask[]> {
     return api.get<CalendarTask[]>('/api/tasks/overdue').then((r) => r.data)
   },
+
+  /** Downloads the user's deadline tasks as an iCalendar (.ics) blob. */
+  exportIcs(): Promise<Blob> {
+    return api.get('/api/calendar/export.ics', { responseType: 'blob' }).then((r) => r.data as Blob)
+  },
 }

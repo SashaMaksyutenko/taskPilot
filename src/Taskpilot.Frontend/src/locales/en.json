@@ -138,6 +138,16 @@
     "revoke": "Revoke",
     "revokeOthers": "Revoke all other sessions"
   },
+  "telegram": {
+    "title": "Telegram",
+    "desc": "Link your Telegram to get notifications from the TaskPilot bot.",
+    "connect": "Connect Telegram",
+    "linked": "Linked",
+    "unlink": "Unlink",
+    "step1": "Open the bot and send this code (or tap the button below):",
+    "step2": "The code expires in 10 minutes. This page updates after you link.",
+    "openBot": "Open the bot in Telegram"
+  },
   "notifPrefs": {
     "title": "Notifications",
     "desc": "Choose which notifications you want to receive, per channel.",

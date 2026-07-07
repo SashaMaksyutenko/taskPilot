@@ -5,6 +5,8 @@ import { AxiosError } from 'axios'
 import QRCode from 'qrcode'
 import Avatar from '../components/Avatar'
 import Navbar from '../components/Navbar'
+import { notify } from '../lib/toast'
+import { apiErrorMessage } from '../lib/apiError'
 import { authService } from '../services/authService'
 import { notificationService } from '../services/notificationService'
 import { userService, type UpdateProfileData } from '../services/userService'
@@ -97,6 +99,30 @@ export default function SettingsPage() {
       })
       .catch(() => {})
   }, [])
+
+  // Telegram linking.
+  const [telegram, setTelegram] = useState<{ linked: boolean; botUsername: string }>({ linked: false, botUsername: '' })
+  const [telegramCode, setTelegramCode] = useState<string | null>(null)
+  useEffect(() => {
+    notificationService.getTelegramStatus().then(setTelegram).catch(() => {})
+  }, [])
+
+  const connectTelegram = async () => {
+    try {
+      const res = await notificationService.createTelegramLinkCode()
+      setTelegramCode(res.code)
+      setTelegram((s) => ({ ...s, botUsername: res.botUsername }))
+    } catch (e) {
+      // Surface why nothing happened (e.g. "Telegram bot is not configured").
+      notify.error(apiErrorMessage(e))
+    }
+  }
+
+  const unlinkTelegram = async () => {
+    await notificationService.unlinkTelegram().catch(() => {})
+    setTelegramCode(null)
+    setTelegram((s) => ({ ...s, linked: false }))
+  }
 
   // channel: 'inapp' toggles the bell; 'email' toggles email delivery.
   const toggleNotif = async (type: string, channel: 'inapp' | 'email') => {
@@ -625,6 +651,48 @@ export default function SettingsPage() {
               </div>
             ))}
           </div>
+        </section>
+
+        {/* Telegram */}
+        <section className="mt-8 rounded-xl border border-slate-200 bg-white p-6 dark:border-slate-700 dark:bg-slate-800">
+          <h2 className="mb-1 font-bold">{t('telegram.title')}</h2>
+          <p className="mb-4 text-sm text-slate-500 dark:text-slate-400">{t('telegram.desc')}</p>
+
+          {telegram.linked ? (
+            <div className="flex items-center gap-3 text-sm">
+              <span className="rounded-full bg-green-100 px-2 py-0.5 font-semibold text-green-700 dark:bg-green-900/40 dark:text-green-300">
+                ✓ {t('telegram.linked')}
+              </span>
+              <button onClick={unlinkTelegram} className="font-semibold text-red-600 hover:underline">
+                {t('telegram.unlink')}
+              </button>
+            </div>
+          ) : telegramCode ? (
+            <div className="space-y-3 text-sm">
+              <p>{t('telegram.step1')}</p>
+              <div className="rounded-lg bg-slate-100 px-4 py-3 text-center font-mono text-lg font-bold tracking-widest dark:bg-slate-900">
+                {telegramCode}
+              </div>
+              {telegram.botUsername && (
+                <a
+                  href={`https://t.me/${telegram.botUsername}?start=${telegramCode}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-block rounded-lg bg-[#229ED9] px-4 py-2 font-semibold text-white transition hover:brightness-95"
+                >
+                  {t('telegram.openBot')}
+                </a>
+              )}
+              <p className="text-xs text-slate-400">{t('telegram.step2')}</p>
+            </div>
+          ) : (
+            <button
+              onClick={connectTelegram}
+              className="rounded-lg bg-[#229ED9] px-5 py-2 text-sm font-semibold text-white transition hover:brightness-95"
+            >
+              {t('telegram.connect')}
+            </button>
+          )}
         </section>
 
         {/* Webhooks */}

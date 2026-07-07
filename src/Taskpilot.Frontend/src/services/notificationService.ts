@@ -40,4 +40,21 @@ export const notificationService = {
       })
       .then((r) => r.data)
   },
+
+  /** Whether the user has linked Telegram, plus the bot username. */
+  getTelegramStatus(): Promise<{ linked: boolean; botUsername: string }> {
+    return api.get<{ linked: boolean; botUsername: string }>('/api/notifications/telegram').then((r) => r.data)
+  },
+
+  /** Generates a one-time Telegram link code. */
+  createTelegramLinkCode(): Promise<{ code: string; botUsername: string }> {
+    return api
+      .post<{ code: string; botUsername: string }>('/api/notifications/telegram/link-code')
+      .then((r) => r.data)
+  },
+
+  /** Unlinks the user's Telegram. */
+  unlinkTelegram(): Promise<void> {
+    return api.delete('/api/notifications/telegram').then(() => undefined)
+  },
 }

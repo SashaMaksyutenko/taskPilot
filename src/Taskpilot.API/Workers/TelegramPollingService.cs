@@ -90,25 +90,28 @@ public class TelegramPollingService : BackgroundService
         using var scope = _scopeFactory.CreateScope();
         var sender = scope.ServiceProvider.GetRequiredService<ITelegramSender>();
 
-        if (text.StartsWith("/start", StringComparison.OrdinalIgnoreCase))
+        if (text.StartsWith("/help", StringComparison.OrdinalIgnoreCase))
         {
-            var parts = text.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-            if (parts.Length >= 2)
-            {
-                var links = scope.ServiceProvider.GetRequiredService<ITelegramLinkService>();
-                var linked = await links.LinkByCodeAsync(parts[1], chatId);
-                await sender.SendMessageAsync(chatId, linked
-                    ? "✅ Your Telegram is now linked to TaskPilot. You'll get notifications here."
-                    : "That link code is invalid or expired. Generate a new one in TaskPilot settings.");
-            }
-            else
-            {
-                await sender.SendMessageAsync(chatId, "Welcome to TaskPilot! Open Settings in the app and use \"Connect Telegram\" to link your account.");
-            }
+            await sender.SendMessageAsync(chatId, "TaskPilot bot — link your account in the app's Settings to receive notifications here. Send the code shown there (or use \"/start <code>\").");
+            return;
         }
-        else if (text.StartsWith("/help", StringComparison.OrdinalIgnoreCase))
+
+        // "/start" with no code -> greeting; otherwise treat the last token (from
+        // "/start <code>" or a plain "<code>" message) as a link code.
+        var parts = text.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        var isBareStart = parts.Length == 1 && parts[0].Equals("/start", StringComparison.OrdinalIgnoreCase);
+        if (isBareStart)
         {
-            await sender.SendMessageAsync(chatId, "TaskPilot bot — link your account in the app's Settings to receive notifications here. Command: /start <code>.");
+            await sender.SendMessageAsync(chatId, "Welcome to TaskPilot! Open Settings in the app, tap \"Connect Telegram\", and send me the code shown there.");
+            return;
         }
+
+        // The code is the last token (handles both "/start CODE" and just "CODE").
+        var code = parts[^1];
+        var links = scope.ServiceProvider.GetRequiredService<ITelegramLinkService>();
+        var linked = await links.LinkByCodeAsync(code, chatId);
+        await sender.SendMessageAsync(chatId, linked
+            ? "✅ Your Telegram is now linked to TaskPilot. You'll get notifications here."
+            : "That link code is invalid or expired. Generate a new one in TaskPilot settings.");
     }
 }

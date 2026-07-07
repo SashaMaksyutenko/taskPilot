@@ -57,4 +57,19 @@ export const notificationService = {
   unlinkTelegram(): Promise<void> {
     return api.delete('/api/notifications/telegram').then(() => undefined)
   },
+
+  /** Public VAPID key the browser needs to subscribe to Web Push (empty when disabled). */
+  getVapidKey(): Promise<{ publicKey: string }> {
+    return api.get<{ publicKey: string }>('/api/notifications/push/vapid-key').then((r) => r.data)
+  },
+
+  /** Registers this browser for Web Push. */
+  pushSubscribe(sub: { endpoint: string; p256dh: string; auth: string }): Promise<void> {
+    return api.post('/api/notifications/push/subscribe', sub).then(() => undefined)
+  },
+
+  /** Removes this browser's Web Push subscription. */
+  pushUnsubscribe(endpoint: string): Promise<void> {
+    return api.post('/api/notifications/push/unsubscribe', { endpoint }).then(() => undefined)
+  },
 }

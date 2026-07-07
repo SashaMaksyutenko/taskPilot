@@ -138,6 +138,18 @@
     "revoke": "Revoke",
     "revokeOthers": "Revoke all other sessions"
   },
+  "push": {
+    "title": "Browser notifications",
+    "desc": "Get push notifications in this browser, even when the tab is closed.",
+    "enable": "Enable",
+    "disable": "Disable",
+    "on": "On",
+    "enabled": "Browser notifications enabled",
+    "denied": "Notification permission was denied",
+    "notConfigured": "Push is not configured on the server",
+    "unsupported": "This browser does not support push",
+    "failed": "Could not enable notifications"
+  },
   "telegram": {
     "title": "Telegram",
     "desc": "Link your Telegram to get notifications from the TaskPilot bot.",

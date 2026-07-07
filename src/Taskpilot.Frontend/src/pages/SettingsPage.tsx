@@ -7,6 +7,7 @@ import Avatar from '../components/Avatar'
 import Navbar from '../components/Navbar'
 import { notify } from '../lib/toast'
 import { apiErrorMessage } from '../lib/apiError'
+import { enablePush, disablePush, getPushEnabled, pushSupported } from '../lib/push'
 import { authService } from '../services/authService'
 import { notificationService } from '../services/notificationService'
 import { userService, type UpdateProfileData } from '../services/userService'
@@ -99,6 +100,33 @@ export default function SettingsPage() {
       })
       .catch(() => {})
   }, [])
+
+  // Browser (Web Push) notifications.
+  const [pushEnabled, setPushEnabled] = useState(false)
+  const [pushBusy, setPushBusy] = useState(false)
+  useEffect(() => {
+    getPushEnabled().then(setPushEnabled).catch(() => {})
+  }, [])
+
+  const togglePush = async () => {
+    setPushBusy(true)
+    try {
+      if (pushEnabled) {
+        await disablePush()
+        setPushEnabled(false)
+      } else {
+        await enablePush()
+        setPushEnabled(true)
+        notify.success(t('push.enabled'))
+      }
+    } catch (e) {
+      const code = e instanceof Error ? e.message : ''
+      const key = code === 'denied' ? 'push.denied' : code === 'not-configured' ? 'push.notConfigured' : code === 'unsupported' ? 'push.unsupported' : 'push.failed'
+      notify.error(t(key))
+    } finally {
+      setPushBusy(false)
+    }
+  }
 
   // Telegram linking.
   const [telegram, setTelegram] = useState<{ linked: boolean; botUsername: string }>({ linked: false, botUsername: '' })
@@ -652,6 +680,32 @@ export default function SettingsPage() {
             ))}
           </div>
         </section>
+
+        {/* Browser push notifications */}
+        {pushSupported() && (
+          <section className="mt-8 rounded-xl border border-slate-200 bg-white p-6 dark:border-slate-700 dark:bg-slate-800">
+            <h2 className="mb-1 font-bold">{t('push.title')}</h2>
+            <p className="mb-4 text-sm text-slate-500 dark:text-slate-400">{t('push.desc')}</p>
+            <div className="flex items-center gap-3 text-sm">
+              {pushEnabled && (
+                <span className="rounded-full bg-green-100 px-2 py-0.5 font-semibold text-green-700 dark:bg-green-900/40 dark:text-green-300">
+                  ✓ {t('push.on')}
+                </span>
+              )}
+              <button
+                onClick={togglePush}
+                disabled={pushBusy}
+                className={`rounded-lg px-5 py-2 text-sm font-semibold transition disabled:opacity-60 ${
+                  pushEnabled
+                    ? 'text-red-600 hover:underline'
+                    : 'bg-[#1E2A44] text-white hover:bg-[#27345a]'
+                }`}
+              >
+                {pushEnabled ? t('push.disable') : t('push.enable')}
+              </button>
+            </div>
+          </section>
+        )}
 
         {/* Telegram */}
         <section className="mt-8 rounded-xl border border-slate-200 bg-white p-6 dark:border-slate-700 dark:bg-slate-800">

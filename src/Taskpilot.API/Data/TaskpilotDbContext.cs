@@ -61,6 +61,7 @@ public class TaskpilotDbContext : DbContext
 
     /// <summary>Tasks within projects.</summary>
     public DbSet<ProjectTask> ProjectTasks => Set<ProjectTask>();
+    public DbSet<PushSubscription> PushSubscriptions => Set<PushSubscription>();
 
     /// <summary>Outgoing webhooks.</summary>
     public DbSet<Webhook> Webhooks => Set<Webhook>();
@@ -416,6 +417,21 @@ public class TaskpilotDbContext : DbContext
                   .WithMany()
                   .HasForeignKey(p => p.OwnerId)
                   .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        // PushSubscription entity configuration
+        modelBuilder.Entity<PushSubscription>(entity =>
+        {
+            entity.HasKey(s => s.Id);
+            entity.Property(s => s.Endpoint).IsRequired();
+            // One row per browser subscription endpoint.
+            entity.HasIndex(s => s.Endpoint).IsUnique();
+            entity.HasIndex(s => s.UserId);
+            // Deleting a user removes their push subscriptions.
+            entity.HasOne(s => s.User)
+                  .WithMany()
+                  .HasForeignKey(s => s.UserId)
+                  .OnDelete(DeleteBehavior.Cascade);
         });
 
         // ProjectTask entity configuration

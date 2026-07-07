@@ -15,11 +15,13 @@ public class NotificationsController : BaseApiController
 {
     private readonly INotificationService _notifications;
     private readonly ITelegramLinkService _telegramLink;
+    private readonly IPushService _push;
 
-    public NotificationsController(INotificationService notifications, ITelegramLinkService telegramLink)
+    public NotificationsController(INotificationService notifications, ITelegramLinkService telegramLink, IPushService push)
     {
         _notifications = notifications;
         _telegramLink = telegramLink;
+        _push = push;
     }
 
     /// <summary>Lists the current user's notifications (use ?unreadOnly=true for unread).</summary>
@@ -125,5 +127,32 @@ public class NotificationsController : BaseApiController
 
         await _telegramLink.UnlinkAsync(userId.Value);
         return Ok(new { message = "Telegram unlinked." });
+    }
+
+    /// <summary>Returns the public VAPID key the browser needs to subscribe to push (empty when disabled).</summary>
+    [HttpGet("push/vapid-key")]
+    [AllowAnonymous]
+    public IActionResult VapidKey() => Ok(new { publicKey = _push.PublicKey });
+
+    /// <summary>Registers the current browser for Web Push.</summary>
+    [HttpPost("push/subscribe")]
+    public async Task<IActionResult> PushSubscribe([FromBody] PushSubscriptionDto dto)
+    {
+        var userId = CurrentUserId();
+        if (userId is null) return Unauthorized();
+
+        var result = await _push.SubscribeAsync(userId.Value, dto.Endpoint, dto.P256dh, dto.Auth);
+        return result.Succeeded ? Ok(new { message = "Subscribed." }) : BadRequest(new { error = result.Error });
+    }
+
+    /// <summary>Removes the current browser's Web Push subscription.</summary>
+    [HttpPost("push/unsubscribe")]
+    public async Task<IActionResult> PushUnsubscribe([FromBody] PushUnsubscribeDto dto)
+    {
+        var userId = CurrentUserId();
+        if (userId is null) return Unauthorized();
+
+        await _push.UnsubscribeAsync(userId.Value, dto.Endpoint);
+        return Ok(new { message = "Unsubscribed." });
     }
 }

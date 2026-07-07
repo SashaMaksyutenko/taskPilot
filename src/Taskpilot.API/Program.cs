@@ -95,6 +95,18 @@ if (!string.IsNullOrWhiteSpace(redisConnection))
 else
     builder.Services.AddDistributedMemoryCache();
 
+// Web Push (VAPID keys from .env: Vapid__*). No keys = push disabled.
+builder.Services.Configure<VapidOptions>(builder.Configuration.GetSection("Vapid"));
+builder.Services.AddScoped<IPushService, PushService>();
+// Dev convenience: print a fresh VAPID pair to copy into .env when none is set.
+if (string.IsNullOrWhiteSpace(builder.Configuration["Vapid:PublicKey"]))
+{
+    var keys = WebPush.VapidHelper.GenerateVapidKeys();
+    Console.WriteLine("[Web Push] VAPID not configured. Add this pair to src/Taskpilot.API/.env:");
+    Console.WriteLine($"  Vapid__PublicKey={keys.PublicKey}");
+    Console.WriteLine($"  Vapid__PrivateKey={keys.PrivateKey}");
+}
+
 // Telegram bot (populated from .env: Telegram__*). No token = bot disabled.
 builder.Services.Configure<TelegramOptions>(builder.Configuration.GetSection("Telegram"));
 builder.Services.AddHttpClient<ITelegramSender, TelegramSender>();

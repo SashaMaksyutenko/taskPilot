@@ -242,7 +242,10 @@
     "googleFailed": "Google sign-in failed",
     "githubContinue": "Continue with GitHub",
     "githubSigningIn": "Signing you in…",
-    "githubFailed": "GitHub sign-in failed"
+    "githubFailed": "GitHub sign-in failed",
+    "linkedinContinue": "Continue with LinkedIn",
+    "linkedinSigningIn": "Signing you in…",
+    "linkedinFailed": "LinkedIn sign-in failed"
   },
   "twoFa": {
     "title": "Two-factor authentication",

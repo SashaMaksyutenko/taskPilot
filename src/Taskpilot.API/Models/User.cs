@@ -28,6 +28,9 @@ public class User
     /// <summary>GitHub account id for users linked to GitHub sign-in; null otherwise.</summary>
     public string? GitHubId { get; set; }
 
+    /// <summary>LinkedIn account id ("sub") for users linked to LinkedIn sign-in; null otherwise.</summary>
+    public string? LinkedInId { get; set; }
+
     /// <summary>Telegram chat id once the user links their Telegram to receive bot messages; null otherwise.</summary>
     public string? TelegramChatId { get; set; }
 

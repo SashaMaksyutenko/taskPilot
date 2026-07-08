@@ -32,7 +32,8 @@ public class AuthServiceTests
     private static AuthService CreateService(
         TaskpilotDbContext context,
         IGoogleAuthClient? googleClient = null,
-        IGitHubAuthClient? gitHubClient = null)
+        IGitHubAuthClient? gitHubClient = null,
+        ILinkedInAuthClient? linkedInClient = null)
     {
         var tokenMock = new Mock<ITokenService>();
         // Access token is a fixed stub; refresh token is unique each call.
@@ -45,7 +46,17 @@ public class AuthServiceTests
         // Default OAuth clients just fail; tests that exercise a provider pass their own stub.
         var google = googleClient ?? new Mock<IGoogleAuthClient>().Object;
         var gitHub = gitHubClient ?? new Mock<IGitHubAuthClient>().Object;
-        return new AuthService(context, tokenMock.Object, google, gitHub, jwt, NullLogger<AuthService>.Instance);
+        var linkedIn = linkedInClient ?? new Mock<ILinkedInAuthClient>().Object;
+        return new AuthService(context, tokenMock.Object, google, gitHub, linkedIn, jwt, NullLogger<AuthService>.Instance);
+    }
+
+    /// <summary>A LinkedIn client stub that always returns the given profile.</summary>
+    private static ILinkedInAuthClient LinkedInStub(string sub, string email, string name)
+    {
+        var mock = new Mock<ILinkedInAuthClient>();
+        mock.Setup(c => c.ExchangeCodeAsync(It.IsAny<string>()))
+            .ReturnsAsync(Result<LinkedInUserInfo>.Ok(new LinkedInUserInfo(sub, email, name)));
+        return mock.Object;
     }
 
     /// <summary>A Google client stub that always returns the given profile.</summary>
@@ -255,6 +266,46 @@ public class AuthServiceTests
         Assert.True(result.Succeeded);
         var user = await ctx.Users.SingleAsync();
         Assert.Equal("gh-777", user.GitHubId);
+        Assert.Equal("hash", user.PasswordHash);
+    }
+
+    [Fact]
+    public async Task LinkedInLoginAsync_NewAccount_CreatesUserAndIssuesTokens()
+    {
+        await using var ctx = CreateContext();
+        var svc = CreateService(ctx, linkedInClient: LinkedInStub("li-123", "Dev@Example.com", "Dev"));
+
+        var result = await svc.LinkedInLoginAsync("auth-code");
+
+        Assert.True(result.Succeeded);
+        Assert.NotNull(result.Value!.AccessToken);
+        var user = await ctx.Users.SingleAsync();
+        Assert.Equal("dev@example.com", user.Email);   // normalized to lowercase
+        Assert.Equal("li-123", user.LinkedInId);
+        Assert.Null(user.PasswordHash);
+    }
+
+    [Fact]
+    public async Task LinkedInLoginAsync_ExistingEmail_LinksAccountWithoutDuplicate()
+    {
+        await using var ctx = CreateContext();
+        ctx.Users.Add(new User
+        {
+            Id = Guid.NewGuid(),
+            Name = "Local User",
+            Email = "dev@example.com",
+            PasswordHash = "hash",
+            Role = Role.Developer,
+            IsActive = true,
+        });
+        await ctx.SaveChangesAsync();
+
+        var svc = CreateService(ctx, linkedInClient: LinkedInStub("li-777", "dev@example.com", "Dev"));
+        var result = await svc.LinkedInLoginAsync("auth-code");
+
+        Assert.True(result.Succeeded);
+        var user = await ctx.Users.SingleAsync();
+        Assert.Equal("li-777", user.LinkedInId);
         Assert.Equal("hash", user.PasswordHash);
     }
 }

@@ -38,6 +38,11 @@ export const authService = {
     return api.post<AuthResponse>('/api/auth/github', { code }).then((r) => r.data)
   },
 
+  /** POST /api/auth/linkedin — signs in with a LinkedIn authorization code. */
+  linkedin(code: string): Promise<AuthResponse> {
+    return api.post<AuthResponse>('/api/auth/linkedin', { code }).then((r) => r.data)
+  },
+
   /** POST /api/auth/refresh — exchanges a refresh token for new tokens. */
   refresh(refreshToken: string): Promise<AuthResponse> {
     return api

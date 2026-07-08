@@ -242,7 +242,10 @@
     "googleFailed": "Не вдалося увійти через Google",
     "githubContinue": "Продовжити через GitHub",
     "githubSigningIn": "Виконуємо вхід…",
-    "githubFailed": "Не вдалося увійти через GitHub"
+    "githubFailed": "Не вдалося увійти через GitHub",
+    "linkedinContinue": "Продовжити через LinkedIn",
+    "linkedinSigningIn": "Виконуємо вхід…",
+    "linkedinFailed": "Не вдалося увійти через LinkedIn"
   },
   "twoFa": {
     "title": "Двофакторна автентифікація",

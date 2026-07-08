@@ -79,6 +79,17 @@ export const githubLogin = createAsyncThunk(
   },
 )
 
+export const linkedinLogin = createAsyncThunk(
+  'auth/linkedinLogin',
+  async (code: string, { rejectWithValue }) => {
+    try {
+      return await authService.linkedin(code)
+    } catch (error) {
+      return rejectWithValue(toErrorMessage(error))
+    }
+  },
+)
+
 export const register = createAsyncThunk(
   'auth/register',
   async (data: RegisterRequest, { rejectWithValue }) => {
@@ -175,6 +186,24 @@ const authSlice = createSlice({
       .addCase(githubLogin.rejected, (state, action) => {
         state.status = 'idle'
         state.error = (action.payload as string) ?? 'GitHub sign-in failed'
+      })
+      // LinkedIn login shares the same token-storing behaviour.
+      .addCase(linkedinLogin.pending, (state) => {
+        state.status = 'loading'
+        state.error = null
+      })
+      .addCase(linkedinLogin.fulfilled, (state, action) => {
+        const data = action.payload as AuthResponse
+        state.status = 'idle'
+        state.accessToken = data.accessToken
+        state.refreshToken = data.refreshToken
+        state.isAuthenticated = true
+        localStorage.setItem('accessToken', data.accessToken)
+        localStorage.setItem('refreshToken', data.refreshToken)
+      })
+      .addCase(linkedinLogin.rejected, (state, action) => {
+        state.status = 'idle'
+        state.error = (action.payload as string) ?? 'LinkedIn sign-in failed'
       })
       .addCase(login.rejected, (state, action) => {
         state.status = 'idle'

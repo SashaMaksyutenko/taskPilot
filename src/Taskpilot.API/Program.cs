@@ -85,6 +85,10 @@ builder.Services.AddHttpClient<IGoogleAuthClient, GoogleAuthClient>();
 builder.Services.Configure<GitHubOAuthOptions>(builder.Configuration.GetSection("GitHubOAuth"));
 builder.Services.AddHttpClient<IGitHubAuthClient, GitHubAuthClient>();
 
+// LinkedIn OAuth credentials (populated from .env: LinkedInOAuth__*).
+builder.Services.Configure<LinkedInOAuthOptions>(builder.Configuration.GetSection("LinkedInOAuth"));
+builder.Services.AddHttpClient<ILinkedInAuthClient, LinkedInAuthClient>();
+
 // Stripe payments (populated from .env: Stripe__*). Disabled until a secret key is set.
 builder.Services.Configure<StripeOptions>(builder.Configuration.GetSection("Stripe"));
 builder.Services.AddHttpClient<IPaymentClient, StripePaymentClient>();

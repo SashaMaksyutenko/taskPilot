@@ -175,6 +175,27 @@ public class AuthController : BaseApiController
         return Ok(result.Value);
     }
 
+    /// <summary>Signs a user in with a LinkedIn OAuth authorization code.</summary>
+    [HttpPost("linkedin")]
+    public async Task<IActionResult> LinkedIn([FromBody] LinkedInLoginDto dto)
+    {
+        _logger.LogInformation("LinkedIn login endpoint called.");
+
+        if (string.IsNullOrWhiteSpace(dto.Code))
+            return BadRequest(new { error = "Authorization code is required." });
+
+        var result = await _authService.LinkedInLoginAsync(dto.Code, ClientIp(), UserAgent());
+        if (!result.Succeeded)
+        {
+            await _audit.LogAsync("auth.login.linkedin.failed", details: result.Error, ipAddress: ClientIp());
+            return Unauthorized(new { error = result.Error });
+        }
+
+        await _audit.LogAsync("auth.login.linkedin.success", actorId: result.Value!.UserId, actorEmail: result.Value.Email,
+            entityType: "User", entityId: result.Value.UserId.ToString(), ipAddress: ClientIp());
+        return Ok(result.Value);
+    }
+
     /// <summary>
     /// Exchanges a valid refresh token for a new access token and a rotated refresh token.
     /// </summary>

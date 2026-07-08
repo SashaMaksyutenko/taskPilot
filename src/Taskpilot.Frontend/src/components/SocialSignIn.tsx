@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import GoogleSignInButton from './GoogleSignInButton'
 import GitHubSignInButton from './GitHubSignInButton'
+import LinkedInSignInButton from './LinkedInSignInButton'
 
 /**
  * Groups the third-party sign-in buttons under a single "or" divider. Renders
@@ -9,7 +10,9 @@ import GitHubSignInButton from './GitHubSignInButton'
 export default function SocialSignIn() {
   const { t } = useTranslation()
   const anyConfigured =
-    import.meta.env.VITE_GOOGLE_CLIENT_ID || import.meta.env.VITE_GITHUB_CLIENT_ID
+    import.meta.env.VITE_GOOGLE_CLIENT_ID ||
+    import.meta.env.VITE_GITHUB_CLIENT_ID ||
+    import.meta.env.VITE_LINKEDIN_CLIENT_ID
   if (!anyConfigured) return null
 
   return (
@@ -22,6 +25,7 @@ export default function SocialSignIn() {
       <div className="space-y-2">
         <GoogleSignInButton />
         <GitHubSignInButton />
+        <LinkedInSignInButton />
       </div>
     </>
   )

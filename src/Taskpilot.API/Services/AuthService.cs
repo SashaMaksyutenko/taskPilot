@@ -19,6 +19,7 @@ public class AuthService : IAuthService
     private readonly ITokenService _tokenService;
     private readonly IGoogleAuthClient _googleClient;
     private readonly IGitHubAuthClient _gitHubClient;
+    private readonly ILinkedInAuthClient _linkedInClient;
     private readonly JwtSettings _jwtSettings;
     private readonly ILogger<AuthService> _logger;
 
@@ -34,6 +35,7 @@ public class AuthService : IAuthService
         ITokenService tokenService,
         IGoogleAuthClient googleClient,
         IGitHubAuthClient gitHubClient,
+        ILinkedInAuthClient linkedInClient,
         IOptions<JwtSettings> jwtOptions,
         ILogger<AuthService> logger)
     {
@@ -41,6 +43,7 @@ public class AuthService : IAuthService
         _tokenService = tokenService;
         _googleClient = googleClient;
         _gitHubClient = gitHubClient;
+        _linkedInClient = linkedInClient;
         _jwtSettings = jwtOptions.Value;
         _logger = logger;
     }
@@ -259,6 +262,81 @@ public class AuthService : IAuthService
         {
             _logger.LogError(ex, "Unexpected error during Google login.");
             return Result<AuthResponseDto>.Fail("An unexpected error occurred during Google sign-in.");
+        }
+    }
+
+    /// <summary>
+    /// Signs a user in with a LinkedIn OAuth authorization code. Exchanges the code
+    /// for the account profile, then finds or creates a matching user and issues the
+    /// usual JWT + refresh token. New LinkedIn users have no password.
+    /// </summary>
+    public async Task<Result<AuthResponseDto>> LinkedInLoginAsync(string code, string? ip = null, string? userAgent = null)
+    {
+        _logger.LogInformation("LinkedInLoginAsync started.");
+
+        try
+        {
+            var exchange = await _linkedInClient.ExchangeCodeAsync(code);
+            if (!exchange.Succeeded)
+                return Result<AuthResponseDto>.Fail(exchange.Error!);
+
+            var profile = exchange.Value!;
+            var email = profile.Email.Trim().ToLowerInvariant();
+
+            // Match on the LinkedIn id first (survives an email change), then on email.
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.LinkedInId == profile.Sub)
+                       ?? await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
+
+            if (user is null)
+            {
+                // First sign-in: create a password-less account linked to LinkedIn.
+                user = new User
+                {
+                    Id = Guid.NewGuid(),
+                    Name = string.IsNullOrWhiteSpace(profile.Name) ? email : profile.Name.Trim(),
+                    Email = email,
+                    LinkedInId = profile.Sub,
+                    Role = Role.Developer,
+                    IsActive = true,
+                    CreatedAt = DateTime.UtcNow,
+                };
+                _context.Users.Add(user);
+                _logger.LogInformation("New user created via LinkedIn. UserId: {UserId}", user.Id);
+            }
+            else if (string.IsNullOrEmpty(user.LinkedInId))
+            {
+                // Existing local account: link it to LinkedIn on first LinkedIn sign-in.
+                user.LinkedInId = profile.Sub;
+                user.UpdatedAt = DateTime.UtcNow;
+            }
+
+            // A temporary ban auto-lifts once it expires.
+            if (!user.IsActive && user.BannedUntil is { } until && until <= DateTime.UtcNow)
+            {
+                user.IsActive = true;
+                user.BannedUntil = null;
+                user.UpdatedAt = DateTime.UtcNow;
+            }
+
+            if (!user.IsActive)
+            {
+                _logger.LogWarning("LinkedIn login blocked: account is inactive. UserId: {UserId}", user.Id);
+                return Result<AuthResponseDto>.Fail("Account is disabled.");
+            }
+
+            var (accessToken, accessExpiresAtUtc) = _tokenService.GenerateAccessToken(user);
+            var refreshToken = CreateRefreshToken(user.Id, ip, userAgent);
+            _context.RefreshTokens.Add(refreshToken);
+            await _context.SaveChangesAsync();
+
+            _logger.LogInformation("LinkedIn login successful. UserId: {UserId}", user.Id);
+            return Result<AuthResponseDto>.Ok(
+                BuildAuthResponse(user, accessToken, accessExpiresAtUtc, refreshToken));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Unexpected error during LinkedIn login.");
+            return Result<AuthResponseDto>.Fail("An unexpected error occurred during LinkedIn sign-in.");
         }
     }
 

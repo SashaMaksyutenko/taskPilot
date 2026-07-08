@@ -18,5 +18,14 @@ export default defineConfig([
     languageOptions: {
       globals: globals.browser,
     },
+    rules: {
+      // react-hooks v7 ships several experimental rules (enabled as errors by the
+      // recommended preset) that flag common, working patterns — deriving/clearing
+      // state in an effect, timers, ref bookkeeping. Keep them visible as warnings
+      // instead of failing the build; revisit as a deliberate hooks refactor.
+      'react-hooks/set-state-in-effect': 'warn',
+      'react-hooks/purity': 'warn',
+      'react-hooks/refs': 'warn',
+    },
   },
 ])

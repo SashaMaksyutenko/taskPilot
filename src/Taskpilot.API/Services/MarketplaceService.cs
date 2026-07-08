@@ -17,17 +17,20 @@ public class MarketplaceService : IMarketplaceService
     private readonly TaskpilotDbContext _context;
     private readonly INotificationService _notifications;
     private readonly IWebhookService _webhooks;
+    private readonly IPaymentClient _payments;
     private readonly ILogger<MarketplaceService> _logger;
 
     public MarketplaceService(
         TaskpilotDbContext context,
         INotificationService notifications,
         IWebhookService webhooks,
+        IPaymentClient payments,
         ILogger<MarketplaceService> logger)
     {
         _context = context;
         _notifications = notifications;
         _webhooks = webhooks;
+        _payments = payments;
         _logger = logger;
     }
 
@@ -310,6 +313,84 @@ public class MarketplaceService : IMarketplaceService
     }
 
     /// <inheritdoc />
+    public async Task<Result<string>> CreatePaymentAsync(Guid posterId, Guid taskId, string successUrl, string cancelUrl)
+    {
+        if (!_payments.IsEnabled)
+            return Result<string>.Fail("Payments are not configured.");
+
+        var task = await _context.MarketplaceTasks.FirstOrDefaultAsync(t => t.Id == taskId);
+        if (task is null)
+            return Result<string>.Fail("Task not found.");
+
+        if (task.PosterId != posterId)
+            return Result<string>.Fail("Only the poster can pay for this task.");
+
+        if (task.Status != MarketplaceTaskStatus.Completed)
+            return Result<string>.Fail("Only a completed task can be paid.");
+
+        if (task.PaymentStatus == PaymentStatus.Paid)
+            return Result<string>.Fail("This task has already been paid.");
+
+        var session = await _payments.CreateCheckoutSessionAsync(
+            task.Budget, $"TaskPilot: {task.Title}", successUrl, cancelUrl);
+        if (!session.Succeeded || session.Value is null)
+            return Result<string>.Fail(session.Error ?? "Could not start the payment.");
+
+        task.PaymentSessionId = session.Value.Id;
+        task.PaymentStatus = PaymentStatus.Pending;
+        await _context.SaveChangesAsync();
+
+        _logger.LogInformation("Payment session created. TaskId: {TaskId}", taskId);
+        return Result<string>.Ok(session.Value.Url);
+    }
+
+    /// <inheritdoc />
+    public async Task<Result> ConfirmPaymentAsync(Guid posterId, Guid taskId)
+    {
+        var task = await _context.MarketplaceTasks.FirstOrDefaultAsync(t => t.Id == taskId);
+        if (task is null)
+            return Result.Fail("Task not found.");
+
+        if (task.PosterId != posterId)
+            return Result.Fail("Only the poster can confirm this payment.");
+
+        if (task.PaymentStatus == PaymentStatus.Paid)
+            return Result.Ok();  // Idempotent: already confirmed.
+
+        if (string.IsNullOrEmpty(task.PaymentSessionId))
+            return Result.Fail("No payment is in progress for this task.");
+
+        var paid = await _payments.IsSessionPaidAsync(task.PaymentSessionId);
+        if (!paid.Succeeded)
+            return Result.Fail(paid.Error ?? "Could not verify the payment.");
+        if (!paid.Value)
+            return Result.Fail("The payment has not been completed.");
+
+        task.PaymentStatus = PaymentStatus.Paid;
+        task.PaidAt = DateTime.UtcNow;
+        await _context.SaveChangesAsync();
+
+        if (task.AssigneeId is { } assigneeId)
+            await _notifications.CreateAsync(
+                assigneeId,
+                NotificationType.Marketplace,
+                $"You were paid {task.Budget:0.##} for \"{task.Title}\".",
+                $"/marketplace/tasks/{task.Id}");
+
+        await _webhooks.DispatchAsync(WebhookEvents.MarketplaceTaskPaid, new
+        {
+            taskId = task.Id,
+            title = task.Title,
+            amount = task.Budget,
+            posterId = task.PosterId,
+            assigneeId = task.AssigneeId,
+        });
+
+        _logger.LogInformation("Marketplace task paid. TaskId: {TaskId}", taskId);
+        return Result.Ok();
+    }
+
+    /// <inheritdoc />
     public async Task<Result> RateAsync(Guid raterId, Guid taskId, int stars, string? comment)
     {
         if (stars < 1 || stars > 5)
@@ -415,6 +496,8 @@ public class MarketplaceService : IMarketplaceService
         AssigneeId = t.AssigneeId,
         AssigneeName = t.Assignee?.Name,
         AssigneeAvatarUrl = t.Assignee is null ? null : UserMapper.AvatarUrl(t.Assignee),
+        PaymentStatus = t.PaymentStatus.ToString(),
+        PaidAt = t.PaidAt,
         CreatedAt = t.CreatedAt,
         Applications = t.Applications
             .OrderByDescending(a => a.CreatedAt)

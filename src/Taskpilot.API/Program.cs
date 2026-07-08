@@ -83,6 +83,10 @@ builder.Services.AddHttpClient<IGoogleAuthClient, GoogleAuthClient>();
 builder.Services.Configure<GitHubOAuthOptions>(builder.Configuration.GetSection("GitHubOAuth"));
 builder.Services.AddHttpClient<IGitHubAuthClient, GitHubAuthClient>();
 
+// Stripe payments (populated from .env: Stripe__*). Disabled until a secret key is set.
+builder.Services.Configure<StripeOptions>(builder.Configuration.GetSection("Stripe"));
+builder.Services.AddHttpClient<IPaymentClient, StripePaymentClient>();
+
 // Distributed cache: use Redis when a connection string is configured (Redis__Connection),
 // otherwise an in-memory cache so the app runs the same without Redis installed.
 var redisConnection = builder.Configuration["Redis:Connection"];

@@ -16,6 +16,8 @@ public class TaskDetailDto
     public Guid? AssigneeId { get; set; }
     public string? AssigneeName { get; set; }
     public string? AssigneeAvatarUrl { get; set; }
+    public string PaymentStatus { get; set; } = string.Empty;
+    public DateTime? PaidAt { get; set; }
     public DateTime CreatedAt { get; set; }
     public List<ApplicationDto> Applications { get; set; } = new();
 }

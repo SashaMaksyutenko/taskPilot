@@ -10,6 +10,7 @@ public static class WebhookEvents
     public const string ProjectCreated = "project.created";
     public const string ProjectArchived = "project.archived";
     public const string MarketplaceTaskCompleted = "marketplace.task.completed";
+    public const string MarketplaceTaskPaid = "marketplace.task.paid";
     public const string UserBanned = "user.banned";
     public const string CommentCreated = "comment.created";
     public const string WarningIssued = "warning.issued";
@@ -20,7 +21,7 @@ public static class WebhookEvents
     public static readonly string[] All =
     {
         TaskCompleted, TaskCreated, TaskUpdated, TaskOverdue,
-        ProjectCreated, ProjectArchived, MarketplaceTaskCompleted, UserBanned,
+        ProjectCreated, ProjectArchived, MarketplaceTaskCompleted, MarketplaceTaskPaid, UserBanned,
         CommentCreated, WarningIssued, AppealResolved, MentionTriggered,
     };
 }

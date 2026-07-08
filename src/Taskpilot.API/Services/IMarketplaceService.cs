@@ -34,6 +34,18 @@ public interface IMarketplaceService
     Task<Result> ApproveTaskAsync(Guid posterId, Guid taskId);
 
     /// <summary>
+    /// Poster starts paying the budget for a completed task, returning the Stripe
+    /// Checkout URL to redirect to. Requires payments to be configured.
+    /// </summary>
+    Task<Result<string>> CreatePaymentAsync(Guid posterId, Guid taskId, string successUrl, string cancelUrl);
+
+    /// <summary>
+    /// Confirms a task's payment after the poster returns from Stripe: verifies the
+    /// session was paid, marks the task paid and notifies the assignee.
+    /// </summary>
+    Task<Result> ConfirmPaymentAsync(Guid posterId, Guid taskId);
+
+    /// <summary>
     /// Leaves a 1–5 star review for a completed task. The rater must be the poster or
     /// the assignee; the review is about the other party. One review per rater per task.
     /// </summary>

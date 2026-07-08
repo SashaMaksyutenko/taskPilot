@@ -1,6 +1,8 @@
 using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
+using Taskpilot.API.Configuration;
 using Taskpilot.API.DTOs.Marketplace;
 using Taskpilot.API.Services;
 
@@ -17,15 +19,18 @@ public class MarketplaceController : BaseApiController
     private readonly IMarketplaceService _marketplace;
     private readonly IValidator<CreateTaskDto> _createTaskValidator;
     private readonly IValidator<ApplyDto> _applyValidator;
+    private readonly EmailOptions _emailOptions;
 
     public MarketplaceController(
         IMarketplaceService marketplace,
         IValidator<CreateTaskDto> createTaskValidator,
-        IValidator<ApplyDto> applyValidator)
+        IValidator<ApplyDto> applyValidator,
+        IOptions<EmailOptions> emailOptions)
     {
         _marketplace = marketplace;
         _createTaskValidator = createTaskValidator;
         _applyValidator = applyValidator;
+        _emailOptions = emailOptions.Value;
     }
 
     /// <summary>Lists a page of marketplace tasks (open first, then newest).</summary>
@@ -107,6 +112,40 @@ public class MarketplaceController : BaseApiController
         var result = await _marketplace.ApproveTaskAsync(userId.Value, taskId);
         return result.Succeeded
             ? Ok(new { message = "Task approved." })
+            : BadRequest(new { error = result.Error });
+    }
+
+    /// <summary>
+    /// Poster starts paying the budget for a completed task. Returns the Stripe
+    /// Checkout URL to redirect the browser to.
+    /// </summary>
+    [HttpPost("tasks/{taskId:guid}/pay")]
+    public async Task<IActionResult> Pay(Guid taskId)
+    {
+        var userId = CurrentUserId();
+        if (userId is null) return Unauthorized();
+
+        // Stripe sends the browser back to the frontend task page after checkout.
+        var baseUrl = _emailOptions.FrontendBaseUrl.TrimEnd('/');
+        var successUrl = $"{baseUrl}/marketplace/tasks/{taskId}?paid=1";
+        var cancelUrl = $"{baseUrl}/marketplace/tasks/{taskId}";
+
+        var result = await _marketplace.CreatePaymentAsync(userId.Value, taskId, successUrl, cancelUrl);
+        return result.Succeeded
+            ? Ok(new { url = result.Value })
+            : BadRequest(new { error = result.Error });
+    }
+
+    /// <summary>Confirms a task's payment after the poster returns from Stripe.</summary>
+    [HttpPost("tasks/{taskId:guid}/pay/confirm")]
+    public async Task<IActionResult> ConfirmPayment(Guid taskId)
+    {
+        var userId = CurrentUserId();
+        if (userId is null) return Unauthorized();
+
+        var result = await _marketplace.ConfirmPaymentAsync(userId.Value, taskId);
+        return result.Succeeded
+            ? Ok(new { message = "Payment confirmed." })
             : BadRequest(new { error = result.Error });
     }
 

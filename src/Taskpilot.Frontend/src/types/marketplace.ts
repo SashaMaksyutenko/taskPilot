@@ -40,6 +40,8 @@ export interface MarketTaskDetail {
   assigneeId: string | null
   assigneeName: string | null
   assigneeAvatarUrl: string | null
+  paymentStatus: string
+  paidAt: string | null
   createdAt: string
   applications: Application[]
 }

@@ -53,6 +53,16 @@ export const marketplaceService = {
     return api.post(`/api/marketplace/tasks/${taskId}/rate`, { stars, comment }).then(() => undefined)
   },
 
+  /** Poster starts paying the budget; resolves to the Stripe Checkout URL to redirect to. */
+  pay(taskId: string): Promise<string> {
+    return api.post<{ url: string }>(`/api/marketplace/tasks/${taskId}/pay`).then((r) => r.data.url)
+  },
+
+  /** Confirms the payment after returning from Stripe. */
+  confirmPayment(taskId: string): Promise<void> {
+    return api.post(`/api/marketplace/tasks/${taskId}/pay/confirm`).then(() => undefined)
+  },
+
   /** Lists the reviews left for a task. */
   getReviews(taskId: string): Promise<Review[]> {
     return api.get<Review[]>(`/api/marketplace/tasks/${taskId}/reviews`).then((r) => r.data)

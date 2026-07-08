@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useParams, useSearchParams } from 'react-router-dom'
 import Avatar from '../components/Avatar'
 import Markdown from '../components/Markdown'
 import Navbar from '../components/Navbar'
 import StarRating from '../components/StarRating'
 import { marketplaceService } from '../services/marketplaceService'
+import { notify } from '../lib/toast'
 import { useAppSelector } from '../store/hooks'
 import type { MarketTaskDetail, Review } from '../types/marketplace'
 
@@ -22,6 +23,7 @@ const appStatusColor: Record<string, string> = {
 export default function MarketplaceTaskPage() {
   const { t } = useTranslation()
   const { taskId = '' } = useParams()
+  const [searchParams, setSearchParams] = useSearchParams()
   const currentUserId = useAppSelector((s) => s.auth.user?.id)
   const [task, setTask] = useState<MarketTaskDetail | null>(null)
   const [coverLetter, setCoverLetter] = useState('')
@@ -40,6 +42,20 @@ export default function MarketplaceTaskPage() {
 
   useEffect(load, [taskId])
   useEffect(loadReviews, [taskId])
+
+  // Returning from Stripe checkout (?paid=1): confirm the payment, then clean the URL.
+  useEffect(() => {
+    if (!taskId || searchParams.get('paid') !== '1') return
+    marketplaceService
+      .confirmPayment(taskId)
+      .then(() => {
+        notify.success(t('marketTask.paymentConfirmed'))
+        load()
+      })
+      .catch(() => {})
+      .finally(() => setSearchParams({}, { replace: true }))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [taskId, searchParams])
 
   const submitRating = async () => {
     if (myStars < 1) return
@@ -87,6 +103,15 @@ export default function MarketplaceTaskPage() {
     load()
   }
 
+  const payTask = async () => {
+    try {
+      const url = await marketplaceService.pay(task!.id)
+      window.location.href = url  // Redirect to Stripe's hosted checkout.
+    } catch {
+      notify.error(t('marketTask.paymentUnavailable'))
+    }
+  }
+
   return (
     <div className="min-h-screen bg-slate-50 text-[#1E2A44] dark:bg-slate-900 dark:text-slate-100">
       <Navbar />
@@ -117,6 +142,27 @@ export default function MarketplaceTaskPage() {
             <Markdown>{task.description}</Markdown>
           </div>
         </div>
+
+        {/* Payment — on a completed task */}
+        {task.status === 'Completed' && (
+          <>
+            {task.paymentStatus === 'Paid' ? (
+              <div className="mt-6 flex items-center gap-2 rounded-xl border border-green-300 bg-green-50 p-4 text-sm font-semibold text-green-700 dark:border-green-700 dark:bg-green-950/30 dark:text-green-300">
+                ✓ {t('marketTask.paid', { amount: task.budget })}
+              </div>
+            ) : isPoster ? (
+              <div className="mt-6 flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-800">
+                <span className="text-sm">{t('marketTask.payPrompt', { name: task.assigneeName ?? '' })}</span>
+                <button
+                  onClick={payTask}
+                  className="ml-auto rounded-lg bg-[#635BFF] px-5 py-2 text-sm font-semibold text-white hover:opacity-90"
+                >
+                  {t('marketTask.pay', { amount: task.budget })}
+                </button>
+              </div>
+            ) : null}
+          </>
+        )}
 
         {/* Poster: applications */}
         {isPoster ? (

@@ -39,6 +39,15 @@ public class MarketplaceTask
     /// <summary>Navigation to the assignee (if any).</summary>
     public User? Assignee { get; set; }
 
+    /// <summary>Payout status once the task is completed.</summary>
+    public PaymentStatus PaymentStatus { get; set; } = PaymentStatus.Unpaid;
+
+    /// <summary>Stripe Checkout session id of the in-flight/last payment; null until one starts.</summary>
+    public string? PaymentSessionId { get; set; }
+
+    /// <summary>UTC time the payment was confirmed; null while unpaid.</summary>
+    public DateTime? PaidAt { get; set; }
+
     /// <summary>UTC time the task was posted.</summary>
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 

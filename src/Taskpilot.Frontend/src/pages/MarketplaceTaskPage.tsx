@@ -7,6 +7,7 @@ import Navbar from '../components/Navbar'
 import StarRating from '../components/StarRating'
 import { marketplaceService } from '../services/marketplaceService'
 import { notify } from '../lib/toast'
+import { celebrate } from '../lib/confetti'
 import { useAppSelector } from '../store/hooks'
 import type { MarketTaskDetail, Review } from '../types/marketplace'
 
@@ -55,7 +56,10 @@ export default function MarketplaceTaskPage() {
     marketplaceService
       .confirmPayment(task.id)
       .then(() => {
-        if (justPaid) notify.success(t('marketTask.paymentConfirmed'))
+        if (justPaid) {
+          notify.success(t('marketTask.paymentConfirmed'))
+          celebrate()
+        }
         load()
       })
       .catch(() => {})

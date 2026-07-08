@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, useNavigate } from 'react-router-dom'
 import Navbar from '../components/Navbar'
+import FadeIn from '../components/FadeIn'
 import { calendarService } from '../services/calendarService'
 import { notificationService } from '../services/notificationService'
 import { projectService } from '../services/projectService'
@@ -70,6 +71,7 @@ export default function HomePage() {
       <Navbar />
 
       <main className="mx-auto max-w-5xl px-6 py-8">
+        <FadeIn>
         <h1 className="text-2xl font-bold">{t('dashboard.welcome')}{user ? `, ${user.name}` : ''} 👋</h1>
         <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
           {t('dashboard.subtitle')}
@@ -145,6 +147,7 @@ export default function HomePage() {
             </div>
           </div>
         </div>
+        </FadeIn>
       </main>
     </div>
   )

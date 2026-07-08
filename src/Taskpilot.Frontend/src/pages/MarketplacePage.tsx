@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, useNavigate } from 'react-router-dom'
 import Avatar from '../components/Avatar'
+import FadeIn from '../components/FadeIn'
 import MarkdownEditor from '../components/MarkdownEditor'
 import Navbar from '../components/Navbar'
 import { marketplaceService } from '../services/marketplaceService'
@@ -71,6 +72,7 @@ export default function MarketplacePage() {
     <div className="min-h-screen bg-slate-50 text-[#1E2A44] dark:bg-slate-900 dark:text-slate-100">
       <Navbar />
       <main className="mx-auto max-w-3xl px-6 py-8">
+        <FadeIn>
         <h1 className="mb-6 text-2xl font-bold">{t('market.title')}</h1>
 
         {/* Post a task — Managers/Admins only */}
@@ -182,6 +184,7 @@ export default function MarketplacePage() {
             </button>
           </div>
         )}
+        </FadeIn>
       </main>
     </div>
   )

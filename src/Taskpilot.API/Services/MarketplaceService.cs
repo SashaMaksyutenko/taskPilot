@@ -18,6 +18,7 @@ public class MarketplaceService : IMarketplaceService
     private readonly INotificationService _notifications;
     private readonly IWebhookService _webhooks;
     private readonly IPaymentClient _payments;
+    private readonly IAuditService _audit;
     private readonly ILogger<MarketplaceService> _logger;
 
     public MarketplaceService(
@@ -25,12 +26,14 @@ public class MarketplaceService : IMarketplaceService
         INotificationService notifications,
         IWebhookService webhooks,
         IPaymentClient payments,
+        IAuditService audit,
         ILogger<MarketplaceService> logger)
     {
         _context = context;
         _notifications = notifications;
         _webhooks = webhooks;
         _payments = payments;
+        _audit = audit;
         _logger = logger;
     }
 
@@ -88,6 +91,7 @@ public class MarketplaceService : IMarketplaceService
                 t.RequiredSkills,
                 t.Deadline,
                 t.Status,
+                t.PaymentStatus,
                 t.PosterId,
                 PosterName = t.Poster.Name,
                 PosterAvatarFileId = t.Poster.AvatarFileId,
@@ -107,6 +111,7 @@ public class MarketplaceService : IMarketplaceService
                 RequiredSkills = t.RequiredSkills,
                 Deadline = t.Deadline,
                 Status = t.Status.ToString(),
+                PaymentStatus = t.PaymentStatus.ToString(),
                 PosterId = t.PosterId,
                 PosterName = t.PosterName,
                 PosterAvatarUrl = UserMapper.AvatarUrl(t.PosterId, t.PosterAvatarFileId),
@@ -186,7 +191,7 @@ public class MarketplaceService : IMarketplaceService
                 task.PosterId,
                 NotificationType.Marketplace,
                 $"{applicantName} applied to your task \"{task.Title}\".",
-                $"/marketplace/tasks/{task.Id}");
+                $"/marketplace/{task.Id}");
 
             _logger.LogInformation("Application submitted. ApplicationId: {ApplicationId}", application.Id);
             return Result<ApplicationDto>.Ok(MapApplication(application, applicantName,
@@ -244,7 +249,7 @@ public class MarketplaceService : IMarketplaceService
             accept
                 ? $"Your application to \"{task.Title}\" was accepted!"
                 : $"Your application to \"{task.Title}\" was rejected.",
-            $"/marketplace/tasks/{task.Id}");
+            $"/marketplace/{task.Id}");
 
         return Result.Ok();
     }
@@ -270,7 +275,7 @@ public class MarketplaceService : IMarketplaceService
             task.PosterId,
             NotificationType.Marketplace,
             $"Work submitted for \"{task.Title}\" — ready for review.",
-            $"/marketplace/tasks/{task.Id}");
+            $"/marketplace/{task.Id}");
 
         _logger.LogInformation("Marketplace task submitted. TaskId: {TaskId}", taskId);
         return Result.Ok();
@@ -298,7 +303,7 @@ public class MarketplaceService : IMarketplaceService
                 assigneeId,
                 NotificationType.Marketplace,
                 $"Your work on \"{task.Title}\" was approved!",
-                $"/marketplace/tasks/{task.Id}");
+                $"/marketplace/{task.Id}");
 
         await _webhooks.DispatchAsync(WebhookEvents.MarketplaceTaskCompleted, new
         {
@@ -345,7 +350,7 @@ public class MarketplaceService : IMarketplaceService
     }
 
     /// <inheritdoc />
-    public async Task<Result> ConfirmPaymentAsync(Guid posterId, Guid taskId)
+    public async Task<Result> ConfirmPaymentAsync(Guid posterId, Guid taskId, string? ip = null)
     {
         var task = await _context.MarketplaceTasks.FirstOrDefaultAsync(t => t.Id == taskId);
         if (task is null)
@@ -375,7 +380,18 @@ public class MarketplaceService : IMarketplaceService
                 assigneeId,
                 NotificationType.Marketplace,
                 $"You were paid {task.Budget:0.##} for \"{task.Title}\".",
-                $"/marketplace/tasks/{task.Id}");
+                $"/marketplace/{task.Id}");
+
+        var posterEmail = await _context.Users
+            .Where(u => u.Id == posterId).Select(u => u.Email).FirstOrDefaultAsync();
+        await _audit.LogAsync(
+            action: "marketplace.task.paid",
+            actorId: posterId,
+            actorEmail: posterEmail,
+            entityType: nameof(MarketplaceTask),
+            entityId: task.Id.ToString(),
+            details: $"Paid {task.Budget:0.##} for \"{task.Title}\"",
+            ipAddress: ip);
 
         await _webhooks.DispatchAsync(WebhookEvents.MarketplaceTaskPaid, new
         {
@@ -436,7 +452,7 @@ public class MarketplaceService : IMarketplaceService
             rateeId,
             NotificationType.Marketplace,
             $"You received a {stars}★ rating for \"{task.Title}\".",
-            $"/marketplace/tasks/{taskId}");
+            $"/marketplace/{taskId}");
 
         _logger.LogInformation("Marketplace review left. TaskId: {TaskId}, RaterId: {RaterId}, Stars: {Stars}", taskId, raterId, stars);
         return Result.Ok();

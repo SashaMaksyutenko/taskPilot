@@ -415,6 +415,7 @@
     "skills": "Навички (напр. React, .NET)",
     "postBtn": "Опублікувати",
     "empty": "Задач ще немає.",
+    "paid": "Оплачено",
     "applications": "Заявок: {{count}}",
     "status": {
       "Open": "Відкрита",

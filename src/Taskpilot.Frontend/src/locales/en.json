@@ -415,6 +415,7 @@
     "skills": "Skills (e.g. React, .NET)",
     "postBtn": "Post task",
     "empty": "No tasks yet.",
+    "paid": "Paid",
     "applications": "{{count}} applications",
     "status": {
       "Open": "Open",

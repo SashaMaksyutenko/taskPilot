@@ -41,9 +41,9 @@ public interface IMarketplaceService
 
     /// <summary>
     /// Confirms a task's payment after the poster returns from Stripe: verifies the
-    /// session was paid, marks the task paid and notifies the assignee.
+    /// session was paid, marks the task paid, notifies the assignee and audits it.
     /// </summary>
-    Task<Result> ConfirmPaymentAsync(Guid posterId, Guid taskId);
+    Task<Result> ConfirmPaymentAsync(Guid posterId, Guid taskId, string? ip = null);
 
     /// <summary>
     /// Leaves a 1–5 star review for a completed task. The rater must be the poster or

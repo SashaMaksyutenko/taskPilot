@@ -7,6 +7,7 @@ export interface MarketTaskListItem {
   requiredSkills: string | null
   deadline: string | null
   status: string
+  paymentStatus: string
   posterId: string
   posterName: string
   posterAvatarUrl: string | null

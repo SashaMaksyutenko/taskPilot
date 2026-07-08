@@ -146,6 +146,11 @@ export default function MarketplacePage() {
                     </div>
                   </div>
                   <span className="flex-none font-bold">${task.budget}</span>
+                  {task.paymentStatus === 'Paid' && (
+                    <span className="flex-none rounded-full bg-green-100 px-2 py-0.5 text-[11px] font-semibold text-green-700 dark:bg-green-900/40 dark:text-green-300">
+                      {t('market.paid')}
+                    </span>
+                  )}
                   <span className={`flex-none rounded-full px-2 py-0.5 text-[11px] font-semibold ${statusColor[task.status] ?? 'bg-slate-200 text-slate-700'}`}>
                     {t(`market.status.${task.status}`, task.status)}
                   </span>

@@ -43,19 +43,27 @@ export default function MarketplaceTaskPage() {
   useEffect(load, [taskId])
   useEffect(loadReviews, [taskId])
 
-  // Returning from Stripe checkout (?paid=1): confirm the payment, then clean the URL.
+  // Confirm a payment once the poster is back from Stripe. Fires both on the
+  // explicit ?paid=1 return and whenever a payment is still Pending (so a lost
+  // redirect still settles on the next visit). Confirm only succeeds once Stripe
+  // reports the session as paid, so this is safe to retry.
   useEffect(() => {
-    if (!taskId || searchParams.get('paid') !== '1') return
+    if (!task) return
+    const isPosterHere = currentUserId === task.posterId
+    const justPaid = searchParams.get('paid') === '1'
+    if (!isPosterHere || (task.paymentStatus !== 'Pending' && !justPaid)) return
     marketplaceService
-      .confirmPayment(taskId)
+      .confirmPayment(task.id)
       .then(() => {
-        notify.success(t('marketTask.paymentConfirmed'))
+        if (justPaid) notify.success(t('marketTask.paymentConfirmed'))
         load()
       })
       .catch(() => {})
-      .finally(() => setSearchParams({}, { replace: true }))
+      .finally(() => {
+        if (justPaid) setSearchParams({}, { replace: true })
+      })
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [taskId, searchParams])
+  }, [task?.id, task?.paymentStatus, currentUserId])
 
   const submitRating = async () => {
     if (myStars < 1) return

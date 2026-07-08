@@ -127,8 +127,8 @@ public class MarketplaceController : BaseApiController
 
         // Stripe sends the browser back to the frontend task page after checkout.
         var baseUrl = _emailOptions.FrontendBaseUrl.TrimEnd('/');
-        var successUrl = $"{baseUrl}/marketplace/tasks/{taskId}?paid=1";
-        var cancelUrl = $"{baseUrl}/marketplace/tasks/{taskId}";
+        var successUrl = $"{baseUrl}/marketplace/{taskId}?paid=1";
+        var cancelUrl = $"{baseUrl}/marketplace/{taskId}";
 
         var result = await _marketplace.CreatePaymentAsync(userId.Value, taskId, successUrl, cancelUrl);
         return result.Succeeded
@@ -143,7 +143,7 @@ public class MarketplaceController : BaseApiController
         var userId = CurrentUserId();
         if (userId is null) return Unauthorized();
 
-        var result = await _marketplace.ConfirmPaymentAsync(userId.Value, taskId);
+        var result = await _marketplace.ConfirmPaymentAsync(userId.Value, taskId, ClientIp());
         return result.Succeeded
             ? Ok(new { message = "Payment confirmed." })
             : BadRequest(new { error = result.Error });

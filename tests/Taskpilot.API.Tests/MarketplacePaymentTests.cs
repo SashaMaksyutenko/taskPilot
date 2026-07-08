@@ -24,7 +24,12 @@ public class MarketplacePaymentTests
         webhooks
             .Setup(w => w.DispatchAsync(It.IsAny<string>(), It.IsAny<object>()))
             .Returns(Task.CompletedTask);
-        return new MarketplaceService(ctx, notifications.Object, webhooks.Object, payments, NullLogger<MarketplaceService>.Instance);
+        var audit = new Mock<IAuditService>();
+        audit
+            .Setup(a => a.LogAsync(It.IsAny<string>(), It.IsAny<Guid?>(), It.IsAny<string?>(),
+                It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<string?>()))
+            .Returns(Task.CompletedTask);
+        return new MarketplaceService(ctx, notifications.Object, webhooks.Object, payments, audit.Object, NullLogger<MarketplaceService>.Instance);
     }
 
     private static async Task<(Guid posterId, Guid assigneeId, Guid taskId)> SeedCompletedTaskAsync(TaskpilotDbContext ctx)

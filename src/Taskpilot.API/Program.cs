@@ -7,11 +7,13 @@ using System.Text;
 using System.Threading.RateLimiting;
 using DotNetEnv;
 using FluentValidation;
+using MassTransit;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Taskpilot.API.Configuration;
+using Taskpilot.API.Consumers;
 using Taskpilot.API.Data;
 using Taskpilot.API.Hubs;
 using Taskpilot.API.Middleware;
@@ -123,6 +125,30 @@ builder.Services.Configure<ViberOptions>(builder.Configuration.GetSection("Viber
 builder.Services.AddHttpClient<IViberSender, ViberSender>();
 builder.Services.AddScoped<IViberLinkService, ViberLinkService>();
 
+// RabbitMQ (populated from .env: RabbitMq__Connection). When set, notification
+// side-channel delivery is offloaded to a MassTransit consumer; otherwise it runs
+// inline and the app behaves exactly as without a broker.
+var rabbitOptions = new RabbitMqOptions();
+builder.Configuration.GetSection("RabbitMq").Bind(rabbitOptions);
+builder.Services.Configure<RabbitMqOptions>(builder.Configuration.GetSection("RabbitMq"));
+if (rabbitOptions.IsConfigured)
+{
+    builder.Services.AddMassTransit(x =>
+    {
+        x.AddConsumer<NotificationDeliveryConsumer>();
+        x.UsingRabbitMq((context, cfg) =>
+        {
+            cfg.Host(new Uri(rabbitOptions.Connection));
+            cfg.ConfigureEndpoints(context);
+        });
+    });
+    builder.Services.AddScoped<INotificationQueue, MassTransitNotificationQueue>();
+}
+else
+{
+    builder.Services.AddSingleton<INotificationQueue, DisabledNotificationQueue>();
+}
+
 // Email delivery — populated from .env: Email__*. Prefer SMTP (Gmail/Brevo/…) when
 // an SMTP host is set; otherwise fall back to the SendGrid API sender. No config =
 // both are disabled and email is silently skipped.
@@ -226,6 +252,7 @@ builder.Services.AddScoped<IFileService, FileService>();
 builder.Services.AddScoped<IForumService, ForumService>();
 builder.Services.AddScoped<IMarketplaceService, MarketplaceService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
+builder.Services.AddScoped<INotificationDeliveryService, NotificationDeliveryService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IAdminService, AdminService>();
 builder.Services.AddScoped<IWarningService, WarningService>();

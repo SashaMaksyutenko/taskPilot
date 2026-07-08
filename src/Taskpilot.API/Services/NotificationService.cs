@@ -6,6 +6,7 @@ using Taskpilot.API.Configuration;
 using Taskpilot.API.Data;
 using Taskpilot.API.DTOs.Notifications;
 using Taskpilot.API.Hubs;
+using Taskpilot.API.Messages;
 using Taskpilot.API.Models;
 
 namespace Taskpilot.API.Services;
@@ -18,43 +19,31 @@ public class NotificationService : INotificationService
 {
     private readonly TaskpilotDbContext _context;
     private readonly IHubContext<NotificationHub> _hub;
-    private readonly IEmailSender _email;
-    private readonly ITelegramSender _telegram;
-    private readonly IViberSender _viber;
-    private readonly IPushService _push;
-    private readonly EmailOptions _emailOptions;
+    private readonly INotificationDeliveryService _delivery;
+    private readonly INotificationQueue _queue;
     private readonly ILogger<NotificationService> _logger;
 
     public NotificationService(
         TaskpilotDbContext context,
         IHubContext<NotificationHub> hub,
-        IEmailSender email,
-        ITelegramSender telegram,
-        IViberSender viber,
-        IPushService push,
-        IOptions<EmailOptions> emailOptions,
+        INotificationDeliveryService delivery,
+        INotificationQueue queue,
         ILogger<NotificationService> logger)
     {
         _context = context;
         _hub = hub;
-        _email = email;
-        _telegram = telegram;
-        _viber = viber;
-        _push = push;
-        _emailOptions = emailOptions.Value;
+        _delivery = delivery;
+        _queue = queue;
         _logger = logger;
     }
 
     /// <inheritdoc />
     public async Task CreateAsync(Guid recipientId, NotificationType type, string message, string? link = null)
     {
-        // The two channels are opted out independently.
-        var muted = await _context.NotificationPreferences
-            .Where(p => p.UserId == recipientId && p.Type == type)
-            .Select(p => p.Channel)
-            .ToListAsync();
-        var inAppMuted = muted.Contains(NotificationChannel.InApp);
-        var emailMuted = muted.Contains(NotificationChannel.Email);
+        // In-app is opted out independently per (type, InApp channel).
+        // (Email muting is applied by the delivery service, inline or queued.)
+        var inAppMuted = await _context.NotificationPreferences
+            .AnyAsync(p => p.UserId == recipientId && p.Type == type && p.Channel == NotificationChannel.InApp);
 
         // In-app: store and push in real time unless muted.
         if (!inAppMuted)
@@ -84,88 +73,12 @@ public class NotificationService : INotificationService
             });
         }
 
-        // Email: deliver when configured and not muted for this type (best-effort).
-        if (!emailMuted)
-            await SendEmailAsync(recipientId, message, link);
-
-        // Telegram: deliver to linked users (best-effort).
-        await SendTelegramAsync(recipientId, message, link);
-
-        // Viber: deliver to linked users (best-effort).
-        await SendViberAsync(recipientId, message, link);
-
-        // Web push: deliver to the user's subscribed browsers (best-effort).
-        var pushUrl = string.IsNullOrEmpty(link)
-            ? _emailOptions.FrontendBaseUrl
-            : _emailOptions.FrontendBaseUrl.TrimEnd('/') + "/" + link.TrimStart('/');
-        await _push.SendToUserAsync(recipientId, "TaskPilot", message, pushUrl);
-    }
-
-    /// <summary>Sends the notification to the recipient's linked Telegram chat, if any.</summary>
-    private async Task SendTelegramAsync(Guid recipientId, string message, string? link)
-    {
-        if (!_telegram.IsEnabled)
-            return;
-
-        var chatId = await _context.Users
-            .Where(u => u.Id == recipientId)
-            .Select(u => u.TelegramChatId)
-            .FirstOrDefaultAsync();
-        if (string.IsNullOrEmpty(chatId))
-            return;
-
-        var url = string.IsNullOrEmpty(link)
-            ? _emailOptions.FrontendBaseUrl
-            : _emailOptions.FrontendBaseUrl.TrimEnd('/') + "/" + link.TrimStart('/');
-
-        await _telegram.SendMessageAsync(chatId, $"{message}\n{url}");
-    }
-
-    /// <summary>Sends the notification to the recipient's linked Viber, if any.</summary>
-    private async Task SendViberAsync(Guid recipientId, string message, string? link)
-    {
-        if (!_viber.IsEnabled)
-            return;
-
-        var viberId = await _context.Users
-            .Where(u => u.Id == recipientId)
-            .Select(u => u.ViberId)
-            .FirstOrDefaultAsync();
-        if (string.IsNullOrEmpty(viberId))
-            return;
-
-        var url = string.IsNullOrEmpty(link)
-            ? _emailOptions.FrontendBaseUrl
-            : _emailOptions.FrontendBaseUrl.TrimEnd('/') + "/" + link.TrimStart('/');
-
-        await _viber.SendMessageAsync(viberId, $"{message}\n{url}");
-    }
-
-    /// <summary>Emails the notification to the recipient when email delivery is enabled.</summary>
-    private async Task SendEmailAsync(Guid recipientId, string message, string? link)
-    {
-        if (!_email.IsEnabled)
-            return;
-
-        var recipient = await _context.Users
-            .Where(u => u.Id == recipientId)
-            .Select(u => new { u.Email, u.Name })
-            .AsNoTracking()
-            .FirstOrDefaultAsync();
-        if (recipient is null || string.IsNullOrWhiteSpace(recipient.Email))
-            return;
-
-        // Turn a relative link (e.g. "/projects/{id}") into a clickable absolute URL.
-        var url = string.IsNullOrEmpty(link)
-            ? _emailOptions.FrontendBaseUrl
-            : _emailOptions.FrontendBaseUrl.TrimEnd('/') + "/" + link.TrimStart('/');
-
-        var html =
-            $"<p>Hi {System.Net.WebUtility.HtmlEncode(recipient.Name)},</p>" +
-            $"<p>{System.Net.WebUtility.HtmlEncode(message)}</p>" +
-            $"<p><a href=\"{url}\">Open in TaskPilot</a></p>";
-
-        await _email.SendAsync(recipient.Email, recipient.Name, "TaskPilot notification", html);
+        // Out-of-band channels (email, Telegram, Viber, push): offload to the queue
+        // when RabbitMQ is enabled, otherwise deliver inline (unchanged behaviour).
+        if (_queue.IsEnabled)
+            await _queue.PublishAsync(new NotificationDeliveryMessage(recipientId, type, message, link));
+        else
+            await _delivery.DeliverAsync(recipientId, type, message, link);
     }
 
     /// <inheritdoc />

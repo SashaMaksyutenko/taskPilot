@@ -39,6 +39,8 @@ public class NotificationServiceTests
         return hub.Object;
     }
 
+    // Builds NotificationService over the real inline delivery path (RabbitMQ
+    // disabled), so these tests cover the default in-app + email + muting behaviour.
     private static NotificationService CreateService(TaskpilotDbContext ctx, IEmailSender email)
     {
         var opts = Options.Create(new EmailOptions { FrontendBaseUrl = "http://localhost:5173" });
@@ -49,7 +51,8 @@ public class NotificationServiceTests
         viber.SetupGet(v => v.IsEnabled).Returns(false);
         var push = new Mock<IPushService>();
         push.SetupGet(p => p.IsEnabled).Returns(false);
-        return new NotificationService(ctx, MockHub(), email, telegram.Object, viber.Object, push.Object, opts, NullLogger<NotificationService>.Instance);
+        var delivery = new NotificationDeliveryService(ctx, email, telegram.Object, viber.Object, push.Object, opts);
+        return new NotificationService(ctx, MockHub(), delivery, new DisabledNotificationQueue(), NullLogger<NotificationService>.Instance);
     }
 
     [Fact]
@@ -111,5 +114,27 @@ public class NotificationServiceTests
         // In-app notification stored; email skipped.
         Assert.Equal(1, await ctx.Notifications.CountAsync());
         email.Verify(e => e.SendAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task CreateAsync_QueueEnabled_PublishesInsteadOfDeliveringInline()
+    {
+        await using var ctx = CreateContext();
+        var userId = Guid.NewGuid();
+        ctx.Users.Add(new User { Id = userId, Name = "Dana", Email = "dana@example.com", Role = Role.Developer, IsActive = true });
+        await ctx.SaveChangesAsync();
+
+        var delivery = new Mock<INotificationDeliveryService>();
+        var queue = new Mock<INotificationQueue>();
+        queue.SetupGet(q => q.IsEnabled).Returns(true);
+        var svc = new NotificationService(ctx, MockHub(), delivery.Object, queue.Object, NullLogger<NotificationService>.Instance);
+
+        await svc.CreateAsync(userId, NotificationType.Task, "You were assigned a task.", "/projects/1");
+
+        // In-app still stored inline; side channels handed to the queue, not delivered inline.
+        Assert.Equal(1, await ctx.Notifications.CountAsync());
+        queue.Verify(q => q.PublishAsync(It.Is<Taskpilot.API.Messages.NotificationDeliveryMessage>(
+            m => m.RecipientId == userId && m.Type == NotificationType.Task)), Times.Once);
+        delivery.Verify(d => d.DeliverAsync(It.IsAny<Guid>(), It.IsAny<NotificationType>(), It.IsAny<string>(), It.IsAny<string?>()), Times.Never);
     }
 }

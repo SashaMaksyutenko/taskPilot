@@ -15,12 +15,14 @@ public class NotificationsController : BaseApiController
 {
     private readonly INotificationService _notifications;
     private readonly ITelegramLinkService _telegramLink;
+    private readonly IViberLinkService _viberLink;
     private readonly IPushService _push;
 
-    public NotificationsController(INotificationService notifications, ITelegramLinkService telegramLink, IPushService push)
+    public NotificationsController(INotificationService notifications, ITelegramLinkService telegramLink, IViberLinkService viberLink, IPushService push)
     {
         _notifications = notifications;
         _telegramLink = telegramLink;
+        _viberLink = viberLink;
         _push = push;
     }
 
@@ -127,6 +129,41 @@ public class NotificationsController : BaseApiController
 
         await _telegramLink.UnlinkAsync(userId.Value);
         return Ok(new { message = "Telegram unlinked." });
+    }
+
+    /// <summary>Whether the current user has linked Viber (and the bot name).</summary>
+    [HttpGet("viber")]
+    public async Task<IActionResult> ViberStatus()
+    {
+        var userId = CurrentUserId();
+        if (userId is null) return Unauthorized();
+
+        var result = await _viberLink.GetStatusAsync(userId.Value);
+        return Ok(new { linked = result.Value!.Linked, botName = result.Value.BotName });
+    }
+
+    /// <summary>Generates a one-time code to link Viber; the user sends it to the bot.</summary>
+    [HttpPost("viber/link-code")]
+    public async Task<IActionResult> ViberLinkCode()
+    {
+        var userId = CurrentUserId();
+        if (userId is null) return Unauthorized();
+
+        var result = await _viberLink.CreateLinkCodeAsync(userId.Value);
+        return result.Succeeded
+            ? Ok(new { code = result.Value.Code, botName = result.Value.BotName })
+            : BadRequest(new { error = result.Error });
+    }
+
+    /// <summary>Unlinks the current user's Viber.</summary>
+    [HttpDelete("viber")]
+    public async Task<IActionResult> ViberUnlink()
+    {
+        var userId = CurrentUserId();
+        if (userId is null) return Unauthorized();
+
+        await _viberLink.UnlinkAsync(userId.Value);
+        return Ok(new { message = "Viber unlinked." });
     }
 
     /// <summary>Returns the public VAPID key the browser needs to subscribe to push (empty when disabled).</summary>

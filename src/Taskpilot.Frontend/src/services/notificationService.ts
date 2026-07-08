@@ -58,6 +58,23 @@ export const notificationService = {
     return api.delete('/api/notifications/telegram').then(() => undefined)
   },
 
+  /** Whether the user has linked Viber, plus the bot name. */
+  getViberStatus(): Promise<{ linked: boolean; botName: string }> {
+    return api.get<{ linked: boolean; botName: string }>('/api/notifications/viber').then((r) => r.data)
+  },
+
+  /** Generates a one-time Viber link code. */
+  createViberLinkCode(): Promise<{ code: string; botName: string }> {
+    return api
+      .post<{ code: string; botName: string }>('/api/notifications/viber/link-code')
+      .then((r) => r.data)
+  },
+
+  /** Unlinks the user's Viber. */
+  unlinkViber(): Promise<void> {
+    return api.delete('/api/notifications/viber').then(() => undefined)
+  },
+
   /** Public VAPID key the browser needs to subscribe to Web Push (empty when disabled). */
   getVapidKey(): Promise<{ publicKey: string }> {
     return api.get<{ publicKey: string }>('/api/notifications/push/vapid-key').then((r) => r.data)

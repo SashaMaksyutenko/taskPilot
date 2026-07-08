@@ -117,6 +117,12 @@ builder.Services.AddHttpClient<ITelegramSender, TelegramSender>();
 builder.Services.AddScoped<ITelegramLinkService, TelegramLinkService>();
 builder.Services.AddHostedService<TelegramPollingService>();
 
+// Viber bot (populated from .env: Viber__*). No token = disabled. Linking uses the
+// inbound webhook (api/viber/webhook), which needs a public host to receive events.
+builder.Services.Configure<ViberOptions>(builder.Configuration.GetSection("Viber"));
+builder.Services.AddHttpClient<IViberSender, ViberSender>();
+builder.Services.AddScoped<IViberLinkService, ViberLinkService>();
+
 // Email delivery — populated from .env: Email__*. Prefer SMTP (Gmail/Brevo/…) when
 // an SMTP host is set; otherwise fall back to the SendGrid API sender. No config =
 // both are disabled and email is silently skipped.

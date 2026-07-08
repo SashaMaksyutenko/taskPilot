@@ -152,6 +152,30 @@ export default function SettingsPage() {
     setTelegram((s) => ({ ...s, linked: false }))
   }
 
+  // Viber linking.
+  const [viber, setViber] = useState<{ linked: boolean; botName: string }>({ linked: false, botName: '' })
+  const [viberCode, setViberCode] = useState<string | null>(null)
+  useEffect(() => {
+    notificationService.getViberStatus().then(setViber).catch(() => {})
+  }, [])
+
+  const connectViber = async () => {
+    try {
+      const res = await notificationService.createViberLinkCode()
+      setViberCode(res.code)
+      setViber((s) => ({ ...s, botName: res.botName }))
+    } catch (e) {
+      // Surface why nothing happened (e.g. "Viber bot is not configured").
+      notify.error(apiErrorMessage(e))
+    }
+  }
+
+  const unlinkViber = async () => {
+    await notificationService.unlinkViber().catch(() => {})
+    setViberCode(null)
+    setViber((s) => ({ ...s, linked: false }))
+  }
+
   // channel: 'inapp' toggles the bell; 'email' toggles email delivery.
   const toggleNotif = async (type: string, channel: 'inapp' | 'email') => {
     const [current, setter] = channel === 'inapp' ? [disabledNotif, setDisabledNotif] : [disabledEmail, setDisabledEmail]
@@ -745,6 +769,38 @@ export default function SettingsPage() {
               className="rounded-lg bg-[#229ED9] px-5 py-2 text-sm font-semibold text-white transition hover:brightness-95"
             >
               {t('telegram.connect')}
+            </button>
+          )}
+        </section>
+
+        {/* Viber */}
+        <section className="mt-8 rounded-xl border border-slate-200 bg-white p-6 dark:border-slate-700 dark:bg-slate-800">
+          <h2 className="mb-1 font-bold">{t('viber.title')}</h2>
+          <p className="mb-4 text-sm text-slate-500 dark:text-slate-400">{t('viber.desc')}</p>
+
+          {viber.linked ? (
+            <div className="flex items-center gap-3 text-sm">
+              <span className="rounded-full bg-green-100 px-2 py-0.5 font-semibold text-green-700 dark:bg-green-900/40 dark:text-green-300">
+                ✓ {t('viber.linked')}
+              </span>
+              <button onClick={unlinkViber} className="font-semibold text-red-600 hover:underline">
+                {t('viber.unlink')}
+              </button>
+            </div>
+          ) : viberCode ? (
+            <div className="space-y-3 text-sm">
+              <p>{t('viber.step1', { bot: viber.botName || 'TaskPilot' })}</p>
+              <div className="rounded-lg bg-slate-100 px-4 py-3 text-center font-mono text-lg font-bold tracking-widest dark:bg-slate-900">
+                {viberCode}
+              </div>
+              <p className="text-xs text-slate-400">{t('viber.step2')}</p>
+            </div>
+          ) : (
+            <button
+              onClick={connectViber}
+              className="rounded-lg bg-[#7360F2] px-5 py-2 text-sm font-semibold text-white transition hover:brightness-95"
+            >
+              {t('viber.connect')}
             </button>
           )}
         </section>

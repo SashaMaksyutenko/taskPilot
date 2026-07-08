@@ -20,6 +20,7 @@ public class NotificationService : INotificationService
     private readonly IHubContext<NotificationHub> _hub;
     private readonly IEmailSender _email;
     private readonly ITelegramSender _telegram;
+    private readonly IViberSender _viber;
     private readonly IPushService _push;
     private readonly EmailOptions _emailOptions;
     private readonly ILogger<NotificationService> _logger;
@@ -29,6 +30,7 @@ public class NotificationService : INotificationService
         IHubContext<NotificationHub> hub,
         IEmailSender email,
         ITelegramSender telegram,
+        IViberSender viber,
         IPushService push,
         IOptions<EmailOptions> emailOptions,
         ILogger<NotificationService> logger)
@@ -37,6 +39,7 @@ public class NotificationService : INotificationService
         _hub = hub;
         _email = email;
         _telegram = telegram;
+        _viber = viber;
         _push = push;
         _emailOptions = emailOptions.Value;
         _logger = logger;
@@ -88,6 +91,9 @@ public class NotificationService : INotificationService
         // Telegram: deliver to linked users (best-effort).
         await SendTelegramAsync(recipientId, message, link);
 
+        // Viber: deliver to linked users (best-effort).
+        await SendViberAsync(recipientId, message, link);
+
         // Web push: deliver to the user's subscribed browsers (best-effort).
         var pushUrl = string.IsNullOrEmpty(link)
             ? _emailOptions.FrontendBaseUrl
@@ -113,6 +119,26 @@ public class NotificationService : INotificationService
             : _emailOptions.FrontendBaseUrl.TrimEnd('/') + "/" + link.TrimStart('/');
 
         await _telegram.SendMessageAsync(chatId, $"{message}\n{url}");
+    }
+
+    /// <summary>Sends the notification to the recipient's linked Viber, if any.</summary>
+    private async Task SendViberAsync(Guid recipientId, string message, string? link)
+    {
+        if (!_viber.IsEnabled)
+            return;
+
+        var viberId = await _context.Users
+            .Where(u => u.Id == recipientId)
+            .Select(u => u.ViberId)
+            .FirstOrDefaultAsync();
+        if (string.IsNullOrEmpty(viberId))
+            return;
+
+        var url = string.IsNullOrEmpty(link)
+            ? _emailOptions.FrontendBaseUrl
+            : _emailOptions.FrontendBaseUrl.TrimEnd('/') + "/" + link.TrimStart('/');
+
+        await _viber.SendMessageAsync(viberId, $"{message}\n{url}");
     }
 
     /// <summary>Emails the notification to the recipient when email delivery is enabled.</summary>

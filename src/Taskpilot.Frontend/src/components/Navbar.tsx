@@ -14,6 +14,7 @@ const LINKS = [
   { to: '/forum', key: 'nav.forum', end: false },
   { to: '/marketplace', key: 'nav.market', end: false },
   { to: '/chat', key: 'nav.chat', end: false },
+  { to: '/assistant', key: 'nav.assistant', end: false },
   { to: '/notes', key: 'nav.notes', end: false },
   { to: '/search', key: 'nav.search', end: false },
 ]

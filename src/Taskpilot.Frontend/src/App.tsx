@@ -12,6 +12,7 @@ import ChatPage from './pages/ChatPage'
 import ForumPage from './pages/ForumPage'
 import MarketplacePage from './pages/MarketplacePage'
 import MarketplaceTaskPage from './pages/MarketplaceTaskPage'
+import AssistantPage from './pages/AssistantPage'
 import NotesPage from './pages/NotesPage'
 import SearchPage from './pages/SearchPage'
 import ProjectsPage from './pages/ProjectsPage'
@@ -51,6 +52,7 @@ function App() {
         {/* Authenticated-only pages */}
         <Route element={<ProtectedRoute />}>
           <Route path="/chat" element={<ChatPage />} />
+          <Route path="/assistant" element={<AssistantPage />} />
           <Route path="/projects" element={<ProjectsPage />} />
           <Route path="/projects/:projectId" element={<BoardPage />} />
           <Route path="/calendar" element={<CalendarPage />} />

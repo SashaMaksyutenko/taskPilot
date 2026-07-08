@@ -23,10 +23,21 @@
     "forum": "Forum",
     "market": "Market",
     "chat": "Chat",
+    "assistant": "Assistant",
     "notes": "Notes",
     "search": "Search",
     "admin": "Admin",
     "logout": "Log out"
+  },
+  "assistant": {
+    "title": "AI Assistant",
+    "subtitle": "Ask anything about using TaskPilot.",
+    "empty": "Ask a question to get started — e.g. \"How do I create a project?\"",
+    "placeholder": "Message the assistant…",
+    "send": "Send",
+    "thinking": "Thinking…",
+    "error": "The assistant could not answer right now.",
+    "disabled": "The AI assistant is not configured on the server."
   },
   "search": {
     "title": "Search",

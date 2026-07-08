@@ -89,6 +89,11 @@ builder.Services.AddHttpClient<IGitHubAuthClient, GitHubAuthClient>();
 builder.Services.Configure<StripeOptions>(builder.Configuration.GetSection("Stripe"));
 builder.Services.AddHttpClient<IPaymentClient, StripePaymentClient>();
 
+// OpenAI assistant (populated from .env: OpenAi__*). Disabled until an API key is set.
+builder.Services.Configure<OpenAiOptions>(builder.Configuration.GetSection("OpenAi"));
+builder.Services.AddHttpClient<IChatBotClient, OpenAiChatBotClient>();
+builder.Services.AddScoped<IChatBotService, ChatBotService>();
+
 // Distributed cache: use Redis when a connection string is configured (Redis__Connection),
 // otherwise an in-memory cache so the app runs the same without Redis installed.
 var redisConnection = builder.Configuration["Redis:Connection"];

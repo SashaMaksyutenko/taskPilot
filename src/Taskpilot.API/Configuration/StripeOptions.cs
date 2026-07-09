@@ -13,6 +13,12 @@ public class StripeOptions
     /// <summary>ISO currency code used for checkout (defaults to USD).</summary>
     public string Currency { get; set; } = "usd";
 
+    /// <summary>Webhook signing secret (whsec_…) for verifying Stripe callbacks. Empty = webhook disabled.</summary>
+    public string WebhookSecret { get; set; } = string.Empty;
+
     /// <summary>True only when a secret key is configured.</summary>
     public bool IsConfigured => !string.IsNullOrWhiteSpace(SecretKey);
+
+    /// <summary>True only when a webhook signing secret is configured.</summary>
+    public bool WebhookConfigured => !string.IsNullOrWhiteSpace(WebhookSecret);
 }

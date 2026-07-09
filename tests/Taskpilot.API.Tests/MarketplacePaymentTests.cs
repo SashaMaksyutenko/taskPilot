@@ -145,4 +145,38 @@ public class MarketplacePaymentTests
         var updated = await ctx.MarketplaceTasks.FindAsync(taskId);
         Assert.Equal(PaymentStatus.Pending, updated!.PaymentStatus);
     }
+
+    [Fact]
+    public async Task ConfirmPaymentBySession_MarksPaid_AndIsIdempotent()
+    {
+        await using var ctx = TestDb.CreateContext();
+        var (_, _, taskId) = await SeedCompletedTaskAsync(ctx);
+        var task = await ctx.MarketplaceTasks.FindAsync(taskId);
+        task!.PaymentSessionId = "cs_test_webhook";
+        task.PaymentStatus = PaymentStatus.Pending;
+        await ctx.SaveChangesAsync();
+
+        var client = new Mock<IPaymentClient>();
+        var service = CreateService(ctx, client.Object);
+
+        var first = await service.ConfirmPaymentBySessionAsync("cs_test_webhook");
+        var second = await service.ConfirmPaymentBySessionAsync("cs_test_webhook"); // duplicate delivery
+
+        Assert.True(first.Succeeded);
+        Assert.True(second.Succeeded); // idempotent
+        var updated = await ctx.MarketplaceTasks.FindAsync(taskId);
+        Assert.Equal(PaymentStatus.Paid, updated!.PaymentStatus);
+        Assert.NotNull(updated.PaidAt);
+    }
+
+    [Fact]
+    public async Task ConfirmPaymentBySession_WithUnknownSession_Fails()
+    {
+        await using var ctx = TestDb.CreateContext();
+        var service = CreateService(ctx, new Mock<IPaymentClient>().Object);
+
+        var result = await service.ConfirmPaymentBySessionAsync("cs_test_nope");
+
+        Assert.False(result.Succeeded);
+    }
 }

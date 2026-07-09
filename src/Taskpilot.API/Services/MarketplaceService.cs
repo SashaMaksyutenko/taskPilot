@@ -371,6 +371,33 @@ public class MarketplaceService : IMarketplaceService
         if (!paid.Value)
             return Result.Fail("The payment has not been completed.");
 
+        var posterEmail = await _context.Users
+            .Where(u => u.Id == posterId).Select(u => u.Email).FirstOrDefaultAsync();
+        await MarkTaskPaidAsync(task, posterId, posterEmail, ip);
+        return Result.Ok();
+    }
+
+    /// <inheritdoc />
+    public async Task<Result> ConfirmPaymentBySessionAsync(string sessionId)
+    {
+        if (string.IsNullOrWhiteSpace(sessionId))
+            return Result.Fail("Session id is required.");
+
+        var task = await _context.MarketplaceTasks.FirstOrDefaultAsync(t => t.PaymentSessionId == sessionId);
+        if (task is null)
+            return Result.Fail("No task matches this payment session.");
+
+        if (task.PaymentStatus == PaymentStatus.Paid)
+            return Result.Ok(); // Idempotent: webhook may be delivered more than once.
+
+        // The signed Stripe event is authoritative that the session was paid.
+        await MarkTaskPaidAsync(task, actorId: null, actorEmail: "stripe.webhook", ip: null);
+        return Result.Ok();
+    }
+
+    /// <summary>Marks a completed task paid and fires the notification, audit and webhook (once).</summary>
+    private async Task MarkTaskPaidAsync(MarketplaceTask task, Guid? actorId, string? actorEmail, string? ip)
+    {
         task.PaymentStatus = PaymentStatus.Paid;
         task.PaidAt = DateTime.UtcNow;
         await _context.SaveChangesAsync();
@@ -382,12 +409,10 @@ public class MarketplaceService : IMarketplaceService
                 $"You were paid {task.Budget:0.##} for \"{task.Title}\".",
                 $"/marketplace/{task.Id}");
 
-        var posterEmail = await _context.Users
-            .Where(u => u.Id == posterId).Select(u => u.Email).FirstOrDefaultAsync();
         await _audit.LogAsync(
             action: "marketplace.task.paid",
-            actorId: posterId,
-            actorEmail: posterEmail,
+            actorId: actorId,
+            actorEmail: actorEmail,
             entityType: nameof(MarketplaceTask),
             entityId: task.Id.ToString(),
             details: $"Paid {task.Budget:0.##} for \"{task.Title}\"",
@@ -402,8 +427,7 @@ public class MarketplaceService : IMarketplaceService
             assigneeId = task.AssigneeId,
         });
 
-        _logger.LogInformation("Marketplace task paid. TaskId: {TaskId}", taskId);
-        return Result.Ok();
+        _logger.LogInformation("Marketplace task paid. TaskId: {TaskId}", task.Id);
     }
 
     /// <inheritdoc />

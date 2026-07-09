@@ -46,6 +46,12 @@ public interface IMarketplaceService
     Task<Result> ConfirmPaymentAsync(Guid posterId, Guid taskId, string? ip = null);
 
     /// <summary>
+    /// Marks the task tied to a Stripe checkout session as paid. Called from the
+    /// signature-verified Stripe webhook (server-to-server; no user context). Idempotent.
+    /// </summary>
+    Task<Result> ConfirmPaymentBySessionAsync(string sessionId);
+
+    /// <summary>
     /// Leaves a 1–5 star review for a completed task. The rater must be the poster or
     /// the assignee; the review is about the other party. One review per rater per task.
     /// </summary>

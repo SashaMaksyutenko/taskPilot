@@ -1,7 +1,9 @@
+using System.Text.Json;
 using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
+using Taskpilot.API.Common;
 using Taskpilot.API.Configuration;
 using Taskpilot.API.DTOs.Marketplace;
 using Taskpilot.API.Services;
@@ -20,17 +22,20 @@ public class MarketplaceController : BaseApiController
     private readonly IValidator<CreateTaskDto> _createTaskValidator;
     private readonly IValidator<ApplyDto> _applyValidator;
     private readonly EmailOptions _emailOptions;
+    private readonly StripeOptions _stripeOptions;
 
     public MarketplaceController(
         IMarketplaceService marketplace,
         IValidator<CreateTaskDto> createTaskValidator,
         IValidator<ApplyDto> applyValidator,
-        IOptions<EmailOptions> emailOptions)
+        IOptions<EmailOptions> emailOptions,
+        IOptions<StripeOptions> stripeOptions)
     {
         _marketplace = marketplace;
         _createTaskValidator = createTaskValidator;
         _applyValidator = applyValidator;
         _emailOptions = emailOptions.Value;
+        _stripeOptions = stripeOptions.Value;
     }
 
     /// <summary>Lists a page of marketplace tasks (open first, then newest).</summary>
@@ -147,6 +152,51 @@ public class MarketplaceController : BaseApiController
         return result.Succeeded
             ? Ok(new { message = "Payment confirmed." })
             : BadRequest(new { error = result.Error });
+    }
+
+    /// <summary>
+    /// Stripe webhook: server-to-server confirmation of a completed checkout. Verifies
+    /// the signature, then marks the matching task paid — so payment settles even if the
+    /// buyer never returns to the app. Register this URL in the Stripe dashboard.
+    /// </summary>
+    [HttpPost("stripe/webhook")]
+    [AllowAnonymous]
+    public async Task<IActionResult> StripeWebhook()
+    {
+        if (!_stripeOptions.WebhookConfigured)
+            return NotFound();
+
+        using var reader = new StreamReader(Request.Body);
+        var payload = await reader.ReadToEndAsync();
+
+        var signature = Request.Headers["Stripe-Signature"].FirstOrDefault();
+        if (!StripeSignature.Verify(payload, signature, _stripeOptions.WebhookSecret))
+            return Unauthorized();
+
+        try
+        {
+            using var doc = JsonDocument.Parse(payload);
+            var root = doc.RootElement;
+            var type = root.TryGetProperty("type", out var t) ? t.GetString() : null;
+
+            // A completed checkout means the task's payment has cleared.
+            if (type == "checkout.session.completed"
+                && root.TryGetProperty("data", out var data)
+                && data.TryGetProperty("object", out var obj)
+                && obj.TryGetProperty("id", out var idEl))
+            {
+                var sessionId = idEl.GetString();
+                if (!string.IsNullOrEmpty(sessionId))
+                    await _marketplace.ConfirmPaymentBySessionAsync(sessionId);
+            }
+        }
+        catch (JsonException)
+        {
+            return BadRequest();
+        }
+
+        // Always 200 on a valid signature so Stripe stops retrying.
+        return Ok();
     }
 
     /// <summary>Leaves a 1–5 star review for a completed task (poster or assignee).</summary>

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import Navbar from '../components/Navbar'
+import EmptyState from '../components/EmptyState'
 import Markdown from '../components/Markdown'
 import { chatbotService, type ChatBotMessage } from '../services/chatbotService'
 
@@ -62,9 +63,7 @@ export default function AssistantPage() {
         ) : (
           <>
             <div className="flex-1 space-y-3 overflow-y-auto rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-800">
-              {messages.length === 0 && (
-                <p className="text-sm text-slate-400">{t('assistant.empty')}</p>
-              )}
+              {messages.length === 0 && <EmptyState message={t('assistant.empty')} />}
               {messages.map((m, i) => (
                 <div key={i} className={m.role === 'user' ? 'flex justify-end' : 'flex justify-start'}>
                   <div

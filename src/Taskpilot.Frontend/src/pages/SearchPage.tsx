@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 import Avatar from '../components/Avatar'
 import Navbar from '../components/Navbar'
+import EmptyState from '../components/EmptyState'
 import { searchService, type SearchItem, type SearchResults } from '../services/searchService'
 
 const empty: SearchResults = { projects: [], tasks: [], topics: [], users: [] }
@@ -78,7 +79,7 @@ export default function SearchPage() {
         {query.trim().length < 2 ? (
           <p className="text-slate-400">{t('search.hint')}</p>
         ) : total === 0 ? (
-          <p className="text-slate-400">{t('search.noResults')}</p>
+          <EmptyState message={t('search.noResults')} />
         ) : (
           <div className="space-y-4">
             <Group title={t('search.projects')} items={results.projects} linkFor={(i) => `/projects/${i.id}`} />

@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { Link, useNavigate } from 'react-router-dom'
 import Avatar from '../components/Avatar'
 import FadeIn from '../components/FadeIn'
+import EmptyState from '../components/EmptyState'
 import MarkdownEditor from '../components/MarkdownEditor'
 import Navbar from '../components/Navbar'
 import { marketplaceService } from '../services/marketplaceService'
@@ -119,7 +120,7 @@ export default function MarketplacePage() {
 
         {/* Task list */}
         {tasks.length === 0 ? (
-          <p className="text-slate-400">{t('market.empty')}</p>
+          <EmptyState message={t('market.empty')} />
         ) : (
           <ul className="space-y-2">
             {tasks.map((task) => (

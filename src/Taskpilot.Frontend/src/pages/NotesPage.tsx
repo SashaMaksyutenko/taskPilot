@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import Navbar from '../components/Navbar'
+import EmptyState from '../components/EmptyState'
 import ConfirmDialog from '../components/ConfirmDialog'
 import { noteService } from '../services/noteService'
 import { notify } from '../lib/toast'
@@ -246,9 +247,9 @@ export default function NotesPage() {
 
         {/* Notes grid */}
         {notes.length === 0 ? (
-          <p className="text-slate-400">{t('notes.empty')}</p>
+          <EmptyState message={t('notes.empty')} />
         ) : visibleNotes.length === 0 ? (
-          <p className="text-slate-400">{t('notes.noMatches')}</p>
+          <EmptyState message={t('notes.noMatches')} />
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {visibleNotes.map((note) => (

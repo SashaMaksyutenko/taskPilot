@@ -4,6 +4,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import Avatar from '../components/Avatar'
 import MarkdownEditor from '../components/MarkdownEditor'
 import Navbar from '../components/Navbar'
+import EmptyState from '../components/EmptyState'
 import TopicContextMenu from '../components/TopicContextMenu'
 import { apiErrorMessage } from '../lib/apiError'
 import { forumService } from '../services/forumService'
@@ -100,7 +101,7 @@ export default function ForumPage() {
 
         {/* Topic list */}
         {topics.length === 0 ? (
-          <p className="text-slate-400">{t('forum.empty')}</p>
+          <EmptyState message={t('forum.empty')} />
         ) : (
           <ul className="space-y-2">
             {topics.map((topic) => (

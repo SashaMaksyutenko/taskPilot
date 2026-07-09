@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 import Navbar from '../components/Navbar'
+import EmptyState from '../components/EmptyState'
 import ConfirmDialog from '../components/ConfirmDialog'
 import ProjectContextMenu from '../components/ProjectContextMenu'
 import { projectService } from '../services/projectService'
@@ -141,7 +142,7 @@ export default function ProjectsPage() {
         </div>
 
         {projects.length === 0 ? (
-          <p className="text-slate-400">{t('projects.empty')}</p>
+          <EmptyState message={t('projects.empty')} />
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {projects.map((p) => (

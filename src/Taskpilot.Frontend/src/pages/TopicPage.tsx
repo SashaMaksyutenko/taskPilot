@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, useParams } from 'react-router-dom'
 import Avatar from '../components/Avatar'
@@ -27,6 +27,15 @@ export default function TopicPage() {
   }
 
   useEffect(load, [topicId])
+
+  // Count exactly one view per opened topic. The ref guard makes it fire once even
+  // under React StrictMode's double-invoke, and re-fetches (vote/reply) don't count.
+  const viewedTopicId = useRef<string | null>(null)
+  useEffect(() => {
+    if (!topicId || viewedTopicId.current === topicId) return
+    viewedTopicId.current = topicId
+    forumService.incrementView(topicId).catch(() => {})
+  }, [topicId])
 
   const isAuthor = topic && currentUserId === topic.authorId
 

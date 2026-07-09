@@ -149,11 +149,22 @@ public class ForumService : IForumService
         if (topic is null)
             return Result<TopicDetailDto>.Fail("Topic not found.");
 
-        // Count this read as a view.
+        // Views are counted separately via IncrementViewAsync (called once per page
+        // open), so re-fetching a topic — after voting, replying, etc. — never inflates
+        // the count.
+        return Result<TopicDetailDto>.Ok(MapDetail(topic, currentUserId));
+    }
+
+    /// <inheritdoc />
+    public async Task<Result> IncrementViewAsync(Guid topicId)
+    {
+        var topic = await _context.ForumTopics.FirstOrDefaultAsync(t => t.Id == topicId);
+        if (topic is null)
+            return Result.Fail("Topic not found.");
+
         topic.ViewCount++;
         await _context.SaveChangesAsync();
-
-        return Result<TopicDetailDto>.Ok(MapDetail(topic, currentUserId));
+        return Result.Ok();
     }
 
     /// <inheritdoc />

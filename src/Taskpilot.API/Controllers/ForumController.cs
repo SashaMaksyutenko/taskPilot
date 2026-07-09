@@ -52,6 +52,14 @@ public class ForumController : BaseApiController
             : NotFound(new { error = result.Error });
     }
 
+    /// <summary>Counts one view of a topic. Called once when the topic page opens.</summary>
+    [HttpPost("topics/{topicId:guid}/view")]
+    public async Task<IActionResult> IncrementView(Guid topicId)
+    {
+        var result = await _forumService.IncrementViewAsync(topicId);
+        return result.Succeeded ? Ok() : NotFound(new { error = result.Error });
+    }
+
     /// <summary>Deletes a topic (author or admin only).</summary>
     [HttpDelete("topics/{topicId:guid}")]
     public async Task<IActionResult> DeleteTopic(Guid topicId)

@@ -14,6 +14,11 @@ export const forumService = {
     return api.get<TopicDetail>(`/api/forum/topics/${id}`).then((r) => r.data)
   },
 
+  /** Counts one view of a topic (called once when the page opens). */
+  incrementView(id: string): Promise<void> {
+    return api.post(`/api/forum/topics/${id}/view`).then(() => undefined)
+  },
+
   createTopic(data: { title: string; body: string }): Promise<TopicDetail> {
     return api.post<TopicDetail>('/api/forum/topics', data).then((r) => r.data)
   },

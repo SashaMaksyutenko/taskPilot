@@ -235,6 +235,7 @@
   },
   "auth": {
     "welcomeBack": "З поверненням",
+    "rememberMe": "Запам'ятати мене",
     "createAccount": "Створіть акаунт",
     "name": "Ім'я",
     "namePlaceholder": "Ваше ім'я",

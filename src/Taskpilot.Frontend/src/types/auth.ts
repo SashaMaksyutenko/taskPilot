@@ -13,6 +13,8 @@ export interface LoginRequest {
   email: string
   password: string
   twoFactorCode?: string
+  /** Client-only: persist the session across browser restarts (localStorage vs sessionStorage). */
+  remember?: boolean
 }
 
 /** Response from login / refresh (mirrors AuthResponseDto on the backend). */

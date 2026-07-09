@@ -1,4 +1,5 @@
 import { HubConnectionBuilder, type HubConnection } from '@microsoft/signalr'
+import { tokenStorage } from './tokenStorage'
 
 const baseURL = import.meta.env.VITE_API_URL ?? 'http://localhost:5025'
 
@@ -10,7 +11,7 @@ const baseURL = import.meta.env.VITE_API_URL ?? 'http://localhost:5025'
 export function createChatConnection(): HubConnection {
   return new HubConnectionBuilder()
     .withUrl(`${baseURL}/hubs/chat`, {
-      accessTokenFactory: () => localStorage.getItem('accessToken') ?? '',
+      accessTokenFactory: () => tokenStorage.getAccess() ?? '',
     })
     .withAutomaticReconnect()
     .build()

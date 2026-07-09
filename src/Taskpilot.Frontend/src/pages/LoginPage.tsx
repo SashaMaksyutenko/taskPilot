@@ -36,11 +36,12 @@ export default function LoginPage() {
   // Two-factor step: shown when the server asks for a TOTP code.
   const [needCode, setNeedCode] = useState(false)
   const [code, setCode] = useState('')
+  const [remember, setRemember] = useState(true)
 
   const onSubmit = async (values: FormValues) => {
     try {
       const res = await dispatch(
-        login({ ...values, twoFactorCode: needCode ? code : undefined }),
+        login({ ...values, twoFactorCode: needCode ? code : undefined, remember }),
       ).unwrap()
       if (res.requiresTwoFactor) {
         setNeedCode(true)
@@ -111,6 +112,16 @@ export default function LoginPage() {
               <p className="mt-1 text-xs text-slate-500">{t('auth.twoFactorHint')}</p>
             </div>
           )}
+
+          <label className="flex items-center gap-2 text-sm text-slate-600 select-none">
+            <input
+              type="checkbox"
+              checked={remember}
+              onChange={(e) => setRemember(e.target.checked)}
+              className="h-4 w-4 rounded border-slate-300 accent-[#1E2A44]"
+            />
+            {t('auth.rememberMe')}
+          </label>
 
           <button
             type="submit"

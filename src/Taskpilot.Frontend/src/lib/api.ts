@@ -1,4 +1,5 @@
 import axios from 'axios'
+import { tokenStorage } from './tokenStorage'
 
 // Base URL of the backend API. Comes from the VITE_API_URL env var (.env),
 // with a sensible dev fallback so the app still runs without a .env file.
@@ -19,7 +20,7 @@ const api = axios.create({
 // Request interceptor: attach the JWT access token (if we have one) to every request.
 // For now the token lives in localStorage; this will be wired to the Redux store later.
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('accessToken')
+  const token = tokenStorage.getAccess()
   if (token) {
     config.headers.Authorization = `Bearer ${token}`
   }

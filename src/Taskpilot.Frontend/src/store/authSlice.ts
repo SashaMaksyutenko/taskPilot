@@ -1,6 +1,7 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit'
 import { AxiosError } from 'axios'
 import { authService } from '../services/authService'
+import { tokenStorage } from '../lib/tokenStorage'
 import type {
   AuthResponse,
   LoginRequest,
@@ -21,9 +22,9 @@ interface AuthState {
 // Initialise tokens from localStorage so a page refresh keeps the user logged in.
 const initialState: AuthState = {
   user: null,
-  accessToken: localStorage.getItem('accessToken'),
-  refreshToken: localStorage.getItem('refreshToken'),
-  isAuthenticated: !!localStorage.getItem('accessToken'),
+  accessToken: tokenStorage.getAccess(),
+  refreshToken: tokenStorage.getRefresh(),
+  isAuthenticated: !!tokenStorage.getAccess(),
   status: 'idle',
   error: null,
 }
@@ -123,8 +124,7 @@ const authSlice = createSlice({
       state.refreshToken = null
       state.isAuthenticated = false
       state.error = null
-      localStorage.removeItem('accessToken')
-      localStorage.removeItem('refreshToken')
+      tokenStorage.clear()
     },
     /** Clears the last error (e.g. when the user edits the form). */
     clearError(state) {
@@ -147,9 +147,8 @@ const authSlice = createSlice({
         state.accessToken = data.accessToken
         state.refreshToken = data.refreshToken
         state.isAuthenticated = true
-        // Persist tokens so the axios interceptor and refreshes can use them.
-        localStorage.setItem('accessToken', data.accessToken)
-        localStorage.setItem('refreshToken', data.refreshToken)
+        // "Remember me" chooses localStorage (persist) vs sessionStorage (this session).
+        tokenStorage.save(data.accessToken, data.refreshToken, action.meta.arg.remember ?? true)
       })
       // Google login shares the same token-storing behaviour as a normal login.
       .addCase(googleLogin.pending, (state) => {
@@ -162,8 +161,7 @@ const authSlice = createSlice({
         state.accessToken = data.accessToken
         state.refreshToken = data.refreshToken
         state.isAuthenticated = true
-        localStorage.setItem('accessToken', data.accessToken)
-        localStorage.setItem('refreshToken', data.refreshToken)
+        tokenStorage.save(data.accessToken, data.refreshToken, true)
       })
       .addCase(googleLogin.rejected, (state, action) => {
         state.status = 'idle'
@@ -180,8 +178,7 @@ const authSlice = createSlice({
         state.accessToken = data.accessToken
         state.refreshToken = data.refreshToken
         state.isAuthenticated = true
-        localStorage.setItem('accessToken', data.accessToken)
-        localStorage.setItem('refreshToken', data.refreshToken)
+        tokenStorage.save(data.accessToken, data.refreshToken, true)
       })
       .addCase(githubLogin.rejected, (state, action) => {
         state.status = 'idle'
@@ -198,8 +195,7 @@ const authSlice = createSlice({
         state.accessToken = data.accessToken
         state.refreshToken = data.refreshToken
         state.isAuthenticated = true
-        localStorage.setItem('accessToken', data.accessToken)
-        localStorage.setItem('refreshToken', data.refreshToken)
+        tokenStorage.save(data.accessToken, data.refreshToken, true)
       })
       .addCase(linkedinLogin.rejected, (state, action) => {
         state.status = 'idle'

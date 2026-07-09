@@ -235,6 +235,7 @@
   },
   "auth": {
     "welcomeBack": "Welcome back",
+    "rememberMe": "Remember me",
     "createAccount": "Create your account",
     "name": "Name",
     "namePlaceholder": "Your name",

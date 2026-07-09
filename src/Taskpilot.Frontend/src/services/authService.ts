@@ -1,4 +1,5 @@
 import api from '../lib/api'
+import { tokenStorage } from '../lib/tokenStorage'
 import type {
   AuthResponse,
   LoginRequest,
@@ -9,7 +10,7 @@ import type {
 
 /** Header carrying the client's current refresh token, so the API can flag "this session". */
 function currentTokenHeader() {
-  const token = localStorage.getItem('refreshToken')
+  const token = tokenStorage.getRefresh()
   return token ? { headers: { 'X-Refresh-Token': token } } : {}
 }
 

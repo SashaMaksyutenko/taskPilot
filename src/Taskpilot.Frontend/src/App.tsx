@@ -22,6 +22,8 @@ import TopicPage from './pages/TopicPage'
 import UserProfilePage from './pages/UserProfilePage'
 import RegisterPage from './pages/RegisterPage'
 import LoginPage from './pages/LoginPage'
+import ForgotPasswordPage from './pages/ForgotPasswordPage'
+import ResetPasswordPage from './pages/ResetPasswordPage'
 import GoogleCallbackPage from './pages/GoogleCallbackPage'
 import GitHubCallbackPage from './pages/GitHubCallbackPage'
 import LinkedInCallbackPage from './pages/LinkedInCallbackPage'
@@ -42,6 +44,11 @@ function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
         </Route>
+
+        {/* Password recovery — reachable regardless of auth (the emailed link must
+            always work, even if the user happens to be signed in). */}
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
 
         {/* OAuth redirect targets (handle the ?code= exchange). */}
         <Route path="/auth/google/callback" element={<GoogleCallbackPage />} />

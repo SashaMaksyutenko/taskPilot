@@ -102,6 +102,9 @@ public class TaskpilotDbContext : DbContext
     /// <summary>Persisted anonymous-visitor analytics (per day, per hashed IP).</summary>
     public DbSet<VisitorHit> VisitorHits => Set<VisitorHit>();
 
+    /// <summary>One-time password-reset tokens (hashed).</summary>
+    public DbSet<PasswordResetToken> PasswordResetTokens => Set<PasswordResetToken>();
+
     /// <summary>
     /// Налаштування моделі (Fluent API): обмеження, індекси, перетворення типів.
     /// Викликається EF Core під час побудови моделі та генерації міграцій.

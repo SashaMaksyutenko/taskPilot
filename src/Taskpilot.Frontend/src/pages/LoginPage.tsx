@@ -96,6 +96,11 @@ export default function LoginPage() {
             {errors.password && (
               <p className="mt-1 text-sm text-red-600">{errors.password.message}</p>
             )}
+            <div className="mt-1 text-right">
+              <Link to="/forgot-password" className="text-xs font-medium text-slate-500 hover:text-[#1E2A44] hover:underline">
+                {t('auth.forgotPassword')}
+              </Link>
+            </div>
           </div>
 
           {needCode && (

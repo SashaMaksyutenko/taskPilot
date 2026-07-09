@@ -236,6 +236,7 @@
   "auth": {
     "welcomeBack": "Welcome back",
     "rememberMe": "Remember me",
+    "forgotPassword": "Forgot password?",
     "createAccount": "Create your account",
     "name": "Name",
     "namePlaceholder": "Your name",
@@ -261,6 +262,26 @@
     "linkedinContinue": "Continue with LinkedIn",
     "linkedinSigningIn": "Signing you in…",
     "linkedinFailed": "LinkedIn sign-in failed"
+  },
+  "forgot": {
+    "title": "Forgot password",
+    "subtitle": "Enter your account email and we'll send you a reset link.",
+    "send": "Send reset link",
+    "sending": "Sending…",
+    "sent": "If that email is registered, a reset link is on its way. Check your inbox.",
+    "backToLogin": "Back to sign in"
+  },
+  "reset": {
+    "title": "Set a new password",
+    "newPassword": "New password",
+    "confirm": "Confirm password",
+    "hint": "At least 8 characters, with an uppercase letter, a lowercase letter and a digit.",
+    "submit": "Reset password",
+    "saving": "Saving…",
+    "success": "Password reset. Please sign in.",
+    "mismatch": "Passwords do not match.",
+    "noToken": "This reset link is invalid or incomplete.",
+    "requestNew": "Request a new reset link"
   },
   "twoFa": {
     "title": "Two-factor authentication",

@@ -19,6 +19,7 @@ public class AuthController : BaseApiController
     private readonly IAuthService _authService;
     private readonly IValidator<RegisterDto> _registerValidator;
     private readonly IValidator<LoginDto> _loginValidator;
+    private readonly IPasswordResetService _passwordReset;
     private readonly IAuditService _audit;
     private readonly ILogger<AuthController> _logger;
 
@@ -29,12 +30,14 @@ public class AuthController : BaseApiController
         IAuthService authService,
         IValidator<RegisterDto> registerValidator,
         IValidator<LoginDto> loginValidator,
+        IPasswordResetService passwordReset,
         IAuditService audit,
         ILogger<AuthController> logger)
     {
         _authService = authService;
         _registerValidator = registerValidator;
         _loginValidator = loginValidator;
+        _passwordReset = passwordReset;
         _audit = audit;
         _logger = logger;
     }
@@ -194,6 +197,29 @@ public class AuthController : BaseApiController
         await _audit.LogAsync("auth.login.linkedin.success", actorId: result.Value!.UserId, actorEmail: result.Value.Email,
             entityType: "User", entityId: result.Value.UserId.ToString(), ipAddress: ClientIp());
         return Ok(result.Value);
+    }
+
+    /// <summary>Sends a password-reset link to the email (always 200, to avoid probing).</summary>
+    [HttpPost("forgot-password")]
+    public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordDto dto)
+    {
+        if (!string.IsNullOrWhiteSpace(dto.Email))
+            await _passwordReset.RequestResetAsync(dto.Email);
+
+        // Generic response regardless of whether the email exists.
+        return Ok(new { message = "If that email is registered, a reset link has been sent." });
+    }
+
+    /// <summary>Sets a new password using a valid reset token.</summary>
+    [HttpPost("reset-password")]
+    public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordDto dto)
+    {
+        var result = await _passwordReset.ResetAsync(dto.Token, dto.NewPassword);
+        if (!result.Succeeded)
+            return BadRequest(new { error = result.Error });
+
+        await _audit.LogAsync("auth.password.reset", details: "Password reset via email link", ipAddress: ClientIp());
+        return Ok(new { message = "Your password has been reset. You can now sign in." });
     }
 
     /// <summary>

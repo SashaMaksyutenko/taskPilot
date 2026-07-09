@@ -44,6 +44,16 @@ export const authService = {
     return api.post<AuthResponse>('/api/auth/linkedin', { code }).then((r) => r.data)
   },
 
+  /** POST /api/auth/forgot-password — emails a reset link (always resolves). */
+  forgotPassword(email: string): Promise<void> {
+    return api.post('/api/auth/forgot-password', { email }).then(() => undefined)
+  },
+
+  /** POST /api/auth/reset-password — sets a new password using the emailed token. */
+  resetPassword(token: string, newPassword: string): Promise<void> {
+    return api.post('/api/auth/reset-password', { token, newPassword }).then(() => undefined)
+  },
+
   /** POST /api/auth/refresh — exchanges a refresh token for new tokens. */
   refresh(refreshToken: string): Promise<AuthResponse> {
     return api

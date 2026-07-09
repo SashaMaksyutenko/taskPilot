@@ -256,6 +256,7 @@ builder.Services.AddScoped<IVisitorService, VisitorService>();
 
 // Register application services. Scoped = one instance per HTTP request.
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IPasswordResetService, PasswordResetService>();
 builder.Services.AddScoped<IChatService, ChatService>();
 builder.Services.AddScoped<IFileService, FileService>();
 builder.Services.AddScoped<IForumService, ForumService>();

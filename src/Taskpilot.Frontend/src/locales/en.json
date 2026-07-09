@@ -492,6 +492,7 @@
     "group": "Group",
     "directChat": "Direct chat",
     "messagePlaceholder": "Type a message…",
+    "addEmoji": "Add emoji",
     "send": "Send",
     "selectConversation": "Select a conversation to start chatting",
     "copy": "Copy text",

@@ -262,6 +262,7 @@ builder.Services.AddScoped<IForumService, ForumService>();
 builder.Services.AddScoped<IMarketplaceService, MarketplaceService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<INotificationDeliveryService, NotificationDeliveryService>();
+builder.Services.AddScoped<IApiKeyService, ApiKeyService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IAdminService, AdminService>();
 builder.Services.AddScoped<IWarningService, WarningService>();
@@ -367,6 +368,9 @@ app.UseCors(FrontendCorsPolicy);
 
 // Authentication must run before authorization so the user identity is known.
 app.UseAuthentication();
+// Accept a personal API key as an alternative to a JWT (must sit between
+// authentication and authorization so [Authorize] sees the key-based principal).
+app.UseMiddleware<ApiKeyAuthenticationMiddleware>();
 app.UseAuthorization();
 
 // Enforce the configured rate-limiting policies (e.g. the "auth" policy).

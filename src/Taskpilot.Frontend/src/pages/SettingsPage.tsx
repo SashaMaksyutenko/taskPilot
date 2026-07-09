@@ -12,6 +12,7 @@ import { authService } from '../services/authService'
 import { notificationService } from '../services/notificationService'
 import { userService, type UpdateProfileData } from '../services/userService'
 import { webhookService } from '../services/webhookService'
+import { apiKeyService, type ApiKey } from '../services/apiKeyService'
 import { fetchMe, logout } from '../store/authSlice'
 import { useAppDispatch, useAppSelector } from '../store/hooks'
 import { WEBHOOK_EVENTS, type Webhook } from '../types/webhook'
@@ -174,6 +175,37 @@ export default function SettingsPage() {
     await notificationService.unlinkViber().catch(() => {})
     setViberCode(null)
     setViber((s) => ({ ...s, linked: false }))
+  }
+
+  // Personal API keys.
+  const [apiKeys, setApiKeys] = useState<ApiKey[]>([])
+  const [newKeyName, setNewKeyName] = useState('')
+  const [createdKey, setCreatedKey] = useState<string | null>(null)
+  useEffect(() => {
+    apiKeyService.list().then(setApiKeys).catch(() => {})
+  }, [])
+
+  const createApiKey = async () => {
+    if (!newKeyName.trim()) return
+    try {
+      const created = await apiKeyService.create(newKeyName.trim())
+      setCreatedKey(created.key) // shown once
+      setNewKeyName('')
+      setApiKeys((keys) => [{ ...created }, ...keys])
+    } catch (e) {
+      notify.error(apiErrorMessage(e))
+    }
+  }
+
+  const revokeApiKey = async (id: string) => {
+    await apiKeyService.revoke(id).catch(() => {})
+    setApiKeys((keys) => keys.filter((k) => k.id !== id))
+  }
+
+  const copyKey = async () => {
+    if (!createdKey) return
+    await navigator.clipboard.writeText(createdKey).catch(() => {})
+    notify.success(t('apiKeys.copied'))
   }
 
   // channel: 'inapp' toggles the bell; 'email' toggles email delivery.
@@ -802,6 +834,65 @@ export default function SettingsPage() {
             >
               {t('viber.connect')}
             </button>
+          )}
+        </section>
+
+        {/* API keys */}
+        <section className="mt-8 rounded-xl border border-slate-200 bg-white p-6 dark:border-slate-700 dark:bg-slate-800">
+          <h2 className="mb-1 font-bold">{t('apiKeys.title')}</h2>
+          <p className="mb-4 text-sm text-slate-500 dark:text-slate-400">{t('apiKeys.desc')}</p>
+
+          {/* Freshly created key — shown once */}
+          {createdKey && (
+            <div className="mb-4 rounded-lg border border-green-300 bg-green-50 p-3 text-sm dark:border-green-700 dark:bg-green-950/30">
+              <p className="mb-2 font-semibold text-green-800 dark:text-green-300">{t('apiKeys.createdOnce')}</p>
+              <div className="flex items-center gap-2">
+                <code className="flex-1 overflow-x-auto rounded bg-white px-2 py-1 font-mono text-xs dark:bg-slate-900">{createdKey}</code>
+                <button onClick={copyKey} className="rounded-lg bg-[#1E2A44] px-3 py-1 text-xs font-semibold text-white hover:bg-[#27345a]">
+                  {t('apiKeys.copy')}
+                </button>
+                <button onClick={() => setCreatedKey(null)} className="text-xs text-slate-400 hover:underline">
+                  {t('apiKeys.dismiss')}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Create */}
+          <div className="mb-4 flex gap-2">
+            <input
+              value={newKeyName}
+              onChange={(e) => setNewKeyName(e.target.value)}
+              placeholder={t('apiKeys.namePlaceholder')}
+              className="flex-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-[#1E2A44] dark:border-slate-600 dark:bg-slate-900"
+            />
+            <button
+              onClick={createApiKey}
+              disabled={!newKeyName.trim()}
+              className="rounded-lg bg-[#1E2A44] px-4 py-2 text-sm font-semibold text-white hover:bg-[#27345a] disabled:opacity-50"
+            >
+              {t('apiKeys.create')}
+            </button>
+          </div>
+
+          {/* List */}
+          {apiKeys.length === 0 ? (
+            <p className="text-sm text-slate-400">{t('apiKeys.empty')}</p>
+          ) : (
+            <ul className="space-y-2">
+              {apiKeys.map((k) => (
+                <li key={k.id} className="flex items-center gap-3 rounded-lg border border-slate-200 px-3 py-2 text-sm dark:border-slate-700">
+                  <span className="font-semibold">{k.name}</span>
+                  <code className="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-xs text-slate-500 dark:bg-slate-900 dark:text-slate-400">{k.prefix}…</code>
+                  <span className="ml-auto text-xs text-slate-400">
+                    {k.lastUsedAt ? t('apiKeys.lastUsed', { date: new Date(k.lastUsedAt).toLocaleDateString() }) : t('apiKeys.neverUsed')}
+                  </span>
+                  <button onClick={() => revokeApiKey(k.id)} className="text-xs font-semibold text-red-600 hover:underline">
+                    {t('apiKeys.revoke')}
+                  </button>
+                </li>
+              ))}
+            </ul>
           )}
         </section>
 

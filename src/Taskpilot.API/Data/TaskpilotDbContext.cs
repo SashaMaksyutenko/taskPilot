@@ -96,6 +96,9 @@ public class TaskpilotDbContext : DbContext
     /// <summary>Emoji reactions on chat messages.</summary>
     public DbSet<MessageReaction> MessageReactions => Set<MessageReaction>();
 
+    /// <summary>Personal API keys for programmatic access.</summary>
+    public DbSet<ApiKey> ApiKeys => Set<ApiKey>();
+
     /// <summary>
     /// Налаштування моделі (Fluent API): обмеження, індекси, перетворення типів.
     /// Викликається EF Core під час побудови моделі та генерації міграцій.

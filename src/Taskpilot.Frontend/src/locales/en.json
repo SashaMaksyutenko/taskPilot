@@ -180,6 +180,20 @@
     "step1": "Open the {{bot}} bot in Viber and send it this code:",
     "step2": "The code expires in 10 minutes. This page updates after you link."
   },
+  "apiKeys": {
+    "title": "API keys",
+    "desc": "Personal keys for programmatic access. Send as an X-Api-Key header (or Bearer token).",
+    "namePlaceholder": "Key name (e.g. CI pipeline)",
+    "create": "Create",
+    "createdOnce": "Copy your key now — it won't be shown again:",
+    "copy": "Copy",
+    "copied": "API key copied",
+    "dismiss": "Dismiss",
+    "empty": "No API keys yet.",
+    "revoke": "Revoke",
+    "lastUsed": "Last used {{date}}",
+    "neverUsed": "Never used"
+  },
   "notifPrefs": {
     "title": "Notifications",
     "desc": "Choose which notifications you want to receive, per channel.",

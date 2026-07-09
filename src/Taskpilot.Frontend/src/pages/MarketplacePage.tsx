@@ -6,6 +6,7 @@ import FadeIn from '../components/FadeIn'
 import EmptyState from '../components/EmptyState'
 import MarkdownEditor from '../components/MarkdownEditor'
 import Navbar from '../components/Navbar'
+import ActionsContextMenu from '../components/ActionsContextMenu'
 import { marketplaceService } from '../services/marketplaceService'
 import { useAppSelector } from '../store/hooks'
 import type { MarketTaskListItem } from '../types/marketplace'
@@ -125,6 +126,16 @@ export default function MarketplacePage() {
           <ul className="space-y-2">
             {tasks.map((task) => (
               <li key={task.id}>
+                <ActionsContextMenu
+                  actions={[
+                    { label: t('menu.open'), onSelect: () => navigate(`/marketplace/${task.id}`) },
+                    {
+                      label: t('menu.copyLink'),
+                      onSelect: () =>
+                        navigator.clipboard?.writeText(`${window.location.origin}/marketplace/${task.id}`).catch(() => {}),
+                    },
+                  ]}
+                >
                 <Link
                   to={`/marketplace/${task.id}`}
                   className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-4 transition hover:shadow-sm dark:border-slate-700 dark:bg-slate-800"
@@ -158,6 +169,7 @@ export default function MarketplacePage() {
                     {t(`market.status.${task.status}`, task.status)}
                   </span>
                 </Link>
+                </ActionsContextMenu>
               </li>
             ))}
           </ul>

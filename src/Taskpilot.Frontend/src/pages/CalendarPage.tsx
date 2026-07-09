@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useNavigate } from 'react-router-dom'
 import Navbar from '../components/Navbar'
+import ActionsContextMenu from '../components/ActionsContextMenu'
 import { calendarService } from '../services/calendarService'
 import type { CalendarTask } from '../types/calendar'
 import { notify } from '../lib/toast'
@@ -20,6 +22,7 @@ const dateKey = (y: number, m: number, d: number) => `${y}-${pad(m + 1)}-${pad(d
  */
 export default function CalendarPage() {
   const { t } = useTranslation()
+  const navigate = useNavigate()
   const months = t('calendar.months', { returnObjects: true }) as string[]
   const weekdays = t('calendar.weekdays', { returnObjects: true }) as string[]
 
@@ -180,15 +183,29 @@ export default function CalendarPage() {
                     </div>
                     <div className="space-y-1">
                       {dayTasks.map((task) => (
-                        <div
+                        <ActionsContextMenu
                           key={task.id}
+                          actions={[
+                            { label: t('menu.openProject'), onSelect: () => navigate(`/projects/${task.projectId}`) },
+                            {
+                              label: t('menu.copyLink'),
+                              onSelect: () =>
+                                navigator.clipboard
+                                  ?.writeText(`${window.location.origin}/projects/${task.projectId}`)
+                                  .catch(() => {}),
+                            },
+                          ]}
+                        >
+                        <div
                           title={`${task.title} · ${task.projectName} · ${t(`board.status.${task.status}`, task.status)}`}
-                          className={`truncate rounded px-1.5 py-0.5 text-[11px] font-medium ${
+                          className={`cursor-pointer truncate rounded px-1.5 py-0.5 text-[11px] font-medium ${
                             STATUS_COLORS[task.status] ?? 'bg-slate-200 text-slate-700'
                           }`}
+                          onClick={() => navigate(`/projects/${task.projectId}`)}
                         >
                           {task.title}
                         </div>
+                        </ActionsContextMenu>
                       ))}
                     </div>
                   </>

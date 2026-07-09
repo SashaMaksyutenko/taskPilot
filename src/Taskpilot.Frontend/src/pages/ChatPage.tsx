@@ -1,7 +1,8 @@
 import { Fragment, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useSearchParams } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import type { HubConnection } from '@microsoft/signalr'
+import ActionsContextMenu from '../components/ActionsContextMenu'
 import AttachmentPreview from '../components/AttachmentPreview'
 import Avatar from '../components/Avatar'
 import MentionField from '../components/MentionField'
@@ -34,6 +35,7 @@ const REACTION_EMOJIS = [
  */
 export default function ChatPage() {
   const { t } = useTranslation()
+  const navigate = useNavigate()
   const dispatch = useAppDispatch()
   const currentUser = useAppSelector((s) => s.auth.user)
 
@@ -323,6 +325,10 @@ export default function ChatPage() {
     return conv.participants.find((p) => p.userId !== currentUser?.id)?.avatarUrl ?? null
   }
 
+  // The other participant of a direct conversation (null for groups), for its context menu.
+  const otherUser = (conv: Conversation) =>
+    conv.type === 'Group' ? null : conv.participants.find((p) => p.userId !== currentUser?.id) ?? null
+
   // @mention candidates: the current conversation's other participants.
   const mentionCandidates = (conversations.find((c) => c.id === selectedId)?.participants ?? [])
     .filter((p) => p.userId !== currentUser?.id)
@@ -402,27 +408,43 @@ export default function ChatPage() {
             {conversations.length === 0 && (
               <p className="p-4 text-sm text-slate-400">{t('chat.noConversations')}</p>
             )}
-            {conversations.map((conv) => (
-              <button
-                key={conv.id}
-                onClick={() => selectConversation(conv.id)}
-                className={`flex w-full items-center gap-2 border-b border-slate-100 px-4 py-3 text-left text-sm hover:bg-slate-50 dark:border-slate-700/60 dark:hover:bg-slate-700/50 ${
-                  selectedId === conv.id ? 'bg-slate-100 font-semibold dark:bg-slate-700' : ''
-                }`}
-              >
-                <Avatar name={conversationTitle(conv)} src={conversationAvatar(conv)} size={32} />
-                <span className={`min-w-0 flex-1 truncate ${conv.unreadCount > 0 && selectedId !== conv.id ? 'font-semibold' : ''}`}>
-                  {conversationTitle(conv)}
-                </span>
-                {conv.unreadCount > 0 && selectedId !== conv.id ? (
-                  <span className="flex-none rounded-full bg-[#F97316] px-1.5 py-0.5 text-xs font-semibold leading-none text-white">
-                    {conv.unreadCount > 99 ? '99+' : conv.unreadCount}
+            {conversations.map((conv) => {
+              const other = otherUser(conv)
+              const row = (
+                <button
+                  onClick={() => selectConversation(conv.id)}
+                  className={`flex w-full items-center gap-2 border-b border-slate-100 px-4 py-3 text-left text-sm hover:bg-slate-50 dark:border-slate-700/60 dark:hover:bg-slate-700/50 ${
+                    selectedId === conv.id ? 'bg-slate-100 font-semibold dark:bg-slate-700' : ''
+                  }`}
+                >
+                  <Avatar name={conversationTitle(conv)} src={conversationAvatar(conv)} size={32} />
+                  <span className={`min-w-0 flex-1 truncate ${conv.unreadCount > 0 && selectedId !== conv.id ? 'font-semibold' : ''}`}>
+                    {conversationTitle(conv)}
                   </span>
-                ) : (
-                  <span className="flex-none text-xs text-slate-400">{t(`chat.type.${conv.type}`, conv.type)}</span>
-                )}
-              </button>
-            ))}
+                  {conv.unreadCount > 0 && selectedId !== conv.id ? (
+                    <span className="flex-none rounded-full bg-[#F97316] px-1.5 py-0.5 text-xs font-semibold leading-none text-white">
+                      {conv.unreadCount > 99 ? '99+' : conv.unreadCount}
+                    </span>
+                  ) : (
+                    <span className="flex-none text-xs text-slate-400">{t(`chat.type.${conv.type}`, conv.type)}</span>
+                  )}
+                </button>
+              )
+              // Direct chats get a user context menu; groups keep the plain row.
+              return other ? (
+                <ActionsContextMenu
+                  key={conv.id}
+                  actions={[
+                    { label: t('menu.viewProfile'), onSelect: () => navigate(`/users/${other.userId}`) },
+                    { label: t('menu.copyName'), onSelect: () => navigator.clipboard?.writeText(other.name).catch(() => {}) },
+                  ]}
+                >
+                  {row}
+                </ActionsContextMenu>
+              ) : (
+                <Fragment key={conv.id}>{row}</Fragment>
+              )
+            })}
           </div>
         </aside>
 
@@ -482,7 +504,18 @@ export default function ChatPage() {
                       </div>
                     )}
                     <div id={`msg-${m.id}`} className={`flex items-end gap-2 ${mine ? 'justify-end' : 'justify-start'}`}>
-                      {!mine && <Avatar name={m.senderName} src={m.senderAvatarUrl} size={28} />}
+                      {!mine && (
+                        <ActionsContextMenu
+                          actions={[
+                            { label: t('menu.viewProfile'), onSelect: () => navigate(`/users/${m.senderId}`) },
+                            { label: t('menu.copyName'), onSelect: () => navigator.clipboard?.writeText(m.senderName).catch(() => {}) },
+                          ]}
+                        >
+                          <span className="cursor-pointer">
+                            <Avatar name={m.senderName} src={m.senderAvatarUrl} size={28} />
+                          </span>
+                        </ActionsContextMenu>
+                      )}
                       <MessageContextMenu
                         content={m.content}
                         isPinned={m.isPinned}

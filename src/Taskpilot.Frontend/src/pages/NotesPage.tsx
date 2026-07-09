@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import Navbar from '../components/Navbar'
 import EmptyState from '../components/EmptyState'
+import NoteContextMenu from '../components/NoteContextMenu'
 import ConfirmDialog from '../components/ConfirmDialog'
 import { noteService } from '../services/noteService'
 import { notify } from '../lib/toast'
@@ -253,8 +254,16 @@ export default function NotesPage() {
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {visibleNotes.map((note) => (
-              <div
+              <NoteContextMenu
                 key={note.id}
+                isPinned={note.isPinned}
+                content={note.content}
+                onTogglePin={() => togglePin(note)}
+                onEdit={() => startEdit(note)}
+                onExportPdf={() => exportPdf(note)}
+                onDelete={() => setDeletingNote(note)}
+              >
+              <div
                 className="flex flex-col rounded-xl border border-slate-200 p-4 shadow-sm dark:border-slate-700"
                 style={{ background: note.color ?? undefined }}
               >
@@ -292,6 +301,7 @@ export default function NotesPage() {
                   </button>
                 </div>
               </div>
+              </NoteContextMenu>
             ))}
           </div>
         )}

@@ -5,6 +5,7 @@ import Avatar from '../components/Avatar'
 import Markdown from '../components/Markdown'
 import MarkdownEditor from '../components/MarkdownEditor'
 import Navbar from '../components/Navbar'
+import ActionsContextMenu, { type ContextAction } from '../components/ActionsContextMenu'
 import { apiErrorMessage } from '../lib/apiError'
 import { forumService } from '../services/forumService'
 import { useAppSelector } from '../store/hooks'
@@ -107,9 +108,16 @@ export default function TopicPage() {
           {t('topic.repliesHeading', { count: topic.replies.length })}
         </h2>
         <div className="space-y-3">
-          {topic.replies.map((r) => (
+          {topic.replies.map((r) => {
+            const replyActions: ContextAction[] = [
+              { label: t('menu.copyText'), onSelect: () => navigator.clipboard?.writeText(r.body).catch(() => {}) },
+            ]
+            if (isAuthor && !r.isSolution) {
+              replyActions.push({ label: t('topic.markSolution'), onSelect: () => markSolution(r) })
+            }
+            return (
+            <ActionsContextMenu key={r.id} actions={replyActions}>
             <div
-              key={r.id}
               className={`flex gap-3 rounded-xl border bg-white p-4 dark:bg-slate-800 ${
                 r.isSolution ? 'border-green-400' : 'border-slate-200 dark:border-slate-700'
               }`}
@@ -151,7 +159,9 @@ export default function TopicPage() {
                 </div>
               </div>
             </div>
-          ))}
+            </ActionsContextMenu>
+            )
+          })}
         </div>
 
         {/* Add reply */}

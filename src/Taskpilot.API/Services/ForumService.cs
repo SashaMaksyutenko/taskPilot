@@ -315,7 +315,7 @@ public class ForumService : IForumService
                     topic.AuthorId,
                     NotificationType.Forum,
                     $"{authorName} replied to your topic \"{topic.Title}\".",
-                    $"/forum/topics/{topic.Id}");
+                    $"/forum/{topic.Id}");
             }
 
             // For a nested reply, also notify the parent reply's author (if different).
@@ -331,7 +331,7 @@ public class ForumService : IForumService
                         pid,
                         NotificationType.Forum,
                         $"{authorName} replied to your comment in \"{topic.Title}\".",
-                        $"/forum/topics/{topic.Id}");
+                        $"/forum/{topic.Id}");
                 }
             }
 

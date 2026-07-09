@@ -466,10 +466,20 @@ export default function ChatPage() {
                 {searchQuery && visibleMessages.length === 0 && (
                   <p className="py-6 text-center text-sm text-slate-400">{t('chat.noMatches')}</p>
                 )}
-                {visibleMessages.map((m) => {
+                {visibleMessages.map((m, i) => {
                   const mine = m.senderId === currentUser?.id
+                  const prev = visibleMessages[i - 1]
+                  const showDate =
+                    !prev || new Date(prev.createdAt).toDateString() !== new Date(m.createdAt).toDateString()
                   return (
                     <Fragment key={m.id}>
+                    {showDate && (
+                      <div className="my-2 flex justify-center">
+                        <span className="rounded-full bg-slate-200 px-3 py-0.5 text-[11px] font-medium text-slate-500 dark:bg-slate-700 dark:text-slate-300">
+                          {new Date(m.createdAt).toLocaleDateString([], { day: 'numeric', month: 'short', year: 'numeric' })}
+                        </span>
+                      </div>
+                    )}
                     <div id={`msg-${m.id}`} className={`flex items-end gap-2 ${mine ? 'justify-end' : 'justify-start'}`}>
                       {!mine && <Avatar name={m.senderName} src={m.senderAvatarUrl} size={28} />}
                       <MessageContextMenu
@@ -589,6 +599,10 @@ export default function ChatPage() {
                                 </div>
                               )}
                             </div>
+                          </div>
+                          {/* Sent time */}
+                          <div className={`mt-0.5 text-right text-[10px] leading-none ${mine ? 'text-white/50' : 'text-slate-400'}`}>
+                            {new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                           </div>
                         </div>
                       </MessageContextMenu>

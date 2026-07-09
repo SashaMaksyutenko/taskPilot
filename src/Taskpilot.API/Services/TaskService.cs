@@ -47,6 +47,33 @@ public class TaskService : ITaskService
             $"/projects/{task.ProjectId}");
     }
 
+    /// <summary>
+    /// Ensures a task's assignee can actually reach the project: if they are neither
+    /// the owner nor already a member, they are added as an Editor member so they can
+    /// see the board and work on their task.
+    /// </summary>
+    private async Task EnsureAssigneeHasAccessAsync(Guid projectId, Guid? assigneeId)
+    {
+        if (assigneeId is not { } id)
+            return;
+
+        var alreadyHasAccess = await _context.Projects.AnyAsync(p => p.Id == projectId &&
+            (p.OwnerId == id || p.Members.Any(m => m.UserId == id)));
+        if (alreadyHasAccess)
+            return;
+
+        _context.ProjectMembers.Add(new ProjectMember
+        {
+            Id = Guid.NewGuid(),
+            ProjectId = projectId,
+            UserId = id,
+            Role = ProjectMemberRole.Editor,
+            CreatedAt = DateTime.UtcNow,
+        });
+        await _context.SaveChangesAsync();
+        _logger.LogInformation("Assignee added as project member. ProjectId: {ProjectId}, UserId: {UserId}", projectId, id);
+    }
+
     /// <inheritdoc />
     public async Task<Result<TaskDto>> CreateTaskAsync(Guid userId, Guid projectId, CreateTaskDto dto)
     {
@@ -98,7 +125,8 @@ public class TaskService : ITaskService
             priority = task.Priority.ToString(),
         });
 
-        // Notify the assignee (if someone other than the creator).
+        // Give the assignee access to the project, then notify them.
+        await EnsureAssigneeHasAccessAsync(projectId, task.AssigneeId);
         await NotifyAssignedAsync(task.AssigneeId, userId, task);
 
         _logger.LogInformation("Task created. TaskId: {TaskId}, ProjectId: {ProjectId}", task.Id, projectId);
@@ -201,9 +229,12 @@ public class TaskService : ITaskService
             updatedAt = task.UpdatedAt,
         });
 
-        // Notify the assignee only when it changed to a new person.
+        // On a real assignee change, give the new assignee access, then notify them.
         if (task.AssigneeId != previousAssigneeId)
+        {
+            await EnsureAssigneeHasAccessAsync(task.ProjectId, task.AssigneeId);
             await NotifyAssignedAsync(task.AssigneeId, userId, task);
+        }
 
         return Result<TaskDto>.Ok(await LoadDtoAsync(task.Id));
     }

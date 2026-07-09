@@ -59,6 +59,43 @@ public class TaskServiceTests
     }
 
     [Fact]
+    public async Task CreateTask_AssignedToNonMember_GrantsThemProjectAccess()
+    {
+        using var ctx = TestDb.CreateContext();
+        var owner = await TestDb.AddUserAsync(ctx, "Owner");
+        var assignee = await TestDb.AddUserAsync(ctx, "Assignee");
+        var projectId = await TestDb.AddProjectAsync(ctx, owner);
+        var svc = Create(ctx);
+
+        // Before: the assignee cannot access the project.
+        Assert.False(await ProjectAccess.CanAccessAsync(ctx, projectId, assignee));
+
+        var result = await svc.CreateTaskAsync(owner, projectId,
+            new CreateTaskDto { Title = "Do the thing", AssigneeId = assignee });
+
+        Assert.True(result.Succeeded);
+        // After: assigning the task made them an Editor member with access.
+        Assert.True(await ProjectAccess.CanAccessAsync(ctx, projectId, assignee));
+        Assert.True(await ProjectAccess.CanWriteAsync(ctx, projectId, assignee));
+        Assert.Equal(1, await ctx.ProjectMembers.CountAsync(m => m.ProjectId == projectId && m.UserId == assignee));
+    }
+
+    [Fact]
+    public async Task CreateTask_AssignedToOwner_AddsNoMemberRow()
+    {
+        using var ctx = TestDb.CreateContext();
+        var owner = await TestDb.AddUserAsync(ctx, "Owner");
+        var projectId = await TestDb.AddProjectAsync(ctx, owner);
+        var svc = Create(ctx);
+
+        await svc.CreateTaskAsync(owner, projectId,
+            new CreateTaskDto { Title = "Mine", AssigneeId = owner });
+
+        // The owner already has access, so no redundant membership is created.
+        Assert.Equal(0, await ctx.ProjectMembers.CountAsync(m => m.ProjectId == projectId));
+    }
+
+    [Fact]
     public async Task GetTasks_FiltersByStatus()
     {
         using var ctx = TestDb.CreateContext();

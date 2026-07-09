@@ -501,8 +501,8 @@
     "anonymousToday": "{{count}} анонімних сьогодні",
     "noneOnline": "Зареєстрованих онлайн немає.",
     "activeUsers": "Активні",
-    "visitorsToday": "Відвідувачів сьогодні",
-    "anonRequests": "Анон. запитів"
+    "visitorsToday": "Гостей сьогодні",
+    "anonRequests": "Запитів гостей"
   },
   "admin": {
     "usersTitle": "Адмін · Користувачі ({{count}})",

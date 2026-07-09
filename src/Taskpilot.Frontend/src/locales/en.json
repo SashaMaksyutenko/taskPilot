@@ -501,8 +501,8 @@
     "anonymousToday": "{{count}} anonymous today",
     "noneOnline": "No registered users online.",
     "activeUsers": "Active users",
-    "visitorsToday": "Visitors today",
-    "anonRequests": "Anon. requests"
+    "visitorsToday": "Guests today",
+    "anonRequests": "Guest requests"
   },
   "admin": {
     "usersTitle": "Admin · Users ({{count}})",

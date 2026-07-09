@@ -346,6 +346,7 @@
   },
   "board": {
     "backToProjects": "← Projects",
+    "notFound": "This project no longer exists.",
     "readOnly": "You have read-only access to this project.",
     "title": "Board",
     "filterByTag": "Filter:",

@@ -125,6 +125,14 @@ public class ProjectService : IProjectService
         if (project is null)
             return Result.Fail("Project not found.");
 
+        // Notifications reference the project only by their Link text (e.g.
+        // "/projects/{id}"), so they aren't cascade-deleted. Remove them explicitly
+        // to avoid dangling links to a project that no longer exists.
+        var linkPrefix = $"/projects/{projectId}";
+        await _context.Notifications
+            .Where(n => n.Link != null && n.Link.StartsWith(linkPrefix))
+            .ExecuteDeleteAsync();
+
         // Tasks and members are removed by the configured cascade deletes.
         _context.Projects.Remove(project);
         await _context.SaveChangesAsync();

@@ -30,6 +30,7 @@ export default function BoardPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const currentUserId = useAppSelector((s) => s.auth.user?.id)
   const [project, setProject] = useState<Project | null>(null)
+  const [notFound, setNotFound] = useState(false)
   const [tasks, setTasks] = useState<Task[]>([])
   const [newTitle, setNewTitle] = useState('')
   const [selectedTask, setSelectedTask] = useState<Task | null>(null)
@@ -51,7 +52,8 @@ export default function BoardPage() {
 
   useEffect(() => {
     if (!projectId) return
-    projectService.getProject(projectId).then(setProject).catch(() => {})
+    // A deleted/inaccessible project 404s — show a clean "not found" instead of a blank board.
+    projectService.getProject(projectId).then(setProject).catch(() => setNotFound(true))
     taskService.getTasks(projectId).then(setTasks).catch(() => {})
     // Other active projects the user owns can receive moved tasks.
     projectService
@@ -229,6 +231,20 @@ export default function BoardPage() {
   const exportPdf = async () => {
     const blob = await taskService.exportPdf(projectId).catch(() => null)
     if (blob) download(blob, 'pdf')
+  }
+
+  if (notFound) {
+    return (
+      <div className="min-h-screen bg-slate-50 text-[#1E2A44] dark:bg-slate-900 dark:text-slate-100">
+        <Navbar />
+        <main className="mx-auto max-w-lg px-6 py-20 text-center">
+          <p className="mb-3 text-lg font-semibold">{t('board.notFound')}</p>
+          <Link to="/projects" className="text-sm font-semibold text-[#1E2A44] hover:underline dark:text-slate-200">
+            ← {t('board.backToProjects')}
+          </Link>
+        </main>
+      </div>
+    )
   }
 
   return (

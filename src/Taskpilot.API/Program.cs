@@ -252,7 +252,7 @@ builder.Services.AddSignalR();
 builder.Services.AddSingleton<PresenceTracker>();
 
 // Tracks anonymous (not-logged-in) site visitors (shared singleton state).
-builder.Services.AddSingleton<VisitorTracker>();
+builder.Services.AddScoped<IVisitorService, VisitorService>();
 
 // Register application services. Scoped = one instance per HTTP request.
 builder.Services.AddScoped<IAuthService, AuthService>();

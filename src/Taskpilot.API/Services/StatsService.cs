@@ -10,11 +10,11 @@ using Taskpilot.API.Hubs;
 namespace Taskpilot.API.Services;
 
 /// <summary>
-/// Computes live site statistics. User/forum counts come from the database;
-/// online users from <see cref="PresenceTracker"/> (SignalR connections) and
-/// anonymous visitors from <see cref="VisitorTracker"/> (both in-memory singletons).
-/// The admin dashboard figures are cached briefly (Redis when configured) to avoid
-/// running a batch of COUNT queries on every dashboard refresh.
+/// Computes live site statistics. User/forum counts come from the database; online
+/// users from <see cref="PresenceTracker"/> (SignalR connections); anonymous visitors
+/// from <see cref="IVisitorService"/> (persisted). The heavy aggregate figures are
+/// cached briefly (Redis when configured) to avoid running a batch of COUNT queries on
+/// every dashboard refresh, while presence and visitor counts stay live.
 /// </summary>
 public class StatsService : IStatsService
 {
@@ -23,10 +23,10 @@ public class StatsService : IStatsService
 
     private readonly TaskpilotDbContext _context;
     private readonly PresenceTracker _presence;
-    private readonly VisitorTracker _visitors;
+    private readonly IVisitorService _visitors;
     private readonly IDistributedCache _cache;
 
-    public StatsService(TaskpilotDbContext context, PresenceTracker presence, VisitorTracker visitors, IDistributedCache cache)
+    public StatsService(TaskpilotDbContext context, PresenceTracker presence, IVisitorService visitors, IDistributedCache cache)
     {
         _context = context;
         _presence = presence;
@@ -37,44 +37,32 @@ public class StatsService : IStatsService
     /// <inheritdoc />
     public async Task<Result<AdminStatsDto>> GetFullStatsAsync()
     {
-        // Cache-aside: serve a recent snapshot when available.
-        var cached = await _cache.GetStringAsync(FullStatsCacheKey);
-        if (cached is not null)
-            return Result<AdminStatsDto>.Ok(JsonSerializer.Deserialize<AdminStatsDto>(cached)!);
+        // Heavy aggregates (user/role/forum counts) are cached; presence and visitor
+        // counts are always live so a just-connected user shows up immediately.
+        var agg = await GetAggregatesAsync();
+        var online = await OnlineNamesAsync();
 
-        var (common, online) = await LoadCommonAsync();
-
-        // Count users grouped by role for the breakdown chart (role stored as string).
-        var byRole = await _context.Users
-            .GroupBy(u => u.Role)
-            .Select(g => new { Role = g.Key, Count = g.Count() })
-            .ToListAsync();
-
-        var dto = new AdminStatsDto
+        return Result<AdminStatsDto>.Ok(new AdminStatsDto
         {
-            UsersByRole = byRole.ToDictionary(x => x.Role.ToString(), x => x.Count),
-            TotalUsers = common.TotalUsers,
-            ActiveUsers = common.ActiveUsers,
-            NewestUserName = common.NewestUserName,
-            TotalTopics = common.TotalTopics,
-            TotalForumPosts = common.TotalForumPosts,
+            UsersByRole = agg.UsersByRole,
+            TotalUsers = agg.TotalUsers,
+            ActiveUsers = agg.ActiveUsers,
+            NewestUserName = agg.NewestUserName,
+            TotalTopics = agg.TotalTopics,
+            TotalForumPosts = agg.TotalForumPosts,
             OnlineUsers = online.Count,
             OnlineUserNames = online,
             // Anonymous-visitor analytics are admin-only.
-            AnonymousVisitorsToday = _visitors.UniqueVisitorsToday,
-            AnonymousVisitsTotal = _visitors.TotalVisits,
-        };
-
-        await _cache.SetStringAsync(FullStatsCacheKey, JsonSerializer.Serialize(dto),
-            new DistributedCacheEntryOptions { AbsoluteExpirationRelativeToNow = FullStatsTtl });
-
-        return Result<AdminStatsDto>.Ok(dto);
+            AnonymousVisitorsToday = await _visitors.UniqueVisitorsTodayAsync(),
+            AnonymousVisitsTotal = await _visitors.TotalVisitsAsync(),
+        });
     }
 
     /// <inheritdoc />
     public async Task<Result<PublicStatsDto>> GetPublicStatsAsync()
     {
-        var (common, online) = await LoadCommonAsync();
+        var common = await LoadCommonAsync();
+        var online = await OnlineNamesAsync();
 
         return Result<PublicStatsDto>.Ok(new PublicStatsDto
         {
@@ -87,13 +75,51 @@ public class StatsService : IStatsService
         });
     }
 
-    // Shared data the two stat views have in common, plus the online user names.
-    private async Task<(CommonStats Stats, List<string> OnlineNames)> LoadCommonAsync()
+    // Cache-aside for the expensive aggregates only (never the live presence count).
+    private async Task<StatsAggregates> GetAggregatesAsync()
+    {
+        var cached = await _cache.GetStringAsync(FullStatsCacheKey);
+        if (cached is not null)
+            return JsonSerializer.Deserialize<StatsAggregates>(cached)!;
+
+        var common = await LoadCommonAsync();
+
+        // Count users grouped by role for the breakdown chart (role stored as string).
+        var byRole = await _context.Users
+            .GroupBy(u => u.Role)
+            .Select(g => new { Role = g.Key, Count = g.Count() })
+            .ToListAsync();
+
+        var agg = new StatsAggregates(
+            byRole.ToDictionary(x => x.Role.ToString(), x => x.Count),
+            common.TotalUsers, common.ActiveUsers, common.NewestUserName, common.TotalTopics, common.TotalForumPosts);
+
+        await _cache.SetStringAsync(FullStatsCacheKey, JsonSerializer.Serialize(agg),
+            new DistributedCacheEntryOptions { AbsoluteExpirationRelativeToNow = FullStatsTtl });
+
+        return agg;
+    }
+
+    // Names of users currently online — always computed live from the presence tracker.
+    private async Task<List<string>> OnlineNamesAsync()
+    {
+        var onlineIds = _presence.OnlineUserIds();
+        if (onlineIds.Count == 0)
+            return new List<string>();
+
+        return await _context.Users
+            .Where(u => onlineIds.Contains(u.Id))
+            .OrderBy(u => u.Name)
+            .Select(u => u.Name)
+            .ToListAsync();
+    }
+
+    // Expensive counts shared by both stat views (cached for admin, fresh for public).
+    private async Task<CommonStats> LoadCommonAsync()
     {
         var totalUsers = await _context.Users.CountAsync();
         var activeUsers = await _context.Users.CountAsync(u => u.IsActive);
 
-        // Newest registered user's name (for the "new user" line).
         var newestUserName = await _context.Users
             .OrderByDescending(u => u.CreatedAt)
             .Select(u => u.Name)
@@ -102,20 +128,15 @@ public class StatsService : IStatsService
         var totalTopics = await _context.ForumTopics.CountAsync();
         var totalForumPosts = await _context.ForumReplies.CountAsync();
 
-        // Resolve the names of the users currently online (registered, real-time).
-        var onlineIds = _presence.OnlineUserIds();
-        var onlineNames = onlineIds.Count == 0
-            ? new List<string>()
-            : await _context.Users
-                .Where(u => onlineIds.Contains(u.Id))
-                .OrderBy(u => u.Name)
-                .Select(u => u.Name)
-                .ToListAsync();
-
-        return (new CommonStats(totalUsers, activeUsers, newestUserName, totalTopics, totalForumPosts), onlineNames);
+        return new CommonStats(totalUsers, activeUsers, newestUserName, totalTopics, totalForumPosts);
     }
 
     // Small carrier for the counts shared by both stat views.
     private readonly record struct CommonStats(
         int TotalUsers, int ActiveUsers, string? NewestUserName, int TotalTopics, int TotalForumPosts);
+
+    // Cacheable aggregate snapshot (excludes live presence/visitor counts).
+    private sealed record StatsAggregates(
+        Dictionary<string, int> UsersByRole, int TotalUsers, int ActiveUsers,
+        string? NewestUserName, int TotalTopics, int TotalForumPosts);
 }

@@ -48,7 +48,7 @@ public class StatsServiceTests
         var presence = new PresenceTracker();
         presence.Connected(bob, "conn-1");
 
-        var svc = new StatsService(ctx, presence, new VisitorTracker(), NewCache());
+        var svc = new StatsService(ctx, presence, new VisitorService(ctx), NewCache());
         var result = await svc.GetPublicStatsAsync();
 
         Assert.True(result.Succeeded);
@@ -68,10 +68,10 @@ public class StatsServiceTests
         AddUser(ctx, "Alice", DateTime.UtcNow);
         await ctx.SaveChangesAsync();
 
-        var visitors = new VisitorTracker();
-        visitors.Record("1.1.1.1");
-        visitors.Record("1.1.1.1"); // same IP
-        visitors.Record("2.2.2.2");
+        var visitors = new VisitorService(ctx);
+        await visitors.RecordAsync("1.1.1.1");
+        await visitors.RecordAsync("1.1.1.1"); // same IP
+        await visitors.RecordAsync("2.2.2.2");
 
         var svc = new StatsService(ctx, new PresenceTracker(), visitors, NewCache());
         var result = await svc.GetFullStatsAsync();

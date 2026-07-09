@@ -25,7 +25,10 @@ export default function LandingPage() {
   const [stats, setStats] = useState<PublicStats | null>(null)
 
   useEffect(() => {
-    statsService.getPublic().then(setStats).catch(() => {})
+    const refresh = () => statsService.getPublic().then(setStats).catch(() => {})
+    refresh()
+    const timer = setInterval(refresh, 10000)
+    return () => clearInterval(timer)
   }, [])
 
   return (

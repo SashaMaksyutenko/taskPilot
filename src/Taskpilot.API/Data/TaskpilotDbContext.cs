@@ -99,6 +99,9 @@ public class TaskpilotDbContext : DbContext
     /// <summary>Personal API keys for programmatic access.</summary>
     public DbSet<ApiKey> ApiKeys => Set<ApiKey>();
 
+    /// <summary>Persisted anonymous-visitor analytics (per day, per hashed IP).</summary>
+    public DbSet<VisitorHit> VisitorHits => Set<VisitorHit>();
+
     /// <summary>
     /// Налаштування моделі (Fluent API): обмеження, індекси, перетворення типів.
     /// Викликається EF Core під час побудови моделі та генерації міграцій.
@@ -107,6 +110,13 @@ public class TaskpilotDbContext : DbContext
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+
+        // One row per unique (day, IP-hash) so unique-visitor counts stay accurate.
+        modelBuilder.Entity<VisitorHit>(entity =>
+        {
+            entity.HasKey(v => v.Id);
+            entity.HasIndex(v => new { v.Day, v.IpHash }).IsUnique();
+        });
 
         // Конфігурація сутності User
         modelBuilder.Entity<User>(entity =>

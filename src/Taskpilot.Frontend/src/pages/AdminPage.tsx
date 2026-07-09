@@ -41,8 +41,13 @@ export default function AdminPage() {
 
   useEffect(() => load(page), [page])
 
+  // Refresh stats on mount and then periodically so "online now" stays live
+  // as people connect/disconnect (heavy aggregates are cached server-side).
   useEffect(() => {
-    statsService.getAdmin().then(setStats).catch(() => {})
+    const refresh = () => statsService.getAdmin().then(setStats).catch(() => {})
+    refresh()
+    const timer = setInterval(refresh, 10000)
+    return () => clearInterval(timer)
   }, [])
 
   // Pending moderation appeals queue.

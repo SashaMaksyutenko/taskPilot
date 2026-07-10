@@ -25,15 +25,39 @@ public class AdminService : IAdminService
     }
 
     /// <inheritdoc />
-    public async Task<Result<PagedResult<AdminUserDto>>> GetAllUsersAsync(int page = 1, int pageSize = 20)
+    public async Task<Result<PagedResult<AdminUserDto>>> GetAllUsersAsync(
+        int page = 1, int pageSize = 20, string? search = null, string? role = null, string? status = null)
     {
         // Clamp paging to sane bounds.
         if (page < 1) page = 1;
         if (pageSize < 1 || pageSize > 100) pageSize = 20;
 
-        var total = await _context.Users.CountAsync();
+        var query = _context.Users.AsQueryable();
 
-        var users = await _context.Users
+        // Search by name or email.
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var term = $"%{search.Trim()}%";
+            query = query.Where(u => EF.Functions.ILike(u.Name, term) || EF.Functions.ILike(u.Email, term));
+        }
+
+        // Filter by role name.
+        if (!string.IsNullOrWhiteSpace(role) && Enum.TryParse<Role>(role, true, out var parsedRole))
+            query = query.Where(u => u.Role == parsedRole);
+
+        // Filter by moderation status.
+        var now = DateTime.UtcNow;
+        query = status?.ToLowerInvariant() switch
+        {
+            "banned" => query.Where(u => !u.IsActive || (u.BannedUntil != null && u.BannedUntil > now)),
+            "muted" => query.Where(u => u.MutedUntil != null && u.MutedUntil > now),
+            "active" => query.Where(u => u.IsActive && (u.BannedUntil == null || u.BannedUntil <= now)),
+            _ => query,
+        };
+
+        var total = await query.CountAsync();
+
+        var users = await query
             .OrderByDescending(u => u.CreatedAt)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)

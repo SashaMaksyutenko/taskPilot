@@ -587,6 +587,12 @@
   },
   "admin": {
     "usersTitle": "Адмін · Користувачі ({{count}})",
+    "searchPlaceholder": "Пошук за іменем або email…",
+    "allRoles": "Усі ролі",
+    "allStatuses": "Усі статуси",
+    "statusActive": "Активні",
+    "statusBanned": "Заблоковані",
+    "statusMuted": "Заглушені",
     "auditLog": "Журнал аудиту →",
     "name": "Ім'я",
     "email": "Пошта",

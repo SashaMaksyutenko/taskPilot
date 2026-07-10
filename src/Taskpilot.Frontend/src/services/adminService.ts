@@ -3,9 +3,21 @@ import type { AdminUser, Appeal, AuditLog, IssueWarningResult, PagedResult, Warn
 
 /** Admin-only REST calls for user management. */
 export const adminService = {
-  getUsers(page = 1, pageSize = 20): Promise<PagedResult<AdminUser>> {
+  getUsers(
+    page = 1,
+    pageSize = 20,
+    filters: { search?: string; role?: string; status?: string } = {},
+  ): Promise<PagedResult<AdminUser>> {
     return api
-      .get<PagedResult<AdminUser>>('/api/admin/users', { params: { page, pageSize } })
+      .get<PagedResult<AdminUser>>('/api/admin/users', {
+        params: {
+          page,
+          pageSize,
+          search: filters.search || undefined,
+          role: filters.role || undefined,
+          status: filters.status || undefined,
+        },
+      })
       .then((r) => r.data)
   },
 

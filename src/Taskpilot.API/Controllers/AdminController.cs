@@ -41,11 +41,16 @@ public class AdminController : BaseApiController
         _issueWarningValidator = issueWarningValidator;
     }
 
-    /// <summary>Lists a page of users.</summary>
+    /// <summary>Lists a page of users, optionally filtered by search, role and status.</summary>
     [HttpGet("users")]
-    public async Task<IActionResult> GetUsers([FromQuery] int page = 1, [FromQuery] int pageSize = 20)
+    public async Task<IActionResult> GetUsers(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20,
+        [FromQuery] string? search = null,
+        [FromQuery] string? role = null,
+        [FromQuery] string? status = null)
     {
-        var result = await _adminService.GetAllUsersAsync(page, pageSize);
+        var result = await _adminService.GetAllUsersAsync(page, pageSize, search, role, status);
         return Ok(result.Value);
     }
 

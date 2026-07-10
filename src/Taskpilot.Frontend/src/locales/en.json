@@ -587,6 +587,12 @@
   },
   "admin": {
     "usersTitle": "Admin · Users ({{count}})",
+    "searchPlaceholder": "Search by name or email…",
+    "allRoles": "All roles",
+    "allStatuses": "All statuses",
+    "statusActive": "Active",
+    "statusBanned": "Banned",
+    "statusMuted": "Muted",
     "auditLog": "Audit log →",
     "name": "Name",
     "email": "Email",

@@ -28,12 +28,16 @@ export default function AdminPage() {
   const [page, setPage] = useState(1)
   const [total, setTotal] = useState(0)
   const [stats, setStats] = useState<AdminStats | null>(null)
+  // User-list filters.
+  const [search, setSearch] = useState('')
+  const [roleFilter, setRoleFilter] = useState('')
+  const [statusFilter, setStatusFilter] = useState('')
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
 
   const load = (p: number) => {
     adminService
-      .getUsers(p, PAGE_SIZE)
+      .getUsers(p, PAGE_SIZE, { search: search.trim(), role: roleFilter, status: statusFilter })
       .then((r) => {
         setUsers(r.items)
         setTotal(r.total)
@@ -41,7 +45,18 @@ export default function AdminPage() {
       .catch(() => {})
   }
 
-  useEffect(() => load(page), [page])
+  // Reload on page or filter change; debounce so typing a search isn't chatty.
+  useEffect(() => {
+    const id = setTimeout(() => load(page), 250)
+    return () => clearTimeout(id)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, search, roleFilter, statusFilter])
+
+  // Changing a filter jumps back to the first page.
+  const changeFilter = (setter: (v: string) => void) => (value: string) => {
+    setter(value)
+    setPage(1)
+  }
 
   // Refresh stats on mount and then periodically so "online now" stays live
   // as people connect/disconnect (heavy aggregates are cached server-side).
@@ -232,6 +247,36 @@ export default function AdminPage() {
             </ul>
           </section>
         )}
+
+        {/* User-list filters */}
+        <div className="mb-4 flex flex-wrap items-center gap-2">
+          <input
+            value={search}
+            onChange={(e) => changeFilter(setSearch)(e.target.value)}
+            placeholder={t('admin.searchPlaceholder')}
+            className="min-w-0 flex-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-[#1E2A44] dark:border-slate-600 dark:bg-slate-800"
+          />
+          <select
+            value={roleFilter}
+            onChange={(e) => changeFilter(setRoleFilter)(e.target.value)}
+            className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-[#1E2A44] dark:border-slate-600 dark:bg-slate-800"
+          >
+            <option value="">{t('admin.allRoles')}</option>
+            {ROLES.map((r) => (
+              <option key={r} value={r}>{t(`admin.roles.${r}`, r)}</option>
+            ))}
+          </select>
+          <select
+            value={statusFilter}
+            onChange={(e) => changeFilter(setStatusFilter)(e.target.value)}
+            className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-[#1E2A44] dark:border-slate-600 dark:bg-slate-800"
+          >
+            <option value="">{t('admin.allStatuses')}</option>
+            <option value="active">{t('admin.statusActive')}</option>
+            <option value="banned">{t('admin.statusBanned')}</option>
+            <option value="muted">{t('admin.statusMuted')}</option>
+          </select>
+        </div>
 
         <div className="overflow-hidden rounded-xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-800">
           <table className="w-full text-sm">

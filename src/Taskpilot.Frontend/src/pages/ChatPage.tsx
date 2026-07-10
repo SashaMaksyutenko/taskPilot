@@ -380,7 +380,7 @@ export default function ChatPage() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder={t('chat.searchPlaceholder')}
-              className="w-full rounded border border-slate-300 px-2 py-1 text-sm outline-none focus:border-[#1E2A44] dark:border-slate-600 dark:bg-slate-900"
+              className="w-full rounded border border-slate-300 px-2 py-1 text-sm outline-none focus:border-primary dark:border-slate-600 dark:bg-slate-900"
             />
             {results.length > 0 && (
               <ul className="absolute left-3 right-3 top-full z-20 -mt-1 max-h-64 overflow-y-auto rounded-b border border-t-0 border-slate-300 bg-white shadow-lg dark:border-slate-600 dark:bg-slate-800">
@@ -479,7 +479,7 @@ export default function ChatPage() {
                   value={messageSearch}
                   onChange={(e) => setMessageSearch(e.target.value)}
                   placeholder={t('chat.searchMessages')}
-                  className="w-full rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm outline-none focus:border-[#1E2A44] dark:border-slate-600 dark:bg-slate-900"
+                  className="w-full rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm outline-none focus:border-primary dark:border-slate-600 dark:bg-slate-900"
                 />
               </div>
 
@@ -529,8 +529,8 @@ export default function ChatPage() {
                             highlightId === m.id ? 'ring-2 ring-[#F97316] ring-offset-2 dark:ring-offset-slate-900' : ''
                           } ${
                             mine
-                              ? 'bg-[#1E2A44] text-white'
-                              : 'bg-white text-[#1E2A44] shadow dark:bg-slate-800 dark:text-slate-100'
+                              ? 'bg-primary text-white'
+                              : 'bg-white text-primary shadow dark:bg-slate-800 dark:text-slate-100'
                           }`}
                         >
                           {m.isPinned && (
@@ -715,11 +715,11 @@ export default function ChatPage() {
                   multiline={false}
                   onKeyDown={(e) => e.key === 'Enter' && send()}
                   placeholder={t('chat.messagePlaceholder')}
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 outline-none focus:border-[#1E2A44] dark:border-slate-600 dark:bg-slate-900"
+                  className="w-full rounded-lg border border-slate-300 px-3 py-2 outline-none focus:border-primary dark:border-slate-600 dark:bg-slate-900"
                 />
                 <button
                   onClick={send}
-                  className="rounded-lg bg-[#F6BE2C] px-5 font-semibold text-[#1E2A44] transition hover:brightness-95"
+                  className="rounded-lg bg-accent px-5 font-semibold text-primary transition hover:brightness-95"
                 >
                   {t('chat.send')}
                 </button>

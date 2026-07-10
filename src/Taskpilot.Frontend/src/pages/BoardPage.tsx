@@ -243,7 +243,7 @@ export default function BoardPage() {
     return (
       <div className="mx-auto max-w-lg px-6 py-20 text-center">
           <p className="mb-3 text-lg font-semibold">{t('board.notFound')}</p>
-          <Link to="/projects" className="text-sm font-semibold text-[#1E2A44] hover:underline dark:text-slate-200">
+          <Link to="/projects" className="text-sm font-semibold text-primary hover:underline dark:text-slate-200">
             ← {t('board.backToProjects')}
           </Link>
         </div>
@@ -291,7 +291,7 @@ export default function BoardPage() {
               onChange={(e) => setNewTitle(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && addTask()}
               placeholder={t('board.addPlaceholder')}
-              className="flex-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-[#1E2A44] dark:border-slate-600 dark:bg-slate-800"
+              className="flex-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-primary dark:border-slate-600 dark:bg-slate-800"
             />
             <button onClick={addTask} className="rounded-lg bg-primary px-4 text-sm font-semibold text-white hover:bg-primary-hover">
               {t('board.add')}
@@ -315,8 +315,8 @@ export default function BoardPage() {
                   onClick={() => toggleTag(tag)}
                   className={`rounded-full px-2 py-0.5 text-xs font-medium transition ${
                     active
-                      ? 'bg-[#1E2A44] text-white dark:bg-slate-200 dark:text-slate-900'
-                      : 'bg-[#1E2A44]/10 text-[#1E2A44] hover:bg-[#1E2A44]/20 dark:bg-slate-700 dark:text-slate-200'
+                      ? 'bg-primary text-white dark:bg-slate-200 dark:text-slate-900'
+                      : 'bg-primary/10 text-primary hover:bg-primary/20 dark:bg-slate-700 dark:text-slate-200'
                   }`}
                 >
                   {tag}
@@ -336,7 +336,7 @@ export default function BoardPage() {
 
         {/* Bulk action bar (visible when tasks are selected) */}
         {canWrite && selectedIds.size > 0 && (
-          <div className="mb-5 flex flex-wrap items-center gap-3 rounded-lg border border-[#1E2A44]/20 bg-[#1E2A44]/5 px-4 py-2 dark:border-slate-600 dark:bg-slate-800">
+          <div className="mb-5 flex flex-wrap items-center gap-3 rounded-lg border border-primary/20 bg-primary/5 px-4 py-2 dark:border-slate-600 dark:bg-slate-800">
             <span className="text-sm font-semibold">{t('board.selected', { count: selectedIds.size })}</span>
             <select
               defaultValue=""
@@ -424,7 +424,7 @@ export default function BoardPage() {
                             checked={selectedIds.has(task.id)}
                             onClick={(e) => e.stopPropagation()}
                             onChange={() => toggleSelected(task.id)}
-                            className={`absolute left-1 top-1 h-4 w-4 accent-[#1E2A44] transition ${
+                            className={`absolute left-1 top-1 h-4 w-4 accent-primary transition ${
                               selectedIds.has(task.id) ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
                             }`}
                           />
@@ -447,7 +447,7 @@ export default function BoardPage() {
                             {task.tags.map((tag) => (
                               <span
                                 key={tag}
-                                className="rounded-full bg-[#1E2A44]/10 px-1.5 py-0.5 text-[10px] font-medium text-[#1E2A44] dark:bg-slate-700 dark:text-slate-200"
+                                className="rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary dark:bg-slate-700 dark:text-slate-200"
                               >
                                 {tag}
                               </span>

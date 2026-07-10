@@ -62,11 +62,11 @@ export default function AuditPage() {
             onChange={(e) => setActionInput(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && applyFilter()}
             placeholder={t('audit.filterPlaceholder')}
-            className="min-w-0 flex-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-[#1E2A44] dark:border-slate-600 dark:bg-slate-800 sm:max-w-sm"
+            className="min-w-0 flex-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-primary dark:border-slate-600 dark:bg-slate-800 sm:max-w-sm"
           />
           <button
             onClick={applyFilter}
-            className="rounded-lg bg-[#1E2A44] px-4 text-sm font-semibold text-white hover:bg-[#27345a]"
+            className="rounded-lg bg-primary px-4 text-sm font-semibold text-white hover:bg-primary-hover"
           >
             {t('audit.filter')}
           </button>

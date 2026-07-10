@@ -134,14 +134,14 @@ export default function NotesPage() {
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder={t('notes.titlePlaceholder')}
-            className="mb-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 font-medium outline-none focus:border-[#1E2A44] dark:border-slate-600 dark:bg-slate-900"
+            className="mb-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 font-medium outline-none focus:border-primary dark:border-slate-600 dark:bg-slate-900"
           />
           <textarea
             value={content}
             onChange={(e) => setContent(e.target.value)}
             placeholder={t('notes.contentPlaceholder')}
             rows={3}
-            className="mb-3 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-[#1E2A44] dark:border-slate-600 dark:bg-slate-900"
+            className="mb-3 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-primary dark:border-slate-600 dark:bg-slate-900"
           />
           {/* Tags */}
           <div className="mb-3">
@@ -150,7 +150,7 @@ export default function NotesPage() {
                 {tags.map((tag) => (
                   <span
                     key={tag}
-                    className="flex items-center gap-1 rounded-full bg-[#1E2A44]/10 px-2 py-0.5 text-xs font-medium text-[#1E2A44] dark:bg-slate-700 dark:text-slate-200"
+                    className="flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary dark:bg-slate-700 dark:text-slate-200"
                   >
                     {tag}
                     <button onClick={() => removeTag(tag)} className="text-slate-400 hover:text-red-600">
@@ -173,7 +173,7 @@ export default function NotesPage() {
               }}
               onBlur={addTag}
               placeholder={t('notes.tagsPlaceholder')}
-              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-[#1E2A44] dark:border-slate-600 dark:bg-slate-900"
+              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-primary dark:border-slate-600 dark:bg-slate-900"
             />
           </div>
 
@@ -183,7 +183,7 @@ export default function NotesPage() {
                 <button
                   key={c}
                   onClick={() => setColor(c)}
-                  className={`h-6 w-6 rounded-full border-2 ${color === c ? 'border-[#1E2A44] dark:border-white' : 'border-transparent'}`}
+                  className={`h-6 w-6 rounded-full border-2 ${color === c ? 'border-primary dark:border-white' : 'border-transparent'}`}
                   style={{ background: c }}
                   aria-label={c}
                 />
@@ -191,7 +191,7 @@ export default function NotesPage() {
             </div>
             <button
               onClick={save}
-              className="ml-auto rounded-lg bg-[#1E2A44] px-5 py-2 text-sm font-semibold text-white hover:bg-[#27345a]"
+              className="ml-auto rounded-lg bg-primary px-5 py-2 text-sm font-semibold text-white hover:bg-primary-hover"
             >
               {editingId ? t('notes.save') : t('notes.add')}
             </button>
@@ -210,7 +210,7 @@ export default function NotesPage() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder={t('notes.searchPlaceholder')}
-              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-[#1E2A44] dark:border-slate-600 dark:bg-slate-800"
+              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-primary dark:border-slate-600 dark:bg-slate-800"
             />
             {allTags.length > 0 && (
               <div className="flex flex-wrap items-center gap-1.5">
@@ -222,8 +222,8 @@ export default function NotesPage() {
                       onClick={() => toggleFilterTag(tag)}
                       className={`rounded-full px-2 py-0.5 text-xs font-medium transition ${
                         active
-                          ? 'bg-[#1E2A44] text-white dark:bg-slate-200 dark:text-slate-900'
-                          : 'bg-[#1E2A44]/10 text-[#1E2A44] hover:bg-[#1E2A44]/20 dark:bg-slate-700 dark:text-slate-200'
+                          ? 'bg-primary text-white dark:bg-slate-200 dark:text-slate-900'
+                          : 'bg-primary/10 text-primary hover:bg-primary/20 dark:bg-slate-700 dark:text-slate-200'
                       }`}
                     >
                       {tag}
@@ -265,7 +265,7 @@ export default function NotesPage() {
                 style={{ background: note.color ?? undefined }}
               >
                 <div className="mb-1 flex items-start gap-2">
-                  {note.title && <h3 className="flex-1 font-bold text-[#1E2A44]">{note.title}</h3>}
+                  {note.title && <h3 className="flex-1 font-bold text-primary">{note.title}</h3>}
                   <button
                     onClick={() => togglePin(note)}
                     title="Pin"
@@ -280,17 +280,17 @@ export default function NotesPage() {
                 {note.tags.length > 0 && (
                   <div className="mt-2 flex flex-wrap gap-1">
                     {note.tags.map((tag) => (
-                      <span key={tag} className="rounded-full bg-black/10 px-1.5 py-0.5 text-[10px] font-medium text-[#1E2A44]">
+                      <span key={tag} className="rounded-full bg-black/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
                         {tag}
                       </span>
                     ))}
                   </div>
                 )}
                 <div className="mt-3 flex gap-3 text-xs font-semibold">
-                  <button onClick={() => startEdit(note)} className="text-[#1E2A44] hover:underline">
+                  <button onClick={() => startEdit(note)} className="text-primary hover:underline">
                     {t('notes.edit')}
                   </button>
-                  <button onClick={() => exportPdf(note)} className="text-[#1E2A44] hover:underline">
+                  <button onClick={() => exportPdf(note)} className="text-primary hover:underline">
                     {t('notes.exportPdf')}
                   </button>
                   <button onClick={() => setDeletingNote(note)} className="text-red-600 hover:underline">

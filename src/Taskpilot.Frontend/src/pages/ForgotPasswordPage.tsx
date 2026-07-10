@@ -26,11 +26,11 @@ export default function ForgotPasswordPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-slate-50 px-6">
       <div className="w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
-        <h1 className="text-2xl font-bold text-[#1E2A44]">{t('forgot.title')}</h1>
+        <h1 className="text-2xl font-bold text-primary">{t('forgot.title')}</h1>
         {sent ? (
           <>
             <p className="mt-3 text-sm text-slate-600">{t('forgot.sent')}</p>
-            <Link to="/login" className="mt-6 inline-block text-sm font-semibold text-[#1E2A44] hover:underline">
+            <Link to="/login" className="mt-6 inline-block text-sm font-semibold text-primary hover:underline">
               ← {t('forgot.backToLogin')}
             </Link>
           </>
@@ -44,13 +44,13 @@ export default function ForgotPasswordPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 autoFocus
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 outline-none focus:border-[#1E2A44]"
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 outline-none focus:border-primary"
               />
             </div>
             <button
               type="submit"
               disabled={busy || !email.trim()}
-              className="w-full rounded-lg bg-[#1E2A44] py-2.5 font-semibold text-white transition hover:bg-[#27345a] disabled:opacity-60"
+              className="w-full rounded-lg bg-primary py-2.5 font-semibold text-white transition hover:bg-primary-hover disabled:opacity-60"
             >
               {busy ? t('forgot.sending') : t('forgot.send')}
             </button>

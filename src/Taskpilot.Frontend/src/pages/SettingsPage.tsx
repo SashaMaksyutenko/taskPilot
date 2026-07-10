@@ -530,7 +530,7 @@ export default function SettingsPage() {
             value={form.bio ?? ''}
             onChange={(e) => set('bio', e.target.value)}
             rows={3}
-            className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 outline-none focus:border-[#1E2A44] dark:border-slate-600 dark:bg-slate-900"
+            className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 outline-none focus:border-primary dark:border-slate-600 dark:bg-slate-900"
           />
 
           <label className="mt-4 flex items-center gap-2 text-sm">
@@ -542,7 +542,7 @@ export default function SettingsPage() {
             <button
               onClick={saveProfile}
               disabled={saving}
-              className="rounded-lg bg-[#1E2A44] px-5 py-2 font-semibold text-white transition hover:bg-[#27345a] disabled:opacity-60"
+              className="rounded-lg bg-primary px-5 py-2 font-semibold text-white transition hover:bg-primary-hover disabled:opacity-60"
             >
               {t('settings.saveProfile')}
             </button>
@@ -560,7 +560,7 @@ export default function SettingsPage() {
           <div className="mt-5 flex items-center gap-3">
             <button
               onClick={changePassword}
-              className="rounded-lg bg-[#1E2A44] px-5 py-2 font-semibold text-white transition hover:bg-[#27345a]"
+              className="rounded-lg bg-primary px-5 py-2 font-semibold text-white transition hover:bg-primary-hover"
             >
               {t('settings.changePassword')}
             </button>
@@ -618,7 +618,7 @@ export default function SettingsPage() {
                 <span className="text-slate-500 dark:text-slate-400">
                   {t('twoFa.backupRemaining', { count: backupRemaining ?? 0 })}
                 </span>
-                <button onClick={regenerateBackup} className="font-semibold text-[#1E2A44] hover:underline dark:text-slate-300">
+                <button onClick={regenerateBackup} className="font-semibold text-primary hover:underline dark:text-slate-300">
                   {t('twoFa.regenerate')}
                 </button>
               </div>
@@ -648,7 +648,7 @@ export default function SettingsPage() {
                 />
               )}
               <div className="rounded-lg bg-slate-50 p-3 text-sm dark:bg-slate-900">
-                <div className="font-mono break-all text-[#1E2A44] dark:text-slate-200">{twoFaSetup.secret}</div>
+                <div className="font-mono break-all text-primary dark:text-slate-200">{twoFaSetup.secret}</div>
                 <a href={twoFaSetup.otpauthUri} className="mt-1 block break-all text-xs text-slate-400 hover:underline">
                   {twoFaSetup.otpauthUri}
                 </a>
@@ -662,16 +662,16 @@ export default function SettingsPage() {
                   placeholder={t('twoFa.codePlaceholder')}
                   className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm tracking-widest outline-none dark:border-slate-600 dark:bg-slate-900"
                 />
-                <button onClick={confirmTwoFa} className="rounded-lg bg-[#1E2A44] px-5 py-2 text-sm font-semibold text-white hover:bg-[#27345a]">
+                <button onClick={confirmTwoFa} className="rounded-lg bg-primary px-5 py-2 text-sm font-semibold text-white hover:bg-primary-hover">
                   {t('twoFa.confirm')}
                 </button>
-                <button onClick={() => { setTwoFaSetup(null); setTwoFaCode(''); setTwoFaMsg('') }} className="text-sm font-semibold text-slate-500 hover:text-[#1E2A44] dark:text-slate-300">
+                <button onClick={() => { setTwoFaSetup(null); setTwoFaCode(''); setTwoFaMsg('') }} className="text-sm font-semibold text-slate-500 hover:text-primary dark:text-slate-300">
                   {t('twoFa.cancel')}
                 </button>
               </div>
             </div>
           ) : (
-            <button onClick={startTwoFa} className="rounded-lg bg-[#1E2A44] px-5 py-2 text-sm font-semibold text-white hover:bg-[#27345a]">
+            <button onClick={startTwoFa} className="rounded-lg bg-primary px-5 py-2 text-sm font-semibold text-white hover:bg-primary-hover">
               {t('twoFa.enable')}
             </button>
           )}
@@ -752,7 +752,7 @@ export default function SettingsPage() {
                 className={`rounded-lg px-5 py-2 text-sm font-semibold transition disabled:opacity-60 ${
                   pushEnabled
                     ? 'text-red-600 hover:underline'
-                    : 'bg-[#1E2A44] text-white hover:bg-[#27345a]'
+                    : 'bg-primary text-white hover:bg-primary-hover'
                 }`}
               >
                 {pushEnabled ? t('push.disable') : t('push.enable')}
@@ -846,7 +846,7 @@ export default function SettingsPage() {
               <p className="mb-2 font-semibold text-green-800 dark:text-green-300">{t('apiKeys.createdOnce')}</p>
               <div className="flex items-center gap-2">
                 <code className="flex-1 overflow-x-auto rounded bg-white px-2 py-1 font-mono text-xs dark:bg-slate-900">{createdKey}</code>
-                <button onClick={copyKey} className="rounded-lg bg-[#1E2A44] px-3 py-1 text-xs font-semibold text-white hover:bg-[#27345a]">
+                <button onClick={copyKey} className="rounded-lg bg-primary px-3 py-1 text-xs font-semibold text-white hover:bg-primary-hover">
                   {t('apiKeys.copy')}
                 </button>
                 <button onClick={() => setCreatedKey(null)} className="text-xs text-slate-400 hover:underline">
@@ -862,12 +862,12 @@ export default function SettingsPage() {
               value={newKeyName}
               onChange={(e) => setNewKeyName(e.target.value)}
               placeholder={t('apiKeys.namePlaceholder')}
-              className="flex-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-[#1E2A44] dark:border-slate-600 dark:bg-slate-900"
+              className="flex-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-primary dark:border-slate-600 dark:bg-slate-900"
             />
             <button
               onClick={createApiKey}
               disabled={!newKeyName.trim()}
-              className="rounded-lg bg-[#1E2A44] px-4 py-2 text-sm font-semibold text-white hover:bg-[#27345a] disabled:opacity-50"
+              className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary-hover disabled:opacity-50"
             >
               {t('apiKeys.create')}
             </button>
@@ -943,11 +943,11 @@ export default function SettingsPage() {
               value={hookUrl}
               onChange={(e) => setHookUrl(e.target.value)}
               placeholder="https://example.com/webhook"
-              className="min-w-0 flex-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-[#1E2A44] dark:border-slate-600 dark:bg-slate-900"
+              className="min-w-0 flex-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-primary dark:border-slate-600 dark:bg-slate-900"
             />
             <button
               onClick={addWebhook}
-              className="rounded-lg bg-[#1E2A44] px-5 py-2 text-sm font-semibold text-white hover:bg-[#27345a]"
+              className="rounded-lg bg-primary px-5 py-2 text-sm font-semibold text-white hover:bg-primary-hover"
             >
               {t('settings.add')}
             </button>
@@ -989,7 +989,7 @@ export default function SettingsPage() {
             />
             {deleteMsg && <p className="mb-3 text-sm text-red-600">{deleteMsg}</p>}
             <div className="flex items-center justify-end gap-3">
-              <button onClick={() => setDeleteOpen(false)} className="text-sm font-semibold text-slate-500 hover:text-[#1E2A44] dark:text-slate-300">
+              <button onClick={() => setDeleteOpen(false)} className="text-sm font-semibold text-slate-500 hover:text-primary dark:text-slate-300">
                 {t('twoFa.cancel')}
               </button>
               <button
@@ -1025,7 +1025,7 @@ function Field({
         type={type}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 outline-none focus:border-[#1E2A44] dark:border-slate-600 dark:bg-slate-900"
+        className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 outline-none focus:border-primary dark:border-slate-600 dark:bg-slate-900"
       />
     </div>
   )

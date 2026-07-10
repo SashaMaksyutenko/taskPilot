@@ -49,11 +49,11 @@ export default function WarnUserModal({
           onChange={(e) => setReason(e.target.value)}
           rows={4}
           placeholder={t('warn.reasonPlaceholder')}
-          className="mb-4 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-[#1E2A44] dark:border-slate-600 dark:bg-slate-900"
+          className="mb-4 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-primary dark:border-slate-600 dark:bg-slate-900"
         />
 
         <div className="flex items-center justify-end gap-3">
-          <button onClick={onClose} className="text-sm font-semibold text-slate-500 hover:text-[#1E2A44] dark:text-slate-300 dark:hover:text-white">
+          <button onClick={onClose} className="text-sm font-semibold text-slate-500 hover:text-primary dark:text-slate-300 dark:hover:text-white">
             {t('warn.cancel')}
           </button>
           <button

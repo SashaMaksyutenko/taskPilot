@@ -22,7 +22,7 @@ function Contact({ label, value, href }: { label: string; value?: string | null;
     <div className="flex gap-2 text-sm">
       <span className="w-20 flex-none text-slate-500 dark:text-slate-400">{label}</span>
       {href ? (
-        <a href={href} target="_blank" rel="noreferrer" className="truncate text-[#1E2A44] hover:underline dark:text-slate-200">
+        <a href={href} target="_blank" rel="noreferrer" className="truncate text-primary hover:underline dark:text-slate-200">
           {value}
         </a>
       ) : (
@@ -84,7 +84,7 @@ export default function UserProfilePage() {
                     </div>
                   )}
                   <div className="mt-2 flex flex-wrap items-center gap-2">
-                    <span className="rounded-full bg-[#1E2A44] px-2.5 py-0.5 text-xs font-bold text-white">
+                    <span className="rounded-full bg-primary px-2.5 py-0.5 text-xs font-bold text-white">
                       ⭐ {t('reputation.points', { count: profile.reputationPoints })}
                     </span>
                     {profile.badges.map((b) => (

@@ -70,7 +70,7 @@ export default function SearchPage() {
           onChange={(e) => setQuery(e.target.value)}
           placeholder={t('search.placeholder')}
           autoFocus
-          className="mb-6 w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 outline-none focus:border-[#1E2A44] dark:border-slate-600 dark:bg-slate-800"
+          className="mb-6 w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 outline-none focus:border-primary dark:border-slate-600 dark:bg-slate-800"
         />
 
         {query.trim().length < 2 ? (

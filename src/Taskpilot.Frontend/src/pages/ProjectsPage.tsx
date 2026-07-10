@@ -215,14 +215,14 @@ export default function ProjectsPage() {
                 onChange={(e) => setEditName(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && saveEdit()}
                 placeholder={t('projects.newPlaceholder')}
-                className="mb-4 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 outline-none focus:border-[#1E2A44] dark:border-slate-600 dark:bg-slate-900"
+                className="mb-4 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 outline-none focus:border-primary dark:border-slate-600 dark:bg-slate-900"
               />
               <div className="mb-5 flex flex-wrap gap-2">
                 {COLORS.map((c) => (
                   <button
                     key={c}
                     onClick={() => setEditColor(c)}
-                    className={`h-7 w-7 rounded-full border-2 ${editColor === c ? 'border-[#1E2A44] dark:border-white' : 'border-transparent'}`}
+                    className={`h-7 w-7 rounded-full border-2 ${editColor === c ? 'border-primary dark:border-white' : 'border-transparent'}`}
                     style={{ background: c }}
                     aria-label={c}
                   />
@@ -231,7 +231,7 @@ export default function ProjectsPage() {
               <div className="flex items-center gap-3">
                 <button
                   onClick={saveEdit}
-                  className="rounded-lg bg-[#1E2A44] px-5 py-2 text-sm font-semibold text-white hover:bg-[#27345a]"
+                  className="rounded-lg bg-primary px-5 py-2 text-sm font-semibold text-white hover:bg-primary-hover"
                 >
                   {t('projects.save')}
                 </button>

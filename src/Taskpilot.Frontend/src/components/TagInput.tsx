@@ -33,7 +33,7 @@ export default function TagInput({
       {tags.map((tag) => (
         <span
           key={tag}
-          className="flex items-center gap-1 rounded-full bg-[#1E2A44]/10 px-2 py-0.5 text-xs font-medium text-[#1E2A44] dark:bg-slate-700 dark:text-slate-200"
+          className="flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary dark:bg-slate-700 dark:text-slate-200"
         >
           {tag}
           <button type="button" onClick={() => remove(tag)} className="text-slate-400 hover:text-red-600">

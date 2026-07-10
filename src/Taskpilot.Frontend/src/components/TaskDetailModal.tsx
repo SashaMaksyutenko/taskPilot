@@ -255,7 +255,7 @@ export default function TaskDetailModal({
         <input
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          className="mb-4 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-[#1E2A44] dark:border-slate-600 dark:bg-slate-900"
+          className="mb-4 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-primary dark:border-slate-600 dark:bg-slate-900"
         />
 
         <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">{t('taskModal.description')}</label>
@@ -263,7 +263,7 @@ export default function TaskDetailModal({
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           rows={3}
-          className="mb-4 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-[#1E2A44] dark:border-slate-600 dark:bg-slate-900"
+          className="mb-4 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-primary dark:border-slate-600 dark:bg-slate-900"
         />
 
         <div className="mb-4 grid grid-cols-2 gap-4">
@@ -295,7 +295,7 @@ export default function TaskDetailModal({
         {/* Time tracking */}
         <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">{t('taskModal.timeTracking')}</label>
         <div className="mb-4 flex items-center gap-3">
-          <span className={`font-mono text-lg font-bold ${timerStartedAt ? 'text-[#F97316]' : 'text-[#1E2A44] dark:text-slate-100'}`}>
+          <span className={`font-mono text-lg font-bold ${timerStartedAt ? 'text-[#F97316]' : 'text-primary dark:text-slate-100'}`}>
             {formatDuration(displaySeconds)}
           </span>
           <button
@@ -316,7 +316,7 @@ export default function TaskDetailModal({
               {tags.map((tag) => (
                 <span
                   key={tag}
-                  className="flex items-center gap-1 rounded-full bg-[#1E2A44]/10 px-2 py-0.5 text-xs font-medium text-[#1E2A44] dark:bg-slate-700 dark:text-slate-200"
+                  className="flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary dark:bg-slate-700 dark:text-slate-200"
                 >
                   {tag}
                   <button
@@ -343,7 +343,7 @@ export default function TaskDetailModal({
             }}
             onBlur={addTag}
             placeholder={t('taskModal.tagsPlaceholder')}
-            className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-[#1E2A44] dark:border-slate-600 dark:bg-slate-900"
+            className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-primary dark:border-slate-600 dark:bg-slate-900"
           />
         </div>
 
@@ -370,7 +370,7 @@ export default function TaskDetailModal({
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder={t('taskModal.searchAssignee')}
-              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-[#1E2A44] dark:border-slate-600 dark:bg-slate-900"
+              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-primary dark:border-slate-600 dark:bg-slate-900"
             />
             {results.length > 0 && (
               <ul className="absolute left-0 right-0 top-full z-20 mt-1 max-h-56 overflow-y-auto rounded-lg border border-slate-300 bg-white shadow-lg dark:border-slate-600 dark:bg-slate-800">
@@ -410,7 +410,7 @@ export default function TaskDetailModal({
                     type="checkbox"
                     checked={s.status === 'Done'}
                     onChange={() => toggleSubtask(s)}
-                    className="h-4 w-4 accent-[#1E2A44]"
+                    className="h-4 w-4 accent-primary"
                   />
                   <span className={s.status === 'Done' ? 'text-slate-400 line-through' : ''}>{s.title}</span>
                 </li>
@@ -428,7 +428,7 @@ export default function TaskDetailModal({
               }
             }}
             placeholder={t('taskModal.addSubtask')}
-            className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-[#1E2A44] dark:border-slate-600 dark:bg-slate-900"
+            className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-primary dark:border-slate-600 dark:bg-slate-900"
           />
         </div>
 
@@ -484,12 +484,12 @@ export default function TaskDetailModal({
               }}
               rows={2}
               placeholder={t('taskModal.commentPlaceholder')}
-              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-[#1E2A44] dark:border-slate-600 dark:bg-slate-900"
+              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-primary dark:border-slate-600 dark:bg-slate-900"
             />
             <button
               onClick={addComment}
               disabled={posting || !newComment.trim()}
-              className="rounded-lg bg-[#1E2A44] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#27345a] disabled:opacity-60"
+              className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white transition hover:bg-primary-hover disabled:opacity-60"
             >
               {t('taskModal.addComment')}
             </button>
@@ -501,7 +501,7 @@ export default function TaskDetailModal({
           <button
             onClick={save}
             disabled={saving}
-            className="rounded-lg bg-[#1E2A44] px-5 py-2 text-sm font-semibold text-white transition hover:bg-[#27345a] disabled:opacity-60"
+            className="rounded-lg bg-primary px-5 py-2 text-sm font-semibold text-white transition hover:bg-primary-hover disabled:opacity-60"
           >
             {t('taskModal.save')}
           </button>

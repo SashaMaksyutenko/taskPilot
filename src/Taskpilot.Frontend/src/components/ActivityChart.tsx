@@ -16,7 +16,7 @@ export default function ActivityChart({ activity }: { activity: DayActivity[] })
   const tickGap = data.length > 45 ? 13 : data.length > 20 ? 4 : 1
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-5 text-[#1E2A44] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100">
+    <div className="rounded-xl border border-slate-200 bg-white p-5 text-primary dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100">
       <h2 className="mb-3 font-bold">{t('admin.contentTrend')}</h2>
       <div className="h-64">
         <ResponsiveContainer width="100%" height="100%">

@@ -182,7 +182,7 @@ export default function AdminPage() {
             <select
               value={activityDays}
               onChange={(e) => setActivityDays(Number(e.target.value))}
-              className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm outline-none focus:border-[#1E2A44] dark:border-slate-600 dark:bg-slate-800"
+              className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm outline-none focus:border-primary dark:border-slate-600 dark:bg-slate-800"
             >
               <option value={7}>{t('admin.period7')}</option>
               <option value={30}>{t('admin.period30')}</option>
@@ -247,7 +247,7 @@ export default function AdminPage() {
                   <div className="flex flex-wrap items-center gap-2">
                     <Link to={`/users/${r.reporterId}`} className="font-semibold hover:underline">{r.reporterName}</Link>
                     <span className="text-xs text-slate-400">{t('report.reported')}</span>
-                    <Link to={`/forum/${r.topicId}#reply-${r.replyId}`} className="text-xs text-[#1E2A44] hover:underline dark:text-slate-200">
+                    <Link to={`/forum/${r.topicId}#reply-${r.replyId}`} className="text-xs text-primary hover:underline dark:text-slate-200">
                       {r.topicTitle}
                     </Link>
                     <span className="ml-auto text-xs text-slate-400">{new Date(r.createdAt).toLocaleString()}</span>
@@ -286,12 +286,12 @@ export default function AdminPage() {
             value={search}
             onChange={(e) => changeFilter(setSearch)(e.target.value)}
             placeholder={t('admin.searchPlaceholder')}
-            className="min-w-0 flex-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-[#1E2A44] dark:border-slate-600 dark:bg-slate-800"
+            className="min-w-0 flex-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-primary dark:border-slate-600 dark:bg-slate-800"
           />
           <select
             value={roleFilter}
             onChange={(e) => changeFilter(setRoleFilter)(e.target.value)}
-            className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-[#1E2A44] dark:border-slate-600 dark:bg-slate-800"
+            className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-primary dark:border-slate-600 dark:bg-slate-800"
           >
             <option value="">{t('admin.allRoles')}</option>
             {ROLES.map((r) => (
@@ -301,7 +301,7 @@ export default function AdminPage() {
           <select
             value={statusFilter}
             onChange={(e) => changeFilter(setStatusFilter)(e.target.value)}
-            className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-[#1E2A44] dark:border-slate-600 dark:bg-slate-800"
+            className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-primary dark:border-slate-600 dark:bg-slate-800"
           >
             <option value="">{t('admin.allStatuses')}</option>
             <option value="active">{t('admin.statusActive')}</option>
@@ -311,7 +311,7 @@ export default function AdminPage() {
           <select
             value={sort}
             onChange={(e) => changeFilter(setSort)(e.target.value)}
-            className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-[#1E2A44] dark:border-slate-600 dark:bg-slate-800"
+            className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-primary dark:border-slate-600 dark:bg-slate-800"
           >
             <option value="newest">{t('admin.sortNewest')}</option>
             <option value="oldest">{t('admin.sortOldest')}</option>

@@ -260,13 +260,13 @@ export default function TopicPage() {
                 value={editTitle}
                 onChange={(e) => setEditTitle(e.target.value)}
                 placeholder={t('forum.topicTitle')}
-                className="mb-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 font-bold outline-none focus:border-[#1E2A44] dark:border-slate-600 dark:bg-slate-900"
+                className="mb-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 font-bold outline-none focus:border-primary dark:border-slate-600 dark:bg-slate-900"
               />
               <MarkdownEditor
                 value={editTopicBody}
                 onChange={setEditTopicBody}
                 placeholder={t('forum.bodyPlaceholder')}
-                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 outline-none focus:border-[#1E2A44] dark:border-slate-600 dark:bg-slate-900"
+                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 outline-none focus:border-primary dark:border-slate-600 dark:bg-slate-900"
               />
               <div className="mt-2">
                 <TagInput tags={editTags} onChange={setEditTags} />
@@ -274,7 +274,7 @@ export default function TopicPage() {
               <div className="mt-2 flex items-center gap-3 text-sm">
                 <button
                   onClick={saveEditTopic}
-                  className="rounded-lg bg-[#1E2A44] px-4 py-1.5 font-semibold text-white transition hover:bg-[#27345a]"
+                  className="rounded-lg bg-primary px-4 py-1.5 font-semibold text-white transition hover:bg-primary-hover"
                 >
                   {t('topic.save')}
                 </button>
@@ -293,21 +293,21 @@ export default function TopicPage() {
                   {topic.title}
                 </h1>
                 <div className="flex flex-none items-center gap-3 text-sm font-semibold">
-                  <button onClick={toggleSubscribe} className="text-[#1E2A44] hover:underline dark:text-slate-200">
+                  <button onClick={toggleSubscribe} className="text-primary hover:underline dark:text-slate-200">
                     {topic.isSubscribed ? t('topic.unsubscribe') : t('topic.subscribe')}
                   </button>
                   {isAdmin && (
-                    <button onClick={togglePin} className="text-[#1E2A44] hover:underline dark:text-slate-200">
+                    <button onClick={togglePin} className="text-primary hover:underline dark:text-slate-200">
                       {topic.isPinned ? t('forum.unpin') : t('forum.pin')}
                     </button>
                   )}
                   {canEditTopic && (
-                    <button onClick={toggleLock} className="text-[#1E2A44] hover:underline dark:text-slate-200">
+                    <button onClick={toggleLock} className="text-primary hover:underline dark:text-slate-200">
                       {topic.isLocked ? t('forum.unlock') : t('forum.lock')}
                     </button>
                   )}
                   {canEditTopic && (
-                    <button onClick={startEditTopic} className="text-[#1E2A44] hover:underline dark:text-slate-200">
+                    <button onClick={startEditTopic} className="text-primary hover:underline dark:text-slate-200">
                       {t('topic.edit')}
                     </button>
                   )}
@@ -330,7 +330,7 @@ export default function TopicPage() {
                     <Link
                       key={tag}
                       to={`/forum?tag=${encodeURIComponent(tag)}`}
-                      className="rounded-full bg-[#1E2A44]/10 px-2 py-0.5 text-xs font-medium text-[#1E2A44] hover:bg-[#1E2A44]/20 dark:bg-slate-700 dark:text-slate-200"
+                      className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary hover:bg-primary/20 dark:bg-slate-700 dark:text-slate-200"
                     >
                       #{tag}
                     </Link>
@@ -382,7 +382,7 @@ export default function TopicPage() {
               <div className="flex flex-none flex-col items-center">
                 <button
                   onClick={() => vote(r, 1)}
-                  className={`text-lg leading-none ${r.myVote === 1 ? 'text-[#F6BE2C]' : 'text-slate-400 hover:text-slate-600'}`}
+                  className={`text-lg leading-none ${r.myVote === 1 ? 'text-accent' : 'text-muted hover:text-foreground'}`}
                 >
                   ▲
                 </button>
@@ -419,12 +419,12 @@ export default function TopicPage() {
                       value={editBody}
                       onChange={setEditBody}
                       placeholder={t('topic.replyPlaceholder')}
-                      className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 outline-none focus:border-[#1E2A44] dark:border-slate-600 dark:bg-slate-900"
+                      className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 outline-none focus:border-primary dark:border-slate-600 dark:bg-slate-900"
                     />
                     <div className="mt-2 flex items-center gap-3 text-xs">
                       <button
                         onClick={() => saveEditReply(r)}
-                        className="rounded-lg bg-[#1E2A44] px-3 py-1 font-semibold text-white transition hover:bg-[#27345a]"
+                        className="rounded-lg bg-primary px-3 py-1 font-semibold text-white transition hover:bg-primary-hover"
                       >
                         {t('topic.save')}
                       </button>
@@ -445,7 +445,7 @@ export default function TopicPage() {
                       onClick={() => toggleReaction(r, re.emoji)}
                       className={`flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs transition ${
                         re.mine
-                          ? 'border-[#1E2A44] bg-[#1E2A44]/10 dark:border-slate-300 dark:bg-slate-700'
+                          ? 'border-primary bg-primary/10 dark:border-slate-300 dark:bg-slate-700'
                           : 'border-slate-200 hover:bg-slate-100 dark:border-slate-600 dark:hover:bg-slate-700'
                       }`}
                     >
@@ -486,16 +486,16 @@ export default function TopicPage() {
                   {r.updatedAt && <span className="italic">· {t('topic.edited')}</span>}
                   {!topic.isLocked && editingReplyId !== r.id && (
                     <>
-                      <button onClick={() => startReplyTo(r)} className="font-semibold text-[#1E2A44] hover:underline dark:text-slate-200">
+                      <button onClick={() => startReplyTo(r)} className="font-semibold text-primary hover:underline dark:text-slate-200">
                         {t('topic.replyTo')}
                       </button>
-                      <button onClick={() => quoteReply(r)} className="font-semibold text-[#1E2A44] hover:underline dark:text-slate-200">
+                      <button onClick={() => quoteReply(r)} className="font-semibold text-primary hover:underline dark:text-slate-200">
                         {t('topic.quote')}
                       </button>
                     </>
                   )}
                   {canModifyReply(r) && editingReplyId !== r.id && (
-                    <button onClick={() => startEditReply(r)} className="font-semibold text-[#1E2A44] hover:underline dark:text-slate-200">
+                    <button onClick={() => startEditReply(r)} className="font-semibold text-primary hover:underline dark:text-slate-200">
                       {t('topic.edit')}
                     </button>
                   )}
@@ -551,7 +551,7 @@ export default function TopicPage() {
         ) : (
           <div className="mt-6" ref={replyEditorRef}>
             {replyingTo && (
-              <div className="mb-2 flex items-center gap-2 rounded-lg bg-[#1E2A44]/5 px-3 py-1.5 text-sm dark:bg-slate-800">
+              <div className="mb-2 flex items-center gap-2 rounded-lg bg-primary/5 px-3 py-1.5 text-sm dark:bg-slate-800">
                 <span className="text-slate-500 dark:text-slate-400">
                   {t('topic.replyingTo')} <span className="font-semibold">{replyingTo.authorName}</span>
                 </span>
@@ -564,12 +564,12 @@ export default function TopicPage() {
               value={body}
               onChange={setBody}
               placeholder={t('topic.replyPlaceholder')}
-              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 outline-none focus:border-[#1E2A44] dark:border-slate-600 dark:bg-slate-800"
+              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 outline-none focus:border-primary dark:border-slate-600 dark:bg-slate-800"
             />
             <div className="mt-2 flex items-center gap-3">
               <button
                 onClick={submitReply}
-                className="rounded-lg bg-[#1E2A44] px-5 py-2 font-semibold text-white transition hover:bg-[#27345a]"
+                className="rounded-lg bg-primary px-5 py-2 font-semibold text-white transition hover:bg-primary-hover"
               >
                 {t('topic.reply')}
               </button>
@@ -605,7 +605,7 @@ export default function TopicPage() {
                 placeholder={t('topic.reportPlaceholder')}
                 rows={3}
                 maxLength={1000}
-                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-[#1E2A44] dark:border-slate-600 dark:bg-slate-900"
+                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-primary dark:border-slate-600 dark:bg-slate-900"
               />
               <div className="mt-3 flex justify-end gap-3 text-sm">
                 <button onClick={() => setReportingReply(null)} className="font-semibold text-slate-500 hover:underline">

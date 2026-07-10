@@ -38,7 +38,7 @@ export default function Avatar({
 
   return (
     <div
-      className="flex shrink-0 items-center justify-center rounded-full bg-[#1E2A44] font-semibold text-white"
+      className="flex shrink-0 items-center justify-center rounded-full bg-primary font-semibold text-white"
       style={{ width: size, height: size, fontSize: Math.round(size * 0.4) }}
       aria-label={name}
     >

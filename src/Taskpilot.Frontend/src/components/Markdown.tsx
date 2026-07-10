@@ -56,7 +56,7 @@ export default function Markdown({ children }: { children: string }) {
           th: ({ children }) => <th className="border border-slate-300 px-2 py-1 font-semibold dark:border-slate-600">{children}</th>,
           td: ({ children }) => <td className="border border-slate-300 px-2 py-1 dark:border-slate-600">{children}</td>,
           a: ({ children, href }) => (
-            <a href={href} target="_blank" rel="noreferrer" className="text-[#1E2A44] underline hover:no-underline dark:text-sky-300">
+            <a href={href} target="_blank" rel="noreferrer" className="text-primary underline hover:no-underline dark:text-sky-300">
               {children}
             </a>
           ),

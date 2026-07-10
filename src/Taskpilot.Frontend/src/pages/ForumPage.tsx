@@ -6,6 +6,10 @@ import MarkdownEditor from '../components/MarkdownEditor'
 import EmptyState from '../components/EmptyState'
 import TagInput from '../components/TagInput'
 import TopicContextMenu from '../components/TopicContextMenu'
+import Button from '../components/ui/Button'
+import Card from '../components/ui/Card'
+import Input from '../components/ui/Input'
+import Select from '../components/ui/Select'
 import { apiErrorMessage } from '../lib/apiError'
 import { forumService } from '../services/forumService'
 import { useAppSelector } from '../store/hooks'
@@ -28,7 +32,6 @@ export default function ForumPage() {
   const [tags, setTags] = useState<string[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  // Browsing controls: search text, sort order, solved filter and an active tag.
   const [search, setSearch] = useState('')
   const [sort, setSort] = useState<'latest' | 'active' | 'top'>('latest')
   const [solvedFilter, setSolvedFilter] = useState<'all' | 'solved' | 'unsolved'>('all')
@@ -54,7 +57,6 @@ export default function ForumPage() {
       .catch(() => {})
   }
 
-  // Reload on page or filter change; debounce so typing a search term isn't chatty.
   useEffect(() => {
     const id = setTimeout(() => load(page), 250)
     return () => clearTimeout(id)
@@ -70,7 +72,6 @@ export default function ForumPage() {
       setTitle('')
       setBody('')
       setTags([])
-      // Jump to the first page to show the new topic (reload if already there).
       if (page === 1) load(1)
       else setPage(1)
     } catch (e) {
@@ -95,7 +96,6 @@ export default function ForumPage() {
     load(page)
   }
 
-  // Changing a filter jumps back to the first page (the effect then reloads).
   const changeSort = (value: 'latest' | 'active' | 'top') => {
     setSort(value)
     setPage(1)
@@ -114,185 +114,173 @@ export default function ForumPage() {
   }
 
   return (
-    <div className="mx-auto max-w-3xl px-6 py-8">
-        <h1 className="mb-6 text-2xl font-bold">{t('forum.title')}</h1>
+    <div className="mx-auto max-w-3xl">
+      <h1 className="page-title mb-6">{t('forum.title')}</h1>
 
-        {/* New topic */}
-        <div className="mb-8 rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-800">
-          <h2 className="mb-3 font-bold">{t('forum.startDiscussion')}</h2>
-          <input
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder={t('forum.topicTitle')}
-            className="mb-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 outline-none focus:border-[#1E2A44] dark:border-slate-600 dark:bg-slate-900"
+      <Card className="mb-8 p-5">
+        <h2 className="mb-3 font-bold">{t('forum.startDiscussion')}</h2>
+        <Input
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder={t('forum.topicTitle')}
+          className="mb-3"
+        />
+        <div className="mb-3">
+          <MarkdownEditor
+            value={body}
+            onChange={setBody}
+            placeholder={t('forum.bodyPlaceholder')}
+            className="w-full rounded-lg border border-border bg-surface px-3 py-2 outline-none focus:border-primary"
           />
-          <div className="mb-3">
-            <MarkdownEditor
-              value={body}
-              onChange={setBody}
-              placeholder={t('forum.bodyPlaceholder')}
-              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 outline-none focus:border-[#1E2A44] dark:border-slate-600 dark:bg-slate-900"
-            />
-          </div>
-          <div className="mb-3">
-            <TagInput tags={tags} onChange={setTags} />
-          </div>
-          <div className="flex items-center gap-3">
-            <button
-              onClick={create}
-              disabled={loading}
-              className="rounded-lg bg-[#1E2A44] px-5 py-2 font-semibold text-white transition hover:bg-[#27345a] disabled:opacity-60"
-            >
-              {t('forum.postTopic')}
+        </div>
+        <div className="mb-4">
+          <TagInput tags={tags} onChange={setTags} />
+        </div>
+        <div className="flex items-center gap-3">
+          <Button onClick={create} disabled={loading}>
+            {t('forum.postTopic')}
+          </Button>
+          {error && <span className="text-sm font-medium text-red-600">{error}</span>}
+        </div>
+      </Card>
+
+      <div className="mb-4 flex flex-wrap items-center gap-2">
+        <Input
+          value={search}
+          onChange={(e) => changeSearch(e.target.value)}
+          placeholder={t('forum.searchPlaceholder')}
+          className="min-w-0 flex-1"
+        />
+        <Select value={sort} onChange={(e) => changeSort(e.target.value as 'latest' | 'active' | 'top')}>
+          <option value="latest">{t('forum.sort.latest')}</option>
+          <option value="active">{t('forum.sort.active')}</option>
+          <option value="top">{t('forum.sort.top')}</option>
+        </Select>
+        <Select
+          value={solvedFilter}
+          onChange={(e) => changeSolved(e.target.value as 'all' | 'solved' | 'unsolved')}
+        >
+          <option value="all">{t('forum.filter.all')}</option>
+          <option value="solved">{t('forum.filter.solved')}</option>
+          <option value="unsolved">{t('forum.filter.unsolved')}</option>
+        </Select>
+      </div>
+
+      {tagFilter && (
+        <div className="mb-4 flex items-center gap-2 text-sm">
+          <span className="text-muted">{t('forum.filteredByTag')}</span>
+          <span className="flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+            #{tagFilter}
+            <button type="button" onClick={() => changeTag(null)} className="text-muted hover:text-red-600">
+              ✕
             </button>
-            {error && <span className="text-sm font-medium text-red-600">{error}</span>}
-          </div>
+          </span>
         </div>
+      )}
 
-        {/* Browsing controls: search, sort, solved filter */}
-        <div className="mb-4 flex flex-wrap items-center gap-2">
-          <input
-            value={search}
-            onChange={(e) => changeSearch(e.target.value)}
-            placeholder={t('forum.searchPlaceholder')}
-            className="min-w-0 flex-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-[#1E2A44] dark:border-slate-600 dark:bg-slate-800"
-          />
-          <select
-            value={sort}
-            onChange={(e) => changeSort(e.target.value as 'latest' | 'active' | 'top')}
-            className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-[#1E2A44] dark:border-slate-600 dark:bg-slate-800"
-          >
-            <option value="latest">{t('forum.sort.latest')}</option>
-            <option value="active">{t('forum.sort.active')}</option>
-            <option value="top">{t('forum.sort.top')}</option>
-          </select>
-          <select
-            value={solvedFilter}
-            onChange={(e) => changeSolved(e.target.value as 'all' | 'solved' | 'unsolved')}
-            className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-[#1E2A44] dark:border-slate-600 dark:bg-slate-800"
-          >
-            <option value="all">{t('forum.filter.all')}</option>
-            <option value="solved">{t('forum.filter.solved')}</option>
-            <option value="unsolved">{t('forum.filter.unsolved')}</option>
-          </select>
-        </div>
-
-        {/* Active tag filter */}
-        {tagFilter && (
-          <div className="mb-4 flex items-center gap-2 text-sm">
-            <span className="text-slate-500 dark:text-slate-400">{t('forum.filteredByTag')}</span>
-            <span className="flex items-center gap-1 rounded-full bg-[#1E2A44]/10 px-2 py-0.5 text-xs font-medium text-[#1E2A44] dark:bg-slate-700 dark:text-slate-200">
-              #{tagFilter}
-              <button onClick={() => changeTag(null)} className="text-slate-400 hover:text-red-600">✕</button>
-            </span>
-          </div>
-        )}
-
-        {/* Topic list */}
-        {topics.length === 0 ? (
-          <EmptyState message={t('forum.empty')} />
-        ) : (
-          <ul className="space-y-2">
-            {topics.map((topic) => (
-              <li key={topic.id}>
-                <TopicContextMenu
-                  topicId={topic.id}
-                  canDelete={currentUser?.id === topic.authorId || currentUser?.role === 'Admin'}
-                  onDelete={() => removeTopic(topic.id)}
-                  isPinned={topic.isPinned}
-                  canPin={isAdmin}
-                  onTogglePin={() => togglePin(topic)}
-                  isLocked={topic.isLocked}
-                  canLock={isAdmin || currentUser?.id === topic.authorId}
-                  onToggleLock={() => toggleLock(topic)}
-                >
-                <Link
-                  to={`/forum/${topic.id}`}
-                  className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-4 transition hover:shadow-sm dark:border-slate-700 dark:bg-slate-800"
-                >
-                  <Avatar name={topic.authorName} src={topic.authorAvatarUrl} size={38} />
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-1.5 truncate font-semibold">
-                      {topic.isPinned && <span>📌</span>}
-                      {topic.isLocked && <span title={t('topic.locked')}>🔒</span>}
-                      <span className="truncate">{topic.title}</span>
-                      {topic.isSolved && (
-                        <span className="flex-none rounded-full bg-green-100 px-2 py-0.5 text-[10px] font-semibold text-green-700 dark:bg-green-900/40 dark:text-green-300">
-                          ✓ {t('forum.solved')}
-                        </span>
+      {topics.length === 0 ? (
+        <EmptyState message={t('forum.empty')} />
+      ) : (
+        <ul className="space-y-2">
+          {topics.map((topic) => (
+            <li key={topic.id}>
+              <TopicContextMenu
+                topicId={topic.id}
+                canDelete={currentUser?.id === topic.authorId || currentUser?.role === 'Admin'}
+                onDelete={() => removeTopic(topic.id)}
+                isPinned={topic.isPinned}
+                canPin={isAdmin}
+                onTogglePin={() => togglePin(topic)}
+                isLocked={topic.isLocked}
+                canLock={isAdmin || currentUser?.id === topic.authorId}
+                onToggleLock={() => toggleLock(topic)}
+              >
+                <Link to={`/forum/${topic.id}`} className="block">
+                  <Card hover className="flex items-center gap-3 p-4">
+                    <Avatar name={topic.authorName} src={topic.authorAvatarUrl} size={38} />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-1.5 truncate font-semibold">
+                        {topic.isPinned && <span>📌</span>}
+                        {topic.isLocked && <span title={t('topic.locked')}>🔒</span>}
+                        <span className="truncate">{topic.title}</span>
+                        {topic.isSolved && (
+                          <span className="flex-none rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">
+                            ✓ {t('forum.solved')}
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-xs text-muted">
+                        {t('forum.by')}{' '}
+                        <span
+                          onClick={(e) => {
+                            e.preventDefault()
+                            e.stopPropagation()
+                            navigate(`/users/${topic.authorId}`)
+                          }}
+                          className="cursor-pointer font-medium text-foreground hover:underline"
+                        >
+                          {topic.authorName}
+                        </span>{' '}
+                        · {new Date(topic.createdAt).toLocaleDateString()}
+                      </div>
+                      {topic.tags.length > 0 && (
+                        <div className="mt-1.5 flex flex-wrap gap-1">
+                          {topic.tags.map((tag) => (
+                            <button
+                              key={tag}
+                              type="button"
+                              onClick={(e) => {
+                                e.preventDefault()
+                                e.stopPropagation()
+                                changeTag(tag)
+                              }}
+                              className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary hover:bg-primary/20"
+                            >
+                              #{tag}
+                            </button>
+                          ))}
+                        </div>
                       )}
                     </div>
-                    <div className="text-xs text-slate-500 dark:text-slate-400">
-                      {t('forum.by')}{' '}
-                      <span
-                        onClick={(e) => {
-                          e.preventDefault()
-                          e.stopPropagation()
-                          navigate(`/users/${topic.authorId}`)
-                        }}
-                        className="cursor-pointer font-medium hover:underline"
-                      >
-                        {topic.authorName}
-                      </span>{' '}
-                      · {new Date(topic.createdAt).toLocaleDateString()}
-                    </div>
-                    {topic.tags.length > 0 && (
-                      <div className="mt-1.5 flex flex-wrap gap-1">
-                        {topic.tags.map((tag) => (
-                          <button
-                            key={tag}
-                            onClick={(e) => {
-                              e.preventDefault()
-                              e.stopPropagation()
-                              changeTag(tag)
-                            }}
-                            className="rounded-full bg-[#1E2A44]/10 px-2 py-0.5 text-[10px] font-medium text-[#1E2A44] hover:bg-[#1E2A44]/20 dark:bg-slate-700 dark:text-slate-200"
-                          >
-                            #{tag}
-                          </button>
-                        ))}
+                    <div className="flex flex-none gap-4 text-center text-xs text-muted">
+                      <div>
+                        <div className="font-bold text-foreground">{topic.replyCount}</div>
+                        {t('forum.replies')}
                       </div>
-                    )}
-                  </div>
-                  <div className="flex flex-none gap-4 text-center text-xs text-slate-500 dark:text-slate-400">
-                    <div>
-                      <div className="font-bold text-[#1E2A44] dark:text-slate-200">{topic.replyCount}</div>
-                      {t('forum.replies')}
+                      <div>
+                        <div className="font-bold text-foreground">{topic.viewCount}</div>
+                        {t('forum.views')}
+                      </div>
                     </div>
-                    <div>
-                      <div className="font-bold text-[#1E2A44] dark:text-slate-200">{topic.viewCount}</div>
-                      {t('forum.views')}
-                    </div>
-                  </div>
+                  </Card>
                 </Link>
-                </TopicContextMenu>
-              </li>
-            ))}
-          </ul>
-        )}
+              </TopicContextMenu>
+            </li>
+          ))}
+        </ul>
+      )}
 
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div className="mt-6 flex items-center justify-center gap-4 text-sm">
-            <button
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              disabled={page <= 1}
-              className="rounded-lg border border-slate-300 px-4 py-1.5 font-semibold transition hover:bg-white disabled:opacity-40 dark:border-slate-600 dark:hover:bg-slate-800"
-            >
-              {t('audit.prev')}
-            </button>
-            <span className="text-slate-500 dark:text-slate-400">
-              {t('audit.pageOf', { page, total: totalPages })}
-            </span>
-            <button
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              disabled={page >= totalPages}
-              className="rounded-lg border border-slate-300 px-4 py-1.5 font-semibold transition hover:bg-white disabled:opacity-40 dark:border-slate-600 dark:hover:bg-slate-800"
-            >
-              {t('audit.next')}
-            </button>
-          </div>
-        )}
-      </div>
+      {totalPages > 1 && (
+        <div className="mt-6 flex items-center justify-center gap-4 text-sm">
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            disabled={page <= 1}
+          >
+            {t('audit.prev')}
+          </Button>
+          <span className="text-muted">{t('audit.pageOf', { page, total: totalPages })}</span>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+            disabled={page >= totalPages}
+          >
+            {t('audit.next')}
+          </Button>
+        </div>
+      )}
+    </div>
   )
 }

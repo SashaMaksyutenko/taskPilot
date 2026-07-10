@@ -90,7 +90,7 @@ export default function MarkdownEditor({ value, onChange, placeholder, rows = 3,
 
   const tab = (active: boolean) =>
     `rounded px-2 py-1 text-xs font-semibold ${
-      active ? 'bg-slate-200 text-[#1E2A44] dark:bg-slate-700 dark:text-white' : 'text-slate-500 dark:text-slate-400'
+      active ? 'bg-slate-200 text-primary dark:bg-slate-700 dark:text-white' : 'text-slate-500 dark:text-slate-400'
     }`
 
   return (

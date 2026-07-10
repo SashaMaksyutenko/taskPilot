@@ -51,17 +51,17 @@ export default function AppealModal({
           onChange={(e) => setMessage(e.target.value)}
           rows={4}
           placeholder={t('appeal.messagePlaceholder')}
-          className="mb-4 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-[#1E2A44] dark:border-slate-600 dark:bg-slate-900"
+          className="mb-4 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-primary dark:border-slate-600 dark:bg-slate-900"
         />
 
         <div className="flex items-center justify-end gap-3">
-          <button onClick={onClose} className="text-sm font-semibold text-slate-500 hover:text-[#1E2A44] dark:text-slate-300 dark:hover:text-white">
+          <button onClick={onClose} className="text-sm font-semibold text-slate-500 hover:text-primary dark:text-slate-300 dark:hover:text-white">
             {t('appeal.cancel')}
           </button>
           <button
             onClick={submit}
             disabled={saving || message.trim().length < 10}
-            className="rounded-lg bg-[#1E2A44] px-5 py-2 text-sm font-semibold text-white transition hover:bg-[#27345a] disabled:opacity-60"
+            className="rounded-lg bg-primary px-5 py-2 text-sm font-semibold text-white transition hover:bg-primary-hover disabled:opacity-60"
           >
             {t('appeal.submit')}
           </button>

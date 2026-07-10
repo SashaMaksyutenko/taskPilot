@@ -66,8 +66,8 @@ export default function AssistantPage() {
                   <div
                     className={`max-w-[85%] rounded-2xl px-4 py-2 text-sm ${
                       m.role === 'user'
-                        ? 'bg-[#1E2A44] text-white'
-                        : 'bg-slate-100 text-[#1E2A44] dark:bg-slate-700 dark:text-slate-100'
+                        ? 'bg-primary text-white'
+                        : 'bg-slate-100 text-primary dark:bg-slate-700 dark:text-slate-100'
                     }`}
                   >
                     {m.role === 'assistant' ? <Markdown>{m.content}</Markdown> : m.content}
@@ -85,12 +85,12 @@ export default function AssistantPage() {
                 onKeyDown={onKeyDown}
                 placeholder={t('assistant.placeholder')}
                 rows={2}
-                className="flex-1 resize-none rounded-lg border border-slate-300 bg-white px-3 py-2 outline-none focus:border-[#1E2A44] dark:border-slate-600 dark:bg-slate-900"
+                className="flex-1 resize-none rounded-lg border border-slate-300 bg-white px-3 py-2 outline-none focus:border-primary dark:border-slate-600 dark:bg-slate-900"
               />
               <button
                 onClick={send}
                 disabled={sending || !input.trim()}
-                className="rounded-lg bg-[#1E2A44] px-5 font-semibold text-white transition hover:bg-[#27345a] disabled:opacity-50"
+                className="rounded-lg bg-primary px-5 font-semibold text-white transition hover:bg-primary-hover disabled:opacity-50"
               >
                 {t('assistant.send')}
               </button>

@@ -14,7 +14,7 @@ export default function MentionText({ text }: { text: string }) {
     <>
       {parts.map((part, i) =>
         IS_MENTION.test(part) ? (
-          <span key={i} className="font-semibold text-[#1E2A44] dark:text-sky-300">
+          <span key={i} className="font-semibold text-primary dark:text-sky-300">
             {part}
           </span>
         ) : (

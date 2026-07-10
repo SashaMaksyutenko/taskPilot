@@ -42,12 +42,12 @@ export default function ResetPasswordPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-slate-50 px-6">
       <div className="w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
-        <h1 className="text-2xl font-bold text-[#1E2A44]">{t('reset.title')}</h1>
+        <h1 className="text-2xl font-bold text-primary">{t('reset.title')}</h1>
 
         {!token ? (
           <>
             <p className="mt-3 text-sm text-slate-600">{t('reset.noToken')}</p>
-            <Link to="/forgot-password" className="mt-6 inline-block text-sm font-semibold text-[#1E2A44] hover:underline">
+            <Link to="/forgot-password" className="mt-6 inline-block text-sm font-semibold text-primary hover:underline">
               {t('reset.requestNew')}
             </Link>
           </>
@@ -60,7 +60,7 @@ export default function ResetPasswordPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 autoFocus
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 outline-none focus:border-[#1E2A44]"
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 outline-none focus:border-primary"
               />
               <p className="mt-1 text-xs text-slate-500">{t('reset.hint')}</p>
             </div>
@@ -70,14 +70,14 @@ export default function ResetPasswordPage() {
                 type="password"
                 value={confirm}
                 onChange={(e) => setConfirm(e.target.value)}
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 outline-none focus:border-[#1E2A44]"
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 outline-none focus:border-primary"
               />
             </div>
             {error && <p className="text-sm text-red-600">{error}</p>}
             <button
               type="submit"
               disabled={busy || !password || !confirm}
-              className="w-full rounded-lg bg-[#1E2A44] py-2.5 font-semibold text-white transition hover:bg-[#27345a] disabled:opacity-60"
+              className="w-full rounded-lg bg-primary py-2.5 font-semibold text-white transition hover:bg-primary-hover disabled:opacity-60"
             >
               {busy ? t('reset.saving') : t('reset.submit')}
             </button>

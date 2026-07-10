@@ -221,7 +221,7 @@ export default function MarketplaceTaskPage() {
               <div className="mt-3">
                 <button
                   onClick={submitWork}
-                  className="rounded-lg bg-[#1E2A44] px-5 py-2 text-sm font-semibold text-white hover:bg-[#27345a]"
+                  className="rounded-lg bg-primary px-5 py-2 text-sm font-semibold text-white hover:bg-primary-hover"
                 >
                   {t('marketTask.submitWork')}
                 </button>
@@ -236,7 +236,7 @@ export default function MarketplaceTaskPage() {
               onChange={(e) => setCoverLetter(e.target.value)}
               placeholder={t('marketTask.coverLetter')}
               rows={3}
-              className="mb-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 outline-none focus:border-[#1E2A44] dark:border-slate-600 dark:bg-slate-900"
+              className="mb-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 outline-none focus:border-primary dark:border-slate-600 dark:bg-slate-900"
             />
             <div className="flex gap-2">
               <input
@@ -244,9 +244,9 @@ export default function MarketplaceTaskPage() {
                 onChange={(e) => setRate(e.target.value)}
                 type="number"
                 placeholder={t('marketTask.rate')}
-                className="w-40 rounded-lg border border-slate-300 bg-white px-3 py-2 outline-none focus:border-[#1E2A44] dark:border-slate-600 dark:bg-slate-900"
+                className="w-40 rounded-lg border border-slate-300 bg-white px-3 py-2 outline-none focus:border-primary dark:border-slate-600 dark:bg-slate-900"
               />
-              <button onClick={apply} className="rounded-lg bg-[#1E2A44] px-5 font-semibold text-white hover:bg-[#27345a]">
+              <button onClick={apply} className="rounded-lg bg-primary px-5 font-semibold text-white hover:bg-primary-hover">
                 {t('marketTask.apply')}
               </button>
             </div>
@@ -269,12 +269,12 @@ export default function MarketplaceTaskPage() {
                     onChange={(e) => setMyComment(e.target.value)}
                     placeholder={t('marketTask.rateComment')}
                     rows={2}
-                    className="mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-[#1E2A44] dark:border-slate-600 dark:bg-slate-900"
+                    className="mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-primary dark:border-slate-600 dark:bg-slate-900"
                   />
                   <button
                     onClick={submitRating}
                     disabled={myStars < 1}
-                    className="mt-2 rounded-lg bg-[#1E2A44] px-5 py-2 text-sm font-semibold text-white hover:bg-[#27345a] disabled:opacity-50"
+                    className="mt-2 rounded-lg bg-primary px-5 py-2 text-sm font-semibold text-white hover:bg-primary-hover disabled:opacity-50"
                   >
                     {t('marketTask.rateSubmit')}
                   </button>

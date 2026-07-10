@@ -1,24 +1,27 @@
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import ActionsContextMenu from '../components/ActionsContextMenu'
+import Button from '../components/ui/Button'
+import Card from '../components/ui/Card'
+import Input from '../components/ui/Input'
+import { cn } from '../lib/cn'
+import { notify } from '../lib/toast'
 import { calendarService } from '../services/calendarService'
 import type { CalendarTask } from '../types/calendar'
-import { notify } from '../lib/toast'
 
 const STATUS_COLORS: Record<string, string> = {
-  Backlog: 'bg-slate-200 text-slate-700',
-  InProgress: 'bg-blue-100 text-blue-700',
-  Review: 'bg-amber-100 text-amber-700',
-  Done: 'bg-green-100 text-green-700',
+  Backlog: 'bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-300',
+  InProgress: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-950/50 dark:text-indigo-300',
+  Review: 'bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300',
+  Done: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300',
 }
 
 const pad = (n: number) => String(n).padStart(2, '0')
 const dateKey = (y: number, m: number, d: number) => `${y}-${pad(m + 1)}-${pad(d)}`
 
-/**
- * Month calendar. Shows tasks on their deadline day, colored by status.
- */
+/** Month calendar — tasks on deadline days, colored by status. */
 export default function CalendarPage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
@@ -42,9 +45,9 @@ export default function CalendarPage() {
 
   const tasksByDay = useMemo(() => {
     const map: Record<string, CalendarTask[]> = {}
-    for (const t of tasks) {
-      const key = t.deadline.slice(0, 10)
-      ;(map[key] ??= []).push(t)
+    for (const task of tasks) {
+      const key = task.deadline.slice(0, 10)
+      ;(map[key] ??= []).push(task)
     }
     return map
   }, [tasks])
@@ -95,86 +98,73 @@ export default function CalendarPage() {
     year === today.getFullYear() && month === today.getMonth() && d === today.getDate()
 
   return (
-    <div className="mx-auto max-w-5xl px-6 py-6">
-        <div className="mb-4 flex items-center justify-between">
-          <h1 className="text-2xl font-bold">{t('calendar.title')}</h1>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={openFeed}
-              className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-semibold hover:bg-white dark:border-slate-600 dark:hover:bg-slate-800"
-            >
-              {t('calendar.subscribe')}
-            </button>
-            <button
-              onClick={exportIcs}
-              className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-semibold hover:bg-white dark:border-slate-600 dark:hover:bg-slate-800"
-            >
-              {t('calendar.exportIcs')}
-            </button>
-          </div>
+    <div className="mx-auto max-w-5xl">
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+        <h1 className="page-title">{t('calendar.title')}</h1>
+        <div className="flex items-center gap-2">
+          <Button variant="secondary" size="sm" onClick={openFeed}>
+            {t('calendar.subscribe')}
+          </Button>
+          <Button variant="secondary" size="sm" onClick={exportIcs}>
+            {t('calendar.exportIcs')}
+          </Button>
         </div>
+      </div>
 
-        {showFeed && (
-          <div className="mb-4 rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-800">
-            <p className="mb-2 text-sm text-slate-600 dark:text-slate-300">{t('calendar.subscribeHint')}</p>
-            <div className="flex flex-col gap-2 sm:flex-row">
-              <input
-                readOnly
-                value={feedUrl ?? t('calendar.loading')}
-                onFocus={(e) => e.currentTarget.select()}
-                className="flex-1 rounded-lg border border-slate-300 bg-slate-50 px-3 py-1.5 text-sm dark:border-slate-600 dark:bg-slate-900"
-              />
-              <button
-                onClick={copyFeed}
-                disabled={!feedUrl}
-                className="rounded-lg bg-[#1E2A44] px-3 py-1.5 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50"
-              >
-                {t('calendar.copy')}
-              </button>
-              <button
-                onClick={regenerateFeed}
-                className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-semibold hover:bg-slate-50 dark:border-slate-600 dark:hover:bg-slate-700"
-              >
-                {t('calendar.regenerate')}
-              </button>
-            </div>
+      {showFeed && (
+        <Card className="mb-4 p-4">
+          <p className="mb-3 text-sm text-muted">{t('calendar.subscribeHint')}</p>
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <Input readOnly value={feedUrl ?? t('calendar.loading')} onFocus={(e) => e.currentTarget.select()} className="flex-1" />
+            <Button size="sm" onClick={copyFeed} disabled={!feedUrl}>
+              {t('calendar.copy')}
+            </Button>
+            <Button variant="secondary" size="sm" onClick={regenerateFeed}>
+              {t('calendar.regenerate')}
+            </Button>
           </div>
-        )}
+        </Card>
+      )}
 
-        <div className="mb-4 flex items-center gap-4">
-          <button onClick={prevMonth} className="rounded-lg border border-slate-300 px-3 py-1 hover:bg-white dark:border-slate-600 dark:hover:bg-slate-800">
-            ←
-          </button>
-          <span className="text-lg font-semibold">
-            {months[month]} {year}
-          </span>
-          <button onClick={nextMonth} className="rounded-lg border border-slate-300 px-3 py-1 hover:bg-white dark:border-slate-600 dark:hover:bg-slate-800">
-            →
-          </button>
-        </div>
+      <div className="mb-4 flex items-center gap-3">
+        <Button variant="secondary" size="sm" onClick={prevMonth} aria-label="Previous month">
+          <ChevronLeft className="h-4 w-4" />
+        </Button>
+        <span className="min-w-[10rem] text-center text-lg font-semibold">
+          {months[month]} {year}
+        </span>
+        <Button variant="secondary" size="sm" onClick={nextMonth} aria-label="Next month">
+          <ChevronRight className="h-4 w-4" />
+        </Button>
+      </div>
 
-        <div className="grid grid-cols-7 gap-px text-center text-xs font-semibold text-slate-500 dark:text-slate-400">
+      <Card className="overflow-hidden p-0">
+        <div className="grid grid-cols-7 border-b border-border bg-canvas text-center text-xs font-semibold text-muted">
           {weekdays.map((w) => (
-            <div key={w} className="py-2">
+            <div key={w} className="py-3">
               {w}
             </div>
           ))}
         </div>
 
-        <div className="grid grid-cols-7 gap-px overflow-hidden rounded-lg bg-slate-200 dark:bg-slate-700">
+        <div className="grid grid-cols-7 gap-px bg-border">
           {cells.map((d, i) => {
             const dayTasks = d ? tasksByDay[dateKey(year, month, d)] ?? [] : []
             return (
               <div
                 key={i}
-                className={`min-h-24 p-1.5 ${d ? 'bg-white dark:bg-slate-800' : 'bg-slate-50 dark:bg-slate-900'}`}
+                className={cn(
+                  'min-h-28 p-2',
+                  d ? 'bg-surface' : 'bg-canvas/50',
+                )}
               >
                 {d && (
                   <>
                     <div
-                      className={`mb-1 inline-flex h-6 w-6 items-center justify-center rounded-full text-xs ${
-                        isToday(d) ? 'bg-[#1E2A44] font-bold text-white' : 'text-slate-500 dark:text-slate-400'
-                      }`}
+                      className={cn(
+                        'mb-1.5 inline-flex h-7 w-7 items-center justify-center rounded-full text-xs font-medium',
+                        isToday(d) ? 'bg-primary font-bold text-white' : 'text-muted',
+                      )}
                     >
                       {d}
                     </div>
@@ -193,15 +183,16 @@ export default function CalendarPage() {
                             },
                           ]}
                         >
-                        <div
-                          title={`${task.title} · ${task.projectName} · ${t(`board.status.${task.status}`, task.status)}`}
-                          className={`cursor-pointer truncate rounded px-1.5 py-0.5 text-[11px] font-medium ${
-                            STATUS_COLORS[task.status] ?? 'bg-slate-200 text-slate-700'
-                          }`}
-                          onClick={() => navigate(`/projects/${task.projectId}`)}
-                        >
-                          {task.title}
-                        </div>
+                          <div
+                            title={`${task.title} · ${task.projectName} · ${t(`board.status.${task.status}`, task.status)}`}
+                            className={cn(
+                              'cursor-pointer truncate rounded px-1.5 py-0.5 text-[11px] font-medium transition hover:opacity-80',
+                              STATUS_COLORS[task.status] ?? 'bg-slate-200 text-slate-700',
+                            )}
+                            onClick={() => navigate(`/projects/${task.projectId}`)}
+                          >
+                            {task.title}
+                          </div>
                         </ActionsContextMenu>
                       ))}
                     </div>
@@ -211,6 +202,7 @@ export default function CalendarPage() {
             )
           })}
         </div>
-      </div>
+      </Card>
+    </div>
   )
 }

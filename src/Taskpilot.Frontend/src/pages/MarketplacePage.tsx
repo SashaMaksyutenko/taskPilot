@@ -82,14 +82,14 @@ export default function MarketplacePage() {
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder={t('market.taskTitle')}
-            className="mb-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 outline-none focus:border-[#1E2A44] dark:border-slate-600 dark:bg-slate-900"
+            className="mb-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 outline-none focus:border-primary dark:border-slate-600 dark:bg-slate-900"
           />
           <div className="mb-2">
             <MarkdownEditor
               value={description}
               onChange={setDescription}
               placeholder={t('market.describe')}
-              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 outline-none focus:border-[#1E2A44] dark:border-slate-600 dark:bg-slate-900"
+              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 outline-none focus:border-primary dark:border-slate-600 dark:bg-slate-900"
             />
           </div>
           <div className="mb-3 flex gap-2">
@@ -98,18 +98,18 @@ export default function MarketplacePage() {
               onChange={(e) => setBudget(e.target.value)}
               type="number"
               placeholder={t('market.budget')}
-              className="w-32 rounded-lg border border-slate-300 bg-white px-3 py-2 outline-none focus:border-[#1E2A44] dark:border-slate-600 dark:bg-slate-900"
+              className="w-32 rounded-lg border border-slate-300 bg-white px-3 py-2 outline-none focus:border-primary dark:border-slate-600 dark:bg-slate-900"
             />
             <input
               value={skills}
               onChange={(e) => setSkills(e.target.value)}
               placeholder={t('market.skills')}
-              className="flex-1 rounded-lg border border-slate-300 bg-white px-3 py-2 outline-none focus:border-[#1E2A44] dark:border-slate-600 dark:bg-slate-900"
+              className="flex-1 rounded-lg border border-slate-300 bg-white px-3 py-2 outline-none focus:border-primary dark:border-slate-600 dark:bg-slate-900"
             />
           </div>
           <button
             onClick={create}
-            className="rounded-lg bg-[#1E2A44] px-5 py-2 font-semibold text-white transition hover:bg-[#27345a]"
+            className="rounded-lg bg-primary px-5 py-2 font-semibold text-white transition hover:bg-primary-hover"
           >
             {t('market.postBtn')}
           </button>

@@ -465,7 +465,23 @@
     "replies": "replies",
     "views": "views",
     "copyLink": "Copy link",
-    "delete": "Delete"
+    "delete": "Delete",
+    "searchPlaceholder": "Search topics…",
+    "solved": "Solved",
+    "pin": "Pin",
+    "unpin": "Unpin",
+    "lock": "Lock",
+    "unlock": "Unlock",
+    "sort": {
+      "latest": "Latest",
+      "active": "Most active",
+      "top": "Most viewed"
+    },
+    "filter": {
+      "all": "All",
+      "solved": "Solved",
+      "unsolved": "Unsolved"
+    }
   },
   "topic": {
     "loading": "Loading…",
@@ -475,7 +491,22 @@
     "markSolution": "Mark as solution",
     "locked": "This topic is locked.",
     "replyPlaceholder": "Write a reply…",
-    "reply": "Reply"
+    "reply": "Reply",
+    "edit": "Edit",
+    "save": "Save",
+    "cancel": "Cancel",
+    "edited": "edited",
+    "replyTo": "Reply",
+    "quote": "Quote",
+    "wrote": "wrote:",
+    "replyingTo": "Replying to",
+    "delete": "Delete",
+    "deleted": "message deleted",
+    "deleteTitle": "Delete reply",
+    "deleteConfirm": "Delete this reply? This cannot be undone.",
+    "addReaction": "Add reaction",
+    "subscribe": "Follow",
+    "unsubscribe": "Following"
   },
   "market": {
     "title": "Marketplace",

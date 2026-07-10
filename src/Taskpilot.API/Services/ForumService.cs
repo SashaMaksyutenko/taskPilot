@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Taskpilot.API.Common;
 using Taskpilot.API.Data;
+using Taskpilot.API.DTOs.Chat;
 using Taskpilot.API.DTOs.Common;
 using Taskpilot.API.DTOs.Forum;
 using Taskpilot.API.Mappers;
@@ -78,7 +79,9 @@ public class ForumService : IForumService
     }
 
     /// <inheritdoc />
-    public async Task<Result<PagedResult<TopicListItemDto>>> GetTopicsAsync(Guid? authorId = null, int page = 1, int pageSize = 20)
+    public async Task<Result<PagedResult<TopicListItemDto>>> GetTopicsAsync(
+        Guid? authorId = null, int page = 1, int pageSize = 20,
+        string? search = null, bool? solved = null, string? sort = null)
     {
         // Clamp paging to sane bounds.
         if (page < 1) page = 1;
@@ -88,11 +91,29 @@ public class ForumService : IForumService
         var query = _context.ForumTopics
             .Where(t => authorId == null || t.AuthorId == authorId);
 
+        // Optional text search over title and body.
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var term = $"%{search.Trim()}%";
+            query = query.Where(t => EF.Functions.ILike(t.Title, term) || EF.Functions.ILike(t.Body, term));
+        }
+
+        // Optional solved/unsolved filter (a topic is solved if any live reply is a solution).
+        if (solved is bool wantSolved)
+            query = query.Where(t => t.Replies.Any(r => r.IsSolution && !r.IsDeleted) == wantSolved);
+
         var total = await query.CountAsync();
 
-        var rows = await query
-            .OrderByDescending(t => t.IsPinned)
-            .ThenByDescending(t => t.CreatedAt)
+        // Pinned topics always come first; the rest follow the chosen sort.
+        IOrderedQueryable<ForumTopic> ordered = sort switch
+        {
+            "active" => query.OrderByDescending(t => t.IsPinned)
+                             .ThenByDescending(t => t.Replies.Where(r => !r.IsDeleted).Max(r => (DateTime?)r.CreatedAt) ?? t.CreatedAt),
+            "top" => query.OrderByDescending(t => t.IsPinned).ThenByDescending(t => t.ViewCount),
+            _ => query.OrderByDescending(t => t.IsPinned).ThenByDescending(t => t.CreatedAt),
+        };
+
+        var rows = await ordered
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .Select(t => new
@@ -103,10 +124,12 @@ public class ForumService : IForumService
                 AuthorName = t.Author.Name,
                 AuthorAvatarFileId = t.Author.AvatarFileId,
                 t.ViewCount,
-                ReplyCount = t.Replies.Count,
+                ReplyCount = t.Replies.Count(r => !r.IsDeleted),
                 t.IsPinned,
                 t.IsLocked,
+                IsSolved = t.Replies.Any(r => r.IsSolution && !r.IsDeleted),
                 t.CreatedAt,
+                LastActivityAt = t.Replies.Where(r => !r.IsDeleted).Max(r => (DateTime?)r.CreatedAt) ?? t.CreatedAt,
             })
             .AsNoTracking()
             .ToListAsync();
@@ -124,7 +147,9 @@ public class ForumService : IForumService
                 ReplyCount = t.ReplyCount,
                 IsPinned = t.IsPinned,
                 IsLocked = t.IsLocked,
+                IsSolved = t.IsSolved,
                 CreatedAt = t.CreatedAt,
+                LastActivityAt = t.LastActivityAt,
             })
             .ToList();
 
@@ -144,15 +169,21 @@ public class ForumService : IForumService
             .Include(t => t.Author)
             .Include(t => t.Replies).ThenInclude(r => r.Author)
             .Include(t => t.Replies).ThenInclude(r => r.Votes)
+            .Include(t => t.Replies).ThenInclude(r => r.Reactions)
             .FirstOrDefaultAsync(t => t.Id == topicId);
 
         if (topic is null)
             return Result<TopicDetailDto>.Fail("Topic not found.");
 
+        var isSubscribed = await _context.ForumTopicSubscriptions
+            .AnyAsync(s => s.TopicId == topicId && s.UserId == currentUserId);
+
         // Views are counted separately via IncrementViewAsync (called once per page
         // open), so re-fetching a topic — after voting, replying, etc. — never inflates
         // the count.
-        return Result<TopicDetailDto>.Ok(MapDetail(topic, currentUserId));
+        var dto = MapDetail(topic, currentUserId);
+        dto.IsSubscribed = isSubscribed;
+        return Result<TopicDetailDto>.Ok(dto);
     }
 
     /// <inheritdoc />
@@ -318,6 +349,9 @@ public class ForumService : IForumService
                     $"/forum/{topic.Id}");
             }
 
+            // Track who has already been notified so subscribers don't get a duplicate.
+            var notified = new HashSet<Guid> { authorId, topic.AuthorId };
+
             // For a nested reply, also notify the parent reply's author (if different).
             if (dto.ParentReplyId.HasValue)
             {
@@ -332,7 +366,22 @@ public class ForumService : IForumService
                         NotificationType.Forum,
                         $"{authorName} replied to your comment in \"{topic.Title}\".",
                         $"/forum/{topic.Id}");
+                    notified.Add(pid);
                 }
+            }
+
+            // Notify everyone subscribed to the topic (skipping already-notified users).
+            var subscriberIds = await _context.ForumTopicSubscriptions
+                .Where(s => s.TopicId == topic.Id && !notified.Contains(s.UserId))
+                .Select(s => s.UserId)
+                .ToListAsync();
+            foreach (var subscriberId in subscriberIds)
+            {
+                await _notifications.CreateAsync(
+                    subscriberId,
+                    NotificationType.Forum,
+                    $"{authorName} replied to \"{topic.Title}\" you follow.",
+                    $"/forum/{topic.Id}");
             }
 
             _logger.LogInformation("Reply added. ReplyId: {ReplyId}", reply.Id);
@@ -359,6 +408,170 @@ public class ForumService : IForumService
         }
     }
 
+    /// <inheritdoc />
+    public async Task<Result<ReplyDto>> EditReplyAsync(Guid userId, Guid replyId, string body, bool isAdmin)
+    {
+        var reply = await _context.ForumReplies
+            .Include(r => r.Author)
+            .Include(r => r.Votes)
+            .Include(r => r.Reactions)
+            .FirstOrDefaultAsync(r => r.Id == replyId);
+        if (reply is null)
+            return Result<ReplyDto>.Fail("Reply not found.");
+
+        // Only the reply's author or an admin may edit it.
+        if (reply.AuthorId != userId && !isAdmin)
+            return Result<ReplyDto>.Fail("You can only edit your own replies.");
+
+        reply.Body = body.Trim();
+        reply.UpdatedAt = DateTime.UtcNow;
+        await _context.SaveChangesAsync();
+
+        _logger.LogInformation("Reply edited. ReplyId: {ReplyId}, By: {UserId}, Admin: {IsAdmin}", replyId, userId, isAdmin);
+        return Result<ReplyDto>.Ok(MapReply(reply, userId));
+    }
+
+    /// <inheritdoc />
+    public async Task<Result> DeleteReplyAsync(Guid userId, Guid replyId, bool isAdmin)
+    {
+        var reply = await _context.ForumReplies.FirstOrDefaultAsync(r => r.Id == replyId);
+        if (reply is null)
+            return Result.Fail("Reply not found.");
+
+        // Only the reply's author or an admin may delete it.
+        if (reply.AuthorId != userId && !isAdmin)
+            return Result.Fail("You can only delete your own replies.");
+
+        // Soft-delete: keep the row so any child replies remain threaded, and
+        // clear the accepted-solution flag if this reply held it.
+        reply.IsDeleted = true;
+        reply.IsSolution = false;
+        reply.UpdatedAt = DateTime.UtcNow;
+        await _context.SaveChangesAsync();
+
+        _logger.LogInformation("Reply deleted. ReplyId: {ReplyId}, By: {UserId}, Admin: {IsAdmin}", replyId, userId, isAdmin);
+        return Result.Ok();
+    }
+
+    /// <inheritdoc />
+    public async Task<Result<List<ReactionDto>>> ToggleReplyReactionAsync(Guid userId, Guid replyId, string emoji)
+    {
+        emoji = emoji.Trim();
+        if (string.IsNullOrEmpty(emoji) || emoji.Length > 16)
+            return Result<List<ReactionDto>>.Fail("Invalid emoji.");
+
+        var reply = await _context.ForumReplies.FirstOrDefaultAsync(r => r.Id == replyId);
+        if (reply is null || reply.IsDeleted)
+            return Result<List<ReactionDto>>.Fail("Reply not found.");
+
+        var existing = await _context.ForumReplyReactions
+            .FirstOrDefaultAsync(r => r.ReplyId == replyId && r.UserId == userId && r.Emoji == emoji);
+        if (existing is null)
+            _context.ForumReplyReactions.Add(new ForumReplyReaction
+            {
+                Id = Guid.NewGuid(),
+                ReplyId = replyId,
+                UserId = userId,
+                Emoji = emoji,
+                CreatedAt = DateTime.UtcNow,
+            });
+        else
+            _context.ForumReplyReactions.Remove(existing);
+
+        await _context.SaveChangesAsync();
+
+        var reactions = await _context.ForumReplyReactions
+            .Where(r => r.ReplyId == replyId)
+            .AsNoTracking()
+            .ToListAsync();
+
+        return Result<List<ReactionDto>>.Ok(MapReactions(reactions, userId));
+    }
+
+    /// <inheritdoc />
+    public async Task<Result> SetTopicPinnedAsync(Guid topicId, Guid userId, bool pinned, bool isAdmin)
+    {
+        if (!isAdmin)
+            return Result.Fail("Only an admin can pin topics.");
+
+        var topic = await _context.ForumTopics.FirstOrDefaultAsync(t => t.Id == topicId);
+        if (topic is null)
+            return Result.Fail("Topic not found.");
+
+        topic.IsPinned = pinned;
+        await _context.SaveChangesAsync();
+        _logger.LogInformation("Topic pin set. TopicId: {TopicId}, Pinned: {Pinned}, By: {UserId}", topicId, pinned, userId);
+        return Result.Ok();
+    }
+
+    /// <inheritdoc />
+    public async Task<Result> SetTopicLockedAsync(Guid topicId, Guid userId, bool locked, bool isAdmin)
+    {
+        var topic = await _context.ForumTopics.FirstOrDefaultAsync(t => t.Id == topicId);
+        if (topic is null)
+            return Result.Fail("Topic not found.");
+
+        if (topic.AuthorId != userId && !isAdmin)
+            return Result.Fail("You can only lock your own topics.");
+
+        topic.IsLocked = locked;
+        await _context.SaveChangesAsync();
+        _logger.LogInformation("Topic lock set. TopicId: {TopicId}, Locked: {Locked}, By: {UserId}", topicId, locked, userId);
+        return Result.Ok();
+    }
+
+    /// <inheritdoc />
+    public async Task<Result<bool>> ToggleSubscriptionAsync(Guid topicId, Guid userId)
+    {
+        var exists = await _context.ForumTopics.AnyAsync(t => t.Id == topicId);
+        if (!exists)
+            return Result<bool>.Fail("Topic not found.");
+
+        var existing = await _context.ForumTopicSubscriptions
+            .FirstOrDefaultAsync(s => s.TopicId == topicId && s.UserId == userId);
+        if (existing is null)
+        {
+            _context.ForumTopicSubscriptions.Add(new ForumTopicSubscription
+            {
+                Id = Guid.NewGuid(),
+                TopicId = topicId,
+                UserId = userId,
+                CreatedAt = DateTime.UtcNow,
+            });
+            await _context.SaveChangesAsync();
+            return Result<bool>.Ok(true);
+        }
+
+        _context.ForumTopicSubscriptions.Remove(existing);
+        await _context.SaveChangesAsync();
+        return Result<bool>.Ok(false);
+    }
+
+    /// <inheritdoc />
+    public async Task<Result<TopicDetailDto>> EditTopicAsync(Guid userId, Guid topicId, string title, string body, bool isAdmin)
+    {
+        var topic = await _context.ForumTopics
+            .Include(t => t.Author)
+            .Include(t => t.Replies).ThenInclude(r => r.Author)
+            .Include(t => t.Replies).ThenInclude(r => r.Votes)
+            .Include(t => t.Replies).ThenInclude(r => r.Reactions)
+            .FirstOrDefaultAsync(t => t.Id == topicId);
+        if (topic is null)
+            return Result<TopicDetailDto>.Fail("Topic not found.");
+
+        // Only the topic's author or an admin may edit it.
+        if (topic.AuthorId != userId && !isAdmin)
+            return Result<TopicDetailDto>.Fail("You can only edit your own topics.");
+
+        topic.Title = title.Trim();
+        topic.Body = body.Trim();
+        topic.UpdatedAt = DateTime.UtcNow;
+        await _context.SaveChangesAsync();
+
+        _logger.LogInformation("Topic edited. TopicId: {TopicId}, By: {UserId}, Admin: {IsAdmin}", topicId, userId, isAdmin);
+        return Result<TopicDetailDto>.Ok(MapDetail(topic, userId));
+    }
+
     // --- mapping ---
 
     private static TopicDetailDto MapDetail(ForumTopic t, Guid currentUserId) => new()
@@ -374,7 +587,10 @@ public class ForumService : IForumService
         IsLocked = t.IsLocked,
         CreatedAt = t.CreatedAt,
         UpdatedAt = t.UpdatedAt,
+        // Deleted replies are hidden entirely (their row is kept only so any
+        // child replies that referenced them stay valid under the FK).
         Replies = t.Replies
+            .Where(r => !r.IsDeleted)
             .OrderBy(r => r.CreatedAt)
             .Select(r => MapReply(r, currentUserId))
             .ToList(),
@@ -387,12 +603,28 @@ public class ForumService : IForumService
         AuthorId = r.AuthorId,
         AuthorName = r.Author?.Name ?? string.Empty,
         AuthorAvatarUrl = r.Author is null ? null : UserMapper.AvatarUrl(r.Author),
-        Body = r.Body,
+        // Deleted replies keep their row (to preserve threading) but hide the text.
+        Body = r.IsDeleted ? string.Empty : r.Body,
         ParentReplyId = r.ParentReplyId,
         IsSolution = r.IsSolution,
+        IsDeleted = r.IsDeleted,
         Score = r.Votes?.Sum(v => v.Value) ?? 0,
         MyVote = r.Votes?.FirstOrDefault(v => v.UserId == currentUserId)?.Value ?? 0,
         CreatedAt = r.CreatedAt,
         UpdatedAt = r.UpdatedAt,
+        Reactions = MapReactions(r.Reactions, currentUserId),
     };
+
+    /// <summary>Groups a reply's reactions by emoji and flags the current user's own.</summary>
+    private static List<ReactionDto> MapReactions(IEnumerable<ForumReplyReaction>? reactions, Guid currentUserId) =>
+        (reactions ?? Enumerable.Empty<ForumReplyReaction>())
+            .GroupBy(r => r.Emoji)
+            .OrderBy(g => g.Min(r => r.CreatedAt))
+            .Select(g => new ReactionDto
+            {
+                Emoji = g.Key,
+                Count = g.Count(),
+                Mine = g.Any(r => r.UserId == currentUserId),
+            })
+            .ToList();
 }

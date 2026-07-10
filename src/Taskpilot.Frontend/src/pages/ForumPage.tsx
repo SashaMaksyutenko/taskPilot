@@ -18,6 +18,7 @@ export default function ForumPage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const currentUser = useAppSelector((s) => s.auth.user)
+  const isAdmin = currentUser?.role === 'Admin'
   const PAGE_SIZE = 10
   const [topics, setTopics] = useState<TopicListItem[]>([])
   const [page, setPage] = useState(1)
@@ -26,12 +27,22 @@ export default function ForumPage() {
   const [body, setBody] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  // Browsing controls: search text, sort order and solved filter.
+  const [search, setSearch] = useState('')
+  const [sort, setSort] = useState<'latest' | 'active' | 'top'>('latest')
+  const [solvedFilter, setSolvedFilter] = useState<'all' | 'solved' | 'unsolved'>('all')
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
 
   const load = (p: number) => {
     forumService
-      .getTopics({ page: p, pageSize: PAGE_SIZE })
+      .getTopics({
+        page: p,
+        pageSize: PAGE_SIZE,
+        search: search.trim() || undefined,
+        sort,
+        solved: solvedFilter === 'all' ? undefined : solvedFilter === 'solved',
+      })
       .then((r) => {
         setTopics(r.items)
         setTotal(r.total)
@@ -39,7 +50,12 @@ export default function ForumPage() {
       .catch(() => {})
   }
 
-  useEffect(() => load(page), [page])
+  // Reload on page or filter change; debounce so typing a search term isn't chatty.
+  useEffect(() => {
+    const id = setTimeout(() => load(page), 250)
+    return () => clearTimeout(id)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, search, sort, solvedFilter])
 
   const create = async () => {
     if (!title.trim() || !body.trim()) return
@@ -62,6 +78,30 @@ export default function ForumPage() {
   const removeTopic = async (id: string) => {
     await forumService.deleteTopic(id).catch(() => {})
     load(page)
+  }
+
+  const togglePin = async (topic: TopicListItem) => {
+    await forumService.setPinned(topic.id, !topic.isPinned).catch(() => {})
+    load(page)
+  }
+
+  const toggleLock = async (topic: TopicListItem) => {
+    await forumService.setLocked(topic.id, !topic.isLocked).catch(() => {})
+    load(page)
+  }
+
+  // Changing a filter jumps back to the first page (the effect then reloads).
+  const changeSort = (value: 'latest' | 'active' | 'top') => {
+    setSort(value)
+    setPage(1)
+  }
+  const changeSolved = (value: 'all' | 'solved' | 'unsolved') => {
+    setSolvedFilter(value)
+    setPage(1)
+  }
+  const changeSearch = (value: string) => {
+    setSearch(value)
+    setPage(1)
   }
 
   return (
@@ -99,6 +139,34 @@ export default function ForumPage() {
           </div>
         </div>
 
+        {/* Browsing controls: search, sort, solved filter */}
+        <div className="mb-4 flex flex-wrap items-center gap-2">
+          <input
+            value={search}
+            onChange={(e) => changeSearch(e.target.value)}
+            placeholder={t('forum.searchPlaceholder')}
+            className="min-w-0 flex-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-[#1E2A44] dark:border-slate-600 dark:bg-slate-800"
+          />
+          <select
+            value={sort}
+            onChange={(e) => changeSort(e.target.value as 'latest' | 'active' | 'top')}
+            className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-[#1E2A44] dark:border-slate-600 dark:bg-slate-800"
+          >
+            <option value="latest">{t('forum.sort.latest')}</option>
+            <option value="active">{t('forum.sort.active')}</option>
+            <option value="top">{t('forum.sort.top')}</option>
+          </select>
+          <select
+            value={solvedFilter}
+            onChange={(e) => changeSolved(e.target.value as 'all' | 'solved' | 'unsolved')}
+            className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-[#1E2A44] dark:border-slate-600 dark:bg-slate-800"
+          >
+            <option value="all">{t('forum.filter.all')}</option>
+            <option value="solved">{t('forum.filter.solved')}</option>
+            <option value="unsolved">{t('forum.filter.unsolved')}</option>
+          </select>
+        </div>
+
         {/* Topic list */}
         {topics.length === 0 ? (
           <EmptyState message={t('forum.empty')} />
@@ -110,6 +178,12 @@ export default function ForumPage() {
                   topicId={topic.id}
                   canDelete={currentUser?.id === topic.authorId || currentUser?.role === 'Admin'}
                   onDelete={() => removeTopic(topic.id)}
+                  isPinned={topic.isPinned}
+                  canPin={isAdmin}
+                  onTogglePin={() => togglePin(topic)}
+                  isLocked={topic.isLocked}
+                  canLock={isAdmin || currentUser?.id === topic.authorId}
+                  onToggleLock={() => toggleLock(topic)}
                 >
                 <Link
                   to={`/forum/${topic.id}`}
@@ -117,9 +191,15 @@ export default function ForumPage() {
                 >
                   <Avatar name={topic.authorName} src={topic.authorAvatarUrl} size={38} />
                   <div className="min-w-0 flex-1">
-                    <div className="truncate font-semibold">
-                      {topic.isPinned && <span className="mr-1">📌</span>}
-                      {topic.title}
+                    <div className="flex items-center gap-1.5 truncate font-semibold">
+                      {topic.isPinned && <span>📌</span>}
+                      {topic.isLocked && <span title={t('topic.locked')}>🔒</span>}
+                      <span className="truncate">{topic.title}</span>
+                      {topic.isSolved && (
+                        <span className="flex-none rounded-full bg-green-100 px-2 py-0.5 text-[10px] font-semibold text-green-700 dark:bg-green-900/40 dark:text-green-300">
+                          ✓ {t('forum.solved')}
+                        </span>
+                      )}
                     </div>
                     <div className="text-xs text-slate-500 dark:text-slate-400">
                       {t('forum.by')}{' '}

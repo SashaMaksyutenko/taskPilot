@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Taskpilot.API.Data;
@@ -12,9 +13,11 @@ using Taskpilot.API.Data;
 namespace Taskpilot.API.Data.Migrations
 {
     [DbContext(typeof(TaskpilotDbContext))]
-    partial class TaskpilotDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260709234439_AddForumReplyIsDeleted")]
+    partial class AddForumReplyIsDeleted
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -285,36 +288,6 @@ namespace Taskpilot.API.Data.Migrations
                     b.ToTable("ForumReplies");
                 });
 
-            modelBuilder.Entity("Taskpilot.API.Models.ForumReplyReaction", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Emoji")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("character varying(16)");
-
-                    b.Property<Guid>("ReplyId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("UserId");
-
-                    b.HasIndex("ReplyId", "UserId", "Emoji")
-                        .IsUnique();
-
-                    b.ToTable("ForumReplyReactions");
-                });
-
             modelBuilder.Entity("Taskpilot.API.Models.ForumTopic", b =>
                 {
                     b.Property<Guid>("Id")
@@ -356,31 +329,6 @@ namespace Taskpilot.API.Data.Migrations
                     b.HasIndex("CreatedAt");
 
                     b.ToTable("ForumTopics");
-                });
-
-            modelBuilder.Entity("Taskpilot.API.Models.ForumTopicSubscription", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("TopicId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("UserId");
-
-                    b.HasIndex("TopicId", "UserId")
-                        .IsUnique();
-
-                    b.ToTable("ForumTopicSubscriptions");
                 });
 
             modelBuilder.Entity("Taskpilot.API.Models.ForumVote", b =>
@@ -1315,25 +1263,6 @@ namespace Taskpilot.API.Data.Migrations
                     b.Navigation("Topic");
                 });
 
-            modelBuilder.Entity("Taskpilot.API.Models.ForumReplyReaction", b =>
-                {
-                    b.HasOne("Taskpilot.API.Models.ForumReply", "Reply")
-                        .WithMany("Reactions")
-                        .HasForeignKey("ReplyId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Taskpilot.API.Models.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Reply");
-
-                    b.Navigation("User");
-                });
-
             modelBuilder.Entity("Taskpilot.API.Models.ForumTopic", b =>
                 {
                     b.HasOne("Taskpilot.API.Models.User", "Author")
@@ -1343,25 +1272,6 @@ namespace Taskpilot.API.Data.Migrations
                         .IsRequired();
 
                     b.Navigation("Author");
-                });
-
-            modelBuilder.Entity("Taskpilot.API.Models.ForumTopicSubscription", b =>
-                {
-                    b.HasOne("Taskpilot.API.Models.ForumTopic", "Topic")
-                        .WithMany()
-                        .HasForeignKey("TopicId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Taskpilot.API.Models.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Topic");
-
-                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("Taskpilot.API.Models.ForumVote", b =>
@@ -1674,8 +1584,6 @@ namespace Taskpilot.API.Data.Migrations
 
             modelBuilder.Entity("Taskpilot.API.Models.ForumReply", b =>
                 {
-                    b.Navigation("Reactions");
-
                     b.Navigation("Votes");
                 });
 

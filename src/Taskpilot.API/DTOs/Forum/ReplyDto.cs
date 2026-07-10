@@ -1,3 +1,5 @@
+using Taskpilot.API.DTOs.Chat;
+
 namespace Taskpilot.API.DTOs.Forum;
 
 /// <summary>A forum reply as returned to clients.</summary>
@@ -12,6 +14,9 @@ public class ReplyDto
     public Guid? ParentReplyId { get; set; }
     public bool IsSolution { get; set; }
 
+    /// <summary>True if the reply was deleted; its body is blanked out.</summary>
+    public bool IsDeleted { get; set; }
+
     /// <summary>Total score (sum of up/down votes).</summary>
     public int Score { get; set; }
 
@@ -20,4 +25,7 @@ public class ReplyDto
 
     public DateTime CreatedAt { get; set; }
     public DateTime? UpdatedAt { get; set; }
+
+    /// <summary>Emoji reactions on this reply, grouped by emoji.</summary>
+    public List<ReactionDto> Reactions { get; set; } = new();
 }

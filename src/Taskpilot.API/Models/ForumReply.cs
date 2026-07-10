@@ -36,6 +36,12 @@ public class ForumReply
     /// <summary>Marks this reply as the accepted solution to the topic.</summary>
     public bool IsSolution { get; set; }
 
+    /// <summary>
+    /// Soft-delete flag. Deleted replies are kept (to preserve threading of any
+    /// child replies) but their body is hidden and shown as "message deleted".
+    /// </summary>
+    public bool IsDeleted { get; set; }
+
     /// <summary>UTC time the reply was created.</summary>
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
@@ -44,4 +50,7 @@ public class ForumReply
 
     /// <summary>Votes cast on this reply.</summary>
     public ICollection<ForumVote> Votes { get; set; } = new List<ForumVote>();
+
+    /// <summary>Emoji reactions placed on this reply.</summary>
+    public ICollection<ForumReplyReaction> Reactions { get; set; } = new List<ForumReplyReaction>();
 }

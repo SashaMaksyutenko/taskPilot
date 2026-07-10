@@ -47,6 +47,12 @@ public class TaskpilotDbContext : DbContext
     /// <summary>Votes on forum replies.</summary>
     public DbSet<ForumVote> ForumVotes => Set<ForumVote>();
 
+    /// <summary>Emoji reactions on forum replies.</summary>
+    public DbSet<ForumReplyReaction> ForumReplyReactions => Set<ForumReplyReaction>();
+
+    /// <summary>User subscriptions to forum topics.</summary>
+    public DbSet<ForumTopicSubscription> ForumTopicSubscriptions => Set<ForumTopicSubscription>();
+
     /// <summary>Public marketplace tasks.</summary>
     public DbSet<MarketplaceTask> MarketplaceTasks => Set<MarketplaceTask>();
 
@@ -334,6 +340,50 @@ public class TaskpilotDbContext : DbContext
             entity.HasOne(v => v.User)
                   .WithMany()
                   .HasForeignKey(v => v.UserId)
+                  .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        // ForumReplyReaction entity configuration
+        modelBuilder.Entity<ForumReplyReaction>(entity =>
+        {
+            entity.HasKey(r => r.Id);
+
+            entity.Property(r => r.Emoji).IsRequired().HasMaxLength(16);
+
+            // One row per (reply, user, emoji) — toggling adds/removes it.
+            entity.HasIndex(r => new { r.ReplyId, r.UserId, r.Emoji }).IsUnique();
+
+            // Deleting a reply removes its reactions.
+            entity.HasOne(r => r.Reply)
+                  .WithMany(rep => rep.Reactions)
+                  .HasForeignKey(r => r.ReplyId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            // Restrict on the user side to avoid multiple cascade paths to Users.
+            entity.HasOne(r => r.User)
+                  .WithMany()
+                  .HasForeignKey(r => r.UserId)
+                  .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        // ForumTopicSubscription entity configuration
+        modelBuilder.Entity<ForumTopicSubscription>(entity =>
+        {
+            entity.HasKey(s => s.Id);
+
+            // One subscription per user per topic.
+            entity.HasIndex(s => new { s.TopicId, s.UserId }).IsUnique();
+
+            // Deleting a topic removes its subscriptions.
+            entity.HasOne(s => s.Topic)
+                  .WithMany()
+                  .HasForeignKey(s => s.TopicId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            // Restrict on the user side to avoid multiple cascade paths to Users.
+            entity.HasOne(s => s.User)
+                  .WithMany()
+                  .HasForeignKey(s => s.UserId)
                   .OnDelete(DeleteBehavior.Restrict);
         });
 

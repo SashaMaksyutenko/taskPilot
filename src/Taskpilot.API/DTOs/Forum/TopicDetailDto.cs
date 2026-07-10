@@ -12,6 +12,10 @@ public class TopicDetailDto
     public int ViewCount { get; set; }
     public bool IsPinned { get; set; }
     public bool IsLocked { get; set; }
+
+    /// <summary>Whether the current user is subscribed to (following) this topic.</summary>
+    public bool IsSubscribed { get; set; }
+
     public DateTime CreatedAt { get; set; }
     public DateTime? UpdatedAt { get; set; }
     public List<ReplyDto> Replies { get; set; } = new();

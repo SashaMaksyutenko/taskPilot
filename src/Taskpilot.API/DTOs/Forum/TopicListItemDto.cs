@@ -12,5 +12,12 @@ public class TopicListItemDto
     public int ReplyCount { get; set; }
     public bool IsPinned { get; set; }
     public bool IsLocked { get; set; }
+
+    /// <summary>True if any non-deleted reply is marked as the accepted solution.</summary>
+    public bool IsSolved { get; set; }
+
     public DateTime CreatedAt { get; set; }
+
+    /// <summary>Time of the latest reply, or the creation time if there are none.</summary>
+    public DateTime LastActivityAt { get; set; }
 }

@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { Link, useNavigate } from 'react-router-dom'
 import FadeIn from '../components/FadeIn'
 import Card from '../components/ui/Card'
+import Skeleton from '../components/ui/Skeleton'
 import { calendarService } from '../services/calendarService'
 import { notificationService } from '../services/notificationService'
 import { projectService } from '../services/projectService'
@@ -130,7 +131,17 @@ export default function HomePage() {
               )}
             </div>
             {loading ? (
-              <p className="py-8 text-center text-sm text-muted">{t('dashboard.loading')}</p>
+              <div className="space-y-3 py-2">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <div key={i} className="flex items-center gap-3">
+                    <Skeleton className="h-9 w-9 rounded-full" />
+                    <div className="flex-1 space-y-1.5">
+                      <Skeleton className="h-3 w-2/3" />
+                      <Skeleton className="h-2.5 w-1/4" />
+                    </div>
+                  </div>
+                ))}
+              </div>
             ) : notifications.length === 0 ? (
               <p className="py-8 text-center text-sm text-muted">{t('dashboard.noActivity')}</p>
             ) : (

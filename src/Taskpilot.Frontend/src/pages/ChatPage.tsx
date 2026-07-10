@@ -1,4 +1,5 @@
 import { Fragment, useEffect, useRef, useState } from 'react'
+import { Paperclip, Send, Smile, MessageSquare } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import type { HubConnection } from '@microsoft/signalr'
@@ -8,6 +9,9 @@ import Avatar from '../components/Avatar'
 import MentionField from '../components/MentionField'
 import MentionText from '../components/MentionText'
 import MessageContextMenu from '../components/MessageContextMenu'
+import Button from '../components/ui/Button'
+import Input from '../components/ui/Input'
+import { cn } from '../lib/cn'
 import { apiErrorMessage } from '../lib/apiError'
 import { createChatConnection } from '../lib/chatHub'
 import { chatService } from '../services/chatService'
@@ -367,33 +371,33 @@ export default function ChatPage() {
 
   return (
     <div className="-mx-4 flex h-[calc(100dvh-4rem)] flex-col sm:-mx-6 lg:-mx-8">
-      <div className="flex min-h-0 flex-1 overflow-hidden rounded-xl border border-border bg-surface">
+      <div className="flex min-h-0 flex-1 overflow-hidden rounded-xl border border-border bg-surface shadow-soft">
         {/* Sidebar: conversations */}
-        <aside className="flex w-72 flex-col border-r border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-800">
-          <div className="border-b border-slate-200 p-4 dark:border-slate-700">
-            <span className="font-bold">{t('chat.title')}</span>
+        <aside className="flex w-72 flex-col border-r border-border bg-surface">
+          <div className="border-b border-border px-4 py-3">
+            <span className="font-bold text-foreground">{t('chat.title')}</span>
           </div>
 
-          {/* Start a direct chat by searching for a user by name or email */}
-          <div className="relative border-b border-slate-200 p-3 dark:border-slate-700">
-            <input
+          <div className="relative border-b border-border p-3">
+            <Input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder={t('chat.searchPlaceholder')}
-              className="w-full rounded border border-slate-300 px-2 py-1 text-sm outline-none focus:border-primary dark:border-slate-600 dark:bg-slate-900"
+              className="h-9"
             />
             {results.length > 0 && (
-              <ul className="absolute left-3 right-3 top-full z-20 -mt-1 max-h-64 overflow-y-auto rounded-b border border-t-0 border-slate-300 bg-white shadow-lg dark:border-slate-600 dark:bg-slate-800">
+              <ul className="absolute left-3 right-3 top-full z-20 mt-1 max-h-64 overflow-y-auto rounded-xl border border-border bg-surface shadow-elevated">
                 {results.map((u) => (
                   <li key={u.id}>
                     <button
+                      type="button"
                       onClick={() => startDirect(u.id)}
-                      className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-slate-50 dark:hover:bg-slate-700"
+                      className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-canvas"
                     >
                       <Avatar name={u.name} src={u.avatarUrl} size={28} />
                       <span className="min-w-0 flex-1 truncate">
                         <span className="font-medium">{u.name}</span>
-                        {u.title && <span className="ml-2 text-xs text-slate-400">{u.title}</span>}
+                        {u.title && <span className="ml-2 text-xs text-muted">{u.title}</span>}
                       </span>
                     </button>
                   </li>
@@ -404,31 +408,32 @@ export default function ChatPage() {
 
           <div className="flex-1 overflow-y-auto">
             {conversations.length === 0 && (
-              <p className="p-4 text-sm text-slate-400">{t('chat.noConversations')}</p>
+              <p className="p-4 text-sm text-muted">{t('chat.noConversations')}</p>
             )}
             {conversations.map((conv) => {
               const other = otherUser(conv)
               const row = (
                 <button
+                  type="button"
                   onClick={() => selectConversation(conv.id)}
-                  className={`flex w-full items-center gap-2 border-b border-slate-100 px-4 py-3 text-left text-sm hover:bg-slate-50 dark:border-slate-700/60 dark:hover:bg-slate-700/50 ${
-                    selectedId === conv.id ? 'bg-slate-100 font-semibold dark:bg-slate-700' : ''
-                  }`}
+                  className={cn(
+                    'flex w-full items-center gap-2 border-b border-border/60 px-4 py-3 text-left text-sm transition hover:bg-canvas',
+                    selectedId === conv.id && 'bg-primary-muted font-semibold text-primary',
+                  )}
                 >
                   <Avatar name={conversationTitle(conv)} src={conversationAvatar(conv)} size={32} />
-                  <span className={`min-w-0 flex-1 truncate ${conv.unreadCount > 0 && selectedId !== conv.id ? 'font-semibold' : ''}`}>
+                  <span className={cn('min-w-0 flex-1 truncate', conv.unreadCount > 0 && selectedId !== conv.id && 'font-semibold')}>
                     {conversationTitle(conv)}
                   </span>
                   {conv.unreadCount > 0 && selectedId !== conv.id ? (
-                    <span className="flex-none rounded-full bg-[#F97316] px-1.5 py-0.5 text-xs font-semibold leading-none text-white">
+                    <span className="flex-none rounded-full bg-accent px-1.5 py-0.5 text-xs font-semibold leading-none text-white">
                       {conv.unreadCount > 99 ? '99+' : conv.unreadCount}
                     </span>
                   ) : (
-                    <span className="flex-none text-xs text-slate-400">{t(`chat.type.${conv.type}`, conv.type)}</span>
+                    <span className="flex-none text-xs text-muted">{t(`chat.type.${conv.type}`, conv.type)}</span>
                   )}
                 </button>
               )
-              // Direct chats get a user context menu; groups keep the plain row.
               return other ? (
                 <ActionsContextMenu
                   key={conv.id}
@@ -447,23 +452,23 @@ export default function ChatPage() {
         </aside>
 
         {/* Main: messages */}
-        <main className="flex min-h-0 flex-1 flex-col">
+        <main className="flex min-h-0 flex-1 flex-col bg-canvas/30">
           {selectedId ? (
             <>
-              {/* Pinned messages strip */}
               {messages.some((m) => m.isPinned && !m.isDeleted) && (
-                <div className="border-b border-slate-200 bg-amber-50 px-4 py-2 dark:border-slate-700 dark:bg-amber-950/20">
+                <div className="border-b border-border bg-amber-50 px-4 py-2 dark:bg-amber-950/20">
                   {messages
                     .filter((m) => m.isPinned && !m.isDeleted)
                     .map((m) => (
-                      <div key={m.id} className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-300">
+                      <div key={m.id} className="flex items-center gap-2 text-xs text-muted">
                         <span className="flex-none">📌</span>
                         <span className="min-w-0 flex-1 truncate">
-                          <span className="font-semibold">{m.senderName}:</span> {m.content}
+                          <span className="font-semibold text-foreground">{m.senderName}:</span> {m.content}
                         </span>
                         <button
+                          type="button"
                           onClick={() => togglePin(m.id)}
-                          className="flex-none text-slate-400 hover:text-red-600"
+                          className="flex-none text-muted hover:text-red-600"
                           title={t('chat.unpin')}
                         >
                           ✕
@@ -473,19 +478,18 @@ export default function ChatPage() {
                 </div>
               )}
 
-              {/* Search within the conversation */}
-              <div className="border-b border-slate-200 px-4 py-2 dark:border-slate-700">
-                <input
+              <div className="border-b border-border px-4 py-2">
+                <Input
                   value={messageSearch}
                   onChange={(e) => setMessageSearch(e.target.value)}
                   placeholder={t('chat.searchMessages')}
-                  className="w-full rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm outline-none focus:border-primary dark:border-slate-600 dark:bg-slate-900"
+                  className="h-9"
                 />
               </div>
 
               <div className="flex-1 space-y-3 overflow-y-auto p-6">
                 {searchQuery && visibleMessages.length === 0 && (
-                  <p className="py-6 text-center text-sm text-slate-400">{t('chat.noMatches')}</p>
+                  <p className="py-6 text-center text-sm text-muted">{t('chat.noMatches')}</p>
                 )}
                 {visibleMessages.map((m, i) => {
                   const mine = m.senderId === currentUser?.id
@@ -496,12 +500,12 @@ export default function ChatPage() {
                     <Fragment key={m.id}>
                     {showDate && (
                       <div className="my-2 flex justify-center">
-                        <span className="rounded-full bg-slate-200 px-3 py-0.5 text-[11px] font-medium text-slate-500 dark:bg-slate-700 dark:text-slate-300">
+                        <span className="rounded-full bg-canvas px-3 py-0.5 text-[11px] font-medium text-muted">
                           {new Date(m.createdAt).toLocaleDateString([], { day: 'numeric', month: 'short', year: 'numeric' })}
                         </span>
                       </div>
                     )}
-                    <div id={`msg-${m.id}`} className={`flex items-end gap-2 ${mine ? 'justify-end' : 'justify-start'}`}>
+                    <div id={`msg-${m.id}`} className={cn('flex items-end gap-2', mine ? 'justify-end' : 'justify-start')}>
                       {!mine && (
                         <ActionsContextMenu
                           actions={[
@@ -525,23 +529,21 @@ export default function ChatPage() {
                         onDelete={() => deleteMessage(m.id)}
                       >
                         <div
-                          className={`max-w-md rounded-2xl px-4 py-2 transition-shadow ${
-                            highlightId === m.id ? 'ring-2 ring-[#F97316] ring-offset-2 dark:ring-offset-slate-900' : ''
-                          } ${
+                          className={cn(
+                            'max-w-md rounded-2xl px-4 py-2 transition-shadow',
+                            highlightId === m.id && 'ring-2 ring-accent ring-offset-2 ring-offset-canvas',
                             mine
-                              ? 'bg-primary text-white'
-                              : 'bg-white text-primary shadow dark:bg-slate-800 dark:text-slate-100'
-                          }`}
+                              ? 'bg-primary text-white shadow-soft'
+                              : 'border border-border bg-surface text-foreground shadow-soft',
+                          )}
                         >
                           {m.isPinned && (
-                            <div className={`mb-0.5 flex items-center gap-1 text-[11px] font-semibold ${mine ? 'text-white/70' : 'text-[#F97316]'}`}>
+                            <div className={cn('mb-0.5 flex items-center gap-1 text-[11px] font-semibold', mine ? 'text-white/70' : 'text-accent')}>
                               📌 {t('chat.pinned')}
                             </div>
                           )}
                           {!mine && (
-                            <div className="mb-0.5 text-xs font-semibold text-slate-500 dark:text-slate-400">
-                              {m.senderName}
-                            </div>
+                            <div className="mb-0.5 text-xs font-semibold text-muted">{m.senderName}</div>
                           )}
                           {editingId === m.id ? (
                             <div>
@@ -559,9 +561,9 @@ export default function ChatPage() {
                                   }
                                 }}
                                 rows={2}
-                                className="w-64 resize-none rounded-lg border border-slate-300 bg-white px-2 py-1 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#F97316] dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100"
+                                className="w-64 resize-none rounded-lg border border-border bg-surface px-2 py-1 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-accent"
                               />
-                              <div className={`mt-1 text-[11px] ${mine ? 'text-white/60' : 'text-slate-400'}`}>
+                              <div className={cn('mt-1 text-[11px]', mine ? 'text-white/60' : 'text-muted')}>
                                 {t('chat.editHint')}
                               </div>
                             </div>
@@ -570,7 +572,7 @@ export default function ChatPage() {
                               <div className="whitespace-pre-wrap break-words">
                                 <MentionText text={m.content} />
                                 {m.editedAt && (
-                                  <span className={`ml-1 text-[11px] italic ${mine ? 'text-white/50' : 'text-slate-400'}`}>
+                                  <span className={cn('ml-1 text-[11px] italic', mine ? 'text-white/50' : 'text-muted')}>
                                     ({t('chat.edited')})
                                   </span>
                                 )}
@@ -586,19 +588,20 @@ export default function ChatPage() {
                               onDownload={downloadAttachment}
                             />
                           )}
-                          {/* Reaction chips + picker */}
                           <div className="mt-1 flex flex-wrap items-center gap-1">
                             {m.reactions.map((r) => (
                               <button
                                 key={r.emoji}
+                                type="button"
                                 onClick={() => toggleReaction(m.id, r.emoji)}
-                                className={`flex items-center gap-0.5 rounded-full border px-1.5 py-0.5 text-xs transition ${
+                                className={cn(
+                                  'flex items-center gap-0.5 rounded-full border px-1.5 py-0.5 text-xs transition',
                                   r.mine
-                                    ? 'border-[#F97316] bg-[#F97316]/15 text-[#F97316] dark:text-orange-300'
+                                    ? 'border-accent bg-accent/15 text-accent'
                                     : mine
                                       ? 'border-white/30 bg-white/10 text-white/90'
-                                      : 'border-slate-300 bg-slate-100 text-slate-600 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200'
-                                }`}
+                                      : 'border-border bg-canvas text-muted',
+                                )}
                               >
                                 <span>{r.emoji}</span>
                                 <span>{r.count}</span>
@@ -606,24 +609,27 @@ export default function ChatPage() {
                             ))}
                             <div className="relative">
                               <button
+                                type="button"
                                 onClick={() => setPickerFor((p) => (p === m.id ? null : m.id))}
                                 title="Add reaction"
-                                className={`flex h-5 w-5 items-center justify-center rounded-full text-xs opacity-60 transition hover:opacity-100 ${
-                                  mine ? 'text-white/80 hover:bg-white/10' : 'text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-700'
-                                }`}
+                                className={cn(
+                                  'flex h-5 w-5 items-center justify-center rounded-full text-xs opacity-60 transition hover:opacity-100',
+                                  mine ? 'text-white/80 hover:bg-white/10' : 'text-muted hover:bg-canvas',
+                                )}
                               >
                                 +
                               </button>
                               {pickerFor === m.id && (
-                                <div className="absolute bottom-6 left-0 z-10 grid max-h-40 w-52 grid-cols-8 gap-0.5 overflow-y-auto rounded-xl border border-slate-200 bg-white p-1.5 shadow-lg dark:border-slate-600 dark:bg-slate-800">
+                                <div className="absolute bottom-6 left-0 z-10 grid max-h-40 w-52 grid-cols-8 gap-0.5 overflow-y-auto rounded-xl border border-border bg-surface p-1.5 shadow-elevated">
                                   {REACTION_EMOJIS.map((e) => (
                                     <button
                                       key={e}
+                                      type="button"
                                       onClick={() => {
                                         toggleReaction(m.id, e)
                                         setPickerFor(null)
                                       }}
-                                      className="flex h-6 w-6 items-center justify-center rounded text-base leading-none transition hover:scale-125 hover:bg-slate-100 dark:hover:bg-slate-700"
+                                      className="flex h-6 w-6 items-center justify-center rounded text-base leading-none transition hover:scale-125 hover:bg-canvas"
                                     >
                                       {e}
                                     </button>
@@ -632,15 +638,14 @@ export default function ChatPage() {
                               )}
                             </div>
                           </div>
-                          {/* Sent time */}
-                          <div className={`mt-0.5 text-right text-[10px] leading-none ${mine ? 'text-white/50' : 'text-slate-400'}`}>
+                          <div className={cn('mt-0.5 text-right text-[10px] leading-none', mine ? 'text-white/50' : 'text-muted')}>
                             {new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                           </div>
                         </div>
                       </MessageContextMenu>
                     </div>
                     {m.id === lastSeenMessageId && (
-                      <div className="pr-1 text-right text-[11px] text-slate-400">✓ {t('chat.seen')}</div>
+                      <div className="pr-1 text-right text-[11px] text-muted">✓ {t('chat.seen')}</div>
                     )}
                     </Fragment>
                   )
@@ -649,9 +654,7 @@ export default function ChatPage() {
               </div>
 
               {typingLabel() && (
-                <div className="px-6 pb-1 text-xs italic text-slate-400 dark:text-slate-500">
-                  {typingLabel()}
-                </div>
+                <div className="px-6 pb-1 text-xs italic text-muted">{typingLabel()}</div>
               )}
 
               {sendError && (
@@ -660,8 +663,7 @@ export default function ChatPage() {
                 </div>
               )}
 
-              <div className="flex items-center gap-2 border-t border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-800">
-                {/* Attach a file */}
+              <div className="flex items-center gap-2 border-t border-border bg-surface p-4">
                 <input
                   ref={fileInputRef}
                   type="file"
@@ -669,35 +671,37 @@ export default function ChatPage() {
                   onChange={(e) => {
                     const f = e.target.files?.[0]
                     if (f) attachFile(f)
-                    e.target.value = '' // allow re-selecting the same file
+                    e.target.value = ''
                   }}
                 />
                 <button
+                  type="button"
                   onClick={() => fileInputRef.current?.click()}
                   title="Attach a file"
-                  className="rounded-lg px-2 py-2 text-lg text-slate-500 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-700"
+                  className="rounded-lg p-2 text-muted transition hover:bg-canvas hover:text-foreground"
                 >
-                  📎
+                  <Paperclip className="h-5 w-5" />
                 </button>
-                {/* Emoji picker for the composer */}
                 <div className="relative">
                   <button
+                    type="button"
                     onClick={() => setShowEmoji((s) => !s)}
                     title={t('chat.addEmoji')}
-                    className="rounded-lg px-2 py-2 text-lg text-slate-500 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-700"
+                    className="rounded-lg p-2 text-muted transition hover:bg-canvas hover:text-foreground"
                   >
-                    😊
+                    <Smile className="h-5 w-5" />
                   </button>
                   {showEmoji && (
-                    <div className="absolute bottom-12 left-0 z-10 grid max-h-48 w-64 grid-cols-8 gap-0.5 overflow-y-auto rounded-xl border border-slate-200 bg-white p-2 shadow-lg dark:border-slate-600 dark:bg-slate-800">
+                    <div className="absolute bottom-12 left-0 z-10 grid max-h-48 w-64 grid-cols-8 gap-0.5 overflow-y-auto rounded-xl border border-border bg-surface p-2 shadow-elevated">
                       {REACTION_EMOJIS.map((e) => (
                         <button
                           key={e}
+                          type="button"
                           onClick={() => {
                             setText((prev) => prev + e)
                             setShowEmoji(false)
                           }}
-                          className="flex h-7 w-7 items-center justify-center rounded text-lg leading-none transition hover:scale-125 hover:bg-slate-100 dark:hover:bg-slate-700"
+                          className="flex h-7 w-7 items-center justify-center rounded text-lg leading-none transition hover:scale-125 hover:bg-canvas"
                         >
                           {e}
                         </button>
@@ -715,19 +719,18 @@ export default function ChatPage() {
                   multiline={false}
                   onKeyDown={(e) => e.key === 'Enter' && send()}
                   placeholder={t('chat.messagePlaceholder')}
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 outline-none focus:border-primary dark:border-slate-600 dark:bg-slate-900"
+                  className="w-full rounded-lg border border-border bg-surface px-3 py-2 outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
                 />
-                <button
-                  onClick={send}
-                  className="rounded-lg bg-accent px-5 font-semibold text-primary transition hover:brightness-95"
-                >
+                <Button variant="accent" onClick={send} className="shrink-0">
+                  <Send className="h-4 w-4" />
                   {t('chat.send')}
-                </button>
+                </Button>
               </div>
             </>
           ) : (
-            <div className="flex flex-1 items-center justify-center text-slate-400">
-              {t('chat.selectConversation')}
+            <div className="flex flex-1 flex-col items-center justify-center gap-2 text-muted">
+              <MessageSquare className="h-12 w-12 opacity-20" />
+              <p>{t('chat.selectConversation')}</p>
             </div>
           )}
         </main>

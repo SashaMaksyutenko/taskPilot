@@ -7,6 +7,7 @@ import ProjectContextMenu from '../components/ProjectContextMenu'
 import Button from '../components/ui/Button'
 import Card from '../components/ui/Card'
 import Input from '../components/ui/Input'
+import { SkeletonCard } from '../components/ui/Skeleton'
 import { projectService } from '../services/projectService'
 import { taskService } from '../services/taskService'
 import { notify } from '../lib/toast'
@@ -136,7 +137,13 @@ export default function ProjectsPage() {
           </Button>
         </div>
 
-        {projects.length === 0 ? (
+        {loading && projects.length === 0 ? (
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <SkeletonCard key={i} />
+            ))}
+          </div>
+        ) : projects.length === 0 ? (
           <EmptyState message={t('projects.empty')} />
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

@@ -626,7 +626,17 @@
       "Admin": "Адмін",
       "Viewer": "Глядач"
     },
-    "usersByRole": "Користувачі за ролями"
+    "usersByRole": "Користувачі за ролями",
+    "usersByStatus": "Користувачі за статусом",
+    "signupsTrend": "Нові користувачі",
+    "contentTrend": "Створено контенту",
+    "metricTopics": "Теми",
+    "metricTasks": "Задачі",
+    "period": "Період:",
+    "period7": "Тиждень",
+    "period30": "Місяць",
+    "period90": "3 місяці",
+    "period365": "Рік"
   },
   "profile": {
     "notFound": "Користувача не знайдено.",

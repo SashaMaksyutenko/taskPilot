@@ -32,4 +32,22 @@ public class AdminStatsDto
 
     /// <summary>Number of users per role (role name → count), for the breakdown chart.</summary>
     public Dictionary<string, int> UsersByRole { get; set; } = new();
+
+    /// <summary>Users per moderation status (Active/Banned/Muted), for the status chart.</summary>
+    public Dictionary<string, int> UsersByStatus { get; set; } = new();
+}
+
+/// <summary>Per-day activity counts for the admin trend charts.</summary>
+public class DayActivityDto
+{
+    public DateTime Day { get; set; }
+
+    /// <summary>New user registrations that day.</summary>
+    public int Signups { get; set; }
+
+    /// <summary>New forum topics that day.</summary>
+    public int Topics { get; set; }
+
+    /// <summary>New tasks created that day.</summary>
+    public int Tasks { get; set; }
 }

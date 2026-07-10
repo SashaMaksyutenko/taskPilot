@@ -626,7 +626,17 @@
       "Admin": "Admin",
       "Viewer": "Viewer"
     },
-    "usersByRole": "Users by role"
+    "usersByRole": "Users by role",
+    "usersByStatus": "Users by status",
+    "signupsTrend": "New users",
+    "contentTrend": "Content created",
+    "metricTopics": "Topics",
+    "metricTasks": "Tasks",
+    "period": "Period:",
+    "period7": "Last week",
+    "period30": "Last month",
+    "period90": "Last 3 months",
+    "period365": "Last year"
   },
   "profile": {
     "notFound": "User not found.",

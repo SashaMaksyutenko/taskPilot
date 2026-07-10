@@ -4,6 +4,9 @@ import { Link, useNavigate } from 'react-router-dom'
 import Avatar from '../components/Avatar'
 import Navbar from '../components/Navbar'
 import RoleChart from '../components/RoleChart'
+import StatusChart from '../components/StatusChart'
+import SignupsChart from '../components/SignupsChart'
+import ActivityChart from '../components/ActivityChart'
 import StatsPanel from '../components/StatsPanel'
 import UserContextMenu from '../components/UserContextMenu'
 import WarnUserModal from '../components/WarnUserModal'
@@ -13,7 +16,7 @@ import { statsService } from '../services/statsService'
 import { useAppSelector } from '../store/hooks'
 import { ROLES, type AdminUser, type Appeal } from '../types/admin'
 import type { ForumReport } from '../types/forum'
-import type { AdminStats } from '../types/stats'
+import type { AdminStats, DayActivity } from '../types/stats'
 
 /**
  * Admin user management: list users, change roles and ban/unban accounts.
@@ -28,6 +31,9 @@ export default function AdminPage() {
   const [page, setPage] = useState(1)
   const [total, setTotal] = useState(0)
   const [stats, setStats] = useState<AdminStats | null>(null)
+  // Trend charts: activity data and the selected period (in days).
+  const [activity, setActivity] = useState<DayActivity[]>([])
+  const [activityDays, setActivityDays] = useState(30)
   // User-list filters and sort.
   const [search, setSearch] = useState('')
   const [roleFilter, setRoleFilter] = useState('')
@@ -58,6 +64,11 @@ export default function AdminPage() {
     setter(value)
     setPage(1)
   }
+
+  // Fetch the activity trend whenever the selected period changes.
+  useEffect(() => {
+    statsService.getActivity(activityDays).then(setActivity).catch(() => {})
+  }, [activityDays])
 
   // Refresh stats on mount and then periodically so "online now" stays live
   // as people connect/disconnect (heavy aggregates are cached server-side).
@@ -163,6 +174,28 @@ export default function AdminPage() {
         <div className="mb-6 grid gap-4 lg:grid-cols-2">
           <StatsPanel stats={stats} />
           {stats && <RoleChart usersByRole={stats.usersByRole} />}
+          {stats && <StatusChart usersByStatus={stats.usersByStatus} />}
+        </div>
+
+        {/* Trend charts with a shared period selector */}
+        <div className="mb-6">
+          <div className="mb-2 flex items-center gap-2">
+            <span className="text-sm font-semibold text-slate-500 dark:text-slate-400">{t('admin.period')}</span>
+            <select
+              value={activityDays}
+              onChange={(e) => setActivityDays(Number(e.target.value))}
+              className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm outline-none focus:border-[#1E2A44] dark:border-slate-600 dark:bg-slate-800"
+            >
+              <option value={7}>{t('admin.period7')}</option>
+              <option value={30}>{t('admin.period30')}</option>
+              <option value={90}>{t('admin.period90')}</option>
+              <option value={365}>{t('admin.period365')}</option>
+            </select>
+          </div>
+          <div className="grid gap-4 lg:grid-cols-2">
+            <SignupsChart activity={activity} />
+            <ActivityChart activity={activity} />
+          </div>
         </div>
 
         {/* Pending appeals queue */}

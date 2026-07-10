@@ -45,6 +45,7 @@ public class StatsService : IStatsService
         return Result<AdminStatsDto>.Ok(new AdminStatsDto
         {
             UsersByRole = agg.UsersByRole,
+            UsersByStatus = agg.UsersByStatus,
             TotalUsers = agg.TotalUsers,
             ActiveUsers = agg.ActiveUsers,
             NewestUserName = agg.NewestUserName,
@@ -75,6 +76,47 @@ public class StatsService : IStatsService
         });
     }
 
+    /// <inheritdoc />
+    public async Task<Result<List<DayActivityDto>>> GetActivityAsync(int days)
+    {
+        // Clamp the window to a sensible range.
+        if (days < 1) days = 1;
+        if (days > 365) days = 365;
+
+        var since = DateTime.UtcNow.Date.AddDays(-(days - 1));
+
+        // Per-day counts for each metric (grouped by the UTC date).
+        var signups = await _context.Users
+            .Where(u => u.CreatedAt >= since)
+            .GroupBy(u => u.CreatedAt.Date)
+            .Select(g => new { Day = g.Key, Count = g.Count() })
+            .ToListAsync();
+        var topics = await _context.ForumTopics
+            .Where(x => x.CreatedAt >= since)
+            .GroupBy(x => x.CreatedAt.Date)
+            .Select(g => new { Day = g.Key, Count = g.Count() })
+            .ToListAsync();
+        var tasks = await _context.ProjectTasks
+            .Where(x => x.CreatedAt >= since)
+            .GroupBy(x => x.CreatedAt.Date)
+            .Select(g => new { Day = g.Key, Count = g.Count() })
+            .ToListAsync();
+
+        // Emit one entry per day, filling gaps with zero.
+        var activity = Enumerable.Range(0, days)
+            .Select(i => since.AddDays(i))
+            .Select(day => new DayActivityDto
+            {
+                Day = day,
+                Signups = signups.FirstOrDefault(s => s.Day == day)?.Count ?? 0,
+                Topics = topics.FirstOrDefault(s => s.Day == day)?.Count ?? 0,
+                Tasks = tasks.FirstOrDefault(s => s.Day == day)?.Count ?? 0,
+            })
+            .ToList();
+
+        return Result<List<DayActivityDto>>.Ok(activity);
+    }
+
     // Cache-aside for the expensive aggregates only (never the live presence count).
     private async Task<StatsAggregates> GetAggregatesAsync()
     {
@@ -90,9 +132,22 @@ public class StatsService : IStatsService
             .Select(g => new { Role = g.Key, Count = g.Count() })
             .ToListAsync();
 
+        // Users per moderation status (disjoint buckets).
+        var now = DateTime.UtcNow;
+        var bannedCount = await _context.Users.CountAsync(u => !u.IsActive || (u.BannedUntil != null && u.BannedUntil > now));
+        var mutedCount = await _context.Users.CountAsync(u =>
+            u.IsActive && (u.BannedUntil == null || u.BannedUntil <= now) && u.MutedUntil != null && u.MutedUntil > now);
+        var byStatus = new Dictionary<string, int>
+        {
+            ["Active"] = common.TotalUsers - bannedCount - mutedCount,
+            ["Muted"] = mutedCount,
+            ["Banned"] = bannedCount,
+        };
+
         var agg = new StatsAggregates(
             byRole.ToDictionary(x => x.Role.ToString(), x => x.Count),
-            common.TotalUsers, common.ActiveUsers, common.NewestUserName, common.TotalTopics, common.TotalForumPosts);
+            common.TotalUsers, common.ActiveUsers, common.NewestUserName, common.TotalTopics, common.TotalForumPosts,
+            byStatus);
 
         await _cache.SetStringAsync(FullStatsCacheKey, JsonSerializer.Serialize(agg),
             new DistributedCacheEntryOptions { AbsoluteExpirationRelativeToNow = FullStatsTtl });
@@ -138,5 +193,6 @@ public class StatsService : IStatsService
     // Cacheable aggregate snapshot (excludes live presence/visitor counts).
     private sealed record StatsAggregates(
         Dictionary<string, int> UsersByRole, int TotalUsers, int ActiveUsers,
-        string? NewestUserName, int TotalTopics, int TotalForumPosts);
+        string? NewestUserName, int TotalTopics, int TotalForumPosts,
+        Dictionary<string, int> UsersByStatus);
 }

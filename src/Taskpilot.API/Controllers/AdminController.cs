@@ -63,6 +63,14 @@ public class AdminController : BaseApiController
         return Ok(result.Value);
     }
 
+    /// <summary>Per-day activity (signups, topics, tasks) over the last N days, for trend charts.</summary>
+    [HttpGet("activity")]
+    public async Task<IActionResult> GetActivity([FromQuery] int days = 30)
+    {
+        var result = await _stats.GetActivityAsync(days);
+        return Ok(result.Value);
+    }
+
     /// <summary>Runs the overdue-tasks check now (otherwise it runs on a timer).</summary>
     [HttpPost("overdue-check")]
     public async Task<IActionResult> RunOverdueCheck()

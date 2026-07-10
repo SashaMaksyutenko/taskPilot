@@ -35,6 +35,9 @@ public class ForumTopic
     /// <summary>UTC time the topic was last edited; null if never.</summary>
     public DateTime? UpdatedAt { get; set; }
 
+    /// <summary>Free-form tags for categorising and filtering topics.</summary>
+    public List<string> Tags { get; set; } = new();
+
     /// <summary>Replies posted to this topic.</summary>
     public ICollection<ForumReply> Replies { get; set; } = new List<ForumReply>();
 }

@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import Avatar from '../components/Avatar'
 import MarkdownEditor from '../components/MarkdownEditor'
 import Navbar from '../components/Navbar'
 import EmptyState from '../components/EmptyState'
+import TagInput from '../components/TagInput'
 import TopicContextMenu from '../components/TopicContextMenu'
 import { apiErrorMessage } from '../lib/apiError'
 import { forumService } from '../services/forumService'
@@ -25,12 +26,15 @@ export default function ForumPage() {
   const [total, setTotal] = useState(0)
   const [title, setTitle] = useState('')
   const [body, setBody] = useState('')
+  const [tags, setTags] = useState<string[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  // Browsing controls: search text, sort order and solved filter.
+  // Browsing controls: search text, sort order, solved filter and an active tag.
   const [search, setSearch] = useState('')
   const [sort, setSort] = useState<'latest' | 'active' | 'top'>('latest')
   const [solvedFilter, setSolvedFilter] = useState<'all' | 'solved' | 'unsolved'>('all')
+  const [searchParams] = useSearchParams()
+  const [tagFilter, setTagFilter] = useState<string | null>(searchParams.get('tag'))
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
 
@@ -42,6 +46,7 @@ export default function ForumPage() {
         search: search.trim() || undefined,
         sort,
         solved: solvedFilter === 'all' ? undefined : solvedFilter === 'solved',
+        tag: tagFilter || undefined,
       })
       .then((r) => {
         setTopics(r.items)
@@ -55,16 +60,17 @@ export default function ForumPage() {
     const id = setTimeout(() => load(page), 250)
     return () => clearTimeout(id)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, search, sort, solvedFilter])
+  }, [page, search, sort, solvedFilter, tagFilter])
 
   const create = async () => {
     if (!title.trim() || !body.trim()) return
     setLoading(true)
     setError('')
     try {
-      await forumService.createTopic({ title: title.trim(), body: body.trim() })
+      await forumService.createTopic({ title: title.trim(), body: body.trim(), tags })
       setTitle('')
       setBody('')
+      setTags([])
       // Jump to the first page to show the new topic (reload if already there).
       if (page === 1) load(1)
       else setPage(1)
@@ -103,6 +109,10 @@ export default function ForumPage() {
     setSearch(value)
     setPage(1)
   }
+  const changeTag = (value: string | null) => {
+    setTagFilter(value)
+    setPage(1)
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 text-[#1E2A44] dark:bg-slate-900 dark:text-slate-100">
@@ -126,6 +136,9 @@ export default function ForumPage() {
               placeholder={t('forum.bodyPlaceholder')}
               className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 outline-none focus:border-[#1E2A44] dark:border-slate-600 dark:bg-slate-900"
             />
+          </div>
+          <div className="mb-3">
+            <TagInput tags={tags} onChange={setTags} />
           </div>
           <div className="flex items-center gap-3">
             <button
@@ -166,6 +179,17 @@ export default function ForumPage() {
             <option value="unsolved">{t('forum.filter.unsolved')}</option>
           </select>
         </div>
+
+        {/* Active tag filter */}
+        {tagFilter && (
+          <div className="mb-4 flex items-center gap-2 text-sm">
+            <span className="text-slate-500 dark:text-slate-400">{t('forum.filteredByTag')}</span>
+            <span className="flex items-center gap-1 rounded-full bg-[#1E2A44]/10 px-2 py-0.5 text-xs font-medium text-[#1E2A44] dark:bg-slate-700 dark:text-slate-200">
+              #{tagFilter}
+              <button onClick={() => changeTag(null)} className="text-slate-400 hover:text-red-600">✕</button>
+            </span>
+          </div>
+        )}
 
         {/* Topic list */}
         {topics.length === 0 ? (
@@ -215,6 +239,23 @@ export default function ForumPage() {
                       </span>{' '}
                       · {new Date(topic.createdAt).toLocaleDateString()}
                     </div>
+                    {topic.tags.length > 0 && (
+                      <div className="mt-1.5 flex flex-wrap gap-1">
+                        {topic.tags.map((tag) => (
+                          <button
+                            key={tag}
+                            onClick={(e) => {
+                              e.preventDefault()
+                              e.stopPropagation()
+                              changeTag(tag)
+                            }}
+                            className="rounded-full bg-[#1E2A44]/10 px-2 py-0.5 text-[10px] font-medium text-[#1E2A44] hover:bg-[#1E2A44]/20 dark:bg-slate-700 dark:text-slate-200"
+                          >
+                            #{tag}
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
                   <div className="flex flex-none gap-4 text-center text-xs text-slate-500 dark:text-slate-400">
                     <div>

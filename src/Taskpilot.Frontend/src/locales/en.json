@@ -474,6 +474,8 @@
     "copyLink": "Copy link",
     "delete": "Delete",
     "searchPlaceholder": "Search topics…",
+    "tagsPlaceholder": "Add tags…",
+    "filteredByTag": "Filtered by tag:",
     "solved": "Solved",
     "pin": "Pin",
     "unpin": "Unpin",

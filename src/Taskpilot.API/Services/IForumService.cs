@@ -20,7 +20,7 @@ public interface IForumService
     /// <param name="sort">"latest" (default), "active" (last reply) or "top" (most viewed).</param>
     Task<Result<PagedResult<TopicListItemDto>>> GetTopicsAsync(
         Guid? authorId = null, int page = 1, int pageSize = 20,
-        string? search = null, bool? solved = null, string? sort = null);
+        string? search = null, bool? solved = null, string? sort = null, string? tag = null);
 
     /// <summary>
     /// Returns a topic with its replies and increments its view count.
@@ -79,9 +79,9 @@ public interface IForumService
     Task<int> GetPendingReportCountAsync();
 
     /// <summary>
-    /// Edits a topic's title and body. Allowed only for the topic's author or an admin.
+    /// Edits a topic's title, body and tags. Allowed only for the topic's author or an admin.
     /// </summary>
-    Task<Result<TopicDetailDto>> EditTopicAsync(Guid userId, Guid topicId, string title, string body, bool isAdmin);
+    Task<Result<TopicDetailDto>> EditTopicAsync(Guid userId, Guid topicId, string title, string body, List<string> tags, bool isAdmin);
 
     /// <summary>
     /// Deletes a topic (and its replies). Allowed only for the topic's author or an admin.

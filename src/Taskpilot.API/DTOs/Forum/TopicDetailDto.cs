@@ -18,5 +18,9 @@ public class TopicDetailDto
 
     public DateTime CreatedAt { get; set; }
     public DateTime? UpdatedAt { get; set; }
+
+    /// <summary>Free-form tags on the topic.</summary>
+    public List<string> Tags { get; set; } = new();
+
     public List<ReplyDto> Replies { get; set; } = new();
 }

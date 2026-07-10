@@ -20,4 +20,7 @@ public class TopicListItemDto
 
     /// <summary>Time of the latest reply, or the creation time if there are none.</summary>
     public DateTime LastActivityAt { get; set; }
+
+    /// <summary>Free-form tags on the topic.</summary>
+    public List<string> Tags { get; set; } = new();
 }

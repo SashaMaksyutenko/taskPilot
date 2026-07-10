@@ -46,9 +46,10 @@ public class ForumController : BaseApiController
         [FromQuery] int pageSize = 20,
         [FromQuery] string? search = null,
         [FromQuery] bool? solved = null,
-        [FromQuery] string? sort = null)
+        [FromQuery] string? sort = null,
+        [FromQuery] string? tag = null)
     {
-        var result = await _forumService.GetTopicsAsync(authorId, page, pageSize, search, solved, sort);
+        var result = await _forumService.GetTopicsAsync(authorId, page, pageSize, search, solved, sort, tag);
         return Ok(result.Value);
     }
 
@@ -87,7 +88,7 @@ public class ForumController : BaseApiController
             return BadRequest(new { errors });
         }
 
-        var result = await _forumService.EditTopicAsync(userId.Value, topicId, dto.Title, dto.Body, User.IsInRole("Admin"));
+        var result = await _forumService.EditTopicAsync(userId.Value, topicId, dto.Title, dto.Body, dto.Tags, User.IsInRole("Admin"));
         return result.Succeeded
             ? Ok(result.Value)
             : BadRequest(new { error = result.Error });

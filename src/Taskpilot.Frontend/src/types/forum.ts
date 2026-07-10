@@ -13,6 +13,7 @@ export interface TopicListItem {
   isSolved: boolean
   createdAt: string
   lastActivityAt: string
+  tags: string[]
 }
 
 /** A group of the same emoji reaction on a reply. */
@@ -52,6 +53,7 @@ export interface TopicDetail {
   isSubscribed: boolean
   createdAt: string
   updatedAt: string | null
+  tags: string[]
   replies: Reply[]
 }
 

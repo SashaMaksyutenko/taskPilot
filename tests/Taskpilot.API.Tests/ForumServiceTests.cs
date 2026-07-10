@@ -189,14 +189,52 @@ public class ForumServiceTests
         var author = await TestDb.AddUserAsync(ctx, "Author");
         var (topicId, _) = await SeedTopicWithReplyAsync(ctx, author, author);
 
-        var result = await Create(ctx).EditTopicAsync(author, topicId, "  New title  ", "  new body  ", isAdmin: false);
+        var result = await Create(ctx).EditTopicAsync(author, topicId, "  New title  ", "  new body  ", new List<string> { "csharp" }, isAdmin: false);
 
         Assert.True(result.Succeeded);
         Assert.Equal("New title", result.Value!.Title);
+        Assert.Equal(new[] { "csharp" }, result.Value!.Tags);
         var stored = await ctx.ForumTopics.FirstAsync(t => t.Id == topicId);
         Assert.Equal("New title", stored.Title);
         Assert.Equal("new body", stored.Body);
+        Assert.Equal(new[] { "csharp" }, stored.Tags);
         Assert.NotNull(stored.UpdatedAt);
+    }
+
+    [Fact]
+    public async Task CreateTopic_NormalizesTags()
+    {
+        await using var ctx = TestDb.CreateContext();
+        var author = await TestDb.AddUserAsync(ctx, "Author");
+        var dto = new Taskpilot.API.DTOs.Forum.CreateTopicDto
+        {
+            Title = "Tagged topic",
+            Body = "body",
+            // Blank, duplicate (case-insensitive) and over-cap entries.
+            Tags = new List<string> { " EF ", "ef", "", "sql", "sql", "a", "b", "c" },
+        };
+
+        var result = await Create(ctx).CreateTopicAsync(author, dto);
+
+        Assert.True(result.Succeeded);
+        // "EF" kept once, blanks dropped, capped at 5.
+        Assert.Equal(new[] { "EF", "sql", "a", "b", "c" }, result.Value!.Tags);
+    }
+
+    [Fact]
+    public async Task GetTopics_TagFilter_ReturnsOnlyMatching()
+    {
+        await using var ctx = TestDb.CreateContext();
+        var author = await TestDb.AddUserAsync(ctx, "Author");
+        var tagged = new ForumTopic { Id = Guid.NewGuid(), Title = "Tagged", Body = "b", AuthorId = author, CreatedAt = DateTime.UtcNow, Tags = new List<string> { "docker" } };
+        var other = new ForumTopic { Id = Guid.NewGuid(), Title = "Other", Body = "b", AuthorId = author, CreatedAt = DateTime.UtcNow, Tags = new List<string> { "linux" } };
+        ctx.ForumTopics.AddRange(tagged, other);
+        await ctx.SaveChangesAsync();
+
+        var result = await Create(ctx).GetTopicsAsync(tag: "docker");
+
+        Assert.Contains(result.Value!.Items, t => t.Id == tagged.Id);
+        Assert.DoesNotContain(result.Value!.Items, t => t.Id == other.Id);
     }
 
     [Fact]
@@ -207,7 +245,7 @@ public class ForumServiceTests
         var stranger = await TestDb.AddUserAsync(ctx, "Stranger");
         var (topicId, _) = await SeedTopicWithReplyAsync(ctx, author, author);
 
-        var result = await Create(ctx).EditTopicAsync(stranger, topicId, "Hacked", "hacked", isAdmin: false);
+        var result = await Create(ctx).EditTopicAsync(stranger, topicId, "Hacked", "hacked", new List<string>(), isAdmin: false);
 
         Assert.False(result.Succeeded);
         Assert.Equal("T", (await ctx.ForumTopics.FirstAsync(t => t.Id == topicId)).Title);

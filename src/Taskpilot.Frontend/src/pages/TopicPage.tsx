@@ -6,6 +6,7 @@ import Markdown from '../components/Markdown'
 import MarkdownEditor from '../components/MarkdownEditor'
 import Navbar from '../components/Navbar'
 import ConfirmDialog from '../components/ConfirmDialog'
+import TagInput from '../components/TagInput'
 import ActionsContextMenu, { type ContextAction } from '../components/ActionsContextMenu'
 import { apiErrorMessage } from '../lib/apiError'
 import { notify } from '../lib/toast'
@@ -48,6 +49,7 @@ export default function TopicPage() {
   const [editingTopic, setEditingTopic] = useState(false)
   const [editTitle, setEditTitle] = useState('')
   const [editTopicBody, setEditTopicBody] = useState('')
+  const [editTags, setEditTags] = useState<string[]>([])
   // Editor container, so replying/quoting can scroll it into view.
   const replyEditorRef = useRef<HTMLDivElement | null>(null)
   // Client-side pagination of the replies list.
@@ -201,6 +203,7 @@ export default function TopicPage() {
     if (!topic) return
     setEditTitle(topic.title)
     setEditTopicBody(topic.body)
+    setEditTags(topic.tags)
     setEditingTopic(true)
     setError('')
   }
@@ -212,8 +215,9 @@ export default function TopicPage() {
       const updated = await forumService.editTopic(topic.id, {
         title: editTitle.trim(),
         body: editTopicBody.trim(),
+        tags: editTags,
       })
-      setTopic({ ...topic, title: updated.title, body: updated.body, updatedAt: updated.updatedAt })
+      setTopic({ ...topic, title: updated.title, body: updated.body, updatedAt: updated.updatedAt, tags: updated.tags })
       setEditingTopic(false)
     } catch (e) {
       setError(apiErrorMessage(e))
@@ -272,6 +276,9 @@ export default function TopicPage() {
                 placeholder={t('forum.bodyPlaceholder')}
                 className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 outline-none focus:border-[#1E2A44] dark:border-slate-600 dark:bg-slate-900"
               />
+              <div className="mt-2">
+                <TagInput tags={editTags} onChange={setEditTags} />
+              </div>
               <div className="mt-2 flex items-center gap-3 text-sm">
                 <button
                   onClick={saveEditTopic}
@@ -325,6 +332,19 @@ export default function TopicPage() {
                   {topic.updatedAt && <span className="italic"> · {t('topic.edited')}</span>}
                 </span>
               </div>
+              {topic.tags.length > 0 && (
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {topic.tags.map((tag) => (
+                    <Link
+                      key={tag}
+                      to={`/forum?tag=${encodeURIComponent(tag)}`}
+                      className="rounded-full bg-[#1E2A44]/10 px-2 py-0.5 text-xs font-medium text-[#1E2A44] hover:bg-[#1E2A44]/20 dark:bg-slate-700 dark:text-slate-200"
+                    >
+                      #{tag}
+                    </Link>
+                  ))}
+                </div>
+              )}
               <div className="mt-4">
                 <Markdown>{topic.body}</Markdown>
               </div>

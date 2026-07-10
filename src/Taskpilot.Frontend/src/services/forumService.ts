@@ -12,6 +12,7 @@ export const forumService = {
       search?: string
       solved?: boolean
       sort?: 'latest' | 'active' | 'top'
+      tag?: string
     } = {},
   ): Promise<PagedResult<TopicListItem>> {
     return api.get<PagedResult<TopicListItem>>('/api/forum/topics', { params }).then((r) => r.data)
@@ -26,12 +27,12 @@ export const forumService = {
     return api.post(`/api/forum/topics/${id}/view`).then(() => undefined)
   },
 
-  createTopic(data: { title: string; body: string }): Promise<TopicDetail> {
+  createTopic(data: { title: string; body: string; tags?: string[] }): Promise<TopicDetail> {
     return api.post<TopicDetail>('/api/forum/topics', data).then((r) => r.data)
   },
 
   /** Edits a topic's title and body (author or admin only). */
-  editTopic(id: string, data: { title: string; body: string }): Promise<TopicDetail> {
+  editTopic(id: string, data: { title: string; body: string; tags?: string[] }): Promise<TopicDetail> {
     return api.put<TopicDetail>(`/api/forum/topics/${id}`, data).then((r) => r.data)
   },
 

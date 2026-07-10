@@ -474,6 +474,8 @@
     "copyLink": "Копіювати посилання",
     "delete": "Видалити",
     "searchPlaceholder": "Пошук тем…",
+    "tagsPlaceholder": "Додати теги…",
+    "filteredByTag": "Фільтр за тегом:",
     "solved": "Вирішено",
     "pin": "Закріпити",
     "unpin": "Відкріпити",

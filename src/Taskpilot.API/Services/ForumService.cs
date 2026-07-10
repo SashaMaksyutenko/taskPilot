@@ -46,6 +46,7 @@ public class ForumService : IForumService
                 Body = dto.Body.Trim(),
                 AuthorId = authorId,
                 CreatedAt = DateTime.UtcNow,
+                Tags = NormalizeTags(dto.Tags),
             };
             _context.ForumTopics.Add(topic);
             await _context.SaveChangesAsync();
@@ -69,6 +70,7 @@ public class ForumService : IForumService
                 IsPinned = false,
                 IsLocked = false,
                 CreatedAt = topic.CreatedAt,
+                Tags = topic.Tags,
             });
         }
         catch (Exception ex)
@@ -81,7 +83,7 @@ public class ForumService : IForumService
     /// <inheritdoc />
     public async Task<Result<PagedResult<TopicListItemDto>>> GetTopicsAsync(
         Guid? authorId = null, int page = 1, int pageSize = 20,
-        string? search = null, bool? solved = null, string? sort = null)
+        string? search = null, bool? solved = null, string? sort = null, string? tag = null)
     {
         // Clamp paging to sane bounds.
         if (page < 1) page = 1;
@@ -101,6 +103,13 @@ public class ForumService : IForumService
         // Optional solved/unsolved filter (a topic is solved if any live reply is a solution).
         if (solved is bool wantSolved)
             query = query.Where(t => t.Replies.Any(r => r.IsSolution && !r.IsDeleted) == wantSolved);
+
+        // Optional tag filter (exact match against the topic's tags).
+        if (!string.IsNullOrWhiteSpace(tag))
+        {
+            var wanted = tag.Trim();
+            query = query.Where(t => t.Tags.Contains(wanted));
+        }
 
         var total = await query.CountAsync();
 
@@ -130,6 +139,7 @@ public class ForumService : IForumService
                 IsSolved = t.Replies.Any(r => r.IsSolution && !r.IsDeleted),
                 t.CreatedAt,
                 LastActivityAt = t.Replies.Where(r => !r.IsDeleted).Max(r => (DateTime?)r.CreatedAt) ?? t.CreatedAt,
+                t.Tags,
             })
             .AsNoTracking()
             .ToListAsync();
@@ -150,6 +160,7 @@ public class ForumService : IForumService
                 IsSolved = t.IsSolved,
                 CreatedAt = t.CreatedAt,
                 LastActivityAt = t.LastActivityAt,
+                Tags = t.Tags,
             })
             .ToList();
 
@@ -624,7 +635,7 @@ public class ForumService : IForumService
         _context.ForumReports.CountAsync(r => r.Status == ForumReportStatus.Pending);
 
     /// <inheritdoc />
-    public async Task<Result<TopicDetailDto>> EditTopicAsync(Guid userId, Guid topicId, string title, string body, bool isAdmin)
+    public async Task<Result<TopicDetailDto>> EditTopicAsync(Guid userId, Guid topicId, string title, string body, List<string> tags, bool isAdmin)
     {
         var topic = await _context.ForumTopics
             .Include(t => t.Author)
@@ -641,11 +652,34 @@ public class ForumService : IForumService
 
         topic.Title = title.Trim();
         topic.Body = body.Trim();
+        topic.Tags = NormalizeTags(tags);
         topic.UpdatedAt = DateTime.UtcNow;
         await _context.SaveChangesAsync();
 
         _logger.LogInformation("Topic edited. TopicId: {TopicId}, By: {UserId}, Admin: {IsAdmin}", topicId, userId, isAdmin);
         return Result<TopicDetailDto>.Ok(MapDetail(topic, userId));
+    }
+
+    // --- helpers ---
+
+    /// <summary>
+    /// Cleans up incoming tags: trims, drops blanks, caps length at 30 and count at 5,
+    /// and de-duplicates case-insensitively (keeping the first spelling).
+    /// </summary>
+    private static List<string> NormalizeTags(IEnumerable<string>? tags)
+    {
+        if (tags is null) return new List<string>();
+        var result = new List<string>();
+        foreach (var raw in tags)
+        {
+            var tag = raw?.Trim();
+            if (string.IsNullOrEmpty(tag)) continue;
+            if (tag.Length > 30) tag = tag.Substring(0, 30);
+            if (result.Any(x => string.Equals(x, tag, StringComparison.OrdinalIgnoreCase))) continue;
+            result.Add(tag);
+            if (result.Count >= 5) break;
+        }
+        return result;
     }
 
     // --- mapping ---
@@ -663,6 +697,7 @@ public class ForumService : IForumService
         IsLocked = t.IsLocked,
         CreatedAt = t.CreatedAt,
         UpdatedAt = t.UpdatedAt,
+        Tags = t.Tags,
         // Deleted replies are hidden entirely (their row is kept only so any
         // child replies that referenced them stay valid under the FK).
         Replies = t.Replies

@@ -1,6 +1,6 @@
 import api from '../lib/api'
 import type { PagedResult } from '../types/common'
-import type { Reply, ReplyReaction, TopicDetail, TopicListItem, VoteResult } from '../types/forum'
+import type { ForumReport, Reply, ReplyReaction, TopicDetail, TopicListItem, VoteResult } from '../types/forum'
 
 /** REST calls for the forum. */
 export const forumService = {
@@ -79,5 +79,20 @@ export const forumService = {
   /** Toggles the current user's subscription to a topic; returns the new state. */
   toggleSubscription(topicId: string): Promise<boolean> {
     return api.post<{ subscribed: boolean }>(`/api/forum/topics/${topicId}/subscribe`).then((r) => r.data.subscribed)
+  },
+
+  /** Reports a reply to the moderators, with an optional reason. */
+  reportReply(replyId: string, reason?: string): Promise<void> {
+    return api.post(`/api/forum/replies/${replyId}/report`, { reason }).then(() => undefined)
+  },
+
+  /** Lists moderation reports (admin only), optionally filtered by status. */
+  getReports(status?: string): Promise<ForumReport[]> {
+    return api.get<ForumReport[]>('/api/forum/reports', { params: status ? { status } : {} }).then((r) => r.data)
+  },
+
+  /** Resolves or dismisses a report (admin only). */
+  resolveReport(reportId: string, dismiss: boolean): Promise<void> {
+    return api.post(`/api/forum/reports/${reportId}/resolve`, { dismiss }).then(() => undefined)
   },
 }

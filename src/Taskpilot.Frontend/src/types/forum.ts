@@ -55,6 +55,21 @@ export interface TopicDetail {
   replies: Reply[]
 }
 
+/** A moderation report on a forum reply (mirrors ForumReportDto). */
+export interface ForumReport {
+  id: string
+  replyId: string
+  topicId: string
+  topicTitle: string
+  replyExcerpt: string
+  replyAuthorName: string
+  reporterId: string
+  reporterName: string
+  reason: string | null
+  status: string
+  createdAt: string
+}
+
 export interface VoteResult {
   replyId: string
   score: number

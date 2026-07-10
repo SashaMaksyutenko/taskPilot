@@ -548,6 +548,82 @@ public class ForumService : IForumService
     }
 
     /// <inheritdoc />
+    public async Task<Result> ReportReplyAsync(Guid reporterId, Guid replyId, string? reason)
+    {
+        var reply = await _context.ForumReplies.FirstOrDefaultAsync(r => r.Id == replyId);
+        if (reply is null || reply.IsDeleted)
+            return Result.Fail("Reply not found.");
+
+        // Don't stack duplicate pending reports from the same user on the same reply.
+        var alreadyPending = await _context.ForumReports.AnyAsync(r =>
+            r.ReplyId == replyId && r.ReporterId == reporterId && r.Status == ForumReportStatus.Pending);
+        if (alreadyPending)
+            return Result.Ok();
+
+        _context.ForumReports.Add(new ForumReport
+        {
+            Id = Guid.NewGuid(),
+            ReplyId = replyId,
+            ReporterId = reporterId,
+            Reason = string.IsNullOrWhiteSpace(reason) ? null : reason.Trim(),
+            Status = ForumReportStatus.Pending,
+            CreatedAt = DateTime.UtcNow,
+        });
+        await _context.SaveChangesAsync();
+        _logger.LogInformation("Reply reported. ReplyId: {ReplyId}, By: {ReporterId}", replyId, reporterId);
+        return Result.Ok();
+    }
+
+    /// <inheritdoc />
+    public async Task<Result<List<ForumReportDto>>> GetReportsAsync(string? status = null)
+    {
+        var query = _context.ForumReports.AsQueryable();
+        if (!string.IsNullOrWhiteSpace(status) && Enum.TryParse<ForumReportStatus>(status, true, out var parsed))
+            query = query.Where(r => r.Status == parsed);
+
+        var reports = await query
+            .OrderBy(r => r.Status == ForumReportStatus.Pending ? 0 : 1)
+            .ThenByDescending(r => r.CreatedAt)
+            .Select(r => new ForumReportDto
+            {
+                Id = r.Id,
+                ReplyId = r.ReplyId,
+                TopicId = r.Reply.TopicId,
+                TopicTitle = r.Reply.Topic.Title,
+                ReplyExcerpt = r.Reply.Body.Length > 200 ? r.Reply.Body.Substring(0, 200) : r.Reply.Body,
+                ReplyAuthorName = r.Reply.Author.Name,
+                ReporterId = r.ReporterId,
+                ReporterName = r.Reporter.Name,
+                Reason = r.Reason,
+                Status = r.Status.ToString(),
+                CreatedAt = r.CreatedAt,
+            })
+            .AsNoTracking()
+            .ToListAsync();
+
+        return Result<List<ForumReportDto>>.Ok(reports);
+    }
+
+    /// <inheritdoc />
+    public async Task<Result> ResolveReportAsync(Guid adminId, Guid reportId, bool dismiss)
+    {
+        var report = await _context.ForumReports.FirstOrDefaultAsync(r => r.Id == reportId);
+        if (report is null)
+            return Result.Fail("Report not found.");
+
+        report.Status = dismiss ? ForumReportStatus.Dismissed : ForumReportStatus.Resolved;
+        report.ResolvedById = adminId;
+        report.ResolvedAt = DateTime.UtcNow;
+        await _context.SaveChangesAsync();
+        _logger.LogInformation("Report resolved. ReportId: {ReportId}, Dismiss: {Dismiss}, By: {AdminId}", reportId, dismiss, adminId);
+        return Result.Ok();
+    }
+
+    /// <inheritdoc />
+    public Task<int> GetPendingReportCountAsync() =>
+        _context.ForumReports.CountAsync(r => r.Status == ForumReportStatus.Pending);
+
+    /// <inheritdoc />
     public async Task<Result<TopicDetailDto>> EditTopicAsync(Guid userId, Guid topicId, string title, string body, bool isAdmin)
     {
         var topic = await _context.ForumTopics

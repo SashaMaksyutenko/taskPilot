@@ -64,6 +64,21 @@ public interface IForumService
     Task<Result<bool>> ToggleSubscriptionAsync(Guid topicId, Guid userId);
 
     /// <summary>
+    /// Files a report against a reply. A user's pending report on the same reply is
+    /// not duplicated.
+    /// </summary>
+    Task<Result> ReportReplyAsync(Guid reporterId, Guid replyId, string? reason);
+
+    /// <summary>Lists moderation reports (pending first, then newest), optionally filtered by status.</summary>
+    Task<Result<List<ForumReportDto>>> GetReportsAsync(string? status = null);
+
+    /// <summary>Resolves a report — either dismissing it or marking it acted upon.</summary>
+    Task<Result> ResolveReportAsync(Guid adminId, Guid reportId, bool dismiss);
+
+    /// <summary>Number of reports still awaiting review (for the admin badge).</summary>
+    Task<int> GetPendingReportCountAsync();
+
+    /// <summary>
     /// Edits a topic's title and body. Allowed only for the topic's author or an admin.
     /// </summary>
     Task<Result<TopicDetailDto>> EditTopicAsync(Guid userId, Guid topicId, string title, string body, bool isAdmin);

@@ -8,9 +8,11 @@ import StatsPanel from '../components/StatsPanel'
 import UserContextMenu from '../components/UserContextMenu'
 import WarnUserModal from '../components/WarnUserModal'
 import { adminService } from '../services/adminService'
+import { forumService } from '../services/forumService'
 import { statsService } from '../services/statsService'
 import { useAppSelector } from '../store/hooks'
 import { ROLES, type AdminUser, type Appeal } from '../types/admin'
+import type { ForumReport } from '../types/forum'
 import type { AdminStats } from '../types/stats'
 
 /**
@@ -61,6 +63,18 @@ export default function AdminPage() {
     await adminService.resolveAppeal(id, approve).catch(() => {})
     loadAppeals()
     load(page) // an approval may have lifted a warning / changed a ban
+  }
+
+  // Pending forum reports queue.
+  const [reports, setReports] = useState<ForumReport[]>([])
+  const loadReports = () => forumService.getReports('Pending').then(setReports).catch(() => {})
+  useEffect(() => {
+    loadReports()
+  }, [])
+
+  const resolveReport = async (id: string, dismiss: boolean) => {
+    await forumService.resolveReport(id, dismiss).catch(() => {})
+    loadReports()
   }
 
   const changeRole = async (id: string, role: string) => {
@@ -166,6 +180,51 @@ export default function AdminPage() {
                       className="rounded-lg border border-red-300 px-4 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50 dark:border-red-700 dark:hover:bg-red-950"
                     >
                       {t('appeal.reject')}
+                    </button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+
+        {/* Pending forum reports queue */}
+        {reports.length > 0 && (
+          <section className="mb-6 rounded-xl border border-red-300 bg-red-50 p-5 dark:border-red-800 dark:bg-red-950/30">
+            <h2 className="mb-3 font-bold text-red-800 dark:text-red-200">
+              {t('report.queueTitle', { count: reports.length })}
+            </h2>
+            <ul className="space-y-3">
+              {reports.map((r) => (
+                <li key={r.id} className="rounded-lg bg-white p-3 text-sm dark:bg-slate-800">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Link to={`/users/${r.reporterId}`} className="font-semibold hover:underline">{r.reporterName}</Link>
+                    <span className="text-xs text-slate-400">{t('report.reported')}</span>
+                    <Link to={`/forum/${r.topicId}#reply-${r.replyId}`} className="text-xs text-[#1E2A44] hover:underline dark:text-slate-200">
+                      {r.topicTitle}
+                    </Link>
+                    <span className="ml-auto text-xs text-slate-400">{new Date(r.createdAt).toLocaleString()}</span>
+                  </div>
+                  <p className="mt-2 rounded border-l-4 border-slate-300 bg-slate-50 px-3 py-1.5 text-xs text-slate-600 dark:border-slate-600 dark:bg-slate-900/40 dark:text-slate-300">
+                    <span className="font-semibold">{r.replyAuthorName}:</span> {r.replyExcerpt}
+                  </p>
+                  {r.reason && (
+                    <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                      {t('report.reasonLabel')}: {r.reason}
+                    </p>
+                  )}
+                  <div className="mt-3 flex gap-2">
+                    <button
+                      onClick={() => resolveReport(r.id, false)}
+                      className="rounded-lg bg-green-600 px-4 py-1.5 text-xs font-semibold text-white hover:bg-green-700"
+                    >
+                      {t('report.resolve')}
+                    </button>
+                    <button
+                      onClick={() => resolveReport(r.id, true)}
+                      className="rounded-lg border border-slate-300 px-4 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-700"
+                    >
+                      {t('report.dismiss')}
                     </button>
                   </div>
                 </li>

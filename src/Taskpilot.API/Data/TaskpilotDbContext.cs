@@ -53,6 +53,9 @@ public class TaskpilotDbContext : DbContext
     /// <summary>User subscriptions to forum topics.</summary>
     public DbSet<ForumTopicSubscription> ForumTopicSubscriptions => Set<ForumTopicSubscription>();
 
+    /// <summary>User reports of forum replies to moderators.</summary>
+    public DbSet<ForumReport> ForumReports => Set<ForumReport>();
+
     /// <summary>Public marketplace tasks.</summary>
     public DbSet<MarketplaceTask> MarketplaceTasks => Set<MarketplaceTask>();
 
@@ -384,6 +387,34 @@ public class TaskpilotDbContext : DbContext
             entity.HasOne(s => s.User)
                   .WithMany()
                   .HasForeignKey(s => s.UserId)
+                  .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        // ForumReport entity configuration
+        modelBuilder.Entity<ForumReport>(entity =>
+        {
+            entity.HasKey(r => r.Id);
+
+            entity.Property(r => r.Reason).HasMaxLength(1000);
+
+            // Store status as a readable string.
+            entity.Property(r => r.Status)
+                  .HasConversion<string>()
+                  .HasMaxLength(20)
+                  .IsRequired();
+
+            entity.HasIndex(r => new { r.Status, r.CreatedAt });
+
+            // Deleting a reply removes its reports.
+            entity.HasOne(r => r.Reply)
+                  .WithMany()
+                  .HasForeignKey(r => r.ReplyId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            // Restrict on the user side to avoid multiple cascade paths to Users.
+            entity.HasOne(r => r.Reporter)
+                  .WithMany()
+                  .HasForeignKey(r => r.ReporterId)
                   .OnDelete(DeleteBehavior.Restrict);
         });
 

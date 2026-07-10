@@ -282,6 +282,58 @@ public class ForumServiceTests
     }
 
     [Fact]
+    public async Task ReportReply_CreatesPending_AndDedupesSameUser()
+    {
+        await using var ctx = TestDb.CreateContext();
+        var author = await TestDb.AddUserAsync(ctx, "Author");
+        var reporter = await TestDb.AddUserAsync(ctx, "Reporter");
+        var (_, replyId) = await SeedTopicWithReplyAsync(ctx, author, author);
+        var svc = Create(ctx);
+
+        Assert.True((await svc.ReportReplyAsync(reporter, replyId, "spam")).Succeeded);
+        // A second report by the same user on the same reply is a no-op.
+        Assert.True((await svc.ReportReplyAsync(reporter, replyId, "again")).Succeeded);
+        Assert.Equal(1, await ctx.ForumReports.CountAsync());
+        Assert.Equal(1, await svc.GetPendingReportCountAsync());
+    }
+
+    [Fact]
+    public async Task GetReports_And_Resolve_MovesOutOfPending()
+    {
+        await using var ctx = TestDb.CreateContext();
+        var author = await TestDb.AddUserAsync(ctx, "Author");
+        var reporter = await TestDb.AddUserAsync(ctx, "Reporter");
+        var admin = await TestDb.AddUserAsync(ctx, "Admin");
+        var (_, replyId) = await SeedTopicWithReplyAsync(ctx, author, author);
+        var svc = Create(ctx);
+        await svc.ReportReplyAsync(reporter, replyId, "bad");
+
+        var pending = await svc.GetReportsAsync("Pending");
+        var report = Assert.Single(pending.Value!);
+        Assert.Equal("Reporter", report.ReporterName);
+        Assert.Equal(replyId, report.ReplyId);
+
+        Assert.True((await svc.ResolveReportAsync(admin, report.Id, dismiss: false)).Succeeded);
+        Assert.Equal(0, await svc.GetPendingReportCountAsync());
+        var stored = await ctx.ForumReports.FirstAsync();
+        Assert.Equal(ForumReportStatus.Resolved, stored.Status);
+        Assert.Equal(admin, stored.ResolvedById);
+    }
+
+    [Fact]
+    public async Task ReportReply_OnDeletedReply_Fails()
+    {
+        await using var ctx = TestDb.CreateContext();
+        var author = await TestDb.AddUserAsync(ctx, "Author");
+        var reporter = await TestDb.AddUserAsync(ctx, "Reporter");
+        var (_, replyId) = await SeedTopicWithReplyAsync(ctx, author, author);
+        var svc = Create(ctx);
+        await svc.DeleteReplyAsync(author, replyId, isAdmin: false);
+
+        Assert.False((await svc.ReportReplyAsync(reporter, replyId, null)).Succeeded);
+    }
+
+    [Fact]
     public async Task AddReply_NotifiesTopicSubscribers()
     {
         await using var ctx = TestDb.CreateContext();

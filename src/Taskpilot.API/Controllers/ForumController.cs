@@ -244,6 +244,50 @@ public class ForumController : BaseApiController
             : BadRequest(new { error = result.Error });
     }
 
+    /// <summary>Reports a reply to the moderators.</summary>
+    [HttpPost("replies/{replyId:guid}/report")]
+    public async Task<IActionResult> ReportReply(Guid replyId, [FromBody] CreateReportDto dto)
+    {
+        var userId = CurrentUserId();
+        if (userId is null) return Unauthorized();
+
+        var result = await _forumService.ReportReplyAsync(userId.Value, replyId, dto.Reason);
+        return result.Succeeded
+            ? Ok(new { message = "Report submitted." })
+            : BadRequest(new { error = result.Error });
+    }
+
+    /// <summary>Lists forum reports for moderators (pending first).</summary>
+    [HttpGet("reports")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> GetReports([FromQuery] string? status = null)
+    {
+        var result = await _forumService.GetReportsAsync(status);
+        return Ok(result.Value);
+    }
+
+    /// <summary>Number of reports awaiting review (for the admin badge).</summary>
+    [HttpGet("reports/count")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> GetReportCount()
+    {
+        return Ok(new { count = await _forumService.GetPendingReportCountAsync() });
+    }
+
+    /// <summary>Resolves or dismisses a report (admin only).</summary>
+    [HttpPost("reports/{reportId:guid}/resolve")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> ResolveReport(Guid reportId, [FromBody] ResolveReportDto dto)
+    {
+        var adminId = CurrentUserId();
+        if (adminId is null) return Unauthorized();
+
+        var result = await _forumService.ResolveReportAsync(adminId.Value, reportId, dto.Dismiss);
+        return result.Succeeded
+            ? Ok(new { message = "Report resolved." })
+            : BadRequest(new { error = result.Error });
+    }
+
     /// <summary>Soft-deletes a reply (author or admin only).</summary>
     [HttpDelete("replies/{replyId:guid}")]
     public async Task<IActionResult> DeleteReply(Guid replyId)

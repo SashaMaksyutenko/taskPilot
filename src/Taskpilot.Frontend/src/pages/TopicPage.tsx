@@ -8,6 +8,7 @@ import Navbar from '../components/Navbar'
 import ConfirmDialog from '../components/ConfirmDialog'
 import ActionsContextMenu, { type ContextAction } from '../components/ActionsContextMenu'
 import { apiErrorMessage } from '../lib/apiError'
+import { notify } from '../lib/toast'
 import { forumService } from '../services/forumService'
 import { useAppSelector } from '../store/hooks'
 import type { Reply, TopicDetail } from '../types/forum'
@@ -38,6 +39,9 @@ export default function TopicPage() {
   const [replyingTo, setReplyingTo] = useState<Reply | null>(null)
   // Reply awaiting delete confirmation.
   const [deletingReply, setDeletingReply] = useState<Reply | null>(null)
+  // Reply being reported, and the reason being typed.
+  const [reportingReply, setReportingReply] = useState<Reply | null>(null)
+  const [reportReason, setReportReason] = useState('')
   // Reply whose emoji picker is open (null = none).
   const [reactionPickerFor, setReactionPickerFor] = useState<string | null>(null)
   // Topic (original post) inline edit state.
@@ -130,6 +134,14 @@ export default function TopicPage() {
     if (!topic) return
     // Deleted replies simply disappear from view.
     setTopic({ ...topic, replies: topic.replies.filter((r) => r.id !== reply.id) })
+  }
+
+  const submitReport = async () => {
+    if (!reportingReply) return
+    await forumService.reportReply(reportingReply.id, reportReason.trim() || undefined).catch(() => {})
+    setReportingReply(null)
+    setReportReason('')
+    notify.success(t('topic.reportSent'))
   }
 
   const toggleReaction = async (reply: Reply, emoji: string) => {
@@ -340,6 +352,9 @@ export default function TopicPage() {
             if (isAuthor && !r.isSolution) {
               replyActions.push({ label: t('topic.markSolution'), onSelect: () => markSolution(r) })
             }
+            if (currentUserId !== r.authorId) {
+              replyActions.push({ label: t('topic.report'), onSelect: () => setReportingReply(r) })
+            }
             if (canModifyReply(r)) {
               replyActions.push({ label: t('topic.delete'), onSelect: () => setDeletingReply(r), danger: true })
             }
@@ -477,6 +492,11 @@ export default function TopicPage() {
                       {t('topic.markSolution')}
                     </button>
                   )}
+                  {currentUserId !== r.authorId && (
+                    <button onClick={() => setReportingReply(r)} className="font-semibold text-slate-400 hover:text-red-600 hover:underline">
+                      {t('topic.report')}
+                    </button>
+                  )}
                   {canModifyReply(r) && (
                     <button onClick={() => setDeletingReply(r)} className="font-semibold text-red-600 hover:underline">
                       {t('topic.delete')}
@@ -557,6 +577,38 @@ export default function TopicPage() {
           }}
           onCancel={() => setDeletingReply(null)}
         />
+
+        {/* Report a reply */}
+        {reportingReply && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setReportingReply(null)}>
+            <div
+              className="w-full max-w-md rounded-xl border border-slate-200 bg-white p-5 shadow-xl dark:border-slate-700 dark:bg-slate-800"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h3 className="mb-1 font-bold">{t('topic.reportTitle')}</h3>
+              <p className="mb-3 text-sm text-slate-500 dark:text-slate-400">{t('topic.reportHint')}</p>
+              <textarea
+                value={reportReason}
+                onChange={(e) => setReportReason(e.target.value)}
+                placeholder={t('topic.reportPlaceholder')}
+                rows={3}
+                maxLength={1000}
+                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-[#1E2A44] dark:border-slate-600 dark:bg-slate-900"
+              />
+              <div className="mt-3 flex justify-end gap-3 text-sm">
+                <button onClick={() => setReportingReply(null)} className="font-semibold text-slate-500 hover:underline">
+                  {t('topic.cancel')}
+                </button>
+                <button
+                  onClick={submitReport}
+                  className="rounded-lg bg-red-600 px-4 py-1.5 font-semibold text-white transition hover:bg-red-700"
+                >
+                  {t('topic.reportSubmit')}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </main>
     </div>
   )

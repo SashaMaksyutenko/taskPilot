@@ -109,6 +109,13 @@
     "autoBanned": "{{name}} reached {{count}} warnings and was auto-suspended.",
     "myTitle": "You have {{count}} warning(s)"
   },
+  "report": {
+    "queueTitle": "Reported posts ({{count}})",
+    "reported": "reported a reply in",
+    "reasonLabel": "Reason",
+    "resolve": "Resolve",
+    "dismiss": "Dismiss"
+  },
   "appeal": {
     "appeal": "Appeal",
     "pending": "Appeal pending",
@@ -506,7 +513,13 @@
     "deleteConfirm": "Delete this reply? This cannot be undone.",
     "addReaction": "Add reaction",
     "subscribe": "Follow",
-    "unsubscribe": "Following"
+    "unsubscribe": "Following",
+    "report": "Report",
+    "reportTitle": "Report reply",
+    "reportHint": "Tell the moderators what's wrong with this reply.",
+    "reportPlaceholder": "Reason (optional)…",
+    "reportSubmit": "Send report",
+    "reportSent": "Report sent to moderators."
   },
   "market": {
     "title": "Marketplace",

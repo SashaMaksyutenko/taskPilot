@@ -361,8 +361,36 @@ public class ForumService : IForumService
                 .FirstAsync();
             var authorName = author.Name;
 
-            // Notify the topic author (unless they replied to their own topic).
-            if (topic.AuthorId != authorId)
+            // Track who has already been notified so nobody gets a duplicate.
+            var notified = new HashSet<Guid> { authorId };
+
+            // @mentions take priority: notify anyone taking part in the topic who is
+            // named in the reply (topic author + everyone who has replied).
+            var replyParticipants = await _context.ForumReplies
+                .Where(r => r.TopicId == topic.Id)
+                .Select(r => new { r.AuthorId, Name = r.Author.Name })
+                .Distinct()
+                .ToListAsync();
+            var topicAuthorName = await _context.Users
+                .Where(u => u.Id == topic.AuthorId).Select(u => u.Name).FirstAsync();
+            var audience = replyParticipants
+                .Select(p => (Id: p.AuthorId, p.Name))
+                .Append((Id: topic.AuthorId, Name: topicAuthorName))
+                .Where(a => a.Id != authorId)
+                .DistinctBy(a => a.Id)
+                .ToList();
+            foreach (var mentionedId in MentionParser.Extract(reply.Body, audience))
+            {
+                if (notified.Add(mentionedId))
+                    await _notifications.CreateAsync(
+                        mentionedId,
+                        NotificationType.Forum,
+                        $"{authorName} mentioned you in \"{topic.Title}\".",
+                        $"/forum/{topic.Id}");
+            }
+
+            // Notify the topic author (unless already notified or replying to their own topic).
+            if (notified.Add(topic.AuthorId))
             {
                 await _notifications.CreateAsync(
                     topic.AuthorId,
@@ -371,24 +399,20 @@ public class ForumService : IForumService
                     $"/forum/{topic.Id}");
             }
 
-            // Track who has already been notified so subscribers don't get a duplicate.
-            var notified = new HashSet<Guid> { authorId, topic.AuthorId };
-
-            // For a nested reply, also notify the parent reply's author (if different).
+            // For a nested reply, also notify the parent reply's author (if not already notified).
             if (dto.ParentReplyId.HasValue)
             {
                 var parentAuthorId = await _context.ForumReplies
                     .Where(r => r.Id == dto.ParentReplyId.Value)
                     .Select(r => (Guid?)r.AuthorId)
                     .FirstOrDefaultAsync();
-                if (parentAuthorId is Guid pid && pid != authorId && pid != topic.AuthorId)
+                if (parentAuthorId is Guid pid && notified.Add(pid))
                 {
                     await _notifications.CreateAsync(
                         pid,
                         NotificationType.Forum,
                         $"{authorName} replied to your comment in \"{topic.Title}\".",
                         $"/forum/{topic.Id}");
-                    notified.Add(pid);
                 }
             }
 

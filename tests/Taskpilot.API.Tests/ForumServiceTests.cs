@@ -372,6 +372,23 @@ public class ForumServiceTests
     }
 
     [Fact]
+    public async Task AddReply_NotifiesMentionedParticipant()
+    {
+        await using var ctx = TestDb.CreateContext();
+        var alice = await TestDb.AddUserAsync(ctx, "Alice");
+        var bob = await TestDb.AddUserAsync(ctx, "Bob");
+        var carol = await TestDb.AddUserAsync(ctx, "Carol");
+        // Topic by Alice with an existing reply by Bob (so Bob is a participant).
+        var (topicId, _) = await SeedTopicWithReplyAsync(ctx, alice, bob);
+        var (svc, notifications) = CreateWithMock(ctx);
+
+        await svc.AddReplyAsync(carol, new Taskpilot.API.DTOs.Forum.CreateReplyDto { TopicId = topicId, Body = "Great point @Bob!" });
+
+        notifications.Verify(n => n.CreateAsync(
+            bob, It.IsAny<NotificationType>(), It.Is<string>(s => s.Contains("mentioned")), It.IsAny<string>()), Times.Once);
+    }
+
+    [Fact]
     public async Task MarkSolution_NotifiesReplyAuthor()
     {
         await using var ctx = TestDb.CreateContext();

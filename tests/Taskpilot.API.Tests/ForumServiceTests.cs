@@ -372,6 +372,22 @@ public class ForumServiceTests
     }
 
     [Fact]
+    public async Task MarkSolution_NotifiesReplyAuthor()
+    {
+        await using var ctx = TestDb.CreateContext();
+        var topicAuthor = await TestDb.AddUserAsync(ctx, "TopicAuthor");
+        var replyAuthor = await TestDb.AddUserAsync(ctx, "ReplyAuthor");
+        // Topic by one user, the reply by another.
+        var (_, replyId) = await SeedTopicWithReplyAsync(ctx, topicAuthor, replyAuthor);
+        var (svc, notifications) = CreateWithMock(ctx);
+
+        await svc.MarkSolutionAsync(topicAuthor, replyId);
+
+        notifications.Verify(n => n.CreateAsync(
+            replyAuthor, It.IsAny<NotificationType>(), It.IsAny<string>(), It.IsAny<string>()), Times.Once);
+    }
+
+    [Fact]
     public async Task AddReply_NotifiesTopicSubscribers()
     {
         await using var ctx = TestDb.CreateContext();

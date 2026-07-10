@@ -257,7 +257,19 @@ public class TaskService : ITaskService
         task.UpdatedAt = DateTime.UtcNow;
         await _context.SaveChangesAsync();
 
-        // Emit the task.completed webhook event when a task is finished.
+        // Notify the assignee that someone else moved their task.
+        var notified = new HashSet<Guid> { userId };
+        if (task.AssigneeId is { } assigneeId && notified.Add(assigneeId))
+        {
+            await _notifications.CreateAsync(
+                assigneeId,
+                NotificationType.Task,
+                $"Task \"{task.Title}\" was moved to {parsed}.",
+                $"/projects/{task.ProjectId}");
+        }
+
+        // Emit the task.completed webhook event when a task is finished, and let the
+        // task's creator know it's done (if they didn't complete it themselves).
         if (parsed == ProjectTaskStatus.Done)
         {
             await _webhooks.DispatchAsync(WebhookEvents.TaskCompleted, new
@@ -267,6 +279,15 @@ public class TaskService : ITaskService
                 projectId = task.ProjectId,
                 completedAt = task.CompletedAt,
             });
+
+            if (notified.Add(task.CreatorId))
+            {
+                await _notifications.CreateAsync(
+                    task.CreatorId,
+                    NotificationType.Task,
+                    $"Task \"{task.Title}\" was completed.",
+                    $"/projects/{task.ProjectId}");
+            }
         }
 
         _logger.LogInformation("Task status changed. TaskId: {TaskId}, Status: {Status}", taskId, parsed);

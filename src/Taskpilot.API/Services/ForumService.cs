@@ -283,6 +283,17 @@ public class ForumService : IForumService
             r.IsSolution = r.Id == replyId;
 
         await _context.SaveChangesAsync();
+
+        // Let the reply's author know their answer was accepted (unless it's their own topic).
+        if (reply.AuthorId != userId)
+        {
+            await _notifications.CreateAsync(
+                reply.AuthorId,
+                NotificationType.Forum,
+                $"Your reply was accepted as the solution in \"{reply.Topic.Title}\".",
+                $"/forum/{reply.TopicId}");
+        }
+
         _logger.LogInformation("Solution marked. TopicId: {TopicId}, ReplyId: {ReplyId}", reply.TopicId, replyId);
         return Result.Ok();
     }

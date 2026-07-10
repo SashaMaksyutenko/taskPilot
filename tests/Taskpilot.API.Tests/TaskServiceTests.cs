@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Taskpilot.API.Data;
 using Taskpilot.API.DTOs.Projects;
+using Taskpilot.API.Models;
 using Taskpilot.API.Services;
 using Xunit;
 
@@ -11,8 +12,14 @@ namespace Taskpilot.API.Tests;
 /// <summary>Unit tests for <see cref="TaskService"/> over an in-memory database.</summary>
 public class TaskServiceTests
 {
-    private static TaskService Create(TaskpilotDbContext ctx) =>
-        new(ctx, new Mock<IWebhookService>().Object, new Mock<INotificationService>().Object, NullLogger<TaskService>.Instance);
+    private static TaskService Create(TaskpilotDbContext ctx) => CreateWithMock(ctx).svc;
+
+    private static (TaskService svc, Mock<INotificationService> notifications) CreateWithMock(TaskpilotDbContext ctx)
+    {
+        var notifications = new Mock<INotificationService>();
+        var svc = new TaskService(ctx, new Mock<IWebhookService>().Object, notifications.Object, NullLogger<TaskService>.Instance);
+        return (svc, notifications);
+    }
 
     [Fact]
     public async Task CreateTask_DefaultsToBacklogAndMedium()
@@ -159,5 +166,40 @@ public class TaskServiceTests
 
         Assert.True(result.Succeeded);
         Assert.Equal(0, await ctx.ProjectTasks.CountAsync());
+    }
+
+    [Fact]
+    public async Task ChangeStatus_NotifiesAssignee_WhenMovedByAnother()
+    {
+        using var ctx = TestDb.CreateContext();
+        var owner = await TestDb.AddUserAsync(ctx, "Owner");
+        var assignee = await TestDb.AddUserAsync(ctx, "Assignee");
+        var projectId = await TestDb.AddProjectAsync(ctx, owner);
+        var (svc, notifications) = CreateWithMock(ctx);
+        var task = await svc.CreateTaskAsync(owner, projectId, new CreateTaskDto { Title = "Task", AssigneeId = assignee });
+        notifications.Invocations.Clear(); // ignore the "assigned" notification from creation
+
+        await svc.ChangeStatusAsync(owner, task.Value!.Id, "InProgress");
+
+        notifications.Verify(n => n.CreateAsync(assignee, It.IsAny<NotificationType>(), It.IsAny<string>(), It.IsAny<string>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task ChangeStatus_ToDone_NotifiesCreator_WhenCompletedByAnother()
+    {
+        using var ctx = TestDb.CreateContext();
+        var owner = await TestDb.AddUserAsync(ctx, "Owner");
+        var assignee = await TestDb.AddUserAsync(ctx, "Assignee");
+        var projectId = await TestDb.AddProjectAsync(ctx, owner);
+        var (svc, notifications) = CreateWithMock(ctx);
+        // Assigning grants the assignee Editor access, so they can move the task.
+        var task = await svc.CreateTaskAsync(owner, projectId, new CreateTaskDto { Title = "Task", AssigneeId = assignee });
+        notifications.Invocations.Clear(); // ignore the "assigned" notification from creation
+
+        await svc.ChangeStatusAsync(assignee, task.Value!.Id, "Done");
+
+        // The creator (owner) is told it's done; the assignee (actor) is not self-notified.
+        notifications.Verify(n => n.CreateAsync(owner, It.IsAny<NotificationType>(), It.IsAny<string>(), It.IsAny<string>()), Times.Once);
+        notifications.Verify(n => n.CreateAsync(assignee, It.IsAny<NotificationType>(), It.IsAny<string>(), It.IsAny<string>()), Times.Never);
     }
 }

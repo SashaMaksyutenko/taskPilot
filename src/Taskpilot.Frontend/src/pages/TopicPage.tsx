@@ -15,6 +15,9 @@ import type { Reply, TopicDetail } from '../types/forum'
 // Quick emoji reactions offered on each reply.
 const REACTION_EMOJIS = ['👍', '👎', '❤️', '🔥', '🎉', '😂', '😮', '😢', '🙏', '👏']
 
+// How many replies to show per page (all are loaded; pagination is client-side).
+const REPLIES_PER_PAGE = 10
+
 /**
  * A single forum topic: the original post, its replies with voting, "accept
  * solution", quoting/replying to a specific message, inline editing and deletion.
@@ -43,6 +46,8 @@ export default function TopicPage() {
   const [editTopicBody, setEditTopicBody] = useState('')
   // Editor container, so replying/quoting can scroll it into view.
   const replyEditorRef = useRef<HTMLDivElement | null>(null)
+  // Client-side pagination of the replies list.
+  const [replyPage, setReplyPage] = useState(1)
 
   const load = () => {
     if (topicId) forumService.getTopic(topicId).then(setTopic).catch(() => {})
@@ -59,12 +64,21 @@ export default function TopicPage() {
     forumService.incrementView(topicId).catch(() => {})
   }, [topicId])
 
+  // Keep the reply page within range as replies are added or removed.
+  useEffect(() => {
+    const pages = Math.max(1, Math.ceil((topic?.replies.length ?? 0) / REPLIES_PER_PAGE))
+    setReplyPage((p) => Math.min(p, pages))
+  }, [topic?.replies.length])
+
   const isAuthor = topic && currentUserId === topic.authorId
   const canEditTopic = !!topic && (currentUserId === topic.authorId || isAdmin)
 
   // Look up a reply by id (used to render "X wrote:" quote references).
   const replyById = (id: string | null): Reply | undefined =>
     id ? topic?.replies.find((r) => r.id === id) : undefined
+
+  const replyTotalPages = Math.max(1, Math.ceil((topic?.replies.length ?? 0) / REPLIES_PER_PAGE))
+  const visibleReplies = topic ? topic.replies.slice((replyPage - 1) * REPLIES_PER_PAGE, replyPage * REPLIES_PER_PAGE) : []
 
   const vote = async (reply: Reply, value: 1 | -1) => {
     const result = await forumService.vote(reply.id, value).catch(() => null)
@@ -164,6 +178,8 @@ export default function TopicPage() {
       setBody('')
       setReplyingTo(null)
       load()
+      // New replies land at the end, so jump to the last page (clamped by the effect).
+      setReplyPage(Number.MAX_SAFE_INTEGER)
     } catch (e) {
       setError(apiErrorMessage(e))
     }
@@ -309,7 +325,7 @@ export default function TopicPage() {
           {t('topic.repliesHeading', { count: topic.replies.length })}
         </h2>
         <div className="space-y-3">
-          {topic.replies.map((r) => {
+          {visibleReplies.map((r) => {
             const parent = replyById(r.parentReplyId)
             const replyActions: ContextAction[] = [
               { label: t('menu.copyText'), onSelect: () => navigator.clipboard?.writeText(r.body).catch(() => {}) },
@@ -439,6 +455,7 @@ export default function TopicPage() {
                   <Link to={`/users/${r.authorId}`} className="font-medium hover:underline">
                     {r.authorName}
                   </Link>
+                  <span>· {new Date(r.createdAt).toLocaleString()}</span>
                   {r.updatedAt && <span className="italic">· {t('topic.edited')}</span>}
                   {!topic.isLocked && editingReplyId !== r.id && (
                     <>
@@ -472,6 +489,29 @@ export default function TopicPage() {
             )
           })}
         </div>
+
+        {/* Replies pagination */}
+        {replyTotalPages > 1 && (
+          <div className="mt-4 flex items-center justify-center gap-4 text-sm">
+            <button
+              onClick={() => setReplyPage((p) => Math.max(1, p - 1))}
+              disabled={replyPage <= 1}
+              className="rounded-lg border border-slate-300 px-4 py-1.5 font-semibold transition hover:bg-white disabled:opacity-40 dark:border-slate-600 dark:hover:bg-slate-800"
+            >
+              {t('audit.prev')}
+            </button>
+            <span className="text-slate-500 dark:text-slate-400">
+              {t('audit.pageOf', { page: replyPage, total: replyTotalPages })}
+            </span>
+            <button
+              onClick={() => setReplyPage((p) => Math.min(replyTotalPages, p + 1))}
+              disabled={replyPage >= replyTotalPages}
+              className="rounded-lg border border-slate-300 px-4 py-1.5 font-semibold transition hover:bg-white disabled:opacity-40 dark:border-slate-600 dark:hover:bg-slate-800"
+            >
+              {t('audit.next')}
+            </button>
+          </div>
+        )}
 
         {/* Add reply */}
         {topic.isLocked ? (

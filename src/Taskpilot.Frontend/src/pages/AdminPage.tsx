@@ -28,16 +28,17 @@ export default function AdminPage() {
   const [page, setPage] = useState(1)
   const [total, setTotal] = useState(0)
   const [stats, setStats] = useState<AdminStats | null>(null)
-  // User-list filters.
+  // User-list filters and sort.
   const [search, setSearch] = useState('')
   const [roleFilter, setRoleFilter] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
+  const [sort, setSort] = useState('newest')
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
 
   const load = (p: number) => {
     adminService
-      .getUsers(p, PAGE_SIZE, { search: search.trim(), role: roleFilter, status: statusFilter })
+      .getUsers(p, PAGE_SIZE, { search: search.trim(), role: roleFilter, status: statusFilter, sort })
       .then((r) => {
         setUsers(r.items)
         setTotal(r.total)
@@ -50,7 +51,7 @@ export default function AdminPage() {
     const id = setTimeout(() => load(page), 250)
     return () => clearTimeout(id)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, search, roleFilter, statusFilter])
+  }, [page, search, roleFilter, statusFilter, sort])
 
   // Changing a filter jumps back to the first page.
   const changeFilter = (setter: (v: string) => void) => (value: string) => {
@@ -275,6 +276,16 @@ export default function AdminPage() {
             <option value="active">{t('admin.statusActive')}</option>
             <option value="banned">{t('admin.statusBanned')}</option>
             <option value="muted">{t('admin.statusMuted')}</option>
+          </select>
+          <select
+            value={sort}
+            onChange={(e) => changeFilter(setSort)(e.target.value)}
+            className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-[#1E2A44] dark:border-slate-600 dark:bg-slate-800"
+          >
+            <option value="newest">{t('admin.sortNewest')}</option>
+            <option value="oldest">{t('admin.sortOldest')}</option>
+            <option value="name">{t('admin.sortName')}</option>
+            <option value="role">{t('admin.sortRole')}</option>
           </select>
         </div>
 

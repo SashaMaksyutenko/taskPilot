@@ -6,7 +6,7 @@ export const adminService = {
   getUsers(
     page = 1,
     pageSize = 20,
-    filters: { search?: string; role?: string; status?: string } = {},
+    filters: { search?: string; role?: string; status?: string; sort?: string } = {},
   ): Promise<PagedResult<AdminUser>> {
     return api
       .get<PagedResult<AdminUser>>('/api/admin/users', {
@@ -16,6 +16,7 @@ export const adminService = {
           search: filters.search || undefined,
           role: filters.role || undefined,
           status: filters.status || undefined,
+          sort: filters.sort || undefined,
         },
       })
       .then((r) => r.data)

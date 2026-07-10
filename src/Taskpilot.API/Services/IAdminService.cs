@@ -10,11 +10,12 @@ namespace Taskpilot.API.Services;
 public interface IAdminService
 {
     /// <summary>
-    /// Lists a page of users (newest first), optionally filtered by a name/email search,
-    /// role and moderation status ("active", "banned" or "muted").
+    /// Lists a page of users, optionally filtered by a name/email search, role and
+    /// moderation status ("active", "banned" or "muted"), and ordered by
+    /// "newest" (default), "oldest", "name" or "role".
     /// </summary>
     Task<Result<PagedResult<AdminUserDto>>> GetAllUsersAsync(
-        int page = 1, int pageSize = 20, string? search = null, string? role = null, string? status = null);
+        int page = 1, int pageSize = 20, string? search = null, string? role = null, string? status = null, string? sort = null);
 
     /// <summary>Changes a user's role.</summary>
     Task<Result> ChangeRoleAsync(Guid targetUserId, string role);

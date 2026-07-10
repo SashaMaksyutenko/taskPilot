@@ -26,7 +26,7 @@ public class AdminService : IAdminService
 
     /// <inheritdoc />
     public async Task<Result<PagedResult<AdminUserDto>>> GetAllUsersAsync(
-        int page = 1, int pageSize = 20, string? search = null, string? role = null, string? status = null)
+        int page = 1, int pageSize = 20, string? search = null, string? role = null, string? status = null, string? sort = null)
     {
         // Clamp paging to sane bounds.
         if (page < 1) page = 1;
@@ -57,8 +57,15 @@ public class AdminService : IAdminService
 
         var total = await query.CountAsync();
 
-        var users = await query
-            .OrderByDescending(u => u.CreatedAt)
+        var ordered = sort?.ToLowerInvariant() switch
+        {
+            "oldest" => query.OrderBy(u => u.CreatedAt),
+            "name" => query.OrderBy(u => u.Name),
+            "role" => query.OrderBy(u => u.Role).ThenBy(u => u.Name),
+            _ => query.OrderByDescending(u => u.CreatedAt), // "newest" (default)
+        };
+
+        var users = await ordered
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .AsNoTracking()

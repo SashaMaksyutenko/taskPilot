@@ -48,9 +48,10 @@ public class AdminController : BaseApiController
         [FromQuery] int pageSize = 20,
         [FromQuery] string? search = null,
         [FromQuery] string? role = null,
-        [FromQuery] string? status = null)
+        [FromQuery] string? status = null,
+        [FromQuery] string? sort = null)
     {
-        var result = await _adminService.GetAllUsersAsync(page, pageSize, search, role, status);
+        var result = await _adminService.GetAllUsersAsync(page, pageSize, search, role, status, sort);
         return Ok(result.Value);
     }
 

@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import Navbar from '../components/Navbar'
 import EmptyState from '../components/EmptyState'
 import Markdown from '../components/Markdown'
 import { chatbotService, type ChatBotMessage } from '../services/chatbotService'
@@ -50,9 +49,7 @@ export default function AssistantPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 text-[#1E2A44] dark:bg-slate-900 dark:text-slate-100">
-      <Navbar />
-      <main className="mx-auto flex h-[calc(100vh-64px)] max-w-3xl flex-col px-6 py-6">
+    <div className="mx-auto flex h-[calc(100vh-64px)] max-w-3xl flex-col px-6 py-6">
         <h1 className="mb-1 text-2xl font-bold">{t('assistant.title')}</h1>
         <p className="mb-4 text-sm text-slate-500 dark:text-slate-400">{t('assistant.subtitle')}</p>
 
@@ -100,7 +97,6 @@ export default function AssistantPage() {
             </div>
           </>
         )}
-      </main>
-    </div>
+      </div>
   )
 }

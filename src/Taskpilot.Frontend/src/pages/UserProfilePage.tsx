@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, useParams } from 'react-router-dom'
 import Avatar from '../components/Avatar'
-import Navbar from '../components/Navbar'
 import StarRating from '../components/StarRating'
 import { forumService } from '../services/forumService'
 import { userService, type PublicProfile } from '../services/userService'
@@ -54,9 +53,7 @@ export default function UserProfilePage() {
   }, [userId])
 
   return (
-    <div className="min-h-screen bg-slate-50 text-[#1E2A44] dark:bg-slate-900 dark:text-slate-100">
-      <Navbar />
-      <main className="mx-auto max-w-2xl px-6 py-8">
+    <div className="mx-auto max-w-2xl px-6 py-8">
         {notFound ? (
           <p className="text-slate-400">{t('profile.notFound')}</p>
         ) : !profile ? (
@@ -156,7 +153,6 @@ export default function UserProfilePage() {
             </div>
           </>
         )}
-      </main>
-    </div>
+      </div>
   )
 }

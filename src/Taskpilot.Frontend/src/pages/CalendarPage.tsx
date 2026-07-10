@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
-import Navbar from '../components/Navbar'
 import ActionsContextMenu from '../components/ActionsContextMenu'
 import { calendarService } from '../services/calendarService'
 import type { CalendarTask } from '../types/calendar'
@@ -96,9 +95,7 @@ export default function CalendarPage() {
     year === today.getFullYear() && month === today.getMonth() && d === today.getDate()
 
   return (
-    <div className="min-h-screen bg-slate-50 text-[#1E2A44] dark:bg-slate-900 dark:text-slate-100">
-      <Navbar />
-      <main className="mx-auto max-w-5xl px-6 py-6">
+    <div className="mx-auto max-w-5xl px-6 py-6">
         <div className="mb-4 flex items-center justify-between">
           <h1 className="text-2xl font-bold">{t('calendar.title')}</h1>
           <div className="flex items-center gap-2">
@@ -214,7 +211,6 @@ export default function CalendarPage() {
             )
           })}
         </div>
-      </main>
-    </div>
+      </div>
   )
 }

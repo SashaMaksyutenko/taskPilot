@@ -1,6 +1,7 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { ToastContainer } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
+import AppShell from './components/layout/AppShell'
 import AdminRoute from './components/AdminRoute'
 import GuestRoute from './components/GuestRoute'
 import ProtectedRoute from './components/ProtectedRoute'
@@ -58,24 +59,26 @@ function App() {
         {/* Site root: landing for guests, dashboard for logged-in users. */}
         <Route path="/" element={<RootPage />} />
 
-        {/* Authenticated-only pages */}
+        {/* Authenticated-only pages (shared sidebar layout) */}
         <Route element={<ProtectedRoute />}>
-          <Route path="/chat" element={<ChatPage />} />
-          <Route path="/assistant" element={<AssistantPage />} />
-          <Route path="/projects" element={<ProjectsPage />} />
-          <Route path="/projects/:projectId" element={<BoardPage />} />
-          <Route path="/calendar" element={<CalendarPage />} />
-          <Route path="/forum" element={<ForumPage />} />
-          <Route path="/forum/:topicId" element={<TopicPage />} />
-          <Route path="/marketplace" element={<MarketplacePage />} />
-          <Route path="/marketplace/:taskId" element={<MarketplaceTaskPage />} />
-          <Route path="/settings" element={<SettingsPage />} />
-          <Route path="/notes" element={<NotesPage />} />
-          <Route path="/search" element={<SearchPage />} />
-          <Route path="/users/:userId" element={<UserProfilePage />} />
-          <Route element={<AdminRoute />}>
-            <Route path="/admin" element={<AdminPage />} />
-            <Route path="/admin/audit" element={<AuditPage />} />
+          <Route element={<AppShell />}>
+            <Route path="/chat" element={<ChatPage />} />
+            <Route path="/assistant" element={<AssistantPage />} />
+            <Route path="/projects" element={<ProjectsPage />} />
+            <Route path="/projects/:projectId" element={<BoardPage />} />
+            <Route path="/calendar" element={<CalendarPage />} />
+            <Route path="/forum" element={<ForumPage />} />
+            <Route path="/forum/:topicId" element={<TopicPage />} />
+            <Route path="/marketplace" element={<MarketplacePage />} />
+            <Route path="/marketplace/:taskId" element={<MarketplaceTaskPage />} />
+            <Route path="/settings" element={<SettingsPage />} />
+            <Route path="/notes" element={<NotesPage />} />
+            <Route path="/search" element={<SearchPage />} />
+            <Route path="/users/:userId" element={<UserProfilePage />} />
+            <Route element={<AdminRoute />}>
+              <Route path="/admin" element={<AdminPage />} />
+              <Route path="/admin/audit" element={<AuditPage />} />
+            </Route>
           </Route>
         </Route>
 

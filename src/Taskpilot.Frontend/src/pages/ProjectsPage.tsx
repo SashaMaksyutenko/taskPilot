@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
-import Navbar from '../components/Navbar'
 import EmptyState from '../components/EmptyState'
 import ConfirmDialog from '../components/ConfirmDialog'
 import ProjectContextMenu from '../components/ProjectContextMenu'
+import Button from '../components/ui/Button'
+import Card from '../components/ui/Card'
+import Input from '../components/ui/Input'
 import { projectService } from '../services/projectService'
 import { taskService } from '../services/taskService'
 import { notify } from '../lib/toast'
@@ -107,38 +109,31 @@ export default function ProjectsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 text-[#1E2A44] dark:bg-slate-900 dark:text-slate-100">
-      <Navbar />
-      <main className="mx-auto max-w-5xl px-6 py-8">
+    <div className="mx-auto max-w-5xl">
         <div className="mb-6 flex items-center justify-between">
-          <h1 className="text-2xl font-bold">{t('projects.title')}</h1>
-          <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
+          <h1 className="page-title">{t('projects.title')}</h1>
+          <label className="flex cursor-pointer items-center gap-2 text-sm text-muted">
             <input
               type="checkbox"
               checked={showArchived}
               onChange={(e) => setShowArchived(e.target.checked)}
-              className="h-4 w-4 accent-[#1E2A44]"
+              className="h-4 w-4 accent-primary"
             />
             {t('projects.showArchived')}
           </label>
         </div>
 
-        {/* Create project */}
         <div className="mb-6 flex gap-2">
-          <input
+          <Input
             value={name}
             onChange={(e) => setName(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && create()}
             placeholder={t('projects.newPlaceholder')}
-            className="flex-1 rounded-lg border border-slate-300 bg-white px-3 py-2 outline-none focus:border-[#1E2A44] dark:border-slate-600 dark:bg-slate-800"
+            className="flex-1"
           />
-          <button
-            onClick={create}
-            disabled={loading}
-            className="rounded-lg bg-[#1E2A44] px-5 font-semibold text-white transition hover:bg-[#27345a] disabled:opacity-60"
-          >
+          <Button onClick={create} disabled={loading}>
             {t('projects.create')}
-          </button>
+          </Button>
         </div>
 
         {projects.length === 0 ? (
@@ -158,10 +153,9 @@ export default function ProjectsPage() {
               >
                 <Link
                   to={`/projects/${p.id}`}
-                  className={`block rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition hover:shadow-md dark:border-slate-700 dark:bg-slate-800 ${
-                    p.isArchived ? 'opacity-60' : ''
-                  }`}
+                  className={`block ${p.isArchived ? 'opacity-60' : ''}`}
                 >
+                <Card hover className="p-5">
                 <div className="flex items-center gap-2">
                   <span className="inline-block h-3 w-3 rounded-full" style={{ background: p.color ?? '#94a3b8' }} />
                   <span className="font-semibold">{p.name}</span>
@@ -198,6 +192,7 @@ export default function ProjectsPage() {
                     </div>
                   )
                 })()}
+                </Card>
                 </Link>
               </ProjectContextMenu>
             ))}
@@ -256,7 +251,6 @@ export default function ProjectsPage() {
           onConfirm={confirmDelete}
           onCancel={() => setDeleting(null)}
         />
-      </main>
-    </div>
+      </div>
   )
 }

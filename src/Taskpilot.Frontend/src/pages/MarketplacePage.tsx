@@ -5,7 +5,6 @@ import Avatar from '../components/Avatar'
 import FadeIn from '../components/FadeIn'
 import EmptyState from '../components/EmptyState'
 import MarkdownEditor from '../components/MarkdownEditor'
-import Navbar from '../components/Navbar'
 import ActionsContextMenu from '../components/ActionsContextMenu'
 import { marketplaceService } from '../services/marketplaceService'
 import { useAppSelector } from '../store/hooks'
@@ -71,9 +70,7 @@ export default function MarketplacePage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 text-[#1E2A44] dark:bg-slate-900 dark:text-slate-100">
-      <Navbar />
-      <main className="mx-auto max-w-3xl px-6 py-8">
+    <div className="mx-auto max-w-3xl px-6 py-8">
         <FadeIn>
         <h1 className="mb-6 text-2xl font-bold">{t('market.title')}</h1>
 
@@ -198,7 +195,6 @@ export default function MarketplacePage() {
           </div>
         )}
         </FadeIn>
-      </main>
-    </div>
+      </div>
   )
 }

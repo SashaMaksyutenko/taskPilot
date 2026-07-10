@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, useNavigate } from 'react-router-dom'
 import Avatar from '../components/Avatar'
-import Navbar from '../components/Navbar'
 import RoleChart from '../components/RoleChart'
 import StatusChart from '../components/StatusChart'
 import SignupsChart from '../components/SignupsChart'
@@ -152,9 +151,8 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 text-[#1E2A44] dark:bg-slate-900 dark:text-slate-100">
-      <Navbar />
-      <main className="mx-auto max-w-5xl px-6 py-8">
+    <>
+    <div className="mx-auto max-w-5xl px-6 py-8">
         <div className="mb-6 flex items-center gap-3">
           <h1 className="text-2xl font-bold">{t('admin.usersTitle', { count: total })}</h1>
           <Link
@@ -431,7 +429,7 @@ export default function AdminPage() {
             </button>
           </div>
         )}
-      </main>
+      </div>
 
       {warnTarget && (
         <WarnUserModal
@@ -440,6 +438,6 @@ export default function AdminPage() {
           onSubmit={submitWarning}
         />
       )}
-    </div>
+    </>
   )
 }

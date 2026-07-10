@@ -3,7 +3,6 @@ import { useTranslation } from 'react-i18next'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import Avatar from '../components/Avatar'
 import MarkdownEditor from '../components/MarkdownEditor'
-import Navbar from '../components/Navbar'
 import EmptyState from '../components/EmptyState'
 import TagInput from '../components/TagInput'
 import TopicContextMenu from '../components/TopicContextMenu'
@@ -115,9 +114,7 @@ export default function ForumPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 text-[#1E2A44] dark:bg-slate-900 dark:text-slate-100">
-      <Navbar />
-      <main className="mx-auto max-w-3xl px-6 py-8">
+    <div className="mx-auto max-w-3xl px-6 py-8">
         <h1 className="mb-6 text-2xl font-bold">{t('forum.title')}</h1>
 
         {/* New topic */}
@@ -296,7 +293,6 @@ export default function ForumPage() {
             </button>
           </div>
         )}
-      </main>
-    </div>
+      </div>
   )
 }

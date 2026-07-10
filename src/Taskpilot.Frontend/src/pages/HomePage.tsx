@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
+import { Calendar, FolderKanban, Bell, AlertTriangle } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Link, useNavigate } from 'react-router-dom'
-import Navbar from '../components/Navbar'
 import FadeIn from '../components/FadeIn'
+import Card from '../components/ui/Card'
 import { calendarService } from '../services/calendarService'
 import { notificationService } from '../services/notificationService'
 import { projectService } from '../services/projectService'
@@ -10,14 +11,12 @@ import { fetchMe } from '../store/authSlice'
 import { useAppDispatch, useAppSelector } from '../store/hooks'
 import type { AppNotification } from '../types/notification'
 import type { CalendarTask } from '../types/calendar'
+import { cn } from '../lib/cn'
 
 const pad = (n: number) => String(n).padStart(2, '0')
 const isoDate = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
 
-/**
- * Personal dashboard: quick stats, recent notifications and quick actions.
- * Pulls live data from the projects, notifications and calendar APIs.
- */
+/** Personal dashboard — stats, overdue tasks, recent activity. */
 export default function HomePage() {
   const dispatch = useAppDispatch()
   const navigate = useNavigate()
@@ -40,7 +39,6 @@ export default function HomePage() {
     const in30 = new Date()
     in30.setDate(today.getDate() + 30)
 
-    // Load all dashboard data, then drop the loading state once everything settles.
     Promise.allSettled([
       projectService.getProjects().then((p) => setProjectCount(p.length)),
       notificationService.getUnreadCount().then(setUnread),
@@ -56,7 +54,6 @@ export default function HomePage() {
     setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })))
   }
 
-  // Open a notification: mark it read locally + on the server and follow its link.
   const openNotification = async (n: AppNotification) => {
     if (!n.isRead) {
       await notificationService.markRead(n.id).catch(() => {})
@@ -66,34 +63,52 @@ export default function HomePage() {
     if (n.link) navigate(n.link)
   }
 
+  const stats = [
+    { label: t('dashboard.projects'), value: projectCount, icon: FolderKanban, tone: 'from-indigo-500/10 to-indigo-600/5 text-indigo-600' },
+    { label: t('dashboard.unread'), value: unread, icon: Bell, tone: 'from-sky-500/10 to-sky-600/5 text-sky-600' },
+    { label: t('dashboard.deadlines'), value: upcoming, icon: Calendar, tone: 'from-amber-500/10 to-amber-600/5 text-amber-600' },
+    { label: t('dashboard.overdue'), value: overdue.length, icon: AlertTriangle, tone: 'from-red-500/10 to-red-600/5 text-red-600' },
+  ]
+
   return (
-    <div className="min-h-screen bg-slate-50 text-[#1E2A44] dark:bg-slate-900 dark:text-slate-100">
-      <Navbar />
+    <div className="mx-auto max-w-5xl">
+      <FadeIn>
+        <h1 className="page-title">
+          {t('dashboard.welcome')}
+          {user ? `, ${user.name}` : ''} 👋
+        </h1>
+        <p className="page-subtitle mt-1">{t('dashboard.subtitle')}</p>
 
-      <main className="mx-auto max-w-5xl px-6 py-8">
-        <FadeIn>
-        <h1 className="text-2xl font-bold">{t('dashboard.welcome')}{user ? `, ${user.name}` : ''} 👋</h1>
-        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-          {t('dashboard.subtitle')}
-        </p>
-
-        <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
-          <Stat label={t('dashboard.projects')} value={projectCount} accent="bg-indigo-100 text-indigo-700" loading={loading} />
-          <Stat label={t('dashboard.unread')} value={unread} accent="bg-blue-100 text-blue-700" loading={loading} />
-          <Stat label={t('dashboard.deadlines')} value={upcoming} accent="bg-amber-100 text-amber-700" loading={loading} />
-          <Stat label={t('dashboard.overdue')} value={overdue.length} accent="bg-red-100 text-red-700" loading={loading} />
+        <div className="mt-8 grid grid-cols-2 gap-4 lg:grid-cols-4">
+          {stats.map((s, i) => (
+            <FadeIn key={s.label} delay={i * 0.05}>
+              <Card className="p-5">
+                <div className={cn('mb-3 inline-flex rounded-xl bg-gradient-to-br p-2.5', s.tone)}>
+                  <s.icon className="h-5 w-5" strokeWidth={2} />
+                </div>
+                {loading ? (
+                  <div className="h-8 w-12 animate-pulse rounded bg-canvas" />
+                ) : (
+                  <div className="text-3xl font-bold tabular-nums">{s.value}</div>
+                )}
+                <div className="mt-1 text-sm text-muted">{s.label}</div>
+              </Card>
+            </FadeIn>
+          ))}
         </div>
 
-        {/* Overdue tasks */}
         {overdue.length > 0 && (
-          <div className="mt-6 rounded-xl border border-red-200 bg-red-50 p-5 dark:border-red-900/50 dark:bg-red-950/20">
-            <h2 className="mb-3 font-bold text-red-700 dark:text-red-400">{t('dashboard.overdueTasks')}</h2>
+          <Card className="mt-6 border-red-200 bg-red-50/50 p-5 dark:border-red-900/40 dark:bg-red-950/20">
+            <h2 className="mb-3 flex items-center gap-2 font-bold text-red-700 dark:text-red-400">
+              <AlertTriangle className="h-5 w-5" />
+              {t('dashboard.overdueTasks')}
+            </h2>
             <ul className="divide-y divide-red-100 dark:divide-red-900/40">
               {overdue.map((task) => (
                 <li key={task.id}>
-                  <Link to={`/projects/${task.projectId}`} className="flex items-center gap-3 py-2 text-sm hover:opacity-80">
+                  <Link to={`/projects/${task.projectId}`} className="flex items-center gap-3 py-2.5 text-sm hover:opacity-80">
                     <span className="font-medium">{task.title}</span>
-                    <span className="text-xs text-slate-500 dark:text-slate-400">{task.projectName}</span>
+                    <span className="text-xs text-muted">{task.projectName}</span>
                     <span className="ml-auto text-xs font-semibold text-red-600 dark:text-red-400">
                       {new Date(task.deadline).toLocaleDateString()}
                     </span>
@@ -101,96 +116,67 @@ export default function HomePage() {
                 </li>
               ))}
             </ul>
-          </div>
+          </Card>
         )}
 
         <div className="mt-6 grid gap-4 lg:grid-cols-3">
-          <div className="rounded-xl border border-slate-200 bg-white p-5 lg:col-span-2 dark:border-slate-700 dark:bg-slate-800">
-            <div className="mb-3 flex items-center">
+          <Card className="p-5 lg:col-span-2">
+            <div className="mb-4 flex items-center">
               <h2 className="font-bold">{t('dashboard.recentActivity')}</h2>
               {unread > 0 && (
-                <button onClick={markAllRead} className="ml-auto text-xs font-semibold text-slate-500 hover:underline dark:text-slate-400">
+                <button onClick={markAllRead} className="ml-auto text-xs font-semibold text-primary hover:underline">
                   {t('dashboard.markAllRead')}
                 </button>
               )}
             </div>
             {loading ? (
-              <p className="py-6 text-center text-sm text-slate-400">{t('dashboard.loading')}</p>
+              <p className="py-8 text-center text-sm text-muted">{t('dashboard.loading')}</p>
             ) : notifications.length === 0 ? (
-              <p className="py-6 text-center text-sm text-slate-400">{t('dashboard.noActivity')}</p>
+              <p className="py-8 text-center text-sm text-muted">{t('dashboard.noActivity')}</p>
             ) : (
-              <ul className="divide-y divide-slate-100 dark:divide-slate-700">
+              <ul className="divide-y divide-border">
                 {notifications.map((n) => (
                   <li key={n.id}>
                     <button
                       onClick={() => openNotification(n)}
                       className="flex w-full items-start gap-3 py-3 text-left hover:opacity-80"
                     >
-                      <span className={`mt-1.5 h-2 w-2 flex-none rounded-full ${n.isRead ? 'bg-slate-300' : 'bg-[#F6BE2C]'}`} />
+                      <span className={cn('mt-1.5 h-2 w-2 flex-none rounded-full', n.isRead ? 'bg-border' : 'bg-accent')} />
                       <div>
                         <p className="text-sm">{n.message}</p>
-                        <p className="text-xs text-slate-400">{new Date(n.createdAt).toLocaleString()}</p>
+                        <p className="text-xs text-muted">{new Date(n.createdAt).toLocaleString()}</p>
                       </div>
                     </button>
                   </li>
                 ))}
               </ul>
             )}
-          </div>
+          </Card>
 
-          <div className="rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-800">
-            <h2 className="mb-3 font-bold">{t('dashboard.quickActions')}</h2>
+          <Card className="p-5">
+            <h2 className="mb-4 font-bold">{t('dashboard.quickActions')}</h2>
             <div className="space-y-2">
-              <Action to="/projects" label={t('dashboard.myProjects')} primary />
-              <Action to="/calendar" label={t('dashboard.calendar')} />
-              <Action to="/chat" label={t('dashboard.openChat')} />
+              <QuickLink to="/projects" label={t('dashboard.myProjects')} primary />
+              <QuickLink to="/calendar" label={t('dashboard.calendar')} />
+              <QuickLink to="/chat" label={t('dashboard.openChat')} />
             </div>
-          </div>
+          </Card>
         </div>
-        </FadeIn>
-      </main>
+      </FadeIn>
     </div>
   )
 }
 
-function Stat({
-  label,
-  value,
-  accent,
-  loading,
-}: {
-  label: string
-  value: number
-  accent: string
-  loading: boolean
-}) {
-  const { t } = useTranslation()
-  return (
-    <div className="rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-800">
-      <div className="text-sm text-slate-500 dark:text-slate-400">{label}</div>
-      <div className="mt-1 flex items-center gap-2">
-        {loading ? (
-          <span className="my-1 h-7 w-10 animate-pulse rounded bg-slate-200 dark:bg-slate-700" />
-        ) : (
-          <>
-            <span className="text-3xl font-bold">{value}</span>
-            <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${accent}`}>{t('dashboard.total')}</span>
-          </>
-        )}
-      </div>
-    </div>
-  )
-}
-
-function Action({ to, label, primary }: { to: string; label: string; primary?: boolean }) {
+function QuickLink({ to, label, primary }: { to: string; label: string; primary?: boolean }) {
   return (
     <Link
       to={to}
-      className={`block rounded-lg py-2.5 text-center text-sm font-semibold transition ${
+      className={cn(
+        'block rounded-lg py-2.5 text-center text-sm font-semibold transition',
         primary
-          ? 'bg-[#1E2A44] text-white hover:bg-[#27345a]'
-          : 'border border-slate-300 text-[#1E2A44] hover:bg-slate-50 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700'
-      }`}
+          ? 'bg-primary text-white hover:bg-primary-hover'
+          : 'border border-border text-foreground hover:bg-canvas',
+      )}
     >
       {label}
     </Link>

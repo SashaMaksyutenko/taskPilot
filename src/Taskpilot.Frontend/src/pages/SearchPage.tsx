@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 import Avatar from '../components/Avatar'
-import Navbar from '../components/Navbar'
 import EmptyState from '../components/EmptyState'
 import { searchService, type SearchItem, type SearchResults } from '../services/searchService'
 
@@ -63,9 +62,7 @@ export default function SearchPage() {
   const total = results.projects.length + results.tasks.length + results.topics.length + results.users.length
 
   return (
-    <div className="min-h-screen bg-slate-50 text-[#1E2A44] dark:bg-slate-900 dark:text-slate-100">
-      <Navbar />
-      <main className="mx-auto max-w-3xl px-6 py-8">
+    <div className="mx-auto max-w-3xl px-6 py-8">
         <h1 className="mb-4 text-2xl font-bold">{t('search.title')}</h1>
 
         <input
@@ -88,7 +85,6 @@ export default function SearchPage() {
             <Group title={t('search.users')} items={results.users} linkFor={(i) => `/users/${i.id}`} withAvatar />
           </div>
         )}
-      </main>
-    </div>
+      </div>
   )
 }

@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import Navbar from '../components/Navbar'
 import EmptyState from '../components/EmptyState'
 import NoteContextMenu from '../components/NoteContextMenu'
 import ConfirmDialog from '../components/ConfirmDialog'
@@ -126,9 +125,7 @@ export default function NotesPage() {
   })
 
   return (
-    <div className="min-h-screen bg-slate-50 text-[#1E2A44] dark:bg-slate-900 dark:text-slate-100">
-      <Navbar />
-      <main className="mx-auto max-w-5xl px-6 py-8">
+    <div className="mx-auto max-w-5xl px-6 py-8">
         <h1 className="mb-6 text-2xl font-bold">{t('notes.title')}</h1>
 
         {/* Create / edit form */}
@@ -317,7 +314,6 @@ export default function NotesPage() {
           }}
           onCancel={() => setDeletingNote(null)}
         />
-      </main>
-    </div>
+      </div>
   )
 }

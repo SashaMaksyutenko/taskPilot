@@ -27,6 +27,7 @@
     "notes": "Notes",
     "search": "Search",
     "admin": "Admin",
+    "settings": "Settings",
     "logout": "Log out"
   },
   "assistant": {
@@ -84,6 +85,10 @@
     "getStarted": "Get started",
     "login": "Log in",
     "featuresTitle": "Everything your team needs",
+    "heroTitle": "Ship work faster with your team",
+    "aiTitle": "AI assistant built in",
+    "aiDesc": "Ask about deadlines, tasks and team status — right inside the app.",
+    "tryFree": "Try for free",
     "f": {
       "projects": "Projects & Kanban",
       "projectsD": "Organize work on boards and drag tasks across stages.",

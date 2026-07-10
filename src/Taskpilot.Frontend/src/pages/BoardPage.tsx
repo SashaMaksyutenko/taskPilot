@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
-import Navbar from '../components/Navbar'
 import TaskActionsDropdown from '../components/TaskActionsDropdown'
 import TaskContextMenu from '../components/TaskContextMenu'
 import TaskDetailModal from '../components/TaskDetailModal'
@@ -14,9 +13,16 @@ import { notify } from '../lib/toast'
 import { STATUS_COLUMNS, type Project, type Task, type TaskStatus } from '../types/project'
 
 const priorityClasses: Record<string, string> = {
-  High: 'bg-red-100 text-red-700',
-  Medium: 'bg-amber-100 text-amber-700',
-  Low: 'bg-slate-200 text-slate-600',
+  High: 'bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-300',
+  Medium: 'bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300',
+  Low: 'bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-300',
+}
+
+const columnAccent: Record<string, string> = {
+  Backlog: 'border-t-slate-400',
+  InProgress: 'border-t-primary',
+  Review: 'border-t-amber-500',
+  Done: 'border-t-emerald-500',
 }
 
 /**
@@ -235,22 +241,17 @@ export default function BoardPage() {
 
   if (notFound) {
     return (
-      <div className="min-h-screen bg-slate-50 text-[#1E2A44] dark:bg-slate-900 dark:text-slate-100">
-        <Navbar />
-        <main className="mx-auto max-w-lg px-6 py-20 text-center">
+      <div className="mx-auto max-w-lg px-6 py-20 text-center">
           <p className="mb-3 text-lg font-semibold">{t('board.notFound')}</p>
           <Link to="/projects" className="text-sm font-semibold text-[#1E2A44] hover:underline dark:text-slate-200">
             ← {t('board.backToProjects')}
           </Link>
-        </main>
-      </div>
+        </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 text-[#1E2A44] dark:bg-slate-900 dark:text-slate-100">
-      <Navbar />
-      <main className="px-6 py-6">
+    <div className="-mx-4 sm:-mx-6 lg:-mx-8">
         <div className="mb-5 flex items-center gap-3">
           <Link to="/projects" className="text-sm text-slate-500 hover:underline dark:text-slate-400">
             {t('board.backToProjects')}
@@ -292,7 +293,7 @@ export default function BoardPage() {
               placeholder={t('board.addPlaceholder')}
               className="flex-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-[#1E2A44] dark:border-slate-600 dark:bg-slate-800"
             />
-            <button onClick={addTask} className="rounded-lg bg-[#1E2A44] px-4 text-sm font-semibold text-white">
+            <button onClick={addTask} className="rounded-lg bg-primary px-4 text-sm font-semibold text-white hover:bg-primary-hover">
               {t('board.add')}
             </button>
           </div>
@@ -372,7 +373,7 @@ export default function BoardPage() {
                 key={col.key}
                 onDragOver={(e) => e.preventDefault()}
                 onDrop={(e) => onDrop(col.key, e.dataTransfer.getData('taskId') || draggingId.current || '')}
-                className="rounded-xl bg-slate-100 p-3 dark:bg-slate-800"
+                className={`rounded-xl border-t-4 bg-canvas p-3 ${columnAccent[col.key] ?? 'border-t-border'}`}
               >
                 <div className="mb-3 flex items-center justify-between px-1 text-sm font-bold">
                   <span>{t(`board.status.${col.key}`)}</span>
@@ -400,7 +401,7 @@ export default function BoardPage() {
                           e.dataTransfer.setData('taskId', task.id)
                         }}
                         onClick={() => setSelectedTask(task)}
-                        className="group relative cursor-grab rounded-lg border border-slate-200 bg-white p-3 shadow-sm active:cursor-grabbing dark:border-slate-700 dark:bg-slate-900"
+                        className="group relative cursor-grab rounded-lg border border-border bg-surface p-3 shadow-soft transition hover:border-primary/30 hover:shadow-card active:cursor-grabbing"
                       >
                         {/* Hover three-dot menu (same actions as right-click) */}
                         <div className="absolute right-1 top-1 opacity-0 transition group-hover:opacity-100">
@@ -464,7 +465,6 @@ export default function BoardPage() {
             )
           })}
         </div>
-      </main>
 
       {selectedTask && (
         <TaskDetailModal

@@ -4,7 +4,6 @@ import { useNavigate } from 'react-router-dom'
 import { AxiosError } from 'axios'
 import QRCode from 'qrcode'
 import Avatar from '../components/Avatar'
-import Navbar from '../components/Navbar'
 import { notify } from '../lib/toast'
 import { apiErrorMessage } from '../lib/apiError'
 import { enablePush, disablePush, getPushEnabled, pushSupported } from '../lib/push'
@@ -418,9 +417,8 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 text-[#1E2A44] dark:bg-slate-900 dark:text-slate-100">
-      <Navbar />
-      <main className="mx-auto max-w-2xl px-6 py-8">
+    <>
+    <div className="mx-auto max-w-2xl px-6 py-8">
         <h1 className="mb-6 text-2xl font-bold">{t('settings.title')}</h1>
 
         {/* Moderation warnings */}
@@ -967,7 +965,7 @@ export default function SettingsPage() {
             {t('danger.delete')}
           </button>
         </section>
-      </main>
+      </div>
 
       {appealTarget && (
         <AppealModal
@@ -1005,7 +1003,7 @@ export default function SettingsPage() {
           </div>
         </div>
       )}
-    </div>
+    </>
   )
 }
 

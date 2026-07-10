@@ -4,7 +4,6 @@ import { Link, useParams } from 'react-router-dom'
 import Avatar from '../components/Avatar'
 import Markdown from '../components/Markdown'
 import MarkdownEditor from '../components/MarkdownEditor'
-import Navbar from '../components/Navbar'
 import ConfirmDialog from '../components/ConfirmDialog'
 import TagInput from '../components/TagInput'
 import ActionsContextMenu, { type ContextAction } from '../components/ActionsContextMenu'
@@ -244,18 +243,11 @@ export default function TopicPage() {
   }
 
   if (!topic) {
-    return (
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
-        <Navbar />
-        <p className="p-8 text-slate-400">{t('topic.loading')}</p>
-      </div>
-    )
+    return <p className="text-muted">{t('topic.loading')}</p>
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 text-[#1E2A44] dark:bg-slate-900 dark:text-slate-100">
-      <Navbar />
-      <main className="mx-auto max-w-3xl px-6 py-8">
+    <div className="mx-auto max-w-3xl px-6 py-8">
         <Link to="/forum" className="text-sm text-slate-500 hover:underline dark:text-slate-400">
           {t('topic.backToForum')}
         </Link>
@@ -629,7 +621,6 @@ export default function TopicPage() {
             </div>
           </div>
         )}
-      </main>
-    </div>
+      </div>
   )
 }

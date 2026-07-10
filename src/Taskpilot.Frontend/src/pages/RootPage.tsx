@@ -1,3 +1,4 @@
+import AppShell from '../components/layout/AppShell'
 import { useAppSelector } from '../store/hooks'
 import HomePage from './HomePage'
 import LandingPage from './LandingPage'
@@ -8,5 +9,10 @@ import LandingPage from './LandingPage'
  */
 export default function RootPage() {
   const isAuthenticated = useAppSelector((s) => s.auth.isAuthenticated)
-  return isAuthenticated ? <HomePage /> : <LandingPage />
+  if (!isAuthenticated) return <LandingPage />
+  return (
+    <AppShell>
+      <HomePage />
+    </AppShell>
+  )
 }

@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
-import Navbar from '../components/Navbar'
 import { adminService } from '../services/adminService'
 import type { AuditLog } from '../types/admin'
 
@@ -47,9 +46,7 @@ export default function AuditPage() {
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
 
   return (
-    <div className="min-h-screen bg-slate-50 text-[#1E2A44] dark:bg-slate-900 dark:text-slate-100">
-      <Navbar />
-      <main className="mx-auto max-w-6xl px-6 py-8">
+    <div className="mx-auto max-w-6xl px-6 py-8">
         <div className="mb-6 flex items-center gap-3">
           <h1 className="text-2xl font-bold">{t('audit.title')}</h1>
           <span className="text-sm text-slate-400">{t('audit.events', { count: total })}</span>
@@ -152,7 +149,6 @@ export default function AuditPage() {
             </button>
           </div>
         </div>
-      </main>
-    </div>
+      </div>
   )
 }

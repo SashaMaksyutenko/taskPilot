@@ -8,7 +8,6 @@ import Avatar from '../components/Avatar'
 import MentionField from '../components/MentionField'
 import MentionText from '../components/MentionText'
 import MessageContextMenu from '../components/MessageContextMenu'
-import Navbar from '../components/Navbar'
 import { apiErrorMessage } from '../lib/apiError'
 import { createChatConnection } from '../lib/chatHub'
 import { chatService } from '../services/chatService'
@@ -367,9 +366,8 @@ export default function ChatPage() {
   }
 
   return (
-    <div className="flex h-screen flex-col bg-slate-50 text-[#1E2A44] dark:bg-slate-900 dark:text-slate-100">
-      <Navbar />
-      <div className="flex min-h-0 flex-1">
+    <div className="-mx-4 flex h-[calc(100dvh-4rem)] flex-col sm:-mx-6 lg:-mx-8">
+      <div className="flex min-h-0 flex-1 overflow-hidden rounded-xl border border-border bg-surface">
         {/* Sidebar: conversations */}
         <aside className="flex w-72 flex-col border-r border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-800">
           <div className="border-b border-slate-200 p-4 dark:border-slate-700">

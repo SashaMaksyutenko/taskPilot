@@ -3,7 +3,6 @@ import { useTranslation } from 'react-i18next'
 import { Link, useParams, useSearchParams } from 'react-router-dom'
 import Avatar from '../components/Avatar'
 import Markdown from '../components/Markdown'
-import Navbar from '../components/Navbar'
 import StarRating from '../components/StarRating'
 import { marketplaceService } from '../services/marketplaceService'
 import { notify } from '../lib/toast'
@@ -78,12 +77,7 @@ export default function MarketplaceTaskPage() {
   }
 
   if (!task) {
-    return (
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
-        <Navbar />
-        <p className="p-8 text-slate-400">{t('topic.loading')}</p>
-      </div>
-    )
+    return <p className="text-muted">{t('topic.loading')}</p>
   }
 
   const isPoster = currentUserId === task.posterId
@@ -125,9 +119,7 @@ export default function MarketplaceTaskPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 text-[#1E2A44] dark:bg-slate-900 dark:text-slate-100">
-      <Navbar />
-      <main className="mx-auto max-w-3xl px-6 py-8">
+    <div className="mx-auto max-w-3xl px-6 py-8">
         <Link to="/marketplace" className="text-sm text-slate-500 hover:underline dark:text-slate-400">
           {t('marketTask.back')}
         </Link>
@@ -309,7 +301,6 @@ export default function MarketplaceTaskPage() {
             )}
           </div>
         )}
-      </main>
-    </div>
+      </div>
   )
 }

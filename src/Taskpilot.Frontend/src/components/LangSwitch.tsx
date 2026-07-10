@@ -1,18 +1,19 @@
 import { useTranslation } from 'react-i18next'
+import { cn } from '../lib/cn'
 
-/**
- * Small EN/UK language toggle for pages without a navbar (login, register).
- * Persists the choice via the i18next language detector (localStorage).
- */
+/** Small EN/UK language toggle. */
 export default function LangSwitch() {
   const { i18n } = useTranslation()
   const isUk = i18n.language.startsWith('uk')
 
   return (
     <button
+      type="button"
       onClick={() => i18n.changeLanguage(isUk ? 'en' : 'uk')}
       title="Change language"
-      className="rounded-lg border border-slate-300 px-2 py-1 text-xs font-bold text-slate-600 hover:bg-slate-100"
+      className={cn(
+        'rounded-lg border border-border px-2.5 py-1 text-xs font-bold text-muted transition hover:bg-canvas hover:text-foreground',
+      )}
     >
       {isUk ? 'УКР' : 'EN'}
     </button>

@@ -6,6 +6,8 @@ import TaskContextMenu from '../components/TaskContextMenu'
 import TaskDetailModal from '../components/TaskDetailModal'
 import ProjectMembersModal from '../components/ProjectMembersModal'
 import ConfirmDialog from '../components/ConfirmDialog'
+import Button from '../components/ui/Button'
+import Input from '../components/ui/Input'
 import { useAppSelector } from '../store/hooks'
 import { projectService } from '../services/projectService'
 import { taskService } from '../services/taskService'
@@ -23,6 +25,14 @@ const columnAccent: Record<string, string> = {
   InProgress: 'border-t-primary',
   Review: 'border-t-amber-500',
   Done: 'border-t-emerald-500',
+}
+
+// Matching dot color for each column header.
+const columnDot: Record<string, string> = {
+  Backlog: 'bg-slate-400',
+  InProgress: 'bg-primary',
+  Review: 'bg-amber-500',
+  Done: 'bg-emerald-500',
 }
 
 /**
@@ -243,7 +253,7 @@ export default function BoardPage() {
     return (
       <div className="mx-auto max-w-lg px-6 py-20 text-center">
           <p className="mb-3 text-lg font-semibold">{t('board.notFound')}</p>
-          <Link to="/projects" className="text-sm font-semibold text-primary hover:underline dark:text-slate-200">
+          <Link to="/projects" className="text-sm font-semibold text-primary hover:underline">
             ← {t('board.backToProjects')}
           </Link>
         </div>
@@ -253,58 +263,43 @@ export default function BoardPage() {
   return (
     <div className="-mx-4 sm:-mx-6 lg:-mx-8">
         <div className="mb-5 flex items-center gap-3">
-          <Link to="/projects" className="text-sm text-slate-500 hover:underline dark:text-slate-400">
+          <Link to="/projects" className="text-sm text-muted hover:text-foreground hover:underline">
             {t('board.backToProjects')}
           </Link>
           <h1 className="text-xl font-bold">{project?.name ?? t('board.title')}</h1>
-          <button
-            onClick={() => setMembersOpen(true)}
-            className="ml-auto rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-semibold hover:bg-white dark:border-slate-600 dark:hover:bg-slate-800"
-          >
+          <Button variant="secondary" size="sm" className="ml-auto" onClick={() => setMembersOpen(true)}>
             {t('members.button')}
-          </button>
-          <button
-            onClick={exportCsv}
-            className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-semibold hover:bg-white dark:border-slate-600 dark:hover:bg-slate-800"
-          >
+          </Button>
+          <Button variant="secondary" size="sm" onClick={exportCsv}>
             {t('board.exportCsv')}
-          </button>
-          <button
-            onClick={exportXlsx}
-            className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-semibold hover:bg-white dark:border-slate-600 dark:hover:bg-slate-800"
-          >
+          </Button>
+          <Button variant="secondary" size="sm" onClick={exportXlsx}>
             {t('board.exportXlsx')}
-          </button>
-          <button
-            onClick={exportPdf}
-            className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-semibold hover:bg-white dark:border-slate-600 dark:hover:bg-slate-800"
-          >
+          </Button>
+          <Button variant="secondary" size="sm" onClick={exportPdf}>
             {t('board.exportPdf')}
-          </button>
+          </Button>
         </div>
 
         {/* Add task (Editors and the owner only) */}
         {canWrite ? (
           <div className="mb-5 flex max-w-md gap-2">
-            <input
+            <Input
               value={newTitle}
               onChange={(e) => setNewTitle(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && addTask()}
               placeholder={t('board.addPlaceholder')}
-              className="flex-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-primary dark:border-slate-600 dark:bg-slate-800"
             />
-            <button onClick={addTask} className="rounded-lg bg-primary px-4 text-sm font-semibold text-white hover:bg-primary-hover">
-              {t('board.add')}
-            </button>
+            <Button onClick={addTask}>{t('board.add')}</Button>
           </div>
         ) : (
-          <p className="mb-5 text-sm text-slate-400">👁️ {t('board.readOnly')}</p>
+          <p className="mb-5 text-sm text-muted">👁️ {t('board.readOnly')}</p>
         )}
 
         {/* Tag filter bar */}
         {allTags.length > 0 && (
           <div className="mb-5 flex flex-wrap items-center gap-1.5">
-            <span className="mr-1 text-xs font-semibold text-slate-500 dark:text-slate-400">
+            <span className="mr-1 text-xs font-semibold text-muted">
               {t('board.filterByTag')}
             </span>
             {allTags.map((tag) => {
@@ -315,8 +310,8 @@ export default function BoardPage() {
                   onClick={() => toggleTag(tag)}
                   className={`rounded-full px-2 py-0.5 text-xs font-medium transition ${
                     active
-                      ? 'bg-primary text-white dark:bg-slate-200 dark:text-slate-900'
-                      : 'bg-primary/10 text-primary hover:bg-primary/20 dark:bg-slate-700 dark:text-slate-200'
+                      ? 'bg-primary text-white'
+                      : 'bg-primary/10 text-primary hover:bg-primary/20'
                   }`}
                 >
                   {tag}
@@ -326,7 +321,7 @@ export default function BoardPage() {
             {activeTags.length > 0 && (
               <button
                 onClick={() => setActiveTags([])}
-                className="ml-1 text-xs font-semibold text-slate-400 hover:text-red-600 hover:underline"
+                className="ml-1 text-xs font-semibold text-muted hover:text-red-600 hover:underline"
               >
                 {t('board.clearFilter')}
               </button>
@@ -336,7 +331,7 @@ export default function BoardPage() {
 
         {/* Bulk action bar (visible when tasks are selected) */}
         {canWrite && selectedIds.size > 0 && (
-          <div className="mb-5 flex flex-wrap items-center gap-3 rounded-lg border border-primary/20 bg-primary/5 px-4 py-2 dark:border-slate-600 dark:bg-slate-800">
+          <div className="mb-5 flex flex-wrap items-center gap-3 rounded-lg border border-primary/20 bg-primary/5 px-4 py-2">
             <span className="text-sm font-semibold">{t('board.selected', { count: selectedIds.size })}</span>
             <select
               defaultValue=""
@@ -344,7 +339,7 @@ export default function BoardPage() {
                 if (e.target.value) bulkStatus(e.target.value as TaskStatus)
                 e.target.value = ''
               }}
-              className="rounded-lg border border-slate-300 bg-white px-2 py-1 text-sm outline-none dark:border-slate-600 dark:bg-slate-900"
+              className="rounded-lg border border-border bg-surface px-2 py-1 text-sm text-foreground outline-none"
             >
               <option value="" disabled>
                 {t('board.bulkMoveTo')}
@@ -358,7 +353,7 @@ export default function BoardPage() {
             <button onClick={bulkDelete} className="text-sm font-semibold text-red-600 hover:underline">
               {t('board.bulkDelete')}
             </button>
-            <button onClick={clearSelection} className="text-sm font-semibold text-slate-500 hover:underline">
+            <button onClick={clearSelection} className="text-sm font-semibold text-muted hover:text-foreground hover:underline">
               {t('board.clearSelection')}
             </button>
           </div>
@@ -376,8 +371,13 @@ export default function BoardPage() {
                 className={`rounded-xl border-t-4 bg-canvas p-3 ${columnAccent[col.key] ?? 'border-t-border'}`}
               >
                 <div className="mb-3 flex items-center justify-between px-1 text-sm font-bold">
-                  <span>{t(`board.status.${col.key}`)}</span>
-                  <span className="text-slate-400">{colTasks.length}</span>
+                  <span className="flex items-center gap-2">
+                    <span className={`h-2 w-2 rounded-full ${columnDot[col.key] ?? 'bg-border'}`} />
+                    {t(`board.status.${col.key}`)}
+                  </span>
+                  <span className="rounded-full bg-border/60 px-2 py-0.5 text-xs font-semibold text-muted">
+                    {colTasks.length}
+                  </span>
                 </div>
 
                 <div className="space-y-2">
@@ -439,7 +439,7 @@ export default function BoardPage() {
                             {t(`board.priority.${task.priority}`, task.priority)}
                           </span>
                           {task.assigneeName && (
-                            <span className="text-[11px] text-slate-500 dark:text-slate-400">@{task.assigneeName}</span>
+                            <span className="text-[11px] text-muted">@{task.assigneeName}</span>
                           )}
                         </div>
                         {task.tags.length > 0 && (
@@ -447,7 +447,7 @@ export default function BoardPage() {
                             {task.tags.map((tag) => (
                               <span
                                 key={tag}
-                                className="rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary dark:bg-slate-700 dark:text-slate-200"
+                                className="rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary"
                               >
                                 {tag}
                               </span>
@@ -458,7 +458,7 @@ export default function BoardPage() {
                     </TaskContextMenu>
                   ))}
                   {colTasks.length === 0 && (
-                    <p className="px-1 py-4 text-center text-xs text-slate-400">{t('board.dropHere')}</p>
+                    <p className="px-1 py-4 text-center text-xs text-muted">{t('board.dropHere')}</p>
                   )}
                 </div>
               </div>

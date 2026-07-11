@@ -4,6 +4,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import Avatar from '../components/Avatar'
 import FadeIn from '../components/FadeIn'
 import EmptyState from '../components/EmptyState'
+import { SkeletonCard } from '../components/ui/Skeleton'
 import MarkdownEditor from '../components/MarkdownEditor'
 import ActionsContextMenu from '../components/ActionsContextMenu'
 import { marketplaceService } from '../services/marketplaceService'
@@ -29,6 +30,7 @@ export default function MarketplacePage() {
 
   const PAGE_SIZE = 10
   const [tasks, setTasks] = useState<MarketTaskListItem[]>([])
+  const [listLoading, setListLoading] = useState(true)
   const [page, setPage] = useState(1)
   const [total, setTotal] = useState(0)
   const [title, setTitle] = useState('')
@@ -39,6 +41,7 @@ export default function MarketplacePage() {
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
 
   const load = (p: number) => {
+    setListLoading(true)
     marketplaceService
       .getTasks({ page: p, pageSize: PAGE_SIZE })
       .then((r) => {
@@ -46,6 +49,7 @@ export default function MarketplacePage() {
         setTotal(r.total)
       })
       .catch(() => {})
+      .finally(() => setListLoading(false))
   }
 
   useEffect(() => load(page), [page])
@@ -117,7 +121,13 @@ export default function MarketplacePage() {
         )}
 
         {/* Task list */}
-        {tasks.length === 0 ? (
+        {listLoading && tasks.length === 0 ? (
+          <div className="space-y-2">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <SkeletonCard key={i} />
+            ))}
+          </div>
+        ) : tasks.length === 0 ? (
           <EmptyState message={t('market.empty')} />
         ) : (
           <ul className="space-y-2">

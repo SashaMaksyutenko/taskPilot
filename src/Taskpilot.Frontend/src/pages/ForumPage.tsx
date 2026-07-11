@@ -10,6 +10,7 @@ import Button from '../components/ui/Button'
 import Card from '../components/ui/Card'
 import Input from '../components/ui/Input'
 import Select from '../components/ui/Select'
+import { SkeletonCard } from '../components/ui/Skeleton'
 import { apiErrorMessage } from '../lib/apiError'
 import { forumService } from '../services/forumService'
 import { useAppSelector } from '../store/hooks'
@@ -31,6 +32,7 @@ export default function ForumPage() {
   const [body, setBody] = useState('')
   const [tags, setTags] = useState<string[]>([])
   const [loading, setLoading] = useState(false)
+  const [listLoading, setListLoading] = useState(true)
   const [error, setError] = useState('')
   const [search, setSearch] = useState('')
   const [sort, setSort] = useState<'latest' | 'active' | 'top'>('latest')
@@ -41,6 +43,7 @@ export default function ForumPage() {
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
 
   const load = (p: number) => {
+    setListLoading(true)
     forumService
       .getTopics({
         page: p,
@@ -55,6 +58,7 @@ export default function ForumPage() {
         setTotal(r.total)
       })
       .catch(() => {})
+      .finally(() => setListLoading(false))
   }
 
   useEffect(() => {
@@ -178,7 +182,13 @@ export default function ForumPage() {
         </div>
       )}
 
-      {topics.length === 0 ? (
+      {listLoading && topics.length === 0 ? (
+        <div className="space-y-2">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <SkeletonCard key={i} />
+          ))}
+        </div>
+      ) : topics.length === 0 ? (
         <EmptyState message={t('forum.empty')} />
       ) : (
         <ul className="space-y-2">

@@ -8,6 +8,7 @@ import ProjectMembersModal from '../components/ProjectMembersModal'
 import ConfirmDialog from '../components/ConfirmDialog'
 import Button from '../components/ui/Button'
 import Input from '../components/ui/Input'
+import Confetti from '../components/Confetti'
 import { useAppSelector } from '../store/hooks'
 import { projectService } from '../services/projectService'
 import { taskService } from '../services/taskService'
@@ -63,6 +64,8 @@ export default function BoardPage() {
   // Task awaiting delete confirmation.
   const [deletingTask, setDeletingTask] = useState<Task | null>(null)
   const draggingId = useRef<string | null>(null)
+  // Celebratory confetti shown briefly when a task is moved to Done.
+  const [showConfetti, setShowConfetti] = useState(false)
 
   const isOwner = !!project && project.ownerId === currentUserId
 
@@ -114,6 +117,8 @@ export default function BoardPage() {
     const task = tasks.find((t) => t.id === taskId)
     if (!task || task.status === status) return
     setTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, status } : t)))
+    // Celebrate finishing a task.
+    if (status === 'Done') setShowConfetti(true)
     try {
       await taskService.changeStatus(taskId, status)
     } catch {
@@ -262,6 +267,7 @@ export default function BoardPage() {
 
   return (
     <div className="-mx-4 sm:-mx-6 lg:-mx-8">
+        {showConfetti && <Confetti onDone={() => setShowConfetti(false)} />}
         <div className="mb-5 flex items-center gap-3">
           <Link to="/projects" className="text-sm text-muted hover:text-foreground hover:underline">
             {t('board.backToProjects')}

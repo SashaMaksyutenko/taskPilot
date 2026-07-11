@@ -120,17 +120,17 @@ export default function MarketplaceTaskPage() {
 
   return (
     <div className="mx-auto max-w-3xl px-6 py-8">
-        <Link to="/marketplace" className="text-sm text-slate-500 hover:underline dark:text-slate-400">
+        <Link to="/marketplace" className="text-sm text-muted hover:underline">
           {t('marketTask.back')}
         </Link>
 
         {/* Task header */}
-        <div className="mt-3 rounded-xl border border-slate-200 bg-white p-6 dark:border-slate-700 dark:bg-slate-800">
+        <div className="mt-3 rounded-xl border border-border bg-surface p-6">
           <div className="flex items-start gap-3">
             <h1 className="flex-1 text-xl font-bold">{task.title}</h1>
             <span className="text-lg font-bold">${task.budget}</span>
           </div>
-          <div className="mt-1 flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+          <div className="mt-1 flex items-center gap-2 text-xs text-muted">
             <Avatar name={task.posterName} src={task.posterAvatarUrl} size={24} />
             <span>
               {t('forum.by')}{' '}
@@ -140,7 +140,7 @@ export default function MarketplaceTaskPage() {
             </span>
           </div>
           {task.requiredSkills && (
-            <div className="mt-2 text-sm text-slate-600 dark:text-slate-300">{t('marketTask.skills')}: {task.requiredSkills}</div>
+            <div className="mt-2 text-sm text-foreground">{t('marketTask.skills')}: {task.requiredSkills}</div>
           )}
           <div className="mt-4">
             <Markdown>{task.description}</Markdown>
@@ -155,7 +155,7 @@ export default function MarketplaceTaskPage() {
                 ✓ {t('marketTask.paid', { amount: task.budget })}
               </div>
             ) : isPoster ? (
-              <div className="mt-6 flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-800">
+              <div className="mt-6 flex items-center gap-3 rounded-xl border border-border bg-surface p-4">
                 <span className="text-sm">{t('marketTask.payPrompt', { name: task.assigneeName ?? '' })}</span>
                 <button
                   onClick={payTask}
@@ -185,11 +185,11 @@ export default function MarketplaceTaskPage() {
             <h2 className="mb-3 mt-6 font-bold">{t('market.applications', { count: task.applications.length })}</h2>
             <div className="space-y-3">
               {task.applications.map((a) => (
-                <div key={a.id} className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-800">
+                <div key={a.id} className="rounded-xl border border-border bg-surface p-4">
                   <div className="flex items-center gap-2">
                     <Avatar name={a.applicantName} src={a.applicantAvatarUrl} size={28} />
                     <Link to={`/users/${a.applicantId}`} className="font-semibold hover:underline">{a.applicantName}</Link>
-                    <span className="text-sm text-slate-500 dark:text-slate-400">· ${a.proposedRate}</span>
+                    <span className="text-sm text-muted">· ${a.proposedRate}</span>
                     <span className={`ml-auto rounded-full px-2 py-0.5 text-[11px] font-semibold ${appStatusColor[a.status]}`}>
                       {t(`marketTask.appStatus.${a.status}`, a.status)}
                     </span>
@@ -200,18 +200,18 @@ export default function MarketplaceTaskPage() {
                       <button onClick={() => decide(a.id, true)} className="rounded-lg bg-green-600 px-4 py-1.5 text-sm font-semibold text-white hover:bg-green-700">
                         {t('marketTask.accept')}
                       </button>
-                      <button onClick={() => decide(a.id, false)} className="rounded-lg border border-slate-300 px-4 py-1.5 text-sm font-semibold hover:bg-slate-50 dark:border-slate-600 dark:hover:bg-slate-700">
+                      <button onClick={() => decide(a.id, false)} className="rounded-lg border border-border px-4 py-1.5 text-sm font-semibold hover:bg-canvas">
                         {t('marketTask.reject')}
                       </button>
                     </div>
                   )}
                 </div>
               ))}
-              {task.applications.length === 0 && <p className="text-slate-400">{t('marketTask.noApplications')}</p>}
+              {task.applications.length === 0 && <p className="text-muted">{t('marketTask.noApplications')}</p>}
             </div>
           </>
         ) : myApplication ? (
-          <div className="mt-6 rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-800">
+          <div className="mt-6 rounded-xl border border-border bg-surface p-5">
             {t('marketTask.youApplied')}{' '}
             <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${appStatusColor[myApplication.status]}`}>
               {t(`marketTask.appStatus.${myApplication.status}`, myApplication.status)}
@@ -229,14 +229,14 @@ export default function MarketplaceTaskPage() {
             )}
           </div>
         ) : task.status === 'Open' ? (
-          <div className="mt-6 rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-800">
+          <div className="mt-6 rounded-xl border border-border bg-surface p-5">
             <h2 className="mb-3 font-bold">{t('marketTask.applyHeading')}</h2>
             <textarea
               value={coverLetter}
               onChange={(e) => setCoverLetter(e.target.value)}
               placeholder={t('marketTask.coverLetter')}
               rows={3}
-              className="mb-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 outline-none focus:border-primary dark:border-slate-600 dark:bg-slate-900"
+              className="mb-2 w-full rounded-lg border border-border bg-canvas px-3 py-2 outline-none focus:border-primary"
             />
             <div className="flex gap-2">
               <input
@@ -244,7 +244,7 @@ export default function MarketplaceTaskPage() {
                 onChange={(e) => setRate(e.target.value)}
                 type="number"
                 placeholder={t('marketTask.rate')}
-                className="w-40 rounded-lg border border-slate-300 bg-white px-3 py-2 outline-none focus:border-primary dark:border-slate-600 dark:bg-slate-900"
+                className="w-40 rounded-lg border border-border bg-canvas px-3 py-2 outline-none focus:border-primary"
               />
               <button onClick={apply} className="rounded-lg bg-primary px-5 font-semibold text-white hover:bg-primary-hover">
                 {t('marketTask.apply')}
@@ -252,16 +252,16 @@ export default function MarketplaceTaskPage() {
             </div>
           </div>
         ) : (
-          <p className="mt-6 text-sm text-slate-400">{t('marketTask.closed')}</p>
+          <p className="mt-6 text-sm text-muted">{t('marketTask.closed')}</p>
         )}
 
         {/* Two-way rating — only on completed tasks */}
         {task.status === 'Completed' && (
-          <div className="mt-6 rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-800">
+          <div className="mt-6 rounded-xl border border-border bg-surface p-5">
             {/* Rating form: poster or assignee, if they haven't rated yet */}
             {(isPoster || task.assigneeId === currentUserId) &&
               !reviews.some((r) => r.raterId === currentUserId) && (
-                <div className="mb-4 border-b border-slate-100 pb-4 dark:border-slate-700">
+                <div className="mb-4 border-b border-border pb-4">
                   <h2 className="mb-2 font-bold">{t('marketTask.rateHeading')}</h2>
                   <StarRating value={myStars} onChange={setMyStars} />
                   <textarea
@@ -269,7 +269,7 @@ export default function MarketplaceTaskPage() {
                     onChange={(e) => setMyComment(e.target.value)}
                     placeholder={t('marketTask.rateComment')}
                     rows={2}
-                    className="mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-primary dark:border-slate-600 dark:bg-slate-900"
+                    className="mt-2 w-full rounded-lg border border-border bg-canvas px-3 py-2 text-sm outline-none focus:border-primary"
                   />
                   <button
                     onClick={submitRating}
@@ -284,7 +284,7 @@ export default function MarketplaceTaskPage() {
             {/* Existing reviews */}
             <h2 className="mb-2 font-bold">{t('marketTask.reviews')}</h2>
             {reviews.length === 0 ? (
-              <p className="text-sm text-slate-400">{t('marketTask.noReviews')}</p>
+              <p className="text-sm text-muted">{t('marketTask.noReviews')}</p>
             ) : (
               <ul className="space-y-3">
                 {reviews.map((r) => (
@@ -294,7 +294,7 @@ export default function MarketplaceTaskPage() {
                       <Link to={`/users/${r.raterId}`} className="font-semibold hover:underline">{r.raterName}</Link>
                       <StarRating value={r.stars} />
                     </div>
-                    {r.comment && <p className="mt-1 text-slate-600 dark:text-slate-300">{r.comment}</p>}
+                    {r.comment && <p className="mt-1 text-foreground">{r.comment}</p>}
                   </li>
                 ))}
               </ul>

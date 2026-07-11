@@ -129,19 +129,19 @@ export default function NotesPage() {
         <h1 className="mb-6 text-2xl font-bold">{t('notes.title')}</h1>
 
         {/* Create / edit form */}
-        <div className="mb-8 rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-800">
+        <div className="mb-8 rounded-xl border border-border bg-surface p-5">
           <input
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder={t('notes.titlePlaceholder')}
-            className="mb-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 font-medium outline-none focus:border-primary dark:border-slate-600 dark:bg-slate-900"
+            className="mb-2 w-full rounded-lg border border-border bg-canvas px-3 py-2 font-medium outline-none focus:border-primary"
           />
           <textarea
             value={content}
             onChange={(e) => setContent(e.target.value)}
             placeholder={t('notes.contentPlaceholder')}
             rows={3}
-            className="mb-3 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-primary dark:border-slate-600 dark:bg-slate-900"
+            className="mb-3 w-full rounded-lg border border-border bg-canvas px-3 py-2 text-sm outline-none focus:border-primary"
           />
           {/* Tags */}
           <div className="mb-3">
@@ -150,10 +150,10 @@ export default function NotesPage() {
                 {tags.map((tag) => (
                   <span
                     key={tag}
-                    className="flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary dark:bg-slate-700 dark:text-slate-200"
+                    className="flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary"
                   >
                     {tag}
-                    <button onClick={() => removeTag(tag)} className="text-slate-400 hover:text-red-600">
+                    <button onClick={() => removeTag(tag)} className="text-muted hover:text-red-600">
                       ✕
                     </button>
                   </span>
@@ -173,7 +173,7 @@ export default function NotesPage() {
               }}
               onBlur={addTag}
               placeholder={t('notes.tagsPlaceholder')}
-              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-primary dark:border-slate-600 dark:bg-slate-900"
+              className="w-full rounded-lg border border-border bg-canvas px-3 py-2 text-sm outline-none focus:border-primary"
             />
           </div>
 
@@ -196,7 +196,7 @@ export default function NotesPage() {
               {editingId ? t('notes.save') : t('notes.add')}
             </button>
             {editingId && (
-              <button onClick={resetForm} className="text-sm font-semibold text-slate-500 hover:underline">
+              <button onClick={resetForm} className="text-sm font-semibold text-muted hover:underline">
                 {t('notes.cancel')}
               </button>
             )}
@@ -210,7 +210,7 @@ export default function NotesPage() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder={t('notes.searchPlaceholder')}
-              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-primary dark:border-slate-600 dark:bg-slate-800"
+              className="w-full rounded-lg border border-border bg-canvas px-3 py-2 text-sm outline-none focus:border-primary"
             />
             {allTags.length > 0 && (
               <div className="flex flex-wrap items-center gap-1.5">
@@ -222,8 +222,8 @@ export default function NotesPage() {
                       onClick={() => toggleFilterTag(tag)}
                       className={`rounded-full px-2 py-0.5 text-xs font-medium transition ${
                         active
-                          ? 'bg-primary text-white dark:bg-slate-200 dark:text-slate-900'
-                          : 'bg-primary/10 text-primary hover:bg-primary/20 dark:bg-slate-700 dark:text-slate-200'
+                          ? 'bg-primary text-white'
+                          : 'bg-primary/10 text-primary hover:bg-primary/20'
                       }`}
                     >
                       {tag}
@@ -233,7 +233,7 @@ export default function NotesPage() {
                 {activeTags.length > 0 && (
                   <button
                     onClick={() => setActiveTags([])}
-                    className="ml-1 text-xs font-semibold text-slate-400 hover:text-red-600 hover:underline"
+                    className="ml-1 text-xs font-semibold text-muted hover:text-red-600 hover:underline"
                   >
                     {t('notes.clearFilter')}
                   </button>
@@ -261,7 +261,7 @@ export default function NotesPage() {
                 onDelete={() => setDeletingNote(note)}
               >
               <div
-                className="flex flex-col rounded-xl border border-slate-200 p-4 shadow-sm dark:border-slate-700"
+                className="flex flex-col rounded-xl border border-slate-200 p-4 shadow-sm"
                 style={{ background: note.color ?? undefined }}
               >
                 <div className="mb-1 flex items-start gap-2">

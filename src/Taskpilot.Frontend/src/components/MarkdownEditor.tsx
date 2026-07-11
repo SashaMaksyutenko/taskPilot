@@ -21,6 +21,7 @@ export default function MarkdownEditor({ value, onChange, placeholder, rows = 3,
   const fileRef = useRef<HTMLInputElement>(null)
   const [preview, setPreview] = useState(false)
   const [uploading, setUploading] = useState(false)
+  const [uploadPct, setUploadPct] = useState(0)
 
   // Insert text at the caret (or replace the selection).
   const insertAtCursor = (text: string) => {
@@ -41,8 +42,9 @@ export default function MarkdownEditor({ value, onChange, placeholder, rows = 3,
     e.target.value = '' // allow re-selecting the same file
     if (!file) return
     setUploading(true)
+    setUploadPct(0)
     try {
-      const uploaded = await fileService.upload(file)
+      const uploaded = await fileService.upload(file, setUploadPct)
       insertAtCursor(`![${file.name}](/api/files/${uploaded.id})\n`)
     } catch {
       // ignore upload failures
@@ -113,8 +115,8 @@ export default function MarkdownEditor({ value, onChange, placeholder, rows = 3,
             <button type="button" title={t('mdToolbar.list')} onClick={() => prefixLines('- ')} className={btn}>•</button>
             <button type="button" title={t('mdToolbar.numbered')} onClick={() => prefixLines('1. ')} className={btn}>1.</button>
             <button type="button" title={t('mdToolbar.quote')} onClick={() => prefixLines('> ')} className={`${btn} font-mono`}>&gt;</button>
-            <button type="button" title={t('mdToolbar.image')} onClick={() => fileRef.current?.click()} disabled={uploading} className={`${btn} disabled:opacity-50`}>
-              {uploading ? '…' : '🖼️'}
+            <button type="button" title={t('mdToolbar.image')} onClick={() => fileRef.current?.click()} disabled={uploading} className={`${btn} tabular-nums disabled:opacity-50`}>
+              {uploading ? `${uploadPct}%` : '🖼️'}
             </button>
             <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={onPickImage} />
           </>

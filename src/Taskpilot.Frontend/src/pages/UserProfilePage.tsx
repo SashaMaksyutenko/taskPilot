@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { Link, useParams } from 'react-router-dom'
 import Avatar from '../components/Avatar'
 import StarRating from '../components/StarRating'
+import ResultState from '../components/ResultState'
 import { forumService } from '../services/forumService'
 import { userService, type PublicProfile } from '../services/userService'
 import type { TopicListItem } from '../types/forum'
@@ -55,7 +56,7 @@ export default function UserProfilePage() {
   return (
     <div className="mx-auto max-w-2xl px-6 py-8">
         {notFound ? (
-          <p className="text-muted">{t('profile.notFound')}</p>
+          <ResultState variant="error" message={t('profile.notFound')} />
         ) : !profile ? (
           <p className="text-muted">{t('topic.loading')}</p>
         ) : (

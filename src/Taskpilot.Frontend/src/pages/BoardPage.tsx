@@ -9,6 +9,7 @@ import ConfirmDialog from '../components/ConfirmDialog'
 import Button from '../components/ui/Button'
 import Input from '../components/ui/Input'
 import Confetti from '../components/Confetti'
+import ResultState from '../components/ResultState'
 import { useAppSelector } from '../store/hooks'
 import { projectService } from '../services/projectService'
 import { taskService } from '../services/taskService'
@@ -256,12 +257,13 @@ export default function BoardPage() {
 
   if (notFound) {
     return (
-      <div className="mx-auto max-w-lg px-6 py-20 text-center">
-          <p className="mb-3 text-lg font-semibold">{t('board.notFound')}</p>
+      <div className="mx-auto max-w-lg px-6 py-16">
+        <ResultState variant="error" message={t('board.notFound')}>
           <Link to="/projects" className="text-sm font-semibold text-primary hover:underline">
             ← {t('board.backToProjects')}
           </Link>
-        </div>
+        </ResultState>
+      </div>
     )
   }
 

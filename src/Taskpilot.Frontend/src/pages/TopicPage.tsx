@@ -6,6 +6,7 @@ import Markdown from '../components/Markdown'
 import MarkdownEditor from '../components/MarkdownEditor'
 import ConfirmDialog from '../components/ConfirmDialog'
 import TagInput from '../components/TagInput'
+import { SkeletonDetail } from '../components/ui/Skeleton'
 import ActionsContextMenu, { type ContextAction } from '../components/ActionsContextMenu'
 import { apiErrorMessage } from '../lib/apiError'
 import { notify } from '../lib/toast'
@@ -243,7 +244,11 @@ export default function TopicPage() {
   }
 
   if (!topic) {
-    return <p className="text-muted">{t('topic.loading')}</p>
+    return (
+      <div className="mx-auto max-w-3xl px-6 py-8">
+        <SkeletonDetail />
+      </div>
+    )
   }
 
   return (

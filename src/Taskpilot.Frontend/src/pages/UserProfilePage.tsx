@@ -4,6 +4,7 @@ import { Link, useParams } from 'react-router-dom'
 import Avatar from '../components/Avatar'
 import StarRating from '../components/StarRating'
 import ResultState from '../components/ResultState'
+import { SkeletonDetail } from '../components/ui/Skeleton'
 import { forumService } from '../services/forumService'
 import { userService, type PublicProfile } from '../services/userService'
 import type { TopicListItem } from '../types/forum'
@@ -58,7 +59,7 @@ export default function UserProfilePage() {
         {notFound ? (
           <ResultState variant="error" message={t('profile.notFound')} />
         ) : !profile ? (
-          <p className="text-muted">{t('topic.loading')}</p>
+          <SkeletonDetail />
         ) : (
           <>
             {/* Header */}

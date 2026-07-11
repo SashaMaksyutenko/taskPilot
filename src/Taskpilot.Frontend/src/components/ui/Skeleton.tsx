@@ -14,6 +14,22 @@ export default function Skeleton({ className, ...props }: HTMLAttributes<HTMLDiv
   )
 }
 
+/** A detail-page skeleton: a heading, a few body lines and two cards below. */
+export function SkeletonDetail() {
+  return (
+    <div className="space-y-4">
+      <Skeleton className="h-7 w-2/3" />
+      <div className="space-y-2">
+        <Skeleton className="h-3.5 w-full" />
+        <Skeleton className="h-3.5 w-5/6" />
+        <Skeleton className="h-3.5 w-4/6" />
+      </div>
+      <SkeletonCard />
+      <SkeletonCard />
+    </div>
+  )
+}
+
 /** A card-shaped skeleton with a few lines — handy for list loading states. */
 export function SkeletonCard({ className }: { className?: string }) {
   return (

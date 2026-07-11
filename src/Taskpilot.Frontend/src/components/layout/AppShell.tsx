@@ -3,7 +3,9 @@ import { Outlet, useLocation } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import Sidebar from './Sidebar'
 import TopBar from './TopBar'
+import ShortcutsHelp from '../ShortcutsHelp'
 import { useNotifications } from '../../hooks/useNotifications'
+import { useShortcuts } from '../../hooks/useShortcuts'
 
 /**
  * Authenticated app chrome: fixed sidebar, top bar and scrollable main area.
@@ -12,9 +14,11 @@ import { useNotifications } from '../../hooks/useNotifications'
 export default function AppShell({ children }: { children?: ReactNode }) {
   const notifications = useNotifications()
   const location = useLocation()
+  const shortcuts = useShortcuts()
 
   return (
     <div className="flex min-h-screen bg-canvas">
+      <ShortcutsHelp open={shortcuts.helpOpen} onClose={() => shortcuts.setHelpOpen(false)} />
       <Sidebar />
 
       <div className="flex min-w-0 flex-1 flex-col lg:pl-64">

@@ -11,6 +11,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { NavLink, useNavigate } from 'react-router-dom'
 import Avatar from '../Avatar'
+import Tooltip from '../ui/Tooltip'
 import { SidebarNav } from './Sidebar'
 import { cn } from '../../lib/cn'
 import { useNotifications } from '../../hooks/useNotifications'
@@ -68,14 +69,16 @@ export default function TopBar({ notifications }: { notifications: NotificationS
             {i18n.language.startsWith('uk') ? 'УКР' : 'EN'}
           </button>
 
-          <button
-            type="button"
-            onClick={toggleTheme}
-            className="rounded-lg p-2 text-muted hover:bg-canvas"
-            aria-label="Toggle theme"
-          >
-            {dark ? <Sun className="h-[18px] w-[18px]" /> : <Moon className="h-[18px] w-[18px]" />}
-          </button>
+          <Tooltip label={t('topbar.theme')}>
+            <button
+              type="button"
+              onClick={toggleTheme}
+              className="rounded-lg p-2 text-muted hover:bg-canvas"
+              aria-label="Toggle theme"
+            >
+              {dark ? <Sun className="h-[18px] w-[18px]" /> : <Moon className="h-[18px] w-[18px]" />}
+            </button>
+          </Tooltip>
 
           <div className="relative" ref={notifications.bellRef}>
             <button
@@ -160,14 +163,16 @@ export default function TopBar({ notifications }: { notifications: NotificationS
             <span className="max-w-[8rem] truncate font-medium text-foreground">{user?.name}</span>
           </NavLink>
 
-          <button
-            type="button"
-            onClick={handleLogout}
-            className="rounded-lg p-2 text-muted hover:bg-canvas hover:text-foreground"
-            title={t('nav.logout')}
-          >
-            <LogOut className="h-[18px] w-[18px]" />
-          </button>
+          <Tooltip label={t('nav.logout')} side="bottom">
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="rounded-lg p-2 text-muted hover:bg-canvas hover:text-foreground"
+              aria-label={t('nav.logout')}
+            >
+              <LogOut className="h-[18px] w-[18px]" />
+            </button>
+          </Tooltip>
         </div>
       </header>
 

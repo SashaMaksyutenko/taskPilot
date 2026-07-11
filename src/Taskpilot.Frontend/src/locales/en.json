@@ -50,6 +50,22 @@
     "noResults": "No results.",
     "hint": "Type at least 2 characters."
   },
+  "topbar": {
+    "theme": "Toggle theme",
+    "language": "Language"
+  },
+  "shortcuts": {
+    "title": "Keyboard shortcuts",
+    "dashboard": "Go to dashboard",
+    "projects": "Go to projects",
+    "calendar": "Go to calendar",
+    "forum": "Go to forum",
+    "marketplace": "Go to marketplace",
+    "chat": "Go to chat",
+    "notes": "Go to notes",
+    "search": "Search",
+    "help": "Show this help"
+  },
   "menu": {
     "open": "Open",
     "openProject": "Open project",

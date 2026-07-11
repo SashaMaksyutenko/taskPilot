@@ -157,7 +157,7 @@ export default function AdminPage() {
           <h1 className="text-2xl font-bold">{t('admin.usersTitle', { count: total })}</h1>
           <Link
             to="/admin/audit"
-            className="ml-auto rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-semibold hover:bg-white dark:border-slate-600 dark:hover:bg-slate-800"
+            className="ml-auto rounded-lg border border-border px-3 py-1.5 text-sm font-semibold hover:bg-canvas"
           >
             {t('admin.auditLog')}
           </Link>
@@ -178,11 +178,11 @@ export default function AdminPage() {
         {/* Trend charts with a shared period selector */}
         <div className="mb-6">
           <div className="mb-2 flex items-center gap-2">
-            <span className="text-sm font-semibold text-slate-500 dark:text-slate-400">{t('admin.period')}</span>
+            <span className="text-sm font-semibold text-muted">{t('admin.period')}</span>
             <select
               value={activityDays}
               onChange={(e) => setActivityDays(Number(e.target.value))}
-              className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm outline-none focus:border-primary dark:border-slate-600 dark:bg-slate-800"
+              className="rounded-lg border border-border bg-canvas px-3 py-1.5 text-sm text-foreground outline-none focus:border-primary"
             >
               <option value={7}>{t('admin.period7')}</option>
               <option value={30}>{t('admin.period30')}</option>
@@ -204,13 +204,13 @@ export default function AdminPage() {
             </h2>
             <ul className="space-y-3">
               {appeals.map((a) => (
-                <li key={a.id} className="rounded-lg bg-white p-3 text-sm dark:bg-slate-800">
+                <li key={a.id} className="rounded-lg bg-surface p-3 text-sm">
                   <div className="flex items-center gap-2">
                     <Link to={`/users/${a.userId}`} className="font-semibold hover:underline">{a.userName}</Link>
-                    <span className="text-xs text-slate-400">{new Date(a.createdAt).toLocaleString()}</span>
+                    <span className="text-xs text-muted">{new Date(a.createdAt).toLocaleString()}</span>
                   </div>
                   {a.warningReason && (
-                    <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                    <p className="mt-1 text-xs text-muted">
                       {t('appeal.warningLabel')}: {a.warningReason}
                     </p>
                   )}
@@ -243,20 +243,20 @@ export default function AdminPage() {
             </h2>
             <ul className="space-y-3">
               {reports.map((r) => (
-                <li key={r.id} className="rounded-lg bg-white p-3 text-sm dark:bg-slate-800">
+                <li key={r.id} className="rounded-lg bg-surface p-3 text-sm">
                   <div className="flex flex-wrap items-center gap-2">
                     <Link to={`/users/${r.reporterId}`} className="font-semibold hover:underline">{r.reporterName}</Link>
-                    <span className="text-xs text-slate-400">{t('report.reported')}</span>
-                    <Link to={`/forum/${r.topicId}#reply-${r.replyId}`} className="text-xs text-primary hover:underline dark:text-slate-200">
+                    <span className="text-xs text-muted">{t('report.reported')}</span>
+                    <Link to={`/forum/${r.topicId}#reply-${r.replyId}`} className="text-xs text-primary hover:underline">
                       {r.topicTitle}
                     </Link>
-                    <span className="ml-auto text-xs text-slate-400">{new Date(r.createdAt).toLocaleString()}</span>
+                    <span className="ml-auto text-xs text-muted">{new Date(r.createdAt).toLocaleString()}</span>
                   </div>
-                  <p className="mt-2 rounded border-l-4 border-slate-300 bg-slate-50 px-3 py-1.5 text-xs text-slate-600 dark:border-slate-600 dark:bg-slate-900/40 dark:text-slate-300">
+                  <p className="mt-2 rounded border-l-4 border-border bg-canvas px-3 py-1.5 text-xs text-muted">
                     <span className="font-semibold">{r.replyAuthorName}:</span> {r.replyExcerpt}
                   </p>
                   {r.reason && (
-                    <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                    <p className="mt-1 text-xs text-muted">
                       {t('report.reasonLabel')}: {r.reason}
                     </p>
                   )}
@@ -269,7 +269,7 @@ export default function AdminPage() {
                     </button>
                     <button
                       onClick={() => resolveReport(r.id, true)}
-                      className="rounded-lg border border-slate-300 px-4 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-700"
+                      className="rounded-lg border border-border px-4 py-1.5 text-xs font-semibold text-foreground hover:bg-canvas"
                     >
                       {t('report.dismiss')}
                     </button>
@@ -286,12 +286,12 @@ export default function AdminPage() {
             value={search}
             onChange={(e) => changeFilter(setSearch)(e.target.value)}
             placeholder={t('admin.searchPlaceholder')}
-            className="min-w-0 flex-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-primary dark:border-slate-600 dark:bg-slate-800"
+            className="min-w-0 flex-1 rounded-lg border border-border bg-canvas px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
           />
           <select
             value={roleFilter}
             onChange={(e) => changeFilter(setRoleFilter)(e.target.value)}
-            className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-primary dark:border-slate-600 dark:bg-slate-800"
+            className="rounded-lg border border-border bg-canvas px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
           >
             <option value="">{t('admin.allRoles')}</option>
             {ROLES.map((r) => (
@@ -301,7 +301,7 @@ export default function AdminPage() {
           <select
             value={statusFilter}
             onChange={(e) => changeFilter(setStatusFilter)(e.target.value)}
-            className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-primary dark:border-slate-600 dark:bg-slate-800"
+            className="rounded-lg border border-border bg-canvas px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
           >
             <option value="">{t('admin.allStatuses')}</option>
             <option value="active">{t('admin.statusActive')}</option>
@@ -311,7 +311,7 @@ export default function AdminPage() {
           <select
             value={sort}
             onChange={(e) => changeFilter(setSort)(e.target.value)}
-            className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-primary dark:border-slate-600 dark:bg-slate-800"
+            className="rounded-lg border border-border bg-canvas px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
           >
             <option value="newest">{t('admin.sortNewest')}</option>
             <option value="oldest">{t('admin.sortOldest')}</option>
@@ -320,9 +320,9 @@ export default function AdminPage() {
           </select>
         </div>
 
-        <div className="overflow-hidden rounded-xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-800">
+        <div className="overflow-hidden rounded-xl border border-border bg-surface">
           <table className="w-full text-sm">
-            <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500 dark:bg-slate-700/50 dark:text-slate-400">
+            <thead className="bg-canvas text-left text-xs uppercase text-muted">
               <tr>
                 <th className="px-4 py-3">{t('admin.name')}</th>
                 <th className="px-4 py-3">{t('admin.email')}</th>
@@ -331,7 +331,7 @@ export default function AdminPage() {
                 <th className="px-4 py-3 text-right">{t('admin.actions')}</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
+            <tbody className="divide-y divide-border">
               {users.map((u) => (
                 <UserContextMenu
                   key={u.id}
@@ -353,12 +353,12 @@ export default function AdminPage() {
                       {u.name}
                     </Link>
                   </td>
-                  <td className="px-4 py-3 text-slate-500 dark:text-slate-400">{u.email}</td>
+                  <td className="px-4 py-3 text-muted">{u.email}</td>
                   <td className="px-4 py-3">
                     <select
                       value={u.role}
                       onChange={(e) => changeRole(u.id, e.target.value)}
-                      className="rounded-lg border border-slate-300 bg-white px-2 py-1 outline-none dark:border-slate-600 dark:bg-slate-900"
+                      className="rounded-lg border border-border bg-canvas px-2 py-1 text-foreground outline-none"
                     >
                       {ROLES.map((r) => (
                         <option key={r} value={r}>
@@ -376,7 +376,7 @@ export default function AdminPage() {
                       {u.isActive ? t('admin.active') : t('admin.banned')}
                     </span>
                     {!u.isActive && u.bannedUntil && (
-                      <div className="mt-1 text-[11px] text-slate-400">
+                      <div className="mt-1 text-[11px] text-muted">
                         {t('admin.bannedUntil', { date: new Date(u.bannedUntil).toLocaleDateString() })}
                       </div>
                     )}
@@ -413,17 +413,17 @@ export default function AdminPage() {
             <button
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page <= 1}
-              className="rounded-lg border border-slate-300 px-4 py-1.5 font-semibold transition hover:bg-white disabled:opacity-40 dark:border-slate-600 dark:hover:bg-slate-800"
+              className="rounded-lg border border-border px-4 py-1.5 font-semibold transition hover:bg-canvas disabled:opacity-40"
             >
               {t('audit.prev')}
             </button>
-            <span className="text-slate-500 dark:text-slate-400">
+            <span className="text-muted">
               {t('audit.pageOf', { page, total: totalPages })}
             </span>
             <button
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
               disabled={page >= totalPages}
-              className="rounded-lg border border-slate-300 px-4 py-1.5 font-semibold transition hover:bg-white disabled:opacity-40 dark:border-slate-600 dark:hover:bg-slate-800"
+              className="rounded-lg border border-border px-4 py-1.5 font-semibold transition hover:bg-canvas disabled:opacity-40"
             >
               {t('audit.next')}
             </button>

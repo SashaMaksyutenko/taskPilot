@@ -6,6 +6,7 @@ import {
   Sun,
   X,
 } from 'lucide-react'
+import { AnimatePresence, motion } from 'framer-motion'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { NavLink, useNavigate } from 'react-router-dom'
@@ -84,11 +85,23 @@ export default function TopBar({ notifications }: { notifications: NotificationS
               aria-label="Notifications"
             >
               <Bell className="h-[18px] w-[18px]" />
-              {notifications.unread > 0 && (
-                <span className="absolute right-0.5 top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">
-                  {notifications.unread}
-                </span>
-              )}
+              <AnimatePresence>
+                {notifications.unread > 0 && (
+                  <motion.span
+                    // Re-key on the count so the badge "pops" each time it changes.
+                    key={notifications.unread}
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    exit={{ scale: 0 }}
+                    transition={{ type: 'spring', stiffness: 500, damping: 18 }}
+                    className="absolute right-0.5 top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white"
+                  >
+                    {/* A soft pulsing ring to draw the eye to new notifications. */}
+                    <span className="absolute inset-0 -z-10 animate-ping rounded-full bg-red-500/60" />
+                    {notifications.unread}
+                  </motion.span>
+                )}
+              </AnimatePresence>
             </button>
 
             {notifications.open && (

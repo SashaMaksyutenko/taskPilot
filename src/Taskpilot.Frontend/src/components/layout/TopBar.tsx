@@ -172,30 +172,42 @@ export default function TopBar({ notifications }: { notifications: NotificationS
       </header>
 
       {/* Mobile drawer */}
-      {mobileOpen && (
-        <div className="fixed inset-0 z-40 lg:hidden">
-          <button
-            type="button"
-            className="absolute inset-0 bg-black/40"
-            onClick={() => setMobileOpen(false)}
-            aria-label="Close menu"
-          />
-          <div className="absolute inset-y-0 left-0 flex w-72 flex-col bg-surface shadow-elevated">
-            <div className="flex h-16 items-center justify-between border-b border-border px-4">
-              <div className="flex items-center gap-2">
-                <img src="/logo-mark.svg" alt="" className="h-8 w-8" />
-                <span className="font-bold">TaskPilot</span>
+      <AnimatePresence>
+        {mobileOpen && (
+          <div className="fixed inset-0 z-40 lg:hidden">
+            <motion.button
+              type="button"
+              className="absolute inset-0 bg-black/40"
+              onClick={() => setMobileOpen(false)}
+              aria-label="Close menu"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+            />
+            <motion.div
+              className="absolute inset-y-0 left-0 flex w-72 flex-col bg-surface shadow-elevated"
+              initial={{ x: '-100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '-100%' }}
+              transition={{ type: 'tween', ease: 'easeOut', duration: 0.25 }}
+            >
+              <div className="flex h-16 items-center justify-between border-b border-border px-4">
+                <div className="flex items-center gap-2">
+                  <img src="/logo-mark.svg" alt="" className="h-8 w-8" />
+                  <span className="font-bold">TaskPilot</span>
+                </div>
+                <button type="button" onClick={() => setMobileOpen(false)} className="rounded-lg p-2 hover:bg-canvas">
+                  <X className="h-5 w-5" />
+                </button>
               </div>
-              <button type="button" onClick={() => setMobileOpen(false)} className="rounded-lg p-2 hover:bg-canvas">
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-            <div className="flex-1 overflow-y-auto p-3">
-              <SidebarNav onNavigate={() => setMobileOpen(false)} />
-            </div>
+              <div className="flex-1 overflow-y-auto p-3">
+                <SidebarNav onNavigate={() => setMobileOpen(false)} />
+              </div>
+            </motion.div>
           </div>
-        </div>
-      )}
+        )}
+      </AnimatePresence>
     </>
   )
 }

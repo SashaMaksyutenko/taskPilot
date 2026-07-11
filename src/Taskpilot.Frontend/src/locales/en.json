@@ -571,6 +571,7 @@
     "directChat": "Direct chat",
     "messagePlaceholder": "Type a message…",
     "addEmoji": "Add emoji",
+    "attach": "Attach a file",
     "send": "Send",
     "selectConversation": "Select a conversation to start chatting",
     "copy": "Copy text",

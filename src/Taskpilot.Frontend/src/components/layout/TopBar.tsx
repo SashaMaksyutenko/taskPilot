@@ -61,13 +61,15 @@ export default function TopBar({ notifications }: { notifications: NotificationS
         </NavLink>
 
         <div className="ml-auto flex items-center gap-1 sm:gap-2">
-          <button
-            type="button"
-            onClick={toggleLang}
-            className="rounded-lg px-2.5 py-2 text-xs font-bold text-muted hover:bg-canvas"
-          >
-            {i18n.language.startsWith('uk') ? 'УКР' : 'EN'}
-          </button>
+          <Tooltip label={t('topbar.language')}>
+            <button
+              type="button"
+              onClick={toggleLang}
+              className="rounded-lg px-2.5 py-2 text-xs font-bold text-muted hover:bg-canvas"
+            >
+              {i18n.language.startsWith('uk') ? 'УКР' : 'EN'}
+            </button>
+          </Tooltip>
 
           <Tooltip label={t('topbar.theme')}>
             <button

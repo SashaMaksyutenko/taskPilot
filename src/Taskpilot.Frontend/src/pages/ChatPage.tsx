@@ -12,6 +12,7 @@ import MessageContextMenu from '../components/MessageContextMenu'
 import Button from '../components/ui/Button'
 import Input from '../components/ui/Input'
 import Skeleton from '../components/ui/Skeleton'
+import Tooltip from '../components/ui/Tooltip'
 import { cn } from '../lib/cn'
 import { apiErrorMessage } from '../lib/apiError'
 import { createChatConnection } from '../lib/chatHub'
@@ -705,23 +706,27 @@ export default function ChatPage() {
                     e.target.value = ''
                   }}
                 />
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  title="Attach a file"
-                  className="rounded-lg p-2 text-muted transition hover:bg-canvas hover:text-foreground"
-                >
-                  <Paperclip className="h-5 w-5" />
-                </button>
-                <div className="relative">
+                <Tooltip label={t('chat.attach')} side="top">
                   <button
                     type="button"
-                    onClick={() => setShowEmoji((s) => !s)}
-                    title={t('chat.addEmoji')}
+                    onClick={() => fileInputRef.current?.click()}
+                    aria-label={t('chat.attach')}
                     className="rounded-lg p-2 text-muted transition hover:bg-canvas hover:text-foreground"
                   >
-                    <Smile className="h-5 w-5" />
+                    <Paperclip className="h-5 w-5" />
                   </button>
+                </Tooltip>
+                <div className="relative">
+                  <Tooltip label={t('chat.addEmoji')} side="top">
+                    <button
+                      type="button"
+                      onClick={() => setShowEmoji((s) => !s)}
+                      aria-label={t('chat.addEmoji')}
+                      className="rounded-lg p-2 text-muted transition hover:bg-canvas hover:text-foreground"
+                    >
+                      <Smile className="h-5 w-5" />
+                    </button>
+                  </Tooltip>
                   {showEmoji && (
                     <div className="absolute bottom-12 left-0 z-10 grid max-h-48 w-64 grid-cols-8 gap-0.5 overflow-y-auto rounded-xl border border-border bg-surface p-2 shadow-elevated">
                       {REACTION_EMOJIS.map((e) => (

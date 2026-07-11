@@ -241,38 +241,38 @@ export default function TaskDetailModal({
       onClick={onClose}
     >
       <div
-        className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-xl bg-white p-6 shadow-xl dark:bg-slate-800"
+        className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-xl bg-surface p-6 shadow-elevated"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-lg font-bold">{t('taskModal.title')}</h2>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+          <button onClick={onClose} className="text-muted hover:text-foreground">
             ✕
           </button>
         </div>
 
-        <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">{t('taskModal.titleField')}</label>
+        <label className="mb-1 block text-sm font-medium text-foreground">{t('taskModal.titleField')}</label>
         <input
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          className="mb-4 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-primary dark:border-slate-600 dark:bg-slate-900"
+          className="mb-4 w-full rounded-lg border border-border bg-canvas px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
         />
 
-        <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">{t('taskModal.description')}</label>
+        <label className="mb-1 block text-sm font-medium text-foreground">{t('taskModal.description')}</label>
         <textarea
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           rows={3}
-          className="mb-4 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-primary dark:border-slate-600 dark:bg-slate-900"
+          className="mb-4 w-full rounded-lg border border-border bg-canvas px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
         />
 
         <div className="mb-4 grid grid-cols-2 gap-4">
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">{t('taskModal.priority')}</label>
+            <label className="mb-1 block text-sm font-medium text-foreground">{t('taskModal.priority')}</label>
             <select
               value={priority}
               onChange={(e) => setPriority(e.target.value)}
-              className="w-full rounded-lg border border-slate-300 bg-white px-2 py-2 text-sm outline-none dark:border-slate-600 dark:bg-slate-900"
+              className="w-full rounded-lg border border-border bg-canvas px-2 py-2 text-sm text-foreground outline-none"
             >
               {PRIORITIES.map((p) => (
                 <option key={p} value={p}>
@@ -282,20 +282,20 @@ export default function TaskDetailModal({
             </select>
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">{t('taskModal.deadline')}</label>
+            <label className="mb-1 block text-sm font-medium text-foreground">{t('taskModal.deadline')}</label>
             <input
               type="date"
               value={deadline}
               onChange={(e) => setDeadline(e.target.value)}
-              className="w-full rounded-lg border border-slate-300 bg-white px-2 py-2 text-sm outline-none dark:border-slate-600 dark:bg-slate-900"
+              className="w-full rounded-lg border border-border bg-canvas px-2 py-2 text-sm text-foreground outline-none"
             />
           </div>
         </div>
 
         {/* Time tracking */}
-        <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">{t('taskModal.timeTracking')}</label>
+        <label className="mb-1 block text-sm font-medium text-foreground">{t('taskModal.timeTracking')}</label>
         <div className="mb-4 flex items-center gap-3">
-          <span className={`font-mono text-lg font-bold ${timerStartedAt ? 'text-[#F97316]' : 'text-primary dark:text-slate-100'}`}>
+          <span className={`font-mono text-lg font-bold ${timerStartedAt ? 'text-accent' : 'text-foreground'}`}>
             {formatDuration(displaySeconds)}
           </span>
           <button
@@ -309,19 +309,19 @@ export default function TaskDetailModal({
         </div>
 
         {/* Tags */}
-        <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">{t('taskModal.tags')}</label>
+        <label className="mb-1 block text-sm font-medium text-foreground">{t('taskModal.tags')}</label>
         <div className="mb-4">
           {tags.length > 0 && (
             <div className="mb-2 flex flex-wrap gap-1.5">
               {tags.map((tag) => (
                 <span
                   key={tag}
-                  className="flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary dark:bg-slate-700 dark:text-slate-200"
+                  className="flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary"
                 >
                   {tag}
                   <button
                     onClick={() => removeTag(tag)}
-                    className="text-slate-400 hover:text-red-600"
+                    className="text-muted hover:text-red-600"
                     title={t('taskModal.removeTag')}
                   >
                     ✕
@@ -343,17 +343,17 @@ export default function TaskDetailModal({
             }}
             onBlur={addTag}
             placeholder={t('taskModal.tagsPlaceholder')}
-            className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-primary dark:border-slate-600 dark:bg-slate-900"
+            className="w-full rounded-lg border border-border bg-canvas px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
           />
         </div>
 
         {/* Assignee */}
-        <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">{t('taskModal.assignee')}</label>
+        <label className="mb-1 block text-sm font-medium text-foreground">{t('taskModal.assignee')}</label>
         <div className="mb-4">
           <div className="mb-2 flex items-center gap-2 text-sm">
             {assigneeName ? (
               <>
-                <span className="rounded bg-slate-100 px-2 py-0.5 font-medium dark:bg-slate-700">
+                <span className="rounded bg-canvas px-2 py-0.5 font-medium">
                   @{assigneeName}
                 </span>
                 <button onClick={unassign} className="text-xs font-semibold text-red-600 hover:underline">
@@ -361,7 +361,7 @@ export default function TaskDetailModal({
                 </button>
               </>
             ) : (
-              <span className="text-slate-400">{t('taskModal.unassigned')}</span>
+              <span className="text-muted">{t('taskModal.unassigned')}</span>
             )}
           </div>
 
@@ -370,19 +370,19 @@ export default function TaskDetailModal({
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder={t('taskModal.searchAssignee')}
-              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-primary dark:border-slate-600 dark:bg-slate-900"
+              className="w-full rounded-lg border border-border bg-canvas px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
             />
             {results.length > 0 && (
-              <ul className="absolute left-0 right-0 top-full z-20 mt-1 max-h-56 overflow-y-auto rounded-lg border border-slate-300 bg-white shadow-lg dark:border-slate-600 dark:bg-slate-800">
+              <ul className="absolute left-0 right-0 top-full z-20 mt-1 max-h-56 overflow-y-auto rounded-lg border border-border bg-surface shadow-elevated">
                 {results.map((u) => (
                   <li key={u.id}>
                     <button
                       onClick={() => pickAssignee(u)}
-                      className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-slate-50 dark:hover:bg-slate-700"
+                      className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-canvas"
                     >
                       <Avatar name={u.name} src={u.avatarUrl} size={26} />
                       <span className="font-medium">{u.name}</span>
-                      {u.title && <span className="ml-1 text-xs text-slate-400">{u.title}</span>}
+                      {u.title && <span className="ml-1 text-xs text-muted">{u.title}</span>}
                     </button>
                   </li>
                 ))}
@@ -392,11 +392,11 @@ export default function TaskDetailModal({
         </div>
 
         {/* Subtasks */}
-        <div className="mb-4 border-t border-slate-200 pt-4 dark:border-slate-700">
-          <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">
+        <div className="mb-4 border-t border-border pt-4">
+          <label className="mb-2 block text-sm font-medium text-foreground">
             {t('taskModal.subtasks')}{' '}
             {subtasks.length > 0 && (
-              <span className="text-slate-400">
+              <span className="text-muted">
                 ({subtasks.filter((s) => s.status === 'Done').length}/{subtasks.length})
               </span>
             )}
@@ -412,7 +412,7 @@ export default function TaskDetailModal({
                     onChange={() => toggleSubtask(s)}
                     className="h-4 w-4 accent-primary"
                   />
-                  <span className={s.status === 'Done' ? 'text-slate-400 line-through' : ''}>{s.title}</span>
+                  <span className={s.status === 'Done' ? 'text-muted line-through' : ''}>{s.title}</span>
                 </li>
               ))}
             </ul>
@@ -428,29 +428,29 @@ export default function TaskDetailModal({
               }
             }}
             placeholder={t('taskModal.addSubtask')}
-            className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-primary dark:border-slate-600 dark:bg-slate-900"
+            className="w-full rounded-lg border border-border bg-canvas px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
           />
         </div>
 
         {/* Comments */}
-        <div className="mb-4 border-t border-slate-200 pt-4 dark:border-slate-700">
-          <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">
+        <div className="mb-4 border-t border-border pt-4">
+          <label className="mb-2 block text-sm font-medium text-foreground">
             {t('taskModal.comments')} {comments.length > 0 && `(${comments.length})`}
           </label>
 
           {comments.length === 0 ? (
-            <p className="mb-3 text-sm text-slate-400">{t('taskModal.noComments')}</p>
+            <p className="mb-3 text-sm text-muted">{t('taskModal.noComments')}</p>
           ) : (
             <ul className="mb-3 max-h-48 space-y-2 overflow-y-auto pr-1">
               {comments.map((c) => (
-                <li key={c.id} className="group rounded-lg bg-slate-50 px-3 py-2 text-sm dark:bg-slate-900">
+                <li key={c.id} className="group rounded-lg bg-canvas px-3 py-2 text-sm">
                   <div className="flex items-center justify-between">
                     <span className="flex items-center gap-2 font-medium">
                       <Avatar name={c.authorName} src={c.authorAvatarUrl} size={22} />
                       {c.authorName}
                     </span>
                     <div className="flex items-center gap-2">
-                      <span className="text-xs text-slate-400">
+                      <span className="text-xs text-muted">
                         {new Date(c.createdAt).toLocaleString()}
                       </span>
                       <button
@@ -462,7 +462,7 @@ export default function TaskDetailModal({
                       </button>
                     </div>
                   </div>
-                  <p className="mt-1 whitespace-pre-wrap break-words text-slate-600 dark:text-slate-300">
+                  <p className="mt-1 whitespace-pre-wrap break-words text-foreground">
                     <MentionText text={c.body} />
                   </p>
                 </li>
@@ -484,7 +484,7 @@ export default function TaskDetailModal({
               }}
               rows={2}
               placeholder={t('taskModal.commentPlaceholder')}
-              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-primary dark:border-slate-600 dark:bg-slate-900"
+              className="w-full rounded-lg border border-border bg-canvas px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
             />
             <button
               onClick={addComment}

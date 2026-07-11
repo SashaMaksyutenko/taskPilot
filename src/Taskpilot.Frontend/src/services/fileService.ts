@@ -11,14 +11,22 @@ export interface UploadedFile {
 
 /** Upload and download of file attachments. */
 export const fileService = {
-  /** Uploads a file (multipart) and returns its metadata. */
-  upload(file: File): Promise<UploadedFile> {
+  /**
+   * Uploads a file (multipart) and returns its metadata. An optional callback
+   * receives the upload progress as a whole percentage (0–100).
+   */
+  upload(file: File, onProgress?: (percent: number) => void): Promise<UploadedFile> {
     const form = new FormData()
     form.append('file', file)
     // Override the default JSON content-type so the browser sets the multipart
     // boundary itself.
     return api
-      .post<UploadedFile>('/api/files', form, { headers: { 'Content-Type': undefined } })
+      .post<UploadedFile>('/api/files', form, {
+        headers: { 'Content-Type': undefined },
+        onUploadProgress: (e) => {
+          if (onProgress && e.total) onProgress(Math.round((e.loaded / e.total) * 100))
+        },
+      })
       .then((r) => r.data)
   },
 

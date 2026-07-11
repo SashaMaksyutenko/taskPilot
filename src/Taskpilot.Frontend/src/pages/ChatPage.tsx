@@ -45,6 +45,8 @@ export default function ChatPage() {
 
   const [conversations, setConversations] = useState<Conversation[]>([])
   const [convLoading, setConvLoading] = useState(true)
+  // Upload progress (0–100) while an attachment is being sent; null when idle.
+  const [uploadProgress, setUploadProgress] = useState<number | null>(null)
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [messages, setMessages] = useState<Message[]>([])
   const [text, setText] = useState('')
@@ -273,10 +275,12 @@ export default function ChatPage() {
     cancelEdit()
   }
 
-  // Upload the chosen file, then send it as a message attachment.
+  // Upload the chosen file (tracking progress), then send it as a message attachment.
   const attachFile = async (file: File) => {
     if (!selectedId) return
-    const uploaded = await fileService.upload(file).catch(() => null)
+    setUploadProgress(0)
+    const uploaded = await fileService.upload(file, setUploadProgress).catch(() => null)
+    setUploadProgress(null)
     if (uploaded) await chatService.sendMessage(selectedId, '', uploaded.id).catch(() => {})
   }
 
@@ -670,6 +674,18 @@ export default function ChatPage() {
 
               {typingLabel() && (
                 <div className="px-6 pb-1 text-xs italic text-muted">{typingLabel()}</div>
+              )}
+
+              {uploadProgress !== null && (
+                <div className="flex items-center gap-2 border-t border-border px-4 py-2">
+                  <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-border">
+                    <div
+                      className="h-full rounded-full bg-accent transition-all duration-150"
+                      style={{ width: `${uploadProgress}%` }}
+                    />
+                  </div>
+                  <span className="w-10 text-right text-xs font-semibold text-muted">{uploadProgress}%</span>
+                </div>
               )}
 
               {sendError && (

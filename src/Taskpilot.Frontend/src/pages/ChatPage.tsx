@@ -11,6 +11,7 @@ import MentionText from '../components/MentionText'
 import MessageContextMenu from '../components/MessageContextMenu'
 import Button from '../components/ui/Button'
 import Input from '../components/ui/Input'
+import Skeleton from '../components/ui/Skeleton'
 import { cn } from '../lib/cn'
 import { apiErrorMessage } from '../lib/apiError'
 import { createChatConnection } from '../lib/chatHub'
@@ -43,6 +44,7 @@ export default function ChatPage() {
   const currentUser = useAppSelector((s) => s.auth.user)
 
   const [conversations, setConversations] = useState<Conversation[]>([])
+  const [convLoading, setConvLoading] = useState(true)
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [messages, setMessages] = useState<Message[]>([])
   const [text, setText] = useState('')
@@ -84,7 +86,7 @@ export default function ChatPage() {
 
   // Load conversations and open the realtime connection once.
   useEffect(() => {
-    chatService.getConversations().then(setConversations).catch(() => {})
+    chatService.getConversations().then(setConversations).catch(() => {}).finally(() => setConvLoading(false))
 
     const connection = createChatConnection()
     connectionRef.current = connection
@@ -407,7 +409,20 @@ export default function ChatPage() {
           </div>
 
           <div className="flex-1 overflow-y-auto">
-            {conversations.length === 0 && (
+            {convLoading && conversations.length === 0 && (
+              <div className="space-y-1 p-3">
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <div key={i} className="flex items-center gap-2 px-1 py-2">
+                    <Skeleton className="h-8 w-8 rounded-full" />
+                    <div className="flex-1 space-y-1.5">
+                      <Skeleton className="h-3 w-2/3" />
+                      <Skeleton className="h-2.5 w-2/5" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            {!convLoading && conversations.length === 0 && (
               <p className="p-4 text-sm text-muted">{t('chat.noConversations')}</p>
             )}
             {conversations.map((conv) => {

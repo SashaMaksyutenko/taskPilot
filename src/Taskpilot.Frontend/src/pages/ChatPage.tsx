@@ -17,6 +17,7 @@ import { cn } from '../lib/cn'
 import { apiErrorMessage } from '../lib/apiError'
 import { createChatConnection } from '../lib/chatHub'
 import { chatService } from '../services/chatService'
+import { gifService, isGifMessage, type Gif } from '../services/gifService'
 import { notify } from '../lib/toast'
 import { fileService } from '../services/fileService'
 import { userService, type UserSearchResult } from '../services/userService'
@@ -48,6 +49,11 @@ export default function ChatPage() {
   const [convLoading, setConvLoading] = useState(true)
   // Upload progress (0–100) while an attachment is being sent; null when idle.
   const [uploadProgress, setUploadProgress] = useState<number | null>(null)
+  // GIF picker: whether the feature is on, the panel state, query and results.
+  const [gifEnabled, setGifEnabled] = useState<boolean | null>(null)
+  const [showGif, setShowGif] = useState(false)
+  const [gifQuery, setGifQuery] = useState('')
+  const [gifResults, setGifResults] = useState<Gif[]>([])
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [messages, setMessages] = useState<Message[]>([])
   const [text, setText] = useState('')
@@ -283,6 +289,38 @@ export default function ChatPage() {
     const uploaded = await fileService.upload(file, setUploadProgress).catch(() => null)
     setUploadProgress(null)
     if (uploaded) await chatService.sendMessage(selectedId, '', uploaded.id).catch(() => {})
+  }
+
+  // On mount: learn whether GIFs are configured (hides the button if not) and
+  // prime the trending list so the picker opens instantly.
+  useEffect(() => {
+    gifService
+      .search('')
+      .then((r) => {
+        setGifEnabled(r.enabled)
+        setGifResults(r.gifs)
+      })
+      .catch(() => setGifEnabled(false))
+  }, [])
+
+  // Debounced GIF search while the picker is open. An empty query keeps the
+  // trending list primed on mount (avoids a duplicate request and saves quota).
+  useEffect(() => {
+    if (!showGif) return
+    const q = gifQuery.trim()
+    if (!q) return
+    const handle = setTimeout(() => {
+      gifService.search(q).then((r) => setGifResults(r.gifs)).catch(() => {})
+    }, 400)
+    return () => clearTimeout(handle)
+  }, [showGif, gifQuery])
+
+  // Send the chosen GIF (its URL becomes the message, rendered as an image).
+  const sendGif = async (gif: Gif) => {
+    if (!selectedId) return
+    setShowGif(false)
+    setGifQuery('')
+    await chatService.sendMessage(selectedId, gif.url).catch(() => {})
   }
 
   // Download an attachment (authenticated) and trigger a save dialog.
@@ -587,6 +625,13 @@ export default function ChatPage() {
                                 {t('chat.editHint')}
                               </div>
                             </div>
+                          ) : isGifMessage(m.content) ? (
+                            <img
+                              src={m.content}
+                              alt="GIF"
+                              loading="lazy"
+                              className="max-w-[240px] rounded-lg"
+                            />
                           ) : (
                             m.content && (
                               <div className="whitespace-pre-wrap break-words">
@@ -745,6 +790,46 @@ export default function ChatPage() {
                     </div>
                   )}
                 </div>
+                {gifEnabled !== false && (
+                  <div className="relative">
+                    <Tooltip label="GIF" side="top">
+                      <button
+                        type="button"
+                        onClick={() => setShowGif((s) => !s)}
+                        aria-label="GIF"
+                        className="rounded-lg px-2 py-1.5 text-xs font-bold text-muted transition hover:bg-canvas hover:text-foreground"
+                      >
+                        GIF
+                      </button>
+                    </Tooltip>
+                    {showGif && (
+                      <div className="absolute bottom-12 left-0 z-10 w-72 rounded-xl border border-border bg-surface p-2 shadow-elevated">
+                        <Input
+                          value={gifQuery}
+                          onChange={(e) => setGifQuery(e.target.value)}
+                          placeholder={t('chat.searchGif')}
+                          className="mb-2 h-9"
+                          autoFocus
+                        />
+                        <div className="grid max-h-56 grid-cols-2 gap-1 overflow-y-auto">
+                          {gifResults.map((g) => (
+                            <button
+                              key={g.id}
+                              type="button"
+                              onClick={() => sendGif(g)}
+                              className="overflow-hidden rounded-lg border border-border transition hover:border-primary"
+                            >
+                              <img src={g.previewUrl} alt="" loading="lazy" className="h-24 w-full object-cover" />
+                            </button>
+                          ))}
+                          {gifResults.length === 0 && (
+                            <p className="col-span-2 py-6 text-center text-xs text-muted">{t('chat.noGifs')}</p>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
                 <MentionField
                   value={text}
                   onChange={(v) => {

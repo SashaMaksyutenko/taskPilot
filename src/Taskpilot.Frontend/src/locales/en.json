@@ -572,6 +572,8 @@
     "messagePlaceholder": "Type a message…",
     "addEmoji": "Add emoji",
     "attach": "Attach a file",
+    "searchGif": "Search GIFs…",
+    "noGifs": "No GIFs found.",
     "send": "Send",
     "selectConversation": "Select a conversation to start chatting",
     "copy": "Copy text",

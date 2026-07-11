@@ -98,6 +98,10 @@ builder.Services.Configure<OpenAiOptions>(builder.Configuration.GetSection("Open
 builder.Services.AddHttpClient<IChatBotClient, OpenAiChatBotClient>();
 builder.Services.AddScoped<IChatBotService, ChatBotService>();
 
+// GIF search for chat (populated from .env: Gif__*). Disabled until an API key is set.
+builder.Services.Configure<GifOptions>(builder.Configuration.GetSection("Gif"));
+builder.Services.AddHttpClient<IGifClient, GifClient>();
+
 // Distributed cache: use Redis when a connection string is configured (Redis__Connection),
 // otherwise an in-memory cache so the app runs the same without Redis installed.
 var redisConnection = builder.Configuration["Redis:Connection"];

@@ -24,7 +24,7 @@ export default function RoleChart({ usersByRole }: { usersByRole: Record<string,
   }))
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-5 text-primary dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100">
+    <div className="rounded-xl border border-border bg-surface p-5 text-primary">
       <h2 className="mb-3 font-bold">{t('admin.usersByRole')}</h2>
       <div className="h-64">
         <ResponsiveContainer width="100%" height="100%">

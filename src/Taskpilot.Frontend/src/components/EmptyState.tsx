@@ -24,7 +24,7 @@ export default function EmptyState({ message, children }: { message: string; chi
         autoplay={!reduceMotion}
         style={{ width: 120, height: 120 }}
       />
-      <p className="text-sm text-slate-400">{message}</p>
+      <p className="text-sm text-muted">{message}</p>
       {children}
     </div>
   )

@@ -88,11 +88,11 @@ export default function MarkdownEditor({ value, onChange, placeholder, rows = 3,
     })
   }
 
-  const btn = 'rounded px-2 py-1 text-xs font-semibold text-slate-500 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-700'
+  const btn = 'rounded px-2 py-1 text-xs font-semibold text-muted hover:bg-canvas'
 
   const tab = (active: boolean) =>
     `rounded px-2 py-1 text-xs font-semibold ${
-      active ? 'bg-slate-200 text-primary dark:bg-slate-700 dark:text-white' : 'text-slate-500 dark:text-slate-400'
+      active ? 'bg-border text-primary dark:text-white' : 'text-muted'
     }`
 
   return (
@@ -101,7 +101,7 @@ export default function MarkdownEditor({ value, onChange, placeholder, rows = 3,
         {/* Write / Preview tabs */}
         <button type="button" onClick={() => setPreview(false)} className={tab(!preview)}>{t('mdToolbar.write')}</button>
         <button type="button" onClick={() => setPreview(true)} className={tab(preview)}>{t('mdToolbar.preview')}</button>
-        <span className="mx-1 h-4 w-px bg-slate-200 dark:bg-slate-600" />
+        <span className="mx-1 h-4 w-px bg-border" />
 
         {!preview && (
           <>
@@ -125,7 +125,7 @@ export default function MarkdownEditor({ value, onChange, placeholder, rows = 3,
 
       {preview ? (
         <div className={`${className} min-h-[5rem] overflow-auto`}>
-          {value.trim() ? <Markdown>{value}</Markdown> : <span className="text-slate-400">{t('mdToolbar.nothingToPreview')}</span>}
+          {value.trim() ? <Markdown>{value}</Markdown> : <span className="text-muted">{t('mdToolbar.nothingToPreview')}</span>}
         </div>
       ) : (
         <textarea

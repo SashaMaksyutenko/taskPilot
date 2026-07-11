@@ -59,7 +59,7 @@ export default function TaskContextMenu({
           <ContextMenu.Sub>
             <ContextMenu.SubTrigger className={`${itemClass} flex items-center justify-between gap-4`}>
               {t('taskModal.priority')}
-              <span className="text-slate-400">▸</span>
+              <span className="text-muted">▸</span>
             </ContextMenu.SubTrigger>
             <ContextMenu.Portal>
               <ContextMenu.SubContent className={contentClass}>
@@ -77,7 +77,7 @@ export default function TaskContextMenu({
             <ContextMenu.Sub>
               <ContextMenu.SubTrigger className={`${itemClass} flex items-center justify-between gap-4`}>
                 {t('board.assignTo')}
-                <span className="text-slate-400">▸</span>
+                <span className="text-muted">▸</span>
               </ContextMenu.SubTrigger>
               <ContextMenu.Portal>
                 <ContextMenu.SubContent className={contentClass}>
@@ -100,7 +100,7 @@ export default function TaskContextMenu({
             <ContextMenu.Sub>
               <ContextMenu.SubTrigger className={`${itemClass} flex items-center justify-between gap-4`}>
                 {t('board.moveToProject')}
-                <span className="text-slate-400">▸</span>
+                <span className="text-muted">▸</span>
               </ContextMenu.SubTrigger>
               <ContextMenu.Portal>
                 <ContextMenu.SubContent className={contentClass}>

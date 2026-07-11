@@ -38,7 +38,7 @@ export default function TaskActionsDropdown({
           // Stop the click from reaching the card (which would open the detail modal).
           onClick={(e) => e.stopPropagation()}
           aria-label="Task actions"
-          className="rounded p-1 leading-none text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-700"
+          className="rounded p-1 leading-none text-muted hover:bg-canvas hover:text-foreground"
         >
           ⋮
         </button>
@@ -60,7 +60,7 @@ export default function TaskActionsDropdown({
           <DropdownMenu.Sub>
             <DropdownMenu.SubTrigger className={`${menuItemClass} flex items-center justify-between gap-4`}>
               {t('taskModal.priority')}
-              <span className="text-slate-400">▸</span>
+              <span className="text-muted">▸</span>
             </DropdownMenu.SubTrigger>
             <DropdownMenu.Portal>
               <DropdownMenu.SubContent className={menuContentClass}>
@@ -77,7 +77,7 @@ export default function TaskActionsDropdown({
             <DropdownMenu.Sub>
               <DropdownMenu.SubTrigger className={`${menuItemClass} flex items-center justify-between gap-4`}>
                 {t('board.assignTo')}
-                <span className="text-slate-400">▸</span>
+                <span className="text-muted">▸</span>
               </DropdownMenu.SubTrigger>
               <DropdownMenu.Portal>
                 <DropdownMenu.SubContent className={menuContentClass}>
@@ -99,7 +99,7 @@ export default function TaskActionsDropdown({
             <DropdownMenu.Sub>
               <DropdownMenu.SubTrigger className={`${menuItemClass} flex items-center justify-between gap-4`}>
                 {t('board.moveToProject')}
-                <span className="text-slate-400">▸</span>
+                <span className="text-muted">▸</span>
               </DropdownMenu.SubTrigger>
               <DropdownMenu.Portal>
                 <DropdownMenu.SubContent className={menuContentClass}>

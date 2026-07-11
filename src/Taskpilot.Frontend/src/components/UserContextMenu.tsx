@@ -47,7 +47,7 @@ export default function UserContextMenu({
           <ContextMenu.Sub>
             <ContextMenu.SubTrigger className={`${itemClass} flex items-center justify-between gap-4`}>
               {t('admin.changeRole')}
-              <span className="text-slate-400">▸</span>
+              <span className="text-muted">▸</span>
             </ContextMenu.SubTrigger>
             <ContextMenu.Portal>
               <ContextMenu.SubContent className={contentClass}>
@@ -76,7 +76,7 @@ export default function UserContextMenu({
                 <ContextMenu.Sub>
                   <ContextMenu.SubTrigger className={`${itemClass} flex items-center justify-between gap-4 text-amber-600`}>
                     {t('admin.mute')}
-                    <span className="text-slate-400">▸</span>
+                    <span className="text-muted">▸</span>
                   </ContextMenu.SubTrigger>
                   <ContextMenu.Portal>
                     <ContextMenu.SubContent className={contentClass}>
@@ -98,7 +98,7 @@ export default function UserContextMenu({
                 <ContextMenu.Sub>
                   <ContextMenu.SubTrigger className={`${itemClass} flex items-center justify-between gap-4 text-red-600`}>
                     {t('admin.ban')}
-                    <span className="text-slate-400">▸</span>
+                    <span className="text-muted">▸</span>
                   </ContextMenu.SubTrigger>
                   <ContextMenu.Portal>
                     <ContextMenu.SubContent className={contentClass}>

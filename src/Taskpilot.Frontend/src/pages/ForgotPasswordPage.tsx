@@ -24,27 +24,27 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-50 px-6">
-      <div className="w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
+    <div className="flex min-h-screen items-center justify-center bg-canvas px-6">
+      <div className="w-full max-w-sm rounded-2xl border border-border bg-surface p-8 shadow-sm">
         <h1 className="text-2xl font-bold text-primary">{t('forgot.title')}</h1>
         {sent ? (
           <>
-            <p className="mt-3 text-sm text-slate-600">{t('forgot.sent')}</p>
+            <p className="mt-3 text-sm text-muted">{t('forgot.sent')}</p>
             <Link to="/login" className="mt-6 inline-block text-sm font-semibold text-primary hover:underline">
               ← {t('forgot.backToLogin')}
             </Link>
           </>
         ) : (
           <form onSubmit={submit} className="mt-6 space-y-4" noValidate>
-            <p className="text-sm text-slate-600">{t('forgot.subtitle')}</p>
+            <p className="text-sm text-muted">{t('forgot.subtitle')}</p>
             <div>
-              <label className="mb-1 block text-sm font-medium text-slate-700">{t('auth.email')}</label>
+              <label className="mb-1 block text-sm font-medium text-foreground">{t('auth.email')}</label>
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 autoFocus
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 outline-none focus:border-primary"
+                className="w-full rounded-lg border border-border px-3 py-2 outline-none focus:border-primary"
               />
             </div>
             <button
@@ -54,7 +54,7 @@ export default function ForgotPasswordPage() {
             >
               {busy ? t('forgot.sending') : t('forgot.send')}
             </button>
-            <Link to="/login" className="block text-center text-sm text-slate-500 hover:underline">
+            <Link to="/login" className="block text-center text-sm text-muted hover:underline">
               {t('forgot.backToLogin')}
             </Link>
           </form>

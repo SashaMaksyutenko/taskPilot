@@ -26,13 +26,13 @@ export default function ConfirmDialog({
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4" onClick={onCancel}>
       <div
-        className="w-full max-w-sm rounded-xl bg-white p-6 shadow-xl dark:bg-slate-800"
+        className="w-full max-w-sm rounded-xl bg-surface p-6 shadow-elevated"
         onClick={(e) => e.stopPropagation()}
       >
         <h2 className="mb-2 text-lg font-bold">{title}</h2>
-        <p className="mb-5 text-sm text-slate-600 dark:text-slate-300">{message}</p>
+        <p className="mb-5 text-sm text-foreground">{message}</p>
         <div className="flex justify-end gap-3">
-          <button onClick={onCancel} className="text-sm font-semibold text-slate-500 hover:underline">
+          <button onClick={onCancel} className="text-sm font-semibold text-muted hover:underline">
             {t('common.cancel')}
           </button>
           <button

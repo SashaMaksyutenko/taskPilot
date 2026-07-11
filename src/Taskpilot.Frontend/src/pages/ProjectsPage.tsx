@@ -167,7 +167,7 @@ export default function ProjectsPage() {
                   <span className="inline-block h-3 w-3 rounded-full" style={{ background: p.color ?? '#94a3b8' }} />
                   <span className="font-semibold">{p.name}</span>
                   {p.isArchived && (
-                    <span className="rounded-full bg-slate-200 px-2 py-0.5 text-[11px] font-semibold text-slate-600 dark:bg-slate-700 dark:text-slate-300">
+                    <span className="rounded-full bg-border px-2 py-0.5 text-[11px] font-semibold text-muted">
                       {t('projects.archived')}
                     </span>
                   )}
@@ -177,23 +177,23 @@ export default function ProjectsPage() {
                     </span>
                   )}
                   {p.memberCount > 0 && (
-                    <span className="ml-auto text-xs text-slate-400" title={t('projects.members', { count: p.memberCount })}>
+                    <span className="ml-auto text-xs text-muted" title={t('projects.members', { count: p.memberCount })}>
                       👥 {p.memberCount + 1}
                     </span>
                   )}
                 </div>
-                <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">{t('projects.tasks', { count: p.taskCount })}</p>
+                <p className="mt-2 text-sm text-muted">{t('projects.tasks', { count: p.taskCount })}</p>
 
                 {/* Progress: share of tasks in the Done status. */}
                 {(() => {
                   const pct = p.taskCount > 0 ? Math.round((p.completedTaskCount / p.taskCount) * 100) : 0
                   return (
                     <div className="mt-3">
-                      <div className="mb-1 flex justify-between text-xs text-slate-500 dark:text-slate-400">
+                      <div className="mb-1 flex justify-between text-xs text-muted">
                         <span>{t('projects.progress', { done: p.completedTaskCount, total: p.taskCount })}</span>
                         <span>{pct}%</span>
                       </div>
-                      <div className="h-2 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700">
+                      <div className="h-2 overflow-hidden rounded-full bg-border">
                         <div className="h-full rounded-full bg-green-500 transition-all" style={{ width: `${pct}%` }} />
                       </div>
                     </div>
@@ -213,7 +213,7 @@ export default function ProjectsPage() {
             onClick={() => setEditing(null)}
           >
             <div
-              className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl dark:bg-slate-800"
+              className="w-full max-w-md rounded-xl bg-surface p-6 shadow-elevated"
               onClick={(e) => e.stopPropagation()}
             >
               <h2 className="mb-4 text-lg font-bold">{t('projects.editTitle')}</h2>
@@ -222,7 +222,7 @@ export default function ProjectsPage() {
                 onChange={(e) => setEditName(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && saveEdit()}
                 placeholder={t('projects.newPlaceholder')}
-                className="mb-4 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 outline-none focus:border-primary dark:border-slate-600 dark:bg-slate-900"
+                className="mb-4 w-full rounded-lg border border-border bg-canvas px-3 py-2 outline-none focus:border-primary"
               />
               <div className="mb-5 flex flex-wrap gap-2">
                 {COLORS.map((c) => (
@@ -242,7 +242,7 @@ export default function ProjectsPage() {
                 >
                   {t('projects.save')}
                 </button>
-                <button onClick={() => setEditing(null)} className="text-sm font-semibold text-slate-500 hover:underline">
+                <button onClick={() => setEditing(null)} className="text-sm font-semibold text-muted hover:underline">
                   {t('projects.cancel')}
                 </button>
               </div>

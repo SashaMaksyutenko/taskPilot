@@ -11,7 +11,7 @@ export default function StarRating({
   return (
     <span className="text-lg leading-none">
       {[1, 2, 3, 4, 5].map((n) => {
-        const cls = n <= value ? 'text-amber-400' : 'text-slate-300 dark:text-slate-600'
+        const cls = n <= value ? 'text-amber-400' : 'text-border'
         return onChange ? (
           <button key={n} type="button" onClick={() => onChange(n)} className="px-0.5" aria-label={`${n} stars`}>
             <span className={cls}>★</span>

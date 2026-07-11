@@ -17,7 +17,7 @@ export default function AdminRoute() {
   }, [user, dispatch])
 
   if (!user) {
-    return <p className="p-8 text-slate-400">Loading…</p>
+    return <p className="p-8 text-muted">Loading…</p>
   }
 
   return user.role === 'Admin' ? <Outlet /> : <Navigate to="/" replace />

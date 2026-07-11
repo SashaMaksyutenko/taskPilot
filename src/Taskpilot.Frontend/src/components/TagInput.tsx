@@ -29,14 +29,14 @@ export default function TagInput({
   const remove = (tag: string) => onChange(tags.filter((x) => x !== tag))
 
   return (
-    <div className="flex flex-wrap items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-2 py-1.5 dark:border-slate-600 dark:bg-slate-900">
+    <div className="flex flex-wrap items-center gap-1.5 rounded-lg border border-border bg-canvas px-2 py-1.5">
       {tags.map((tag) => (
         <span
           key={tag}
-          className="flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary dark:bg-slate-700 dark:text-slate-200"
+          className="flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary"
         >
           {tag}
-          <button type="button" onClick={() => remove(tag)} className="text-slate-400 hover:text-red-600">
+          <button type="button" onClick={() => remove(tag)} className="text-muted hover:text-red-600">
             ✕
           </button>
         </span>

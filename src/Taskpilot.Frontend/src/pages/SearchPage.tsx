@@ -21,15 +21,15 @@ function Group({
 }) {
   if (items.length === 0) return null
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-800">
-      <h2 className="mb-2 text-sm font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400">{title}</h2>
-      <ul className="divide-y divide-slate-100 dark:divide-slate-700">
+    <div className="rounded-xl border border-border bg-surface p-4">
+      <h2 className="mb-2 text-sm font-bold uppercase tracking-wide text-muted">{title}</h2>
+      <ul className="divide-y divide-border">
         {items.map((i) => (
           <li key={`${i.id}-${i.label}`}>
             <Link to={linkFor(i)} className="flex items-center gap-2 py-2 text-sm hover:opacity-80">
               {withAvatar && <Avatar name={i.label} src={i.avatarUrl} size={26} />}
               <span className="font-medium">{i.label}</span>
-              {i.sublabel && <span className="text-xs text-slate-400">· {i.sublabel}</span>}
+              {i.sublabel && <span className="text-xs text-muted">· {i.sublabel}</span>}
             </Link>
           </li>
         ))}
@@ -70,11 +70,11 @@ export default function SearchPage() {
           onChange={(e) => setQuery(e.target.value)}
           placeholder={t('search.placeholder')}
           autoFocus
-          className="mb-6 w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 outline-none focus:border-primary dark:border-slate-600 dark:bg-slate-800"
+          className="mb-6 w-full rounded-lg border border-border bg-canvas px-4 py-2.5 outline-none focus:border-primary"
         />
 
         {query.trim().length < 2 ? (
-          <p className="text-slate-400">{t('search.hint')}</p>
+          <p className="text-muted">{t('search.hint')}</p>
         ) : total === 0 ? (
           <EmptyState message={t('search.noResults')} />
         ) : (

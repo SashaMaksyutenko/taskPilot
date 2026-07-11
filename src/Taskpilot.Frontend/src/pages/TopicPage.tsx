@@ -248,25 +248,25 @@ export default function TopicPage() {
 
   return (
     <div className="mx-auto max-w-3xl px-6 py-8">
-        <Link to="/forum" className="text-sm text-slate-500 hover:underline dark:text-slate-400">
+        <Link to="/forum" className="text-sm text-muted hover:underline">
           {t('topic.backToForum')}
         </Link>
 
         {/* Original post */}
-        <div className="mt-3 rounded-xl border border-slate-200 bg-white p-6 dark:border-slate-700 dark:bg-slate-800">
+        <div className="mt-3 rounded-xl border border-border bg-surface p-6">
           {editingTopic ? (
             <div>
               <input
                 value={editTitle}
                 onChange={(e) => setEditTitle(e.target.value)}
                 placeholder={t('forum.topicTitle')}
-                className="mb-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 font-bold outline-none focus:border-primary dark:border-slate-600 dark:bg-slate-900"
+                className="mb-2 w-full rounded-lg border border-border bg-canvas px-3 py-2 font-bold outline-none focus:border-primary"
               />
               <MarkdownEditor
                 value={editTopicBody}
                 onChange={setEditTopicBody}
                 placeholder={t('forum.bodyPlaceholder')}
-                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 outline-none focus:border-primary dark:border-slate-600 dark:bg-slate-900"
+                className="w-full rounded-lg border border-border bg-canvas px-3 py-2 outline-none focus:border-primary"
               />
               <div className="mt-2">
                 <TagInput tags={editTags} onChange={setEditTags} />
@@ -278,7 +278,7 @@ export default function TopicPage() {
                 >
                   {t('topic.save')}
                 </button>
-                <button onClick={() => setEditingTopic(false)} className="font-semibold text-slate-500 hover:underline">
+                <button onClick={() => setEditingTopic(false)} className="font-semibold text-muted hover:underline">
                   {t('topic.cancel')}
                 </button>
                 {error && <span className="font-medium text-red-600">{error}</span>}
@@ -293,27 +293,27 @@ export default function TopicPage() {
                   {topic.title}
                 </h1>
                 <div className="flex flex-none items-center gap-3 text-sm font-semibold">
-                  <button onClick={toggleSubscribe} className="text-primary hover:underline dark:text-slate-200">
+                  <button onClick={toggleSubscribe} className="text-primary hover:underline">
                     {topic.isSubscribed ? t('topic.unsubscribe') : t('topic.subscribe')}
                   </button>
                   {isAdmin && (
-                    <button onClick={togglePin} className="text-primary hover:underline dark:text-slate-200">
+                    <button onClick={togglePin} className="text-primary hover:underline">
                       {topic.isPinned ? t('forum.unpin') : t('forum.pin')}
                     </button>
                   )}
                   {canEditTopic && (
-                    <button onClick={toggleLock} className="text-primary hover:underline dark:text-slate-200">
+                    <button onClick={toggleLock} className="text-primary hover:underline">
                       {topic.isLocked ? t('forum.unlock') : t('forum.lock')}
                     </button>
                   )}
                   {canEditTopic && (
-                    <button onClick={startEditTopic} className="text-primary hover:underline dark:text-slate-200">
+                    <button onClick={startEditTopic} className="text-primary hover:underline">
                       {t('topic.edit')}
                     </button>
                   )}
                 </div>
               </div>
-              <div className="mt-1 flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+              <div className="mt-1 flex items-center gap-2 text-xs text-muted">
                 <Avatar name={topic.authorName} src={topic.authorAvatarUrl} size={24} />
                 <span>
                   {t('forum.by')}{' '}
@@ -330,7 +330,7 @@ export default function TopicPage() {
                     <Link
                       key={tag}
                       to={`/forum?tag=${encodeURIComponent(tag)}`}
-                      className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary hover:bg-primary/20 dark:bg-slate-700 dark:text-slate-200"
+                      className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary hover:bg-primary/20"
                     >
                       #{tag}
                     </Link>
@@ -374,8 +374,8 @@ export default function TopicPage() {
             <ActionsContextMenu key={r.id} actions={replyActions}>
             <div
               id={`reply-${r.id}`}
-              className={`flex gap-3 rounded-xl border bg-white p-4 dark:bg-slate-800 ${
-                r.isSolution ? 'border-green-400' : 'border-slate-200 dark:border-slate-700'
+              className={`flex gap-3 rounded-xl border bg-surface p-4 ${
+                r.isSolution ? 'border-green-400' : 'border-border'
               }`}
             >
               {/* Vote control */}
@@ -389,7 +389,7 @@ export default function TopicPage() {
                 <span className="text-sm font-bold">{r.score}</span>
                 <button
                   onClick={() => vote(r, -1)}
-                  className={`text-lg leading-none ${r.myVote === -1 ? 'text-blue-500' : 'text-slate-400 hover:text-slate-600'}`}
+                  className={`text-lg leading-none ${r.myVote === -1 ? 'text-blue-500' : 'text-muted hover:text-foreground'}`}
                 >
                   ▼
                 </button>
@@ -406,7 +406,7 @@ export default function TopicPage() {
                 {parent && (
                   <a
                     href={`#reply-${parent.id}`}
-                    className="mb-2 block rounded-lg border-l-4 border-slate-300 bg-slate-50 px-3 py-1.5 text-xs text-slate-500 hover:bg-slate-100 dark:border-slate-600 dark:bg-slate-900/40 dark:text-slate-400"
+                    className="mb-2 block rounded-lg border-l-4 border-border bg-canvas px-3 py-1.5 text-xs text-muted hover:bg-canvas/40"
                   >
                     <span className="font-semibold">{parent.authorName} {t('topic.wrote')}</span>{' '}
                     <span className="line-clamp-2">{parent.body}</span>
@@ -419,7 +419,7 @@ export default function TopicPage() {
                       value={editBody}
                       onChange={setEditBody}
                       placeholder={t('topic.replyPlaceholder')}
-                      className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 outline-none focus:border-primary dark:border-slate-600 dark:bg-slate-900"
+                      className="w-full rounded-lg border border-border bg-canvas px-3 py-2 outline-none focus:border-primary"
                     />
                     <div className="mt-2 flex items-center gap-3 text-xs">
                       <button
@@ -428,7 +428,7 @@ export default function TopicPage() {
                       >
                         {t('topic.save')}
                       </button>
-                      <button onClick={cancelEditReply} className="font-semibold text-slate-500 hover:underline">
+                      <button onClick={cancelEditReply} className="font-semibold text-muted hover:underline">
                         {t('topic.cancel')}
                       </button>
                     </div>
@@ -445,8 +445,8 @@ export default function TopicPage() {
                       onClick={() => toggleReaction(r, re.emoji)}
                       className={`flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs transition ${
                         re.mine
-                          ? 'border-primary bg-primary/10 dark:border-slate-300 dark:bg-slate-700'
-                          : 'border-slate-200 hover:bg-slate-100 dark:border-slate-600 dark:hover:bg-slate-700'
+                          ? 'border-primary bg-primary/10 dark:border-border'
+                          : 'border-border hover:bg-canvas'
                       }`}
                     >
                       <span>{re.emoji}</span>
@@ -456,18 +456,18 @@ export default function TopicPage() {
                   <div className="relative">
                     <button
                       onClick={() => setReactionPickerFor(reactionPickerFor === r.id ? null : r.id)}
-                      className="rounded-full border border-slate-200 px-2 py-0.5 text-xs text-slate-400 hover:bg-slate-100 dark:border-slate-600 dark:hover:bg-slate-700"
+                      className="rounded-full border border-border px-2 py-0.5 text-xs text-muted hover:bg-canvas"
                       aria-label={t('topic.addReaction')}
                     >
                       🙂+
                     </button>
                     {reactionPickerFor === r.id && (
-                      <div className="absolute z-10 mt-1 flex w-52 flex-wrap gap-1 rounded-lg border border-slate-200 bg-white p-2 shadow-lg dark:border-slate-600 dark:bg-slate-800">
+                      <div className="absolute z-10 mt-1 flex w-52 flex-wrap gap-1 rounded-lg border border-border bg-surface p-2 shadow-lg">
                         {REACTION_EMOJIS.map((e) => (
                           <button
                             key={e}
                             onClick={() => toggleReaction(r, e)}
-                            className="rounded p-1 text-lg hover:bg-slate-100 dark:hover:bg-slate-700"
+                            className="rounded p-1 text-lg hover:bg-canvas"
                           >
                             {e}
                           </button>
@@ -477,7 +477,7 @@ export default function TopicPage() {
                   </div>
                 </div>
 
-                <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+                <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted">
                   <Avatar name={r.authorName} src={r.authorAvatarUrl} size={22} />
                   <Link to={`/users/${r.authorId}`} className="font-medium hover:underline">
                     {r.authorName}
@@ -486,16 +486,16 @@ export default function TopicPage() {
                   {r.updatedAt && <span className="italic">· {t('topic.edited')}</span>}
                   {!topic.isLocked && editingReplyId !== r.id && (
                     <>
-                      <button onClick={() => startReplyTo(r)} className="font-semibold text-primary hover:underline dark:text-slate-200">
+                      <button onClick={() => startReplyTo(r)} className="font-semibold text-primary hover:underline">
                         {t('topic.replyTo')}
                       </button>
-                      <button onClick={() => quoteReply(r)} className="font-semibold text-primary hover:underline dark:text-slate-200">
+                      <button onClick={() => quoteReply(r)} className="font-semibold text-primary hover:underline">
                         {t('topic.quote')}
                       </button>
                     </>
                   )}
                   {canModifyReply(r) && editingReplyId !== r.id && (
-                    <button onClick={() => startEditReply(r)} className="font-semibold text-primary hover:underline dark:text-slate-200">
+                    <button onClick={() => startEditReply(r)} className="font-semibold text-primary hover:underline">
                       {t('topic.edit')}
                     </button>
                   )}
@@ -505,7 +505,7 @@ export default function TopicPage() {
                     </button>
                   )}
                   {currentUserId !== r.authorId && (
-                    <button onClick={() => setReportingReply(r)} className="font-semibold text-slate-400 hover:text-red-600 hover:underline">
+                    <button onClick={() => setReportingReply(r)} className="font-semibold text-muted hover:text-red-600 hover:underline">
                       {t('topic.report')}
                     </button>
                   )}
@@ -528,17 +528,17 @@ export default function TopicPage() {
             <button
               onClick={() => setReplyPage((p) => Math.max(1, p - 1))}
               disabled={replyPage <= 1}
-              className="rounded-lg border border-slate-300 px-4 py-1.5 font-semibold transition hover:bg-white disabled:opacity-40 dark:border-slate-600 dark:hover:bg-slate-800"
+              className="rounded-lg border border-border px-4 py-1.5 font-semibold transition hover:bg-canvas disabled:opacity-40"
             >
               {t('audit.prev')}
             </button>
-            <span className="text-slate-500 dark:text-slate-400">
+            <span className="text-muted">
               {t('audit.pageOf', { page: replyPage, total: replyTotalPages })}
             </span>
             <button
               onClick={() => setReplyPage((p) => Math.min(replyTotalPages, p + 1))}
               disabled={replyPage >= replyTotalPages}
-              className="rounded-lg border border-slate-300 px-4 py-1.5 font-semibold transition hover:bg-white disabled:opacity-40 dark:border-slate-600 dark:hover:bg-slate-800"
+              className="rounded-lg border border-border px-4 py-1.5 font-semibold transition hover:bg-canvas disabled:opacity-40"
             >
               {t('audit.next')}
             </button>
@@ -547,15 +547,15 @@ export default function TopicPage() {
 
         {/* Add reply */}
         {topic.isLocked ? (
-          <p className="mt-6 text-sm text-slate-400">🔒 {t('topic.locked')}</p>
+          <p className="mt-6 text-sm text-muted">🔒 {t('topic.locked')}</p>
         ) : (
           <div className="mt-6" ref={replyEditorRef}>
             {replyingTo && (
-              <div className="mb-2 flex items-center gap-2 rounded-lg bg-primary/5 px-3 py-1.5 text-sm dark:bg-slate-800">
-                <span className="text-slate-500 dark:text-slate-400">
+              <div className="mb-2 flex items-center gap-2 rounded-lg bg-primary/5 px-3 py-1.5 text-sm">
+                <span className="text-muted">
                   {t('topic.replyingTo')} <span className="font-semibold">{replyingTo.authorName}</span>
                 </span>
-                <button onClick={() => setReplyingTo(null)} className="ml-auto text-slate-400 hover:text-red-600" aria-label={t('topic.cancel')}>
+                <button onClick={() => setReplyingTo(null)} className="ml-auto text-muted hover:text-red-600" aria-label={t('topic.cancel')}>
                   ✕
                 </button>
               </div>
@@ -564,7 +564,7 @@ export default function TopicPage() {
               value={body}
               onChange={setBody}
               placeholder={t('topic.replyPlaceholder')}
-              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 outline-none focus:border-primary dark:border-slate-600 dark:bg-slate-800"
+              className="w-full rounded-lg border border-border bg-canvas px-3 py-2 outline-none focus:border-primary"
             />
             <div className="mt-2 flex items-center gap-3">
               <button
@@ -594,21 +594,21 @@ export default function TopicPage() {
         {reportingReply && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setReportingReply(null)}>
             <div
-              className="w-full max-w-md rounded-xl border border-slate-200 bg-white p-5 shadow-xl dark:border-slate-700 dark:bg-slate-800"
+              className="w-full max-w-md rounded-xl border border-border bg-surface p-5 shadow-xl"
               onClick={(e) => e.stopPropagation()}
             >
               <h3 className="mb-1 font-bold">{t('topic.reportTitle')}</h3>
-              <p className="mb-3 text-sm text-slate-500 dark:text-slate-400">{t('topic.reportHint')}</p>
+              <p className="mb-3 text-sm text-muted">{t('topic.reportHint')}</p>
               <textarea
                 value={reportReason}
                 onChange={(e) => setReportReason(e.target.value)}
                 placeholder={t('topic.reportPlaceholder')}
                 rows={3}
                 maxLength={1000}
-                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-primary dark:border-slate-600 dark:bg-slate-900"
+                className="w-full rounded-lg border border-border bg-canvas px-3 py-2 text-sm outline-none focus:border-primary"
               />
               <div className="mt-3 flex justify-end gap-3 text-sm">
-                <button onClick={() => setReportingReply(null)} className="font-semibold text-slate-500 hover:underline">
+                <button onClick={() => setReportingReply(null)} className="font-semibold text-muted hover:underline">
                   {t('topic.cancel')}
                 </button>
                 <button

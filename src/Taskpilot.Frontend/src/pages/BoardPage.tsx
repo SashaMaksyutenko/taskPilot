@@ -18,7 +18,7 @@ import { STATUS_COLUMNS, type Project, type Task, type TaskStatus } from '../typ
 const priorityClasses: Record<string, string> = {
   High: 'bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-300',
   Medium: 'bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300',
-  Low: 'bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-300',
+  Low: 'bg-border text-muted',
 }
 
 const columnAccent: Record<string, string> = {
@@ -439,7 +439,7 @@ export default function BoardPage() {
                         <div className="mt-2 flex items-center gap-2">
                           <span
                             className={`rounded px-2 py-0.5 text-[11px] font-semibold ${
-                              priorityClasses[task.priority] ?? 'bg-slate-200 text-slate-600'
+                              priorityClasses[task.priority] ?? 'bg-border text-muted'
                             }`}
                           >
                             {t(`board.priority.${task.priority}`, task.priority)}

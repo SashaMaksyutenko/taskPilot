@@ -17,10 +17,10 @@ export default function SocialSignIn() {
 
   return (
     <>
-      <div className="my-5 flex items-center gap-3 text-xs text-slate-400">
-        <span className="h-px flex-1 bg-slate-200" />
+      <div className="my-5 flex items-center gap-3 text-xs text-muted">
+        <span className="h-px flex-1 bg-border" />
         {t('auth.or')}
-        <span className="h-px flex-1 bg-slate-200" />
+        <span className="h-px flex-1 bg-border" />
       </div>
       <div className="space-y-2">
         <GoogleSignInButton />

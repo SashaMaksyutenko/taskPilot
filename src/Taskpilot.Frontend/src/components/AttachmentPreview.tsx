@@ -56,7 +56,7 @@ export default function AttachmentPreview({
     <button
       onClick={() => onDownload(fileId, fileName ?? 'file')}
       className={`mt-1 flex items-center gap-1 text-sm underline ${
-        mine ? 'text-white/90' : 'text-primary dark:text-slate-100'
+        mine ? 'text-white/90' : 'text-primary'
       }`}
     >
       📎 {fileName}

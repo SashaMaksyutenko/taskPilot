@@ -12,7 +12,7 @@ import { calendarService } from '../services/calendarService'
 import type { CalendarTask } from '../types/calendar'
 
 const STATUS_COLORS: Record<string, string> = {
-  Backlog: 'bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-300',
+  Backlog: 'bg-border text-foreground',
   InProgress: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-950/50 dark:text-indigo-300',
   Review: 'bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300',
   Done: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300',
@@ -187,7 +187,7 @@ export default function CalendarPage() {
                             title={`${task.title} · ${task.projectName} · ${t(`board.status.${task.status}`, task.status)}`}
                             className={cn(
                               'cursor-pointer truncate rounded px-1.5 py-0.5 text-[11px] font-medium transition hover:opacity-80',
-                              STATUS_COLORS[task.status] ?? 'bg-slate-200 text-slate-700',
+                              STATUS_COLORS[task.status] ?? 'bg-border text-foreground',
                             )}
                             onClick={() => navigate(`/projects/${task.projectId}`)}
                           >

@@ -51,7 +51,7 @@ export default function AssistantPage() {
   return (
     <div className="mx-auto flex h-[calc(100vh-64px)] max-w-3xl flex-col px-6 py-6">
         <h1 className="mb-1 text-2xl font-bold">{t('assistant.title')}</h1>
-        <p className="mb-4 text-sm text-slate-500 dark:text-slate-400">{t('assistant.subtitle')}</p>
+        <p className="mb-4 text-sm text-muted">{t('assistant.subtitle')}</p>
 
         {enabled === false ? (
           <div className="rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-800 dark:border-amber-700 dark:bg-amber-950/30 dark:text-amber-300">
@@ -59,7 +59,7 @@ export default function AssistantPage() {
           </div>
         ) : (
           <>
-            <div className="flex-1 space-y-3 overflow-y-auto rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-800">
+            <div className="flex-1 space-y-3 overflow-y-auto rounded-xl border border-border bg-surface p-4">
               {messages.length === 0 && <EmptyState message={t('assistant.empty')} />}
               {messages.map((m, i) => (
                 <div key={i} className={m.role === 'user' ? 'flex justify-end' : 'flex justify-start'}>
@@ -67,14 +67,14 @@ export default function AssistantPage() {
                     className={`max-w-[85%] rounded-2xl px-4 py-2 text-sm ${
                       m.role === 'user'
                         ? 'bg-primary text-white'
-                        : 'bg-slate-100 text-primary dark:bg-slate-700 dark:text-slate-100'
+                        : 'bg-canvas text-primary'
                     }`}
                   >
                     {m.role === 'assistant' ? <Markdown>{m.content}</Markdown> : m.content}
                   </div>
                 </div>
               ))}
-              {sending && <p className="text-sm text-slate-400">{t('assistant.thinking')}</p>}
+              {sending && <p className="text-sm text-muted">{t('assistant.thinking')}</p>}
               <div ref={endRef} />
             </div>
 
@@ -85,7 +85,7 @@ export default function AssistantPage() {
                 onKeyDown={onKeyDown}
                 placeholder={t('assistant.placeholder')}
                 rows={2}
-                className="flex-1 resize-none rounded-lg border border-slate-300 bg-white px-3 py-2 outline-none focus:border-primary dark:border-slate-600 dark:bg-slate-900"
+                className="flex-1 resize-none rounded-lg border border-border bg-canvas px-3 py-2 outline-none focus:border-primary"
               />
               <button
                 onClick={send}

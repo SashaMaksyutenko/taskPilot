@@ -14,7 +14,7 @@ import type { MarketTaskListItem } from '../types/marketplace'
 const statusColor: Record<string, string> = {
   Open: 'bg-green-100 text-green-700',
   InProgress: 'bg-blue-100 text-blue-700',
-  Completed: 'bg-slate-200 text-slate-700',
+  Completed: 'bg-border text-foreground',
   Cancelled: 'bg-red-100 text-red-700',
 }
 
@@ -172,7 +172,7 @@ export default function MarketplacePage() {
                       {t('market.paid')}
                     </span>
                   )}
-                  <span className={`flex-none rounded-full px-2 py-0.5 text-[11px] font-semibold ${statusColor[task.status] ?? 'bg-slate-200 text-slate-700'}`}>
+                  <span className={`flex-none rounded-full px-2 py-0.5 text-[11px] font-semibold ${statusColor[task.status] ?? 'bg-border text-foreground'}`}>
                     {t(`market.status.${task.status}`, task.status)}
                   </span>
                 </Link>

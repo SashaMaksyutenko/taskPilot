@@ -76,12 +76,12 @@ export default function ProjectMembersModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={onClose}>
       <div
-        className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-xl bg-white p-6 shadow-xl dark:bg-slate-800"
+        className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-xl bg-surface p-6 shadow-elevated"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-lg font-bold">{t('members.title')}</h2>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+          <button onClick={onClose} className="text-muted hover:text-foreground dark:hover:text-foreground">
             ✕
           </button>
         </div>
@@ -92,7 +92,7 @@ export default function ProjectMembersModal({
               <Avatar name={m.name} src={m.avatarUrl} size={28} />
               <span className="min-w-0 flex-1 truncate font-medium">{m.name}</span>
               {m.isOwner ? (
-                <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-600 dark:bg-slate-700 dark:text-slate-300">
+                <span className="rounded-full bg-canvas px-2 py-0.5 text-[11px] font-semibold text-muted">
                   {t('members.owner')}
                 </span>
               ) : isOwner ? (
@@ -100,7 +100,7 @@ export default function ProjectMembersModal({
                   <select
                     value={m.role}
                     onChange={(e) => changeRole(m.userId, e.target.value)}
-                    className="rounded border border-slate-300 bg-white px-1.5 py-0.5 text-xs outline-none dark:border-slate-600 dark:bg-slate-900"
+                    className="rounded border border-border bg-canvas px-1.5 py-0.5 text-xs outline-none"
                   >
                     <option value="Editor">{t('members.role.Editor')}</option>
                     <option value="Viewer">{t('members.role.Viewer')}</option>
@@ -113,7 +113,7 @@ export default function ProjectMembersModal({
                   </button>
                 </>
               ) : (
-                <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-600 dark:bg-slate-700 dark:text-slate-300">
+                <span className="rounded-full bg-canvas px-2 py-0.5 text-[11px] font-semibold text-muted">
                   {t(`members.role.${m.role}`)}
                 </span>
               )}
@@ -124,11 +124,11 @@ export default function ProjectMembersModal({
         {isOwner && (
           <div className="relative">
             <div className="mb-2 flex items-center gap-2 text-sm">
-              <span className="text-slate-500 dark:text-slate-400">{t('members.addAs')}</span>
+              <span className="text-muted">{t('members.addAs')}</span>
               <select
                 value={roleToAdd}
                 onChange={(e) => setRoleToAdd(e.target.value)}
-                className="rounded border border-slate-300 bg-white px-2 py-1 text-xs outline-none dark:border-slate-600 dark:bg-slate-900"
+                className="rounded border border-border bg-canvas px-2 py-1 text-xs outline-none"
               >
                 <option value="Editor">{t('members.role.Editor')}</option>
                 <option value="Viewer">{t('members.role.Viewer')}</option>
@@ -138,20 +138,20 @@ export default function ProjectMembersModal({
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder={t('members.searchPlaceholder')}
-              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-primary dark:border-slate-600 dark:bg-slate-900"
+              className="w-full rounded-lg border border-border bg-canvas px-3 py-2 text-sm outline-none focus:border-primary"
             />
             {results.length > 0 && (
-              <ul className="absolute left-0 right-0 top-full z-20 mt-1 max-h-56 overflow-y-auto rounded-lg border border-slate-300 bg-white shadow-lg dark:border-slate-600 dark:bg-slate-800">
+              <ul className="absolute left-0 right-0 top-full z-20 mt-1 max-h-56 overflow-y-auto rounded-lg border border-border bg-canvas shadow-lg">
                 {results.map((u) => (
                   <li key={u.id}>
                     <button
                       onClick={() => add(u.id)}
                       disabled={memberIds.has(u.id)}
-                      className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-slate-50 disabled:opacity-40 dark:hover:bg-slate-700"
+                      className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-canvas disabled:opacity-40"
                     >
                       <Avatar name={u.name} src={u.avatarUrl} size={24} />
                       <span className="min-w-0 flex-1 truncate">{u.name}</span>
-                      {memberIds.has(u.id) && <span className="text-xs text-slate-400">{t('members.added')}</span>}
+                      {memberIds.has(u.id) && <span className="text-xs text-muted">{t('members.added')}</span>}
                     </button>
                   </li>
                 ))}

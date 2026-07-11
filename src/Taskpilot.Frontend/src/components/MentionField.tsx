@@ -117,7 +117,7 @@ export default function MentionField({
         <input ref={ref as React.RefObject<HTMLInputElement>} {...shared} />
       )}
       {open && matches.length > 0 && (
-        <ul className="absolute bottom-full left-0 z-30 mb-1 max-h-56 w-full overflow-y-auto rounded-lg border border-slate-300 bg-white shadow-lg dark:border-slate-600 dark:bg-slate-800">
+        <ul className="absolute bottom-full left-0 z-30 mb-1 max-h-56 w-full overflow-y-auto rounded-lg border border-border bg-canvas shadow-lg">
           {matches.map((c, i) => (
             <li key={c.id}>
               <button
@@ -128,7 +128,7 @@ export default function MentionField({
                   insert(c)
                 }}
                 className={`flex w-full items-center gap-2 px-3 py-2 text-left text-sm ${
-                  i === active ? 'bg-slate-100 dark:bg-slate-700' : 'hover:bg-slate-50 dark:hover:bg-slate-700/60'
+                  i === active ? 'bg-canvas' : 'hover:bg-canvas/60'
                 }`}
               >
                 <Avatar name={c.name} src={c.avatarUrl} size={22} />

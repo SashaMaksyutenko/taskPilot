@@ -456,7 +456,7 @@ export default function SettingsPage() {
 
         {/* My appeals */}
         {appeals.length > 0 && (
-          <section className="mb-8 rounded-xl border border-slate-200 bg-white p-6 dark:border-slate-700 dark:bg-slate-800">
+          <section className="mb-8 rounded-xl border border-border bg-surface p-6">
             <h2 className="mb-3 font-bold">{t('appeal.myTitle')}</h2>
             <ul className="space-y-3">
               {appeals.map((a) => (
@@ -468,16 +468,16 @@ export default function SettingsPage() {
                           ? 'bg-green-100 text-green-700'
                           : a.status === 'Rejected'
                             ? 'bg-red-100 text-red-700'
-                            : 'bg-slate-200 text-slate-700'
+                            : 'bg-border text-foreground'
                       }`}
                     >
                       {t(`appeal.status.${a.status}`, a.status)}
                     </span>
-                    <span className="text-xs text-slate-400">{new Date(a.createdAt).toLocaleString()}</span>
+                    <span className="text-xs text-muted">{new Date(a.createdAt).toLocaleString()}</span>
                   </div>
-                  <p className="mt-1 whitespace-pre-wrap text-slate-600 dark:text-slate-300">{a.message}</p>
+                  <p className="mt-1 whitespace-pre-wrap text-foreground">{a.message}</p>
                   {a.reviewNote && (
-                    <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                    <p className="mt-1 text-xs text-muted">
                       {t('appeal.reviewNote')}: {a.reviewNote}
                     </p>
                   )}
@@ -488,7 +488,7 @@ export default function SettingsPage() {
         )}
 
         {/* Profile */}
-        <section className="mb-8 rounded-xl border border-slate-200 bg-white p-6 dark:border-slate-700 dark:bg-slate-800">
+        <section className="mb-8 rounded-xl border border-border bg-surface p-6">
           <h2 className="mb-4 font-bold">{t('settings.profile')}</h2>
 
           {/* Avatar */}
@@ -496,7 +496,7 @@ export default function SettingsPage() {
             <Avatar name={user?.name ?? '?'} src={user?.avatarUrl} size={72} />
             <div className="flex flex-col gap-2">
               <label
-                className={`cursor-pointer rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold transition hover:bg-slate-50 dark:border-slate-600 dark:hover:bg-slate-700 ${
+                className={`cursor-pointer rounded-lg border border-border px-4 py-2 text-sm font-semibold transition hover:bg-canvas ${
                   avatarBusy ? 'pointer-events-none opacity-60' : ''
                 }`}
               >
@@ -525,12 +525,12 @@ export default function SettingsPage() {
             <Field label={t('settings.github')} value={form.github ?? ''} onChange={(v) => set('github', v)} />
           </div>
 
-          <label className="mb-1 mt-4 block text-sm font-medium text-slate-700 dark:text-slate-300">{t('settings.bio')}</label>
+          <label className="mb-1 mt-4 block text-sm font-medium text-foreground">{t('settings.bio')}</label>
           <textarea
             value={form.bio ?? ''}
             onChange={(e) => set('bio', e.target.value)}
             rows={3}
-            className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 outline-none focus:border-primary dark:border-slate-600 dark:bg-slate-900"
+            className="w-full rounded-lg border border-border bg-canvas px-3 py-2 outline-none focus:border-primary"
           />
 
           <label className="mt-4 flex items-center gap-2 text-sm">
@@ -546,12 +546,12 @@ export default function SettingsPage() {
             >
               {t('settings.saveProfile')}
             </button>
-            {profileMsg && <span className="text-sm text-slate-500 dark:text-slate-400">{profileMsg}</span>}
+            {profileMsg && <span className="text-sm text-muted">{profileMsg}</span>}
           </div>
         </section>
 
         {/* Change password */}
-        <section className="rounded-xl border border-slate-200 bg-white p-6 dark:border-slate-700 dark:bg-slate-800">
+        <section className="rounded-xl border border-border bg-surface p-6">
           <h2 className="mb-4 font-bold">{t('settings.changePassword')}</h2>
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label={t('settings.currentPassword')} type="password" value={current} onChange={setCurrent} />
@@ -564,12 +564,12 @@ export default function SettingsPage() {
             >
               {t('settings.changePassword')}
             </button>
-            {pwMsg && <span className="text-sm text-slate-500 dark:text-slate-400">{pwMsg}</span>}
+            {pwMsg && <span className="text-sm text-muted">{pwMsg}</span>}
           </div>
         </section>
 
         {/* Active sessions */}
-        <section className="mt-8 rounded-xl border border-slate-200 bg-white p-6 dark:border-slate-700 dark:bg-slate-800">
+        <section className="mt-8 rounded-xl border border-border bg-surface p-6">
           <div className="mb-3 flex items-center justify-between">
             <h2 className="font-bold">{t('sessions.title')}</h2>
             {sessions.length > 1 && (
@@ -580,7 +580,7 @@ export default function SettingsPage() {
           </div>
           <ul className="space-y-2">
             {sessions.map((s) => (
-              <li key={s.id} className="flex items-center gap-3 rounded-lg border border-slate-200 px-3 py-2 text-sm dark:border-slate-700">
+              <li key={s.id} className="flex items-center gap-3 rounded-lg border border-border px-3 py-2 text-sm">
                 <div className="min-w-0 flex-1">
                   <div className="font-medium">
                     {deviceLabel(s.userAgent)}
@@ -590,7 +590,7 @@ export default function SettingsPage() {
                       </span>
                     )}
                   </div>
-                  <div className="text-xs text-slate-400">
+                  <div className="text-xs text-muted">
                     {s.ipAddress ?? '—'} · {new Date(s.createdAtUtc).toLocaleString()}
                   </div>
                 </div>
@@ -605,9 +605,9 @@ export default function SettingsPage() {
         </section>
 
         {/* Two-factor authentication */}
-        <section className="mt-8 rounded-xl border border-slate-200 bg-white p-6 dark:border-slate-700 dark:bg-slate-800">
+        <section className="mt-8 rounded-xl border border-border bg-surface p-6">
           <h2 className="mb-1 font-bold">{t('twoFa.title')}</h2>
-          <p className="mb-4 text-sm text-slate-500 dark:text-slate-400">{t('twoFa.desc')}</p>
+          <p className="mb-4 text-sm text-muted">{t('twoFa.desc')}</p>
 
           {user?.twoFactorEnabled ? (
             <div className="space-y-3">
@@ -615,10 +615,10 @@ export default function SettingsPage() {
                 ✓ {t('twoFa.enabled')}
               </div>
               <div className="flex items-center justify-between text-sm">
-                <span className="text-slate-500 dark:text-slate-400">
+                <span className="text-muted">
                   {t('twoFa.backupRemaining', { count: backupRemaining ?? 0 })}
                 </span>
-                <button onClick={regenerateBackup} className="font-semibold text-primary hover:underline dark:text-slate-300">
+                <button onClick={regenerateBackup} className="font-semibold text-primary hover:underline">
                   {t('twoFa.regenerate')}
                 </button>
               </div>
@@ -628,7 +628,7 @@ export default function SettingsPage() {
                   onChange={(e) => setTwoFaCode(e.target.value)}
                   inputMode="numeric"
                   placeholder={t('twoFa.codePlaceholder')}
-                  className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm tracking-widest outline-none dark:border-slate-600 dark:bg-slate-900"
+                  className="rounded-lg border border-border bg-canvas px-3 py-2 text-sm tracking-widest outline-none"
                 />
                 <button onClick={disableTwoFa} className="rounded-lg border border-red-300 px-4 py-2 text-sm font-semibold text-red-600 hover:bg-red-50 dark:border-red-700 dark:hover:bg-red-950">
                   {t('twoFa.disable')}
@@ -637,19 +637,19 @@ export default function SettingsPage() {
             </div>
           ) : twoFaSetup ? (
             <div className="space-y-3">
-              <p className="text-sm text-slate-600 dark:text-slate-300">{t('twoFa.scanHint')}</p>
+              <p className="text-sm text-foreground">{t('twoFa.scanHint')}</p>
               {twoFaQr && (
                 <img
                   src={twoFaQr}
                   alt="2FA QR code"
-                  className="rounded-lg border border-slate-200 bg-white p-2 dark:border-slate-700"
+                  className="rounded-lg border border-border bg-surface p-2"
                   width={180}
                   height={180}
                 />
               )}
-              <div className="rounded-lg bg-slate-50 p-3 text-sm dark:bg-slate-900">
-                <div className="font-mono break-all text-primary dark:text-slate-200">{twoFaSetup.secret}</div>
-                <a href={twoFaSetup.otpauthUri} className="mt-1 block break-all text-xs text-slate-400 hover:underline">
+              <div className="rounded-lg bg-canvas p-3 text-sm">
+                <div className="font-mono break-all text-primary">{twoFaSetup.secret}</div>
+                <a href={twoFaSetup.otpauthUri} className="mt-1 block break-all text-xs text-muted hover:underline">
                   {twoFaSetup.otpauthUri}
                 </a>
               </div>
@@ -660,12 +660,12 @@ export default function SettingsPage() {
                   inputMode="numeric"
                   autoFocus
                   placeholder={t('twoFa.codePlaceholder')}
-                  className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm tracking-widest outline-none dark:border-slate-600 dark:bg-slate-900"
+                  className="rounded-lg border border-border bg-canvas px-3 py-2 text-sm tracking-widest outline-none"
                 />
                 <button onClick={confirmTwoFa} className="rounded-lg bg-primary px-5 py-2 text-sm font-semibold text-white hover:bg-primary-hover">
                   {t('twoFa.confirm')}
                 </button>
-                <button onClick={() => { setTwoFaSetup(null); setTwoFaCode(''); setTwoFaMsg('') }} className="text-sm font-semibold text-slate-500 hover:text-primary dark:text-slate-300">
+                <button onClick={() => { setTwoFaSetup(null); setTwoFaCode(''); setTwoFaMsg('') }} className="text-sm font-semibold text-muted hover:text-primary">
                   {t('twoFa.cancel')}
                 </button>
               </div>
@@ -694,27 +694,27 @@ export default function SettingsPage() {
         </section>
 
         {/* Data & privacy */}
-        <section className="mt-8 rounded-xl border border-slate-200 bg-white p-6 dark:border-slate-700 dark:bg-slate-800">
+        <section className="mt-8 rounded-xl border border-border bg-surface p-6">
           <h2 className="mb-1 font-bold">{t('privacy.title')}</h2>
-          <p className="mb-4 text-sm text-slate-500 dark:text-slate-400">{t('privacy.exportDesc')}</p>
+          <p className="mb-4 text-sm text-muted">{t('privacy.exportDesc')}</p>
           <button
             onClick={downloadData}
-            className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold hover:bg-slate-50 dark:border-slate-600 dark:hover:bg-slate-700"
+            className="rounded-lg border border-border px-4 py-2 text-sm font-semibold hover:bg-canvas"
           >
             {t('privacy.export')}
           </button>
         </section>
 
         {/* Notification preferences */}
-        <section className="mt-8 rounded-xl border border-slate-200 bg-white p-6 dark:border-slate-700 dark:bg-slate-800">
+        <section className="mt-8 rounded-xl border border-border bg-surface p-6">
           <h2 className="mb-1 font-bold">{t('notifPrefs.title')}</h2>
-          <p className="mb-4 text-sm text-slate-500 dark:text-slate-400">{t('notifPrefs.desc')}</p>
+          <p className="mb-4 text-sm text-muted">{t('notifPrefs.desc')}</p>
 
           {/* A row per type with an in-app and an email toggle. */}
           <div className="grid grid-cols-[1fr_auto_auto] items-center gap-x-6 gap-y-2 text-sm">
             <span />
-            <span className="text-center text-xs font-semibold text-slate-500 dark:text-slate-400">{t('notifPrefs.inApp')}</span>
-            <span className="text-center text-xs font-semibold text-slate-500 dark:text-slate-400">{t('notifPrefs.email')}</span>
+            <span className="text-center text-xs font-semibold text-muted">{t('notifPrefs.inApp')}</span>
+            <span className="text-center text-xs font-semibold text-muted">{t('notifPrefs.email')}</span>
             {NOTIF_TYPES.map((type) => (
               <div key={type} className="contents">
                 <span>{t(`notifPrefs.type.${type}`, type)}</span>
@@ -737,9 +737,9 @@ export default function SettingsPage() {
 
         {/* Browser push notifications */}
         {pushSupported() && (
-          <section className="mt-8 rounded-xl border border-slate-200 bg-white p-6 dark:border-slate-700 dark:bg-slate-800">
+          <section className="mt-8 rounded-xl border border-border bg-surface p-6">
             <h2 className="mb-1 font-bold">{t('push.title')}</h2>
-            <p className="mb-4 text-sm text-slate-500 dark:text-slate-400">{t('push.desc')}</p>
+            <p className="mb-4 text-sm text-muted">{t('push.desc')}</p>
             <div className="flex items-center gap-3 text-sm">
               {pushEnabled && (
                 <span className="rounded-full bg-green-100 px-2 py-0.5 font-semibold text-green-700 dark:bg-green-900/40 dark:text-green-300">
@@ -762,9 +762,9 @@ export default function SettingsPage() {
         )}
 
         {/* Telegram */}
-        <section className="mt-8 rounded-xl border border-slate-200 bg-white p-6 dark:border-slate-700 dark:bg-slate-800">
+        <section className="mt-8 rounded-xl border border-border bg-surface p-6">
           <h2 className="mb-1 font-bold">{t('telegram.title')}</h2>
-          <p className="mb-4 text-sm text-slate-500 dark:text-slate-400">{t('telegram.desc')}</p>
+          <p className="mb-4 text-sm text-muted">{t('telegram.desc')}</p>
 
           {telegram.linked ? (
             <div className="flex items-center gap-3 text-sm">
@@ -778,7 +778,7 @@ export default function SettingsPage() {
           ) : telegramCode ? (
             <div className="space-y-3 text-sm">
               <p>{t('telegram.step1')}</p>
-              <div className="rounded-lg bg-slate-100 px-4 py-3 text-center font-mono text-lg font-bold tracking-widest dark:bg-slate-900">
+              <div className="rounded-lg bg-canvas px-4 py-3 text-center font-mono text-lg font-bold tracking-widest">
                 {telegramCode}
               </div>
               {telegram.botUsername && (
@@ -791,7 +791,7 @@ export default function SettingsPage() {
                   {t('telegram.openBot')}
                 </a>
               )}
-              <p className="text-xs text-slate-400">{t('telegram.step2')}</p>
+              <p className="text-xs text-muted">{t('telegram.step2')}</p>
             </div>
           ) : (
             <button
@@ -804,9 +804,9 @@ export default function SettingsPage() {
         </section>
 
         {/* Viber */}
-        <section className="mt-8 rounded-xl border border-slate-200 bg-white p-6 dark:border-slate-700 dark:bg-slate-800">
+        <section className="mt-8 rounded-xl border border-border bg-surface p-6">
           <h2 className="mb-1 font-bold">{t('viber.title')}</h2>
-          <p className="mb-4 text-sm text-slate-500 dark:text-slate-400">{t('viber.desc')}</p>
+          <p className="mb-4 text-sm text-muted">{t('viber.desc')}</p>
 
           {viber.linked ? (
             <div className="flex items-center gap-3 text-sm">
@@ -820,10 +820,10 @@ export default function SettingsPage() {
           ) : viberCode ? (
             <div className="space-y-3 text-sm">
               <p>{t('viber.step1', { bot: viber.botName || 'TaskPilot' })}</p>
-              <div className="rounded-lg bg-slate-100 px-4 py-3 text-center font-mono text-lg font-bold tracking-widest dark:bg-slate-900">
+              <div className="rounded-lg bg-canvas px-4 py-3 text-center font-mono text-lg font-bold tracking-widest">
                 {viberCode}
               </div>
-              <p className="text-xs text-slate-400">{t('viber.step2')}</p>
+              <p className="text-xs text-muted">{t('viber.step2')}</p>
             </div>
           ) : (
             <button
@@ -836,20 +836,20 @@ export default function SettingsPage() {
         </section>
 
         {/* API keys */}
-        <section className="mt-8 rounded-xl border border-slate-200 bg-white p-6 dark:border-slate-700 dark:bg-slate-800">
+        <section className="mt-8 rounded-xl border border-border bg-surface p-6">
           <h2 className="mb-1 font-bold">{t('apiKeys.title')}</h2>
-          <p className="mb-4 text-sm text-slate-500 dark:text-slate-400">{t('apiKeys.desc')}</p>
+          <p className="mb-4 text-sm text-muted">{t('apiKeys.desc')}</p>
 
           {/* Freshly created key — shown once */}
           {createdKey && (
             <div className="mb-4 rounded-lg border border-green-300 bg-green-50 p-3 text-sm dark:border-green-700 dark:bg-green-950/30">
               <p className="mb-2 font-semibold text-green-800 dark:text-green-300">{t('apiKeys.createdOnce')}</p>
               <div className="flex items-center gap-2">
-                <code className="flex-1 overflow-x-auto rounded bg-white px-2 py-1 font-mono text-xs dark:bg-slate-900">{createdKey}</code>
+                <code className="flex-1 overflow-x-auto rounded bg-canvas px-2 py-1 font-mono text-xs">{createdKey}</code>
                 <button onClick={copyKey} className="rounded-lg bg-primary px-3 py-1 text-xs font-semibold text-white hover:bg-primary-hover">
                   {t('apiKeys.copy')}
                 </button>
-                <button onClick={() => setCreatedKey(null)} className="text-xs text-slate-400 hover:underline">
+                <button onClick={() => setCreatedKey(null)} className="text-xs text-muted hover:underline">
                   {t('apiKeys.dismiss')}
                 </button>
               </div>
@@ -862,7 +862,7 @@ export default function SettingsPage() {
               value={newKeyName}
               onChange={(e) => setNewKeyName(e.target.value)}
               placeholder={t('apiKeys.namePlaceholder')}
-              className="flex-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-primary dark:border-slate-600 dark:bg-slate-900"
+              className="flex-1 rounded-lg border border-border bg-canvas px-3 py-2 text-sm outline-none focus:border-primary"
             />
             <button
               onClick={createApiKey}
@@ -875,14 +875,14 @@ export default function SettingsPage() {
 
           {/* List */}
           {apiKeys.length === 0 ? (
-            <p className="text-sm text-slate-400">{t('apiKeys.empty')}</p>
+            <p className="text-sm text-muted">{t('apiKeys.empty')}</p>
           ) : (
             <ul className="space-y-2">
               {apiKeys.map((k) => (
-                <li key={k.id} className="flex items-center gap-3 rounded-lg border border-slate-200 px-3 py-2 text-sm dark:border-slate-700">
+                <li key={k.id} className="flex items-center gap-3 rounded-lg border border-border px-3 py-2 text-sm">
                   <span className="font-semibold">{k.name}</span>
-                  <code className="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-xs text-slate-500 dark:bg-slate-900 dark:text-slate-400">{k.prefix}…</code>
-                  <span className="ml-auto text-xs text-slate-400">
+                  <code className="rounded bg-canvas px-1.5 py-0.5 font-mono text-xs text-muted">{k.prefix}…</code>
+                  <span className="ml-auto text-xs text-muted">
                     {k.lastUsedAt ? t('apiKeys.lastUsed', { date: new Date(k.lastUsedAt).toLocaleDateString() }) : t('apiKeys.neverUsed')}
                   </span>
                   <button onClick={() => revokeApiKey(k.id)} className="text-xs font-semibold text-red-600 hover:underline">
@@ -895,26 +895,26 @@ export default function SettingsPage() {
         </section>
 
         {/* Webhooks */}
-        <section className="mt-8 rounded-xl border border-slate-200 bg-white p-6 dark:border-slate-700 dark:bg-slate-800">
+        <section className="mt-8 rounded-xl border border-border bg-surface p-6">
           <h2 className="mb-1 font-bold">{t('settings.webhooks')}</h2>
-          <p className="mb-4 text-sm text-slate-500 dark:text-slate-400">
+          <p className="mb-4 text-sm text-muted">
             {t('settings.webhooksDesc')}
           </p>
 
           {/* Existing webhooks */}
           {webhooks.length === 0 ? (
-            <p className="mb-4 text-sm text-slate-400">{t('settings.noWebhooks')}</p>
+            <p className="mb-4 text-sm text-muted">{t('settings.noWebhooks')}</p>
           ) : (
             <ul className="mb-4 space-y-2">
               {webhooks.map((w) => (
                 <li
                   key={w.id}
-                  className="flex items-center gap-3 rounded-lg border border-slate-200 px-3 py-2 text-sm dark:border-slate-700"
+                  className="flex items-center gap-3 rounded-lg border border-border px-3 py-2 text-sm"
                 >
-                  <span className="rounded bg-slate-100 px-2 py-0.5 text-[11px] font-semibold dark:bg-slate-700">
+                  <span className="rounded bg-canvas px-2 py-0.5 text-[11px] font-semibold">
                     {w.event}
                   </span>
-                  <span className="min-w-0 flex-1 truncate text-slate-600 dark:text-slate-300">{w.url}</span>
+                  <span className="min-w-0 flex-1 truncate text-foreground">{w.url}</span>
                   <button
                     onClick={() => removeWebhook(w.id)}
                     className="flex-none text-xs font-semibold text-red-600 hover:underline"
@@ -931,7 +931,7 @@ export default function SettingsPage() {
             <select
               value={hookEvent}
               onChange={(e) => setHookEvent(e.target.value)}
-              className="rounded-lg border border-slate-300 bg-white px-2 py-2 text-sm outline-none dark:border-slate-600 dark:bg-slate-900"
+              className="rounded-lg border border-border bg-canvas px-2 py-2 text-sm outline-none"
             >
               {WEBHOOK_EVENTS.map((ev) => (
                 <option key={ev} value={ev}>
@@ -943,7 +943,7 @@ export default function SettingsPage() {
               value={hookUrl}
               onChange={(e) => setHookUrl(e.target.value)}
               placeholder="https://example.com/webhook"
-              className="min-w-0 flex-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-primary dark:border-slate-600 dark:bg-slate-900"
+              className="min-w-0 flex-1 rounded-lg border border-border bg-canvas px-3 py-2 text-sm outline-none focus:border-primary"
             />
             <button
               onClick={addWebhook}
@@ -977,19 +977,19 @@ export default function SettingsPage() {
 
       {deleteOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setDeleteOpen(false)}>
-          <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl dark:bg-slate-800" onClick={(e) => e.stopPropagation()}>
+          <div className="w-full max-w-md rounded-xl bg-surface p-6 shadow-elevated" onClick={(e) => e.stopPropagation()}>
             <h2 className="mb-2 text-lg font-bold text-red-700 dark:text-red-300">{t('danger.confirmTitle')}</h2>
-            <p className="mb-4 text-sm text-slate-600 dark:text-slate-300">{t('danger.confirmDesc')}</p>
+            <p className="mb-4 text-sm text-foreground">{t('danger.confirmDesc')}</p>
             <input
               type="password"
               value={deletePassword}
               onChange={(e) => setDeletePassword(e.target.value)}
               placeholder={t('settings.currentPassword')}
-              className="mb-3 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-red-500 dark:border-slate-600 dark:bg-slate-900"
+              className="mb-3 w-full rounded-lg border border-border bg-canvas px-3 py-2 text-sm outline-none focus:border-red-500"
             />
             {deleteMsg && <p className="mb-3 text-sm text-red-600">{deleteMsg}</p>}
             <div className="flex items-center justify-end gap-3">
-              <button onClick={() => setDeleteOpen(false)} className="text-sm font-semibold text-slate-500 hover:text-primary dark:text-slate-300">
+              <button onClick={() => setDeleteOpen(false)} className="text-sm font-semibold text-muted hover:text-primary">
                 {t('twoFa.cancel')}
               </button>
               <button
@@ -1020,12 +1020,12 @@ function Field({
 }) {
   return (
     <div>
-      <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">{label}</label>
+      <label className="mb-1 block text-sm font-medium text-foreground">{label}</label>
       <input
         type={type}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 outline-none focus:border-primary dark:border-slate-600 dark:bg-slate-900"
+        className="w-full rounded-lg border border-border bg-canvas px-3 py-2 outline-none focus:border-primary"
       />
     </div>
   )

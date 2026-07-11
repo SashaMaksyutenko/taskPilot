@@ -49,8 +49,8 @@ export default function AuditPage() {
     <div className="mx-auto max-w-6xl px-6 py-8">
         <div className="mb-6 flex items-center gap-3">
           <h1 className="text-2xl font-bold">{t('audit.title')}</h1>
-          <span className="text-sm text-slate-400">{t('audit.events', { count: total })}</span>
-          <Link to="/admin" className="ml-auto text-sm text-slate-500 hover:underline dark:text-slate-400">
+          <span className="text-sm text-muted">{t('audit.events', { count: total })}</span>
+          <Link to="/admin" className="ml-auto text-sm text-muted hover:underline">
             {t('audit.backToUsers')}
           </Link>
         </div>
@@ -62,7 +62,7 @@ export default function AuditPage() {
             onChange={(e) => setActionInput(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && applyFilter()}
             placeholder={t('audit.filterPlaceholder')}
-            className="min-w-0 flex-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-primary dark:border-slate-600 dark:bg-slate-800 sm:max-w-sm"
+            className="min-w-0 flex-1 rounded-lg border border-border bg-canvas px-3 py-2 text-sm outline-none focus:border-primary sm:max-w-sm"
           />
           <button
             onClick={applyFilter}
@@ -73,16 +73,16 @@ export default function AuditPage() {
           {action && (
             <button
               onClick={clearFilter}
-              className="rounded-lg border border-slate-300 px-4 text-sm font-semibold hover:bg-white dark:border-slate-600 dark:hover:bg-slate-800"
+              className="rounded-lg border border-border px-4 text-sm font-semibold hover:bg-canvas"
             >
               {t('audit.clear')}
             </button>
           )}
         </div>
 
-        <div className="overflow-hidden rounded-xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-800">
+        <div className="overflow-hidden rounded-xl border border-border bg-surface">
           <table className="w-full text-sm">
-            <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500 dark:bg-slate-700/50 dark:text-slate-400">
+            <thead className="bg-canvas text-left text-xs uppercase text-muted">
               <tr>
                 <th className="px-4 py-3">{t('audit.time')}</th>
                 <th className="px-4 py-3">{t('audit.action')}</th>
@@ -91,35 +91,35 @@ export default function AuditPage() {
                 <th className="px-4 py-3">{t('audit.details')}</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
+            <tbody className="divide-y divide-border">
               {loading ? (
                 <tr>
-                  <td colSpan={5} className="px-4 py-8 text-center text-slate-400">
+                  <td colSpan={5} className="px-4 py-8 text-center text-muted">
                     {t('topic.loading')}
                   </td>
                 </tr>
               ) : logs.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-4 py-8 text-center text-slate-400">
+                  <td colSpan={5} className="px-4 py-8 text-center text-muted">
                     {t('audit.noEvents')}
                   </td>
                 </tr>
               ) : (
                 logs.map((l) => (
                   <tr key={l.id}>
-                    <td className="whitespace-nowrap px-4 py-3 text-slate-500 dark:text-slate-400">
+                    <td className="whitespace-nowrap px-4 py-3 text-muted">
                       {new Date(l.createdAt).toLocaleString()}
                     </td>
                     <td className="px-4 py-3">
-                      <span className="rounded bg-slate-100 px-2 py-0.5 text-[11px] font-semibold dark:bg-slate-700">
+                      <span className="rounded bg-canvas px-2 py-0.5 text-[11px] font-semibold">
                         {l.action}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
-                      {l.actorEmail ?? <span className="text-slate-400">{t('audit.system')}</span>}
+                    <td className="px-4 py-3 text-foreground">
+                      {l.actorEmail ?? <span className="text-muted">{t('audit.system')}</span>}
                     </td>
-                    <td className="px-4 py-3 text-slate-500 dark:text-slate-400">{l.ipAddress ?? '—'}</td>
-                    <td className="px-4 py-3 text-slate-500 dark:text-slate-400">{l.details ?? '—'}</td>
+                    <td className="px-4 py-3 text-muted">{l.ipAddress ?? '—'}</td>
+                    <td className="px-4 py-3 text-muted">{l.details ?? '—'}</td>
                   </tr>
                 ))
               )}
@@ -129,21 +129,21 @@ export default function AuditPage() {
 
         {/* Pagination */}
         <div className="mt-4 flex items-center justify-between text-sm">
-          <span className="text-slate-500 dark:text-slate-400">
+          <span className="text-muted">
             {t('audit.pageOf', { page, total: totalPages })}
           </span>
           <div className="flex gap-2">
             <button
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page <= 1}
-              className="rounded-lg border border-slate-300 px-3 py-1.5 font-semibold disabled:opacity-40 dark:border-slate-600"
+              className="rounded-lg border border-border px-3 py-1.5 font-semibold disabled:opacity-40"
             >
               {t('audit.prev')}
             </button>
             <button
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
               disabled={page >= totalPages}
-              className="rounded-lg border border-slate-300 px-3 py-1.5 font-semibold disabled:opacity-40 dark:border-slate-600"
+              className="rounded-lg border border-border px-3 py-1.5 font-semibold disabled:opacity-40"
             >
               {t('audit.next')}
             </button>

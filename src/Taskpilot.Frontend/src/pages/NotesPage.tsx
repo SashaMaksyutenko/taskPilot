@@ -261,7 +261,7 @@ export default function NotesPage() {
                 onDelete={() => setDeletingNote(note)}
               >
               <div
-                className="flex flex-col rounded-xl border border-slate-200 p-4 shadow-sm"
+                className="flex flex-col rounded-xl border border-border p-4 shadow-sm"
                 style={{ background: note.color ?? undefined }}
               >
                 <div className="mb-1 flex items-start gap-2">

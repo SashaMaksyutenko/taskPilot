@@ -1,6 +1,6 @@
 import api from '../lib/api'
 
-export type BookmarkType = 'Task' | 'Topic' | 'Message'
+export type BookmarkType = 'Task' | 'Topic' | 'Message' | 'File'
 
 /** A saved bookmark (mirrors BookmarkDto). */
 export interface Bookmark {

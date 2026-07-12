@@ -1,17 +1,19 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
-import { Bookmark as BookmarkIcon, FolderKanban, MessagesSquare, MessageSquare, X } from 'lucide-react'
+import { Bookmark as BookmarkIcon, FolderKanban, MessagesSquare, MessageSquare, Paperclip, X } from 'lucide-react'
 import EmptyState from '../components/EmptyState'
 import Card from '../components/ui/Card'
 import { SkeletonCard } from '../components/ui/Skeleton'
 import { bookmarkService, type Bookmark, type BookmarkType } from '../services/bookmarkService'
+import { fileService } from '../services/fileService'
 
 // Icon per bookmark type.
 const TYPE_ICON: Record<BookmarkType, typeof FolderKanban> = {
   Task: FolderKanban,
   Topic: MessagesSquare,
   Message: MessageSquare,
+  File: Paperclip,
 }
 
 /** Quick-access list of the user's saved bookmarks (tasks, topics, messages). */
@@ -33,6 +35,18 @@ export default function BookmarksPage() {
   const remove = async (id: string) => {
     await bookmarkService.remove(id).catch(() => {})
     setItems((prev) => prev.filter((b) => b.id !== id))
+  }
+
+  // File bookmarks download the file (its entityId is the file id) instead of navigating.
+  const downloadFile = async (b: Bookmark) => {
+    const blob = await fileService.download(b.entityId).catch(() => null)
+    if (!blob) return
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = b.title || 'file'
+    a.click()
+    URL.revokeObjectURL(url)
   }
 
   return (
@@ -60,12 +74,21 @@ export default function BookmarksPage() {
                   <span className="flex-none rounded-lg bg-primary/10 p-2 text-primary">
                     <Icon className="h-5 w-5" />
                   </span>
-                  <Link to={b.link} className="min-w-0 flex-1">
-                    <div className="truncate font-semibold">{b.title || t(`bookmarks.type.${b.type}`)}</div>
-                    <div className="text-xs text-muted">
-                      {t(`bookmarks.type.${b.type}`)} · {new Date(b.createdAt).toLocaleDateString()}
-                    </div>
-                  </Link>
+                  {b.type === 'File' ? (
+                    <button onClick={() => downloadFile(b)} className="min-w-0 flex-1 text-left">
+                      <div className="truncate font-semibold hover:underline">{b.title || t(`bookmarks.type.${b.type}`)}</div>
+                      <div className="text-xs text-muted">
+                        {t(`bookmarks.type.${b.type}`)} · {new Date(b.createdAt).toLocaleDateString()}
+                      </div>
+                    </button>
+                  ) : (
+                    <Link to={b.link} className="min-w-0 flex-1">
+                      <div className="truncate font-semibold">{b.title || t(`bookmarks.type.${b.type}`)}</div>
+                      <div className="text-xs text-muted">
+                        {t(`bookmarks.type.${b.type}`)} · {new Date(b.createdAt).toLocaleDateString()}
+                      </div>
+                    </Link>
+                  )}
                   <button
                     onClick={() => remove(b.id)}
                     className="flex-none rounded-lg p-2 text-muted transition hover:bg-canvas hover:text-red-600"

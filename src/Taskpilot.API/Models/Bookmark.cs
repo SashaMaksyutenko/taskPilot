@@ -6,6 +6,7 @@ public enum BookmarkType
     Task,
     Topic,
     Message,
+    File,
 }
 
 /// <summary>

@@ -71,13 +71,15 @@
     "title": "Bookmarks",
     "empty": "No bookmarks yet. Save tasks and topics for quick access.",
     "add": "Add to bookmarks",
+    "addFile": "Bookmark file",
     "remove": "Remove bookmark",
     "added": "Added to bookmarks",
     "removed": "Removed from bookmarks",
     "type": {
       "Task": "Task",
       "Topic": "Topic",
-      "Message": "Message"
+      "Message": "Message",
+      "File": "File"
     }
   },
   "menu": {

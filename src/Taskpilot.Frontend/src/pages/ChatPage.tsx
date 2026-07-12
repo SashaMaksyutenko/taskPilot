@@ -324,14 +324,32 @@ export default function ChatPage() {
     await chatService.sendMessage(selectedId, gif.url).catch(() => {})
   }
 
-  // Bookmarked message ids (for the context-menu label).
+  // Bookmarked message + file ids (for the context-menu labels).
   const [bookmarkedMsgIds, setBookmarkedMsgIds] = useState<Set<string>>(new Set())
+  const [bookmarkedFileIds, setBookmarkedFileIds] = useState<Set<string>>(new Set())
   useEffect(() => {
     bookmarkService
       .getMine()
-      .then((bs) => setBookmarkedMsgIds(new Set(bs.filter((b) => b.type === 'Message').map((b) => b.entityId))))
+      .then((bs) => {
+        setBookmarkedMsgIds(new Set(bs.filter((b) => b.type === 'Message').map((b) => b.entityId)))
+        setBookmarkedFileIds(new Set(bs.filter((b) => b.type === 'File').map((b) => b.entityId)))
+      })
       .catch(() => {})
   }, [])
+
+  const toggleFileBookmark = async (fileId: string, fileName: string | null) => {
+    const now = await bookmarkService
+      .toggle({ type: 'File', entityId: fileId, title: fileName || 'File', link: fileId })
+      .catch(() => null)
+    if (now === null) return
+    setBookmarkedFileIds((prev) => {
+      const next = new Set(prev)
+      if (now) next.add(fileId)
+      else next.delete(fileId)
+      return next
+    })
+    notify.success(now ? t('bookmarks.added') : t('bookmarks.removed'))
+  }
 
   const toggleMessageBookmark = async (m: Message) => {
     // A readable title: the text (or "GIF"/file name for non-text messages).
@@ -677,13 +695,24 @@ export default function ChatPage() {
                             )
                           )}
                           {m.fileId && (
-                            <AttachmentPreview
-                              fileId={m.fileId}
-                              fileName={m.fileName}
-                              contentType={m.fileContentType}
-                              mine={mine}
-                              onDownload={downloadAttachment}
-                            />
+                            <ActionsContextMenu
+                              actions={[
+                                {
+                                  label: bookmarkedFileIds.has(m.fileId) ? t('bookmarks.remove') : t('bookmarks.addFile'),
+                                  onSelect: () => toggleFileBookmark(m.fileId!, m.fileName),
+                                },
+                              ]}
+                            >
+                              <span className="inline-block">
+                                <AttachmentPreview
+                                  fileId={m.fileId}
+                                  fileName={m.fileName}
+                                  contentType={m.fileContentType}
+                                  mine={mine}
+                                  onDownload={downloadAttachment}
+                                />
+                              </span>
+                            </ActionsContextMenu>
                           )}
                           <div className="mt-1 flex flex-wrap items-center gap-1">
                             {m.reactions.map((r) => (

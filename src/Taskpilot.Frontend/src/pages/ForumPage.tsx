@@ -13,6 +13,8 @@ import Select from '../components/ui/Select'
 import { SkeletonCard } from '../components/ui/Skeleton'
 import { apiErrorMessage } from '../lib/apiError'
 import { forumService } from '../services/forumService'
+import { bookmarkService } from '../services/bookmarkService'
+import { notify } from '../lib/toast'
 import { useAppSelector } from '../store/hooks'
 import type { TopicListItem } from '../types/forum'
 
@@ -88,6 +90,29 @@ export default function ForumPage() {
   const removeTopic = async (id: string) => {
     await forumService.deleteTopic(id).catch(() => {})
     load(page)
+  }
+
+  // Which topics the current user has bookmarked (for the context-menu label).
+  const [bookmarkedIds, setBookmarkedIds] = useState<Set<string>>(new Set())
+  useEffect(() => {
+    bookmarkService
+      .getMine()
+      .then((bs) => setBookmarkedIds(new Set(bs.filter((b) => b.type === 'Topic').map((b) => b.entityId))))
+      .catch(() => {})
+  }, [])
+
+  const toggleBookmark = async (topic: TopicListItem) => {
+    const now = await bookmarkService
+      .toggle({ type: 'Topic', entityId: topic.id, title: topic.title, link: `/forum/${topic.id}` })
+      .catch(() => null)
+    if (now === null) return
+    setBookmarkedIds((prev) => {
+      const next = new Set(prev)
+      if (now) next.add(topic.id)
+      else next.delete(topic.id)
+      return next
+    })
+    notify.success(now ? t('bookmarks.added') : t('bookmarks.removed'))
   }
 
   const togglePin = async (topic: TopicListItem) => {
@@ -204,6 +229,8 @@ export default function ForumPage() {
                 isLocked={topic.isLocked}
                 canLock={isAdmin || currentUser?.id === topic.authorId}
                 onToggleLock={() => toggleLock(topic)}
+                bookmarked={bookmarkedIds.has(topic.id)}
+                onBookmark={() => toggleBookmark(topic)}
               >
                 <Link to={`/forum/${topic.id}`} className="block">
                   <Card hover className="flex items-center gap-3 p-4">

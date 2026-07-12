@@ -15,6 +15,7 @@ import MarketplacePage from './pages/MarketplacePage'
 import MarketplaceTaskPage from './pages/MarketplaceTaskPage'
 import AssistantPage from './pages/AssistantPage'
 import NotesPage from './pages/NotesPage'
+import BookmarksPage from './pages/BookmarksPage'
 import SearchPage from './pages/SearchPage'
 import ProjectsPage from './pages/ProjectsPage'
 import RootPage from './pages/RootPage'
@@ -73,6 +74,7 @@ function App() {
             <Route path="/marketplace/:taskId" element={<MarketplaceTaskPage />} />
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="/notes" element={<NotesPage />} />
+            <Route path="/bookmarks" element={<BookmarksPage />} />
             <Route path="/search" element={<SearchPage />} />
             <Route path="/users/:userId" element={<UserProfilePage />} />
             <Route element={<AdminRoute />}>

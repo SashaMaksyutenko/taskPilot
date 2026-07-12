@@ -10,6 +10,7 @@ import Button from '../components/ui/Button'
 import Input from '../components/ui/Input'
 import Confetti from '../components/Confetti'
 import ResultState from '../components/ResultState'
+import { bookmarkService } from '../services/bookmarkService'
 import { useAppSelector } from '../store/hooks'
 import { projectService } from '../services/projectService'
 import { taskService } from '../services/taskService'
@@ -168,6 +169,29 @@ export default function BoardPage() {
     const url = `${window.location.origin}/projects/${projectId}?task=${task.id}`
     navigator.clipboard?.writeText(url).catch(() => {})
     notify.success(t('toast.linkCopied'))
+  }
+
+  // Bookmarked task ids (for the context-menu label).
+  const [bookmarkedTaskIds, setBookmarkedTaskIds] = useState<Set<string>>(new Set())
+  useEffect(() => {
+    bookmarkService
+      .getMine()
+      .then((bs) => setBookmarkedTaskIds(new Set(bs.filter((b) => b.type === 'Task').map((b) => b.entityId))))
+      .catch(() => {})
+  }, [])
+
+  const toggleBookmark = async (task: Task) => {
+    const now = await bookmarkService
+      .toggle({ type: 'Task', entityId: task.id, title: task.title, link: `/projects/${projectId}?task=${task.id}` })
+      .catch(() => null)
+    if (now === null) return
+    setBookmarkedTaskIds((prev) => {
+      const next = new Set(prev)
+      if (now) next.add(task.id)
+      else next.delete(task.id)
+      return next
+    })
+    notify.success(now ? t('bookmarks.added') : t('bookmarks.removed'))
   }
 
   const assign = async (task: Task, assigneeId: string | null) => {
@@ -401,6 +425,8 @@ export default function BoardPage() {
                       moveTargets={moveTargets}
                       onMove={(pid) => moveTask(task, pid)}
                       onDelete={() => setDeletingTask(task)}
+                      bookmarked={bookmarkedTaskIds.has(task.id)}
+                      onBookmark={() => toggleBookmark(task)}
                     >
                       <div
                         draggable

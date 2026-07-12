@@ -24,6 +24,8 @@ export default function TaskContextMenu({
   moveTargets,
   onMove,
   onDelete,
+  bookmarked,
+  onBookmark,
 }: {
   children: ReactNode
   onEdit: () => void
@@ -35,6 +37,8 @@ export default function TaskContextMenu({
   moveTargets: { id: string; name: string }[]
   onMove: (projectId: string) => void
   onDelete: () => void
+  bookmarked?: boolean
+  onBookmark?: () => void
 }) {
   const { t } = useTranslation()
 
@@ -54,6 +58,12 @@ export default function TaskContextMenu({
           <ContextMenu.Item className={itemClass} onSelect={onCopyLink}>
             {t('board.copyLink')}
           </ContextMenu.Item>
+
+          {onBookmark && (
+            <ContextMenu.Item className={itemClass} onSelect={onBookmark}>
+              {bookmarked ? t('bookmarks.remove') : t('bookmarks.add')}
+            </ContextMenu.Item>
+          )}
 
           {/* Change priority submenu */}
           <ContextMenu.Sub>

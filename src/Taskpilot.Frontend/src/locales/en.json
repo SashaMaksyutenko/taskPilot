@@ -25,6 +25,7 @@
     "chat": "Chat",
     "assistant": "Assistant",
     "notes": "Notes",
+    "bookmarks": "Bookmarks",
     "search": "Search",
     "admin": "Admin",
     "settings": "Settings",
@@ -65,6 +66,19 @@
     "notes": "Go to notes",
     "search": "Search",
     "help": "Show this help"
+  },
+  "bookmarks": {
+    "title": "Bookmarks",
+    "empty": "No bookmarks yet. Save tasks and topics for quick access.",
+    "add": "Add to bookmarks",
+    "remove": "Remove bookmark",
+    "added": "Added to bookmarks",
+    "removed": "Removed from bookmarks",
+    "type": {
+      "Task": "Task",
+      "Topic": "Topic",
+      "Message": "Message"
+    }
   },
   "menu": {
     "open": "Open",

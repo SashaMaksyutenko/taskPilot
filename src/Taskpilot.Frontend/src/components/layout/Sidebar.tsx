@@ -1,4 +1,5 @@
 import {
+  Bookmark,
   Bot,
   Calendar,
   FolderKanban,
@@ -25,6 +26,7 @@ const LINKS = [
   { to: '/chat', key: 'nav.chat', icon: MessageSquare, end: false },
   { to: '/assistant', key: 'nav.assistant', icon: Bot, end: false },
   { to: '/notes', key: 'nav.notes', icon: NotebookPen, end: false },
+  { to: '/bookmarks', key: 'nav.bookmarks', icon: Bookmark, end: false },
   { to: '/search', key: 'nav.search', icon: Search, end: false },
 ] as const
 

@@ -84,6 +84,9 @@ public class TaskpilotDbContext : DbContext
     /// <summary>Personal notes.</summary>
     public DbSet<Note> Notes => Set<Note>();
 
+    /// <summary>Users' bookmarks (saved shortcuts to tasks/topics/messages).</summary>
+    public DbSet<Bookmark> Bookmarks => Set<Bookmark>();
+
     /// <summary>Comments on project tasks.</summary>
     public DbSet<TaskComment> TaskComments => Set<TaskComment>();
 
@@ -660,6 +663,31 @@ public class TaskpilotDbContext : DbContext
             entity.HasOne(n => n.Owner)
                   .WithMany()
                   .HasForeignKey(n => n.OwnerId)
+                  .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // Bookmark entity configuration
+        modelBuilder.Entity<Bookmark>(entity =>
+        {
+            entity.HasKey(b => b.Id);
+
+            entity.Property(b => b.Title).HasMaxLength(300);
+            entity.Property(b => b.Link).HasMaxLength(500);
+
+            // Store the type as a readable string.
+            entity.Property(b => b.Type)
+                  .HasConversion<string>()
+                  .HasMaxLength(20)
+                  .IsRequired();
+
+            // One bookmark per user per entity; newest first per user.
+            entity.HasIndex(b => new { b.UserId, b.Type, b.EntityId }).IsUnique();
+            entity.HasIndex(b => new { b.UserId, b.CreatedAt });
+
+            // Bookmarks are personal data: deleting the owner removes them.
+            entity.HasOne(b => b.User)
+                  .WithMany()
+                  .HasForeignKey(b => b.UserId)
                   .OnDelete(DeleteBehavior.Cascade);
         });
 

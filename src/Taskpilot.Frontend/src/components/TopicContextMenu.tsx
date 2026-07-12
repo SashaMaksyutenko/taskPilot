@@ -18,6 +18,8 @@ export default function TopicContextMenu({
   isLocked,
   canLock,
   onToggleLock,
+  bookmarked,
+  onBookmark,
 }: {
   children: ReactNode
   topicId: string
@@ -29,6 +31,8 @@ export default function TopicContextMenu({
   isLocked?: boolean
   canLock?: boolean
   onToggleLock?: () => void
+  bookmarked?: boolean
+  onBookmark?: () => void
 }) {
   const { t } = useTranslation()
 
@@ -46,6 +50,12 @@ export default function TopicContextMenu({
           <ContextMenu.Item className={itemClass} onSelect={copyLink}>
             {t('forum.copyLink')}
           </ContextMenu.Item>
+
+          {onBookmark && (
+            <ContextMenu.Item className={itemClass} onSelect={onBookmark}>
+              {bookmarked ? t('bookmarks.remove') : t('bookmarks.add')}
+            </ContextMenu.Item>
+          )}
 
           {showModeration && (
             <>

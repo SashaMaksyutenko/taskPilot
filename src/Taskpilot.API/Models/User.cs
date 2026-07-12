@@ -115,4 +115,12 @@ public class User
     /// Defaults to false — email stays private unless the user opts in.
     /// </summary>
     public bool ShowEmail { get; set; }
+
+    // --- Digest email preference ---
+
+    /// <summary>How often to email this user a summary of their tasks. Off by default (opt-in).</summary>
+    public DigestFrequency DigestFrequency { get; set; } = DigestFrequency.Off;
+
+    /// <summary>UTC time the last digest was sent; null until the first one. Guards the cadence.</summary>
+    public DateTime? LastDigestSentAt { get; set; }
 }

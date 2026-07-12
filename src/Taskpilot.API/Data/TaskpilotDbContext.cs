@@ -164,6 +164,12 @@ public class TaskpilotDbContext : DbContext
                   .HasMaxLength(20)
                   .IsRequired();
 
+            // Digest cadence stored as a readable string ("Off"/"Daily"/"Weekly").
+            entity.Property(u => u.DigestFrequency)
+                  .HasConversion<string>()
+                  .HasMaxLength(20)
+                  .IsRequired();
+
             // Optional profile fields.
             entity.Property(u => u.Title).HasMaxLength(100);
             entity.Property(u => u.Bio).HasMaxLength(1000);

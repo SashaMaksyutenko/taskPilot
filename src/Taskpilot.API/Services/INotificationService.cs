@@ -36,4 +36,10 @@ public interface INotificationService
 
     /// <summary>Replaces the user's email-muted type set; returns the applied disabled types.</summary>
     Task<Result<List<string>>> SetDisabledEmailTypesAsync(Guid userId, IEnumerable<string> typeNames);
+
+    /// <summary>Returns the user's digest email cadence ("Off"/"Daily"/"Weekly").</summary>
+    Task<Result<string>> GetDigestFrequencyAsync(Guid userId);
+
+    /// <summary>Sets the user's digest email cadence; returns the applied value.</summary>
+    Task<Result<string>> SetDigestFrequencyAsync(Guid userId, string frequency);
 }

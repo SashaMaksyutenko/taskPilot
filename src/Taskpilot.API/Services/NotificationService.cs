@@ -151,6 +151,32 @@ public class NotificationService : INotificationService
     public Task<Result<List<string>>> SetDisabledEmailTypesAsync(Guid userId, IEnumerable<string> typeNames) =>
         SetDisabledAsync(userId, NotificationChannel.Email, typeNames);
 
+    /// <inheritdoc />
+    public async Task<Result<string>> GetDigestFrequencyAsync(Guid userId)
+    {
+        var freq = await _context.Users
+            .Where(u => u.Id == userId)
+            .Select(u => u.DigestFrequency)
+            .FirstOrDefaultAsync();
+        return Result<string>.Ok(freq.ToString());
+    }
+
+    /// <inheritdoc />
+    public async Task<Result<string>> SetDigestFrequencyAsync(Guid userId, string frequency)
+    {
+        if (!Enum.TryParse<DigestFrequency>(frequency, ignoreCase: true, out var freq))
+            return Result<string>.Fail("Invalid digest frequency.");
+
+        var updated = await _context.Users
+            .Where(u => u.Id == userId)
+            .ExecuteUpdateAsync(s => s.SetProperty(u => u.DigestFrequency, freq));
+        if (updated == 0)
+            return Result<string>.Fail("User not found.");
+
+        _logger.LogInformation("Digest frequency updated. UserId: {UserId}, Frequency: {Frequency}", userId, freq);
+        return Result<string>.Ok(freq.ToString());
+    }
+
     /// <summary>Returns the notification types the user muted on the given channel.</summary>
     private async Task<Result<List<string>>> GetDisabledAsync(Guid userId, NotificationChannel channel)
     {

@@ -81,7 +81,21 @@ public class NotificationsController : BaseApiController
 
         var inApp = await _notifications.GetDisabledTypesAsync(userId.Value);
         var email = await _notifications.GetDisabledEmailTypesAsync(userId.Value);
-        return Ok(new { disabledTypes = inApp.Value, disabledEmailTypes = email.Value });
+        var digest = await _notifications.GetDigestFrequencyAsync(userId.Value);
+        return Ok(new { disabledTypes = inApp.Value, disabledEmailTypes = email.Value, digestFrequency = digest.Value });
+    }
+
+    /// <summary>Sets how often the current user receives a digest email (Off/Daily/Weekly).</summary>
+    [HttpPut("digest")]
+    public async Task<IActionResult> UpdateDigest([FromBody] UpdateDigestDto dto)
+    {
+        var userId = CurrentUserId();
+        if (userId is null) return Unauthorized();
+
+        var result = await _notifications.SetDigestFrequencyAsync(userId.Value, dto.Frequency);
+        return result.Succeeded
+            ? Ok(new { digestFrequency = result.Value })
+            : BadRequest(new { error = result.Error });
     }
 
     /// <summary>Replaces the current user's notification opt-outs (in-app and email).</summary>

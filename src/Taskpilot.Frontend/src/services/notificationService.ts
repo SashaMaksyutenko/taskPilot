@@ -21,10 +21,23 @@ export const notificationService = {
     return api.post('/api/notifications/read-all').then(() => undefined)
   },
 
-  /** Notification types the user muted, per channel. */
-  getPreferences(): Promise<{ disabledTypes: string[]; disabledEmailTypes: string[] }> {
+  /** Notification types the user muted, per channel, plus the digest cadence. */
+  getPreferences(): Promise<{
+    disabledTypes: string[]
+    disabledEmailTypes: string[]
+    digestFrequency: string
+  }> {
     return api
-      .get<{ disabledTypes: string[]; disabledEmailTypes: string[] }>('/api/notifications/preferences')
+      .get<{ disabledTypes: string[]; disabledEmailTypes: string[]; digestFrequency: string }>(
+        '/api/notifications/preferences',
+      )
+      .then((r) => r.data)
+  },
+
+  /** Sets how often the user receives a digest email (Off/Daily/Weekly). */
+  updateDigest(frequency: string): Promise<{ digestFrequency: string }> {
+    return api
+      .put<{ digestFrequency: string }>('/api/notifications/digest', { frequency })
       .then((r) => r.data)
   },
 

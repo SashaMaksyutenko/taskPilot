@@ -261,6 +261,13 @@
       "Marketplace": "Marketplace",
       "Moderation": "Moderation",
       "General": "General"
+    },
+    "digest": {
+      "title": "Email digest",
+      "desc": "A periodic summary of your tasks and deadlines.",
+      "off": "Off",
+      "daily": "Daily",
+      "weekly": "Weekly"
     }
   },
   "mdToolbar": {

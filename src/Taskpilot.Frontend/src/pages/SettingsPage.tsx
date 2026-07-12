@@ -91,15 +91,23 @@ export default function SettingsPage() {
   // Notification preferences (opt-out sets per channel).
   const [disabledNotif, setDisabledNotif] = useState<string[]>([])
   const [disabledEmail, setDisabledEmail] = useState<string[]>([])
+  // Digest email cadence: 'Off' | 'Daily' | 'Weekly'.
+  const [digest, setDigest] = useState('Off')
   useEffect(() => {
     notificationService
       .getPreferences()
       .then((p) => {
         setDisabledNotif(p.disabledTypes)
         setDisabledEmail(p.disabledEmailTypes)
+        setDigest(p.digestFrequency)
       })
       .catch(() => {})
   }, [])
+
+  const changeDigest = (value: string) => {
+    setDigest(value)
+    notificationService.updateDigest(value).catch(() => {})
+  }
 
   // Browser (Web Push) notifications.
   const [pushEnabled, setPushEnabled] = useState(false)
@@ -732,6 +740,23 @@ export default function SettingsPage() {
                 />
               </div>
             ))}
+          </div>
+
+          {/* Digest email cadence */}
+          <div className="mt-6 flex items-center justify-between gap-4 border-t border-border pt-4">
+            <div>
+              <p className="text-sm font-semibold">{t('notifPrefs.digest.title')}</p>
+              <p className="text-xs text-muted">{t('notifPrefs.digest.desc')}</p>
+            </div>
+            <select
+              value={digest}
+              onChange={(e) => changeDigest(e.target.value)}
+              className="rounded-lg border border-border bg-canvas px-3 py-2 text-sm"
+            >
+              <option value="Off">{t('notifPrefs.digest.off')}</option>
+              <option value="Daily">{t('notifPrefs.digest.daily')}</option>
+              <option value="Weekly">{t('notifPrefs.digest.weekly')}</option>
+            </select>
           </div>
         </section>
 

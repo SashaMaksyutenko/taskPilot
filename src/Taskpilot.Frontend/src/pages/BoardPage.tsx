@@ -255,11 +255,11 @@ export default function BoardPage() {
       ? topLevelTasks
       : topLevelTasks.filter((t) => t.tags.some((tag) => activeTags.includes(tag)))
 
-  const download = (blob: Blob, ext: string) => {
+  const download = (blob: Blob, ext: string, prefix = project?.name ?? 'tasks') => {
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `${project?.name ?? 'tasks'}.${ext}`
+    a.download = `${prefix}.${ext}`
     a.click()
     URL.revokeObjectURL(url)
   }
@@ -277,6 +277,16 @@ export default function BoardPage() {
   const exportPdf = async () => {
     const blob = await taskService.exportPdf(projectId).catch(() => null)
     if (blob) download(blob, 'pdf')
+  }
+
+  const reportPdf = async () => {
+    const blob = await taskService.reportPdf(projectId).catch(() => null)
+    if (blob) download(blob, 'pdf', `${project?.name ?? 'project'}-report`)
+  }
+
+  const reportXlsx = async () => {
+    const blob = await taskService.reportXlsx(projectId).catch(() => null)
+    if (blob) download(blob, 'xlsx', `${project?.name ?? 'project'}-report`)
   }
 
   if (notFound) {
@@ -310,6 +320,12 @@ export default function BoardPage() {
           </Button>
           <Button variant="secondary" size="sm" onClick={exportPdf}>
             {t('board.exportPdf')}
+          </Button>
+          <Button variant="accent" size="sm" onClick={reportPdf}>
+            {t('board.reportPdf')}
+          </Button>
+          <Button variant="accent" size="sm" onClick={reportXlsx}>
+            {t('board.reportXlsx')}
           </Button>
         </div>
 

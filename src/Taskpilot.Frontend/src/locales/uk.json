@@ -442,6 +442,8 @@
     "exportCsv": "Експорт CSV",
     "exportXlsx": "Експорт Excel",
     "exportPdf": "Експорт PDF",
+    "reportPdf": "Звіт PDF",
+    "reportXlsx": "Звіт Excel",
     "addPlaceholder": "Додати задачу (у Backlog)…",
     "add": "Додати",
     "edit": "Редагувати",

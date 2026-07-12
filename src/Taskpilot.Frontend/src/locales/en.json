@@ -442,6 +442,8 @@
     "exportCsv": "Export CSV",
     "exportXlsx": "Export Excel",
     "exportPdf": "Export PDF",
+    "reportPdf": "Report PDF",
+    "reportXlsx": "Report Excel",
     "addPlaceholder": "Add a task (goes to Backlog)…",
     "add": "Add",
     "edit": "Edit",

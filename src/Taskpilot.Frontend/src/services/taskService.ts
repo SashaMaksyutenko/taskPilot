@@ -115,4 +115,18 @@ export const taskService = {
       .get(`/api/projects/${projectId}/tasks/export/pdf`, { responseType: 'blob' })
       .then((r) => r.data as Blob)
   },
+
+  /** Downloads the analytical project report as a PDF blob. */
+  reportPdf(projectId: string): Promise<Blob> {
+    return api
+      .get(`/api/projects/${projectId}/report/pdf`, { responseType: 'blob' })
+      .then((r) => r.data as Blob)
+  },
+
+  /** Downloads the analytical project report as an Excel (.xlsx) blob. */
+  reportXlsx(projectId: string): Promise<Blob> {
+    return api
+      .get(`/api/projects/${projectId}/report/xlsx`, { responseType: 'blob' })
+      .then((r) => r.data as Blob)
+  },
 }

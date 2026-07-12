@@ -17,6 +17,8 @@ export default function MessageContextMenu({
   onTogglePin,
   onCopyLink,
   onDelete,
+  bookmarked,
+  onBookmark,
 }: {
   children: ReactNode
   content: string
@@ -27,6 +29,8 @@ export default function MessageContextMenu({
   onTogglePin: () => void
   onCopyLink: () => void
   onDelete: () => void
+  bookmarked?: boolean
+  onBookmark?: () => void
 }) {
   const { t } = useTranslation()
 
@@ -48,6 +52,11 @@ export default function MessageContextMenu({
           <ContextMenu.Item className={itemClass} onSelect={onCopyLink}>
             {t('chat.copyLink')}
           </ContextMenu.Item>
+          {onBookmark && (
+            <ContextMenu.Item className={itemClass} onSelect={onBookmark}>
+              {bookmarked ? t('bookmarks.remove') : t('bookmarks.add')}
+            </ContextMenu.Item>
+          )}
           {canEdit && onEdit && (
             <ContextMenu.Item className={itemClass} onSelect={onEdit}>
               {t('chat.edit')}

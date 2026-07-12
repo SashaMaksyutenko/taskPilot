@@ -18,6 +18,7 @@ import { apiErrorMessage } from '../lib/apiError'
 import { createChatConnection } from '../lib/chatHub'
 import { chatService } from '../services/chatService'
 import { gifService, isGifMessage, type Gif } from '../services/gifService'
+import { bookmarkService } from '../services/bookmarkService'
 import { notify } from '../lib/toast'
 import { fileService } from '../services/fileService'
 import { userService, type UserSearchResult } from '../services/userService'
@@ -323,6 +324,35 @@ export default function ChatPage() {
     await chatService.sendMessage(selectedId, gif.url).catch(() => {})
   }
 
+  // Bookmarked message ids (for the context-menu label).
+  const [bookmarkedMsgIds, setBookmarkedMsgIds] = useState<Set<string>>(new Set())
+  useEffect(() => {
+    bookmarkService
+      .getMine()
+      .then((bs) => setBookmarkedMsgIds(new Set(bs.filter((b) => b.type === 'Message').map((b) => b.entityId))))
+      .catch(() => {})
+  }, [])
+
+  const toggleMessageBookmark = async (m: Message) => {
+    // A readable title: the text (or "GIF"/file name for non-text messages).
+    const title = m.content && !isGifMessage(m.content)
+      ? m.content.slice(0, 80)
+      : isGifMessage(m.content)
+        ? 'GIF'
+        : m.fileName || m.senderName
+    const now = await bookmarkService
+      .toggle({ type: 'Message', entityId: m.id, title, link: `/chat?c=${m.conversationId}&m=${m.id}` })
+      .catch(() => null)
+    if (now === null) return
+    setBookmarkedMsgIds((prev) => {
+      const next = new Set(prev)
+      if (now) next.add(m.id)
+      else next.delete(m.id)
+      return next
+    })
+    notify.success(now ? t('bookmarks.added') : t('bookmarks.removed'))
+  }
+
   // Download an attachment (authenticated) and trigger a save dialog.
   const downloadAttachment = async (fileId: string, fileName: string) => {
     const blob = await fileService.download(fileId).catch(() => null)
@@ -585,6 +615,8 @@ export default function ChatPage() {
                         onTogglePin={() => togglePin(m.id)}
                         onCopyLink={() => copyMessageLink(m)}
                         onDelete={() => deleteMessage(m.id)}
+                        bookmarked={bookmarkedMsgIds.has(m.id)}
+                        onBookmark={() => toggleMessageBookmark(m)}
                       >
                         <div
                           className={cn(

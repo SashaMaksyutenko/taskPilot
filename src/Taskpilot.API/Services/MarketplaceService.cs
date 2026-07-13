@@ -251,6 +251,16 @@ public class MarketplaceService : IMarketplaceService
                 : $"Your application to \"{task.Title}\" was rejected.",
             $"/marketplace/{task.Id}");
 
+        if (accept)
+            await _webhooks.DispatchAsync(WebhookEvents.MarketplaceApplicationAccepted, new
+            {
+                taskId = task.Id,
+                title = task.Title,
+                posterId = task.PosterId,
+                applicantId = application.ApplicantId,
+                applicationId = application.Id,
+            });
+
         return Result.Ok();
     }
 

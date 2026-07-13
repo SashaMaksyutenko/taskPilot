@@ -20,6 +20,7 @@ public class AuthService : IAuthService
     private readonly IGoogleAuthClient _googleClient;
     private readonly IGitHubAuthClient _gitHubClient;
     private readonly ILinkedInAuthClient _linkedInClient;
+    private readonly IWebhookService _webhooks;
     private readonly JwtSettings _jwtSettings;
     private readonly ILogger<AuthService> _logger;
 
@@ -36,6 +37,7 @@ public class AuthService : IAuthService
         IGoogleAuthClient googleClient,
         IGitHubAuthClient gitHubClient,
         ILinkedInAuthClient linkedInClient,
+        IWebhookService webhooks,
         IOptions<JwtSettings> jwtOptions,
         ILogger<AuthService> logger)
     {
@@ -44,6 +46,7 @@ public class AuthService : IAuthService
         _googleClient = googleClient;
         _gitHubClient = gitHubClient;
         _linkedInClient = linkedInClient;
+        _webhooks = webhooks;
         _jwtSettings = jwtOptions.Value;
         _logger = logger;
     }
@@ -90,6 +93,14 @@ public class AuthService : IAuthService
             // Persist the user. SaveChangesAsync writes the INSERT to PostgreSQL.
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
+
+            await _webhooks.DispatchAsync(WebhookEvents.UserJoined, new
+            {
+                userId = user.Id,
+                name = user.Name,
+                email = user.Email,
+                joinedAt = user.CreatedAt,
+            });
 
             _logger.LogInformation("User registered successfully. UserId: {UserId}, Email: {Email}", user.Id, email);
             return Result<Guid>.Ok(user.Id);

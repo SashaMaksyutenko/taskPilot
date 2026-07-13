@@ -47,7 +47,8 @@ public class AuthServiceTests
         var google = googleClient ?? new Mock<IGoogleAuthClient>().Object;
         var gitHub = gitHubClient ?? new Mock<IGitHubAuthClient>().Object;
         var linkedIn = linkedInClient ?? new Mock<ILinkedInAuthClient>().Object;
-        return new AuthService(context, tokenMock.Object, google, gitHub, linkedIn, jwt, NullLogger<AuthService>.Instance);
+        var webhooks = new Mock<IWebhookService>().Object;
+        return new AuthService(context, tokenMock.Object, google, gitHub, linkedIn, webhooks, jwt, NullLogger<AuthService>.Instance);
     }
 
     /// <summary>A LinkedIn client stub that always returns the given profile.</summary>

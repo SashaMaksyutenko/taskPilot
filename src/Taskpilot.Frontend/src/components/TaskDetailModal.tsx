@@ -6,7 +6,7 @@ import MentionField, { type MentionCandidate } from './MentionField'
 import { apiErrorMessage } from '../lib/apiError'
 import { createTaskConnection } from '../lib/taskHub'
 import { projectService } from '../services/projectService'
-import { taskService } from '../services/taskService'
+import { taskService, type ExtensionRequest } from '../services/taskService'
 import { userService, type UserSearchResult } from '../services/userService'
 import type { Task, TaskComment } from '../types/project'
 
@@ -47,6 +47,38 @@ export default function TaskDetailModal({
   const [deadline, setDeadline] = useState(toDateInput(task.deadline))
   const [tags, setTags] = useState<string[]>(task.tags ?? [])
   const [tagInput, setTagInput] = useState('')
+
+  // Deadline-extension requests for this task.
+  const [extensions, setExtensions] = useState<ExtensionRequest[]>([])
+  const [extDate, setExtDate] = useState('')
+  const [extReason, setExtReason] = useState('')
+  const [extError, setExtError] = useState('')
+  useEffect(() => {
+    taskService.getExtensionRequests(task.id).then(setExtensions).catch(() => {})
+  }, [task.id])
+
+  const submitExtension = async () => {
+    setExtError('')
+    if (!extDate) return
+    try {
+      // Send an end-of-day UTC time so a plain date still lands in the future.
+      const created = await taskService.requestExtension(task.id, `${extDate}T23:59:59Z`, extReason.trim())
+      setExtensions((prev) => [created, ...prev])
+      setExtDate('')
+      setExtReason('')
+    } catch (e) {
+      setExtError(apiErrorMessage(e))
+    }
+  }
+
+  const decideExtension = async (requestId: string, approve: boolean) => {
+    const updated = await taskService.decideExtension(requestId, approve).catch(() => null)
+    if (updated) {
+      setExtensions((prev) => prev.map((x) => (x.id === requestId ? updated : x)))
+      // An approval moves the task deadline — reflect it in the editor.
+      if (approve) setDeadline(toDateInput(updated.requestedDeadline))
+    }
+  }
 
   // Subtasks (children of this task).
   const [subtasks, setSubtasks] = useState<Task[]>([])
@@ -290,6 +322,71 @@ export default function TaskDetailModal({
               className="w-full rounded-lg border border-border bg-canvas px-2 py-2 text-sm text-foreground outline-none"
             />
           </div>
+        </div>
+
+        {/* Deadline-extension requests */}
+        <label className="mb-1 block text-sm font-medium text-foreground">{t('extension.title')}</label>
+        <div className="mb-4 space-y-2">
+          {extensions.map((x) => (
+            <div key={x.id} className="rounded-lg border border-border bg-canvas px-3 py-2 text-sm">
+              <div className="flex items-center gap-2">
+                <span className="font-medium">{x.requesterName}</span>
+                <span className="text-muted">→ {new Date(x.requestedDeadline).toLocaleDateString()}</span>
+                <span
+                  className={`ml-auto rounded-full px-2 py-0.5 text-[11px] font-semibold ${
+                    x.status === 'Approved'
+                      ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300'
+                      : x.status === 'Rejected'
+                        ? 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300'
+                        : 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200'
+                  }`}
+                >
+                  {t(`extension.status.${x.status}`, x.status)}
+                </span>
+              </div>
+              {x.reason && <p className="mt-1 text-muted">{x.reason}</p>}
+              {x.canDecide && (
+                <div className="mt-2 flex gap-2">
+                  <button
+                    onClick={() => decideExtension(x.id, true)}
+                    className="rounded-lg bg-green-600 px-3 py-1 text-xs font-semibold text-white hover:bg-green-700"
+                  >
+                    {t('extension.approve')}
+                  </button>
+                  <button
+                    onClick={() => decideExtension(x.id, false)}
+                    className="rounded-lg border border-border px-3 py-1 text-xs font-semibold text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
+                  >
+                    {t('extension.reject')}
+                  </button>
+                </div>
+              )}
+            </div>
+          ))}
+
+          {/* Request form (one open request at a time; backend enforces) */}
+          <div className="flex flex-wrap items-end gap-2">
+            <input
+              type="date"
+              value={extDate}
+              onChange={(e) => setExtDate(e.target.value)}
+              className="rounded-lg border border-border bg-canvas px-2 py-1.5 text-sm text-foreground outline-none"
+            />
+            <input
+              value={extReason}
+              onChange={(e) => setExtReason(e.target.value)}
+              placeholder={t('extension.reasonPlaceholder')}
+              className="min-w-0 flex-1 rounded-lg border border-border bg-canvas px-3 py-1.5 text-sm text-foreground outline-none focus:border-primary"
+            />
+            <button
+              onClick={submitExtension}
+              disabled={!extDate}
+              className="rounded-lg bg-primary px-3 py-1.5 text-sm font-semibold text-white hover:bg-primary-hover disabled:opacity-50"
+            >
+              {t('extension.request')}
+            </button>
+          </div>
+          {extError && <p className="text-xs text-red-600">{extError}</p>}
         </div>
 
         {/* Time tracking */}

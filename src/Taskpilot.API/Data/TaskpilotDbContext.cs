@@ -90,6 +90,9 @@ public class TaskpilotDbContext : DbContext
     /// <summary>Reputation ledger: persisted history of point-affecting events.</summary>
     public DbSet<ReputationEntry> ReputationEntries => Set<ReputationEntry>();
 
+    /// <summary>Task deadline-extension requests awaiting/holding owner decisions.</summary>
+    public DbSet<TaskExtensionRequest> TaskExtensionRequests => Set<TaskExtensionRequest>();
+
     /// <summary>Comments on project tasks.</summary>
     public DbSet<TaskComment> TaskComments => Set<TaskComment>();
 
@@ -721,6 +724,35 @@ public class TaskpilotDbContext : DbContext
                   .WithMany()
                   .HasForeignKey(e => e.UserId)
                   .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // TaskExtensionRequest configuration
+        modelBuilder.Entity<TaskExtensionRequest>(entity =>
+        {
+            entity.HasKey(r => r.Id);
+
+            entity.Property(r => r.Reason).HasMaxLength(1000);
+
+            // Status stored as a readable string.
+            entity.Property(r => r.Status)
+                  .HasConversion<string>()
+                  .HasMaxLength(20)
+                  .IsRequired();
+
+            // Requests are read per task, newest first.
+            entity.HasIndex(r => new { r.TaskId, r.CreatedAt });
+
+            // Remove a task's requests with the task.
+            entity.HasOne(r => r.Task)
+                  .WithMany()
+                  .HasForeignKey(r => r.TaskId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            // Keep the requester link but don't cascade-delete requests with the user.
+            entity.HasOne(r => r.Requester)
+                  .WithMany()
+                  .HasForeignKey(r => r.RequesterId)
+                  .OnDelete(DeleteBehavior.Restrict);
         });
 
         // TaskComment entity configuration

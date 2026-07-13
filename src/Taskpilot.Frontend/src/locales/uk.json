@@ -476,6 +476,18 @@
       "Low": "Низький"
     }
   },
+  "extension": {
+    "title": "Запити на продовження дедлайну",
+    "request": "Запросити",
+    "reasonPlaceholder": "Причина (необовʼязково)",
+    "approve": "Схвалити",
+    "reject": "Відхилити",
+    "status": {
+      "Pending": "Очікує",
+      "Approved": "Схвалено",
+      "Rejected": "Відхилено"
+    }
+  },
   "taskModal": {
     "title": "Деталі задачі",
     "titleField": "Назва",

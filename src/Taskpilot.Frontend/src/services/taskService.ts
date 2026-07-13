@@ -129,4 +129,37 @@ export const taskService = {
       .get(`/api/projects/${projectId}/report/xlsx`, { responseType: 'blob' })
       .then((r) => r.data as Blob)
   },
+
+  /** Lists a task's deadline-extension requests (newest first). */
+  getExtensionRequests(taskId: string): Promise<ExtensionRequest[]> {
+    return api.get<ExtensionRequest[]>(`/api/tasks/${taskId}/extension-requests`).then((r) => r.data)
+  },
+
+  /** Raises a pending extension request for a task. */
+  requestExtension(taskId: string, requestedDeadline: string, reason: string): Promise<ExtensionRequest> {
+    return api
+      .post<ExtensionRequest>(`/api/tasks/${taskId}/extension-requests`, { requestedDeadline, reason })
+      .then((r) => r.data)
+  },
+
+  /** Approves or rejects an extension request (project owner only). */
+  decideExtension(requestId: string, approve: boolean): Promise<ExtensionRequest> {
+    return api
+      .post<ExtensionRequest>(`/api/extension-requests/${requestId}/decision`, { approve })
+      .then((r) => r.data)
+  },
+}
+
+/** A task deadline-extension request (mirrors the backend ExtensionRequestDto). */
+export interface ExtensionRequest {
+  id: string
+  taskId: string
+  requesterId: string
+  requesterName: string
+  requestedDeadline: string
+  reason: string
+  status: 'Pending' | 'Approved' | 'Rejected'
+  createdAt: string
+  decidedAt: string | null
+  canDecide: boolean
 }

@@ -283,6 +283,7 @@ builder.Services.AddScoped<INoteService, NoteService>();
 builder.Services.AddScoped<IBookmarkService, BookmarkService>();
 builder.Services.AddScoped<IReportService, ReportService>();
 builder.Services.AddScoped<IReputationService, ReputationService>();
+builder.Services.AddScoped<IExtensionService, ExtensionService>();
 builder.Services.AddScoped<ISearchService, SearchService>();
 builder.Services.AddScoped<IOverdueService, OverdueService>();
 // Background worker that flags overdue tasks (notifications + webhooks).

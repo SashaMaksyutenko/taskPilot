@@ -476,6 +476,18 @@
       "Low": "Low"
     }
   },
+  "extension": {
+    "title": "Deadline extension requests",
+    "request": "Request",
+    "reasonPlaceholder": "Reason (optional)",
+    "approve": "Approve",
+    "reject": "Reject",
+    "status": {
+      "Pending": "Pending",
+      "Approved": "Approved",
+      "Rejected": "Rejected"
+    }
+  },
   "taskModal": {
     "title": "Task details",
     "titleField": "Title",

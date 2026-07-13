@@ -65,6 +65,12 @@ public class ProjectTask
     /// </summary>
     public DateTime? OverdueNotifiedAt { get; set; }
 
+    /// <summary>
+    /// UTC time this task was escalated (still overdue past the escalation threshold);
+    /// null until then. Prevents the escalation from firing repeatedly.
+    /// </summary>
+    public DateTime? EscalatedAt { get; set; }
+
     /// <summary>Free-form labels attached to the task (stored as a Postgres text[]).</summary>
     public List<string> Tags { get; set; } = new();
 

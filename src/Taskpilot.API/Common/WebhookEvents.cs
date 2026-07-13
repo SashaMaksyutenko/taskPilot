@@ -18,6 +18,7 @@ public static class WebhookEvents
     public const string WarningIssued = "warning.issued";
     public const string AppealResolved = "appeal.resolved";
     public const string MentionTriggered = "mention.triggered";
+    public const string EscalationTriggered = "escalation.triggered";
 
     /// <summary>All supported events (used for validation).</summary>
     public static readonly string[] All =
@@ -26,6 +27,6 @@ public static class WebhookEvents
         ProjectCreated, ProjectArchived,
         MarketplaceTaskCompleted, MarketplaceTaskPaid, MarketplaceApplicationAccepted,
         UserBanned, UserJoined,
-        CommentCreated, WarningIssued, AppealResolved, MentionTriggered,
+        CommentCreated, WarningIssued, AppealResolved, MentionTriggered, EscalationTriggered,
     };
 }

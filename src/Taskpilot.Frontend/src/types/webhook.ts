@@ -25,4 +25,5 @@ export const WEBHOOK_EVENTS = [
   'warning.issued',
   'appeal.resolved',
   'mention.triggered',
+  'escalation.triggered',
 ] as const

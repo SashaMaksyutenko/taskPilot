@@ -6,7 +6,7 @@ import StarRating from '../components/StarRating'
 import ResultState from '../components/ResultState'
 import { SkeletonDetail } from '../components/ui/Skeleton'
 import { forumService } from '../services/forumService'
-import { userService, type PublicProfile } from '../services/userService'
+import { userService, type PublicProfile, type ReputationEntry } from '../services/userService'
 import type { TopicListItem } from '../types/forum'
 
 /** Emoji per reputation badge key (labels come from i18n). */
@@ -43,6 +43,7 @@ export default function UserProfilePage() {
   const { userId = '' } = useParams()
   const [profile, setProfile] = useState<PublicProfile | null>(null)
   const [topics, setTopics] = useState<TopicListItem[]>([])
+  const [reputation, setReputation] = useState<ReputationEntry[]>([])
   const [notFound, setNotFound] = useState(false)
 
   useEffect(() => {
@@ -52,6 +53,7 @@ export default function UserProfilePage() {
       .then(setProfile)
       .catch(() => setNotFound(true))
     forumService.getTopics({ authorId: userId }).then((r) => setTopics(r.items)).catch(() => {})
+    userService.getReputationHistory(userId).then((r) => setReputation(r.entries)).catch(() => {})
   }, [userId])
 
   return (
@@ -126,6 +128,36 @@ export default function UserProfilePage() {
                   <Contact label={t('settings.github')} value={profile.github} href={profile.github ?? undefined} />
                   <Contact label={t('settings.phone')} value={profile.phone} />
                 </div>
+              </div>
+            )}
+
+            {/* Reputation history (ledger) */}
+            {reputation.length > 0 && (
+              <div className="mt-6 rounded-xl border border-border bg-surface p-6">
+                <h2 className="mb-3 font-bold">{t('reputation.history')}</h2>
+                <ul className="space-y-1">
+                  {reputation.map((e) => (
+                    <li
+                      key={e.id}
+                      className="flex items-center gap-3 rounded-lg px-3 py-1.5 text-sm hover:bg-canvas/50"
+                    >
+                      <span
+                        className={`w-12 flex-none text-right font-bold tabular-nums ${
+                          e.delta >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
+                        }`}
+                      >
+                        {e.delta > 0 ? `+${e.delta}` : e.delta}
+                      </span>
+                      <span className="min-w-0 flex-1 truncate">
+                        {t(`reputation.reason.${e.reason}`, e.reason)}
+                        {e.description && <span className="text-muted"> — {e.description}</span>}
+                      </span>
+                      <span className="flex-none text-xs text-muted">
+                        {new Date(e.createdAt).toLocaleDateString()}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
               </div>
             )}
 

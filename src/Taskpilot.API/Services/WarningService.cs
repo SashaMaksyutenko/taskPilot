@@ -20,6 +20,7 @@ public class WarningService : IWarningService
     private readonly IAuditService _audit;
     private readonly IAdminService _admin;
     private readonly IWebhookService _webhooks;
+    private readonly IReputationService _reputation;
     private readonly ILogger<WarningService> _logger;
 
     public WarningService(
@@ -28,6 +29,7 @@ public class WarningService : IWarningService
         IAuditService audit,
         IAdminService admin,
         IWebhookService webhooks,
+        IReputationService reputation,
         ILogger<WarningService> logger)
     {
         _context = context;
@@ -35,6 +37,7 @@ public class WarningService : IWarningService
         _audit = audit;
         _admin = admin;
         _webhooks = webhooks;
+        _reputation = reputation;
         _logger = logger;
     }
 
@@ -87,6 +90,9 @@ public class WarningService : IWarningService
             reason,
             count,
         });
+
+        // Deduct reputation for the warning (recorded in the ledger history).
+        await _reputation.RecordAsync(targetUserId, -5, ReputationReason.WarningIssued, reason, warning.Id);
 
         // Escalate: auto-ban once the user reaches the threshold (if still active).
         var autoBanned = false;

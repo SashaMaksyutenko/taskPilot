@@ -19,6 +19,7 @@ public class MarketplaceService : IMarketplaceService
     private readonly IWebhookService _webhooks;
     private readonly IPaymentClient _payments;
     private readonly IAuditService _audit;
+    private readonly IReputationService _reputation;
     private readonly ILogger<MarketplaceService> _logger;
 
     public MarketplaceService(
@@ -27,6 +28,7 @@ public class MarketplaceService : IMarketplaceService
         IWebhookService webhooks,
         IPaymentClient payments,
         IAuditService audit,
+        IReputationService reputation,
         ILogger<MarketplaceService> logger)
     {
         _context = context;
@@ -34,6 +36,7 @@ public class MarketplaceService : IMarketplaceService
         _webhooks = webhooks;
         _payments = payments;
         _audit = audit;
+        _reputation = reputation;
         _logger = logger;
     }
 
@@ -322,6 +325,10 @@ public class MarketplaceService : IMarketplaceService
             posterId = task.PosterId,
             assigneeId = task.AssigneeId,
         });
+
+        // Credit the assignee's reputation ledger for the completed marketplace task.
+        if (task.AssigneeId is { } assignee)
+            await _reputation.RecordAsync(assignee, 10, ReputationReason.MarketplaceCompleted, task.Title, task.Id, once: true);
 
         _logger.LogInformation("Marketplace task approved/completed. TaskId: {TaskId}", taskId);
         return Result.Ok();

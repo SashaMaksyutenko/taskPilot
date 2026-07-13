@@ -288,11 +288,20 @@
   },
   "reputation": {
     "points": "{{count}} балів",
+    "history": "Історія репутації",
     "badge": {
       "solver": "Вирішувач проблем",
       "contributor": "Топ-контриб'ютор",
       "freelancer": "Надійний фрилансер",
       "veteran": "Ветеран"
+    },
+    "reason": {
+      "TaskEarly": "Задачу здано достроково",
+      "TaskOnTime": "Задачу здано вчасно",
+      "TaskLate": "Задачу здано із запізненням",
+      "MarketplaceCompleted": "Задачу з маркетплейсу завершено",
+      "ForumSolution": "Відповідь визнано рішенням",
+      "WarningIssued": "Отримано попередження"
     }
   },
   "auth": {

@@ -19,6 +19,7 @@ public class UsersController : BaseApiController
     private readonly IWarningService _warnings;
     private readonly IAppealService _appeals;
     private readonly IAuditService _audit;
+    private readonly IReputationService _reputation;
     private readonly IValidator<UpdateProfileDto> _updateProfileValidator;
     private readonly IValidator<ChangePasswordDto> _changePasswordValidator;
     private readonly IValidator<CreateAppealDto> _createAppealValidator;
@@ -28,6 +29,7 @@ public class UsersController : BaseApiController
         IWarningService warnings,
         IAppealService appeals,
         IAuditService audit,
+        IReputationService reputation,
         IValidator<UpdateProfileDto> updateProfileValidator,
         IValidator<ChangePasswordDto> changePasswordValidator,
         IValidator<CreateAppealDto> createAppealValidator)
@@ -36,6 +38,7 @@ public class UsersController : BaseApiController
         _warnings = warnings;
         _appeals = appeals;
         _audit = audit;
+        _reputation = reputation;
         _updateProfileValidator = updateProfileValidator;
         _changePasswordValidator = changePasswordValidator;
         _createAppealValidator = createAppealValidator;
@@ -60,6 +63,14 @@ public class UsersController : BaseApiController
         return result.Succeeded
             ? Ok(result.Value)
             : NotFound(new { error = result.Error });
+    }
+
+    /// <summary>Returns a user's reputation history (ledger entries + running total).</summary>
+    [HttpGet("{userId:guid}/reputation/history")]
+    public async Task<IActionResult> GetReputationHistory(Guid userId)
+    {
+        var history = await _reputation.GetHistoryAsync(userId);
+        return Ok(history);
     }
 
     /// <summary>Serves a user's avatar image. Public so it can be used in &lt;img&gt; tags.</summary>

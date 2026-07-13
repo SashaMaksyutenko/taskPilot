@@ -43,6 +43,21 @@ export interface PublicProfile {
   badges: string[]
 }
 
+/** One line in the reputation history. */
+export interface ReputationEntry {
+  id: string
+  delta: number
+  reason: string
+  description: string
+  createdAt: string
+}
+
+/** Reputation history plus the ledger's running total. */
+export interface ReputationHistory {
+  entries: ReputationEntry[]
+  ledgerTotal: number
+}
+
 /** REST calls for the current user's account (profile, password). */
 export const userService = {
   updateProfile(data: UpdateProfileData): Promise<User> {
@@ -57,6 +72,11 @@ export const userService = {
 
   getPublicProfile(userId: string): Promise<PublicProfile> {
     return api.get<PublicProfile>(`/api/users/${userId}`).then((r) => r.data)
+  },
+
+  /** The user's reputation history (ledger entries + running total). */
+  getReputationHistory(userId: string): Promise<ReputationHistory> {
+    return api.get<ReputationHistory>(`/api/users/${userId}/reputation/history`).then((r) => r.data)
   },
 
   changePassword(currentPassword: string, newPassword: string): Promise<void> {

@@ -20,17 +20,20 @@ public class TaskService : ITaskService
     private readonly TaskpilotDbContext _context;
     private readonly IWebhookService _webhooks;
     private readonly INotificationService _notifications;
+    private readonly IReputationService _reputation;
     private readonly ILogger<TaskService> _logger;
 
     public TaskService(
         TaskpilotDbContext context,
         IWebhookService webhooks,
         INotificationService notifications,
+        IReputationService reputation,
         ILogger<TaskService> logger)
     {
         _context = context;
         _webhooks = webhooks;
         _notifications = notifications;
+        _reputation = reputation;
         _logger = logger;
     }
 
@@ -288,6 +291,9 @@ public class TaskService : ITaskService
                     $"Task \"{task.Title}\" was completed.",
                     $"/projects/{task.ProjectId}");
             }
+
+            // Record the timeliness reputation event (early/on-time/late) once per task.
+            await _reputation.RecordTaskCompletionAsync(task);
         }
 
         _logger.LogInformation("Task status changed. TaskId: {TaskId}, Status: {Status}", taskId, parsed);

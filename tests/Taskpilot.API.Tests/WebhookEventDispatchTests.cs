@@ -57,7 +57,7 @@ public class WebhookEventDispatchTests
             .Returns(Task.CompletedTask);
 
         var svc = new MarketplaceService(ctx, notifications.Object, webhooks.Object,
-            new Mock<IPaymentClient>().Object, audit.Object, NullLogger<MarketplaceService>.Instance);
+            new Mock<IPaymentClient>().Object, audit.Object, new Mock<IReputationService>().Object, NullLogger<MarketplaceService>.Instance);
 
         var posterId = await TestDb.AddUserAsync(ctx, "Poster");
         var applicantId = await TestDb.AddUserAsync(ctx, "Applicant");
@@ -103,7 +103,7 @@ public class WebhookEventDispatchTests
             .Returns(Task.CompletedTask);
 
         var svc = new MarketplaceService(ctx, notifications.Object, webhooks.Object,
-            new Mock<IPaymentClient>().Object, audit.Object, NullLogger<MarketplaceService>.Instance);
+            new Mock<IPaymentClient>().Object, audit.Object, new Mock<IReputationService>().Object, NullLogger<MarketplaceService>.Instance);
 
         var posterId = await TestDb.AddUserAsync(ctx, "Poster");
         var applicantId = await TestDb.AddUserAsync(ctx, "Applicant");

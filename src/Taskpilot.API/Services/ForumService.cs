@@ -17,15 +17,18 @@ public class ForumService : IForumService
 {
     private readonly TaskpilotDbContext _context;
     private readonly INotificationService _notifications;
+    private readonly IReputationService _reputation;
     private readonly ILogger<ForumService> _logger;
 
     public ForumService(
         TaskpilotDbContext context,
         INotificationService notifications,
+        IReputationService reputation,
         ILogger<ForumService> logger)
     {
         _context = context;
         _notifications = notifications;
+        _reputation = reputation;
         _logger = logger;
     }
 
@@ -293,6 +296,9 @@ public class ForumService : IForumService
                 $"Your reply was accepted as the solution in \"{reply.Topic.Title}\".",
                 $"/forum/{reply.TopicId}");
         }
+
+        // Credit the reply author's reputation ledger once for this accepted solution.
+        await _reputation.RecordAsync(reply.AuthorId, 15, ReputationReason.ForumSolution, reply.Topic.Title, reply.Id, once: true);
 
         _logger.LogInformation("Solution marked. TopicId: {TopicId}, ReplyId: {ReplyId}", reply.TopicId, replyId);
         return Result.Ok();

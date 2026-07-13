@@ -87,6 +87,9 @@ public class TaskpilotDbContext : DbContext
     /// <summary>Users' bookmarks (saved shortcuts to tasks/topics/messages).</summary>
     public DbSet<Bookmark> Bookmarks => Set<Bookmark>();
 
+    /// <summary>Reputation ledger: persisted history of point-affecting events.</summary>
+    public DbSet<ReputationEntry> ReputationEntries => Set<ReputationEntry>();
+
     /// <summary>Comments on project tasks.</summary>
     public DbSet<TaskComment> TaskComments => Set<TaskComment>();
 
@@ -694,6 +697,29 @@ public class TaskpilotDbContext : DbContext
             entity.HasOne(b => b.User)
                   .WithMany()
                   .HasForeignKey(b => b.UserId)
+                  .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // ReputationEntry (ledger) configuration
+        modelBuilder.Entity<ReputationEntry>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+
+            entity.Property(e => e.Description).HasMaxLength(300);
+
+            // Store the reason as a readable string.
+            entity.Property(e => e.Reason)
+                  .HasConversion<string>()
+                  .HasMaxLength(30)
+                  .IsRequired();
+
+            // History is read per user, newest first.
+            entity.HasIndex(e => new { e.UserId, e.CreatedAt });
+
+            // Ledger is personal data: deleting the user removes their history.
+            entity.HasOne(e => e.User)
+                  .WithMany()
+                  .HasForeignKey(e => e.UserId)
                   .OnDelete(DeleteBehavior.Cascade);
         });
 

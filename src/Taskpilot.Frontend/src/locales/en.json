@@ -288,11 +288,20 @@
   },
   "reputation": {
     "points": "{{count}} pts",
+    "history": "Reputation history",
     "badge": {
       "solver": "Problem Solver",
       "contributor": "Top Contributor",
       "freelancer": "Trusted Freelancer",
       "veteran": "Veteran"
+    },
+    "reason": {
+      "TaskEarly": "Task delivered early",
+      "TaskOnTime": "Task delivered on time",
+      "TaskLate": "Task delivered late",
+      "MarketplaceCompleted": "Marketplace task completed",
+      "ForumSolution": "Reply accepted as solution",
+      "WarningIssued": "Warning received"
     }
   },
   "auth": {

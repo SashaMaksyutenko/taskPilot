@@ -101,6 +101,48 @@ public class OverdueServiceTests
     }
 
     [Fact]
+    public async Task Escalates_FiveDays_FiresLevelsOneAndTwo()
+    {
+        await using var ctx = TestDb.CreateContext();
+        var (ownerId, _, projectId) = await SeedProjectWithMemberAsync(ctx);
+        var taskId = await AddTaskAsync(ctx, projectId, ownerId, DateTime.UtcNow.AddDays(-6)); // 6 days overdue
+        var (svc, _, webhooks) = Create(ctx);
+
+        await svc.ProcessOverdueAsync();
+
+        // Both tier 1 (3d) and tier 2 (5d) fire in a single run.
+        webhooks.Verify(w => w.DispatchAsync(WebhookEvents.EscalationTriggered, It.IsAny<object>()), Times.Exactly(2));
+        var task = await ctx.ProjectTasks.FindAsync(taskId);
+        Assert.Equal(2, task!.EscalationLevel);
+    }
+
+    [Fact]
+    public async Task Escalates_SevenDays_NotifiesAdmin()
+    {
+        await using var ctx = TestDb.CreateContext();
+        var (ownerId, _, projectId) = await SeedProjectWithMemberAsync(ctx);
+        // An active admin who should receive the top-tier escalation.
+        var adminId = Guid.NewGuid();
+        ctx.Users.Add(new User
+        {
+            Id = adminId, Name = "Admin", Email = $"{adminId:N}@test.local",
+            PasswordHash = "h", Role = Role.Admin, IsActive = true,
+        });
+        await ctx.SaveChangesAsync();
+        var taskId = await AddTaskAsync(ctx, projectId, ownerId, DateTime.UtcNow.AddDays(-8)); // 8 days overdue
+        var (svc, notifications, webhooks) = Create(ctx);
+
+        await svc.ProcessOverdueAsync();
+
+        // Tiers 1, 2 and 3 all fire.
+        webhooks.Verify(w => w.DispatchAsync(WebhookEvents.EscalationTriggered, It.IsAny<object>()), Times.Exactly(3));
+        // The admin is notified at the top tier.
+        notifications.Verify(n => n.CreateAsync(adminId, NotificationType.Task, It.IsAny<string>(), It.IsAny<string?>()), Times.Once);
+        var task = await ctx.ProjectTasks.FindAsync(taskId);
+        Assert.Equal(3, task!.EscalationLevel);
+    }
+
+    [Fact]
     public async Task DoesNotEscalate_DoneTask()
     {
         await using var ctx = TestDb.CreateContext();

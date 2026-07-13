@@ -99,6 +99,7 @@ public class ExtensionService : IExtensionService
             request.Task.Deadline = request.RequestedDeadline;
             request.Task.OverdueNotifiedAt = null;
             request.Task.EscalatedAt = null;
+            request.Task.EscalationLevel = 0;
         }
 
         await _context.SaveChangesAsync();

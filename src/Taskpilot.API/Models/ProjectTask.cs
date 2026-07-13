@@ -66,10 +66,16 @@ public class ProjectTask
     public DateTime? OverdueNotifiedAt { get; set; }
 
     /// <summary>
-    /// UTC time this task was escalated (still overdue past the escalation threshold);
-    /// null until then. Prevents the escalation from firing repeatedly.
+    /// UTC time this task was last escalated (still overdue past a threshold);
+    /// null until then.
     /// </summary>
     public DateTime? EscalatedAt { get; set; }
+
+    /// <summary>
+    /// Highest escalation tier reached: 0 = none, 1 = team (3d), 2 = critical (5d),
+    /// 3 = admin (7d). Each tier only fires once; reset when the deadline is extended.
+    /// </summary>
+    public int EscalationLevel { get; set; }
 
     /// <summary>Free-form labels attached to the task (stored as a Postgres text[]).</summary>
     public List<string> Tags { get; set; } = new();

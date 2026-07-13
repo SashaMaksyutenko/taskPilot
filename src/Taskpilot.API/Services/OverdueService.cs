@@ -11,8 +11,9 @@ namespace Taskpilot.API.Services;
 /// </summary>
 public class OverdueService : IOverdueService
 {
-    // How long a task must stay overdue before it is escalated to the whole team.
-    private static readonly TimeSpan EscalationThreshold = TimeSpan.FromDays(3);
+    // Escalation tiers by days overdue: level 1 = team (3d), 2 = critical (5d), 3 = admin (7d).
+    private static readonly int[] TierDays = { 3, 5, 7 };
+    private const int MaxLevel = 3;
 
     private readonly TaskpilotDbContext _context;
     private readonly INotificationService _notifications;
@@ -76,52 +77,87 @@ public class OverdueService : IOverdueService
     }
 
     /// <summary>
-    /// Escalates tasks still overdue past <see cref="EscalationThreshold"/>: notifies the
-    /// project owner and every member, and emits the "escalation.triggered" webhook, once
-    /// per task (tracked via <see cref="ProjectTask.EscalatedAt"/>).
+    /// Escalates tasks that stay overdue, through tiers by days overdue: team (3d),
+    /// critical (5d) and admin (7d). Each tier fires exactly once (tracked via
+    /// <see cref="ProjectTask.EscalationLevel"/>), notifying the tier's audience and
+    /// emitting the "escalation.triggered" webhook with the level reached.
     /// </summary>
     private async Task EscalateAsync(DateTime now)
     {
-        var cutoff = now - EscalationThreshold;
+        var firstCutoff = now - TimeSpan.FromDays(TierDays[0]);
 
-        // Overdue beyond the threshold, not Done, and not yet escalated.
+        // Overdue past the first tier, not Done, and not yet at the top tier.
         var tasks = await _context.ProjectTasks
             .Include(t => t.Project).ThenInclude(p => p.Members)
             .Where(t => t.Deadline != null
-                        && t.Deadline < cutoff
+                        && t.Deadline < firstCutoff
                         && t.Status != ProjectTaskStatus.Done
-                        && t.EscalatedAt == null)
+                        && t.EscalationLevel < MaxLevel)
+            .ToListAsync();
+
+        if (tasks.Count == 0)
+            return;
+
+        // Admins receive the top-tier (7d) escalation.
+        var adminIds = await _context.Users
+            .Where(u => u.Role == Role.Admin && u.IsActive)
+            .Select(u => u.Id)
             .ToListAsync();
 
         foreach (var task in tasks)
         {
-            task.EscalatedAt = now;
+            var daysOverdue = (now - task.Deadline!.Value).TotalDays;
+            var target = TargetLevel(daysOverdue);
 
-            // The owner plus every collaborator on the project (distinct).
-            var recipients = task.Project.Members
-                .Select(m => m.UserId)
-                .Append(task.Project.OwnerId)
-                .Distinct();
+            // Fire each newly-reached tier in order.
+            for (var level = task.EscalationLevel + 1; level <= target; level++)
+                await FireLevelAsync(task, level, now, adminIds);
 
-            foreach (var recipientId in recipients)
-                await _notifications.CreateAsync(
-                    recipientId,
-                    NotificationType.Task,
-                    $"Escalation: \"{task.Title}\" is still overdue",
-                    $"/projects/{task.ProjectId}");
-
-            // Emit the escalation webhook so external tools can react.
-            await _webhooks.DispatchAsync(WebhookEvents.EscalationTriggered, new
+            if (target > task.EscalationLevel)
             {
-                taskId = task.Id,
-                title = task.Title,
-                projectId = task.ProjectId,
-                deadline = task.Deadline,
-                escalatedAt = now,
-            });
-
-            _logger.LogWarning("Task escalated (overdue > {Days}d). TaskId: {TaskId}",
-                EscalationThreshold.TotalDays, task.Id);
+                task.EscalationLevel = target;
+                task.EscalatedAt = now;
+            }
         }
+    }
+
+    /// <summary>The highest escalation tier a task qualifies for by days overdue.</summary>
+    private static int TargetLevel(double daysOverdue)
+    {
+        var level = 0;
+        for (var i = 0; i < TierDays.Length; i++)
+            if (daysOverdue >= TierDays[i]) level = i + 1;
+        return level;
+    }
+
+    /// <summary>Notifies the tier's audience and emits the escalation webhook for one level.</summary>
+    private async Task FireLevelAsync(ProjectTask task, int level, DateTime now, List<Guid> adminIds)
+    {
+        // Owner + members for levels 1–2; owner + admins for level 3 (admin tier).
+        var recipients = level >= 3
+            ? adminIds.Append(task.Project.OwnerId).Distinct()
+            : task.Project.Members.Select(m => m.UserId).Append(task.Project.OwnerId).Distinct();
+
+        var message = level switch
+        {
+            1 => $"Escalation: \"{task.Title}\" is {TierDays[0]}+ days overdue",
+            2 => $"Critical: \"{task.Title}\" is {TierDays[1]}+ days overdue",
+            _ => $"\"{task.Title}\" is {TierDays[2]}+ days overdue — admins notified",
+        };
+
+        foreach (var recipientId in recipients)
+            await _notifications.CreateAsync(recipientId, NotificationType.Task, message, $"/projects/{task.ProjectId}");
+
+        await _webhooks.DispatchAsync(WebhookEvents.EscalationTriggered, new
+        {
+            taskId = task.Id,
+            title = task.Title,
+            projectId = task.ProjectId,
+            deadline = task.Deadline,
+            level,
+            escalatedAt = now,
+        });
+
+        _logger.LogWarning("Task escalated to level {Level}. TaskId: {TaskId}", level, task.Id);
     }
 }

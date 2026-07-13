@@ -93,6 +93,9 @@ public class TaskpilotDbContext : DbContext
     /// <summary>Task deadline-extension requests awaiting/holding owner decisions.</summary>
     public DbSet<TaskExtensionRequest> TaskExtensionRequests => Set<TaskExtensionRequest>();
 
+    /// <summary>Users' saved search queries.</summary>
+    public DbSet<SavedSearch> SavedSearches => Set<SavedSearch>();
+
     /// <summary>Comments on project tasks.</summary>
     public DbSet<TaskComment> TaskComments => Set<TaskComment>();
 
@@ -723,6 +726,24 @@ public class TaskpilotDbContext : DbContext
             entity.HasOne(e => e.User)
                   .WithMany()
                   .HasForeignKey(e => e.UserId)
+                  .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // SavedSearch configuration
+        modelBuilder.Entity<SavedSearch>(entity =>
+        {
+            entity.HasKey(s => s.Id);
+
+            entity.Property(s => s.Name).IsRequired().HasMaxLength(100);
+            entity.Property(s => s.Query).IsRequired().HasMaxLength(200);
+
+            // Read per user, newest first.
+            entity.HasIndex(s => new { s.UserId, s.CreatedAt });
+
+            // Saved searches are personal: deleting the user removes them.
+            entity.HasOne(s => s.User)
+                  .WithMany()
+                  .HasForeignKey(s => s.UserId)
                   .OnDelete(DeleteBehavior.Cascade);
         });
 

@@ -49,7 +49,9 @@
     "topics": "Topics",
     "users": "People",
     "noResults": "No results.",
-    "hint": "Type at least 2 characters."
+    "hint": "Type at least 2 characters.",
+    "save": "Save",
+    "removeSaved": "Remove saved search"
   },
   "topbar": {
     "theme": "Toggle theme",

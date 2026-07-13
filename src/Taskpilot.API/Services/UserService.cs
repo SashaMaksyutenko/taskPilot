@@ -109,8 +109,9 @@ public class UserService : IUserService
 
     /// <summary>
     /// Computes a derived reputation score and badges from the user's existing activity
-    /// (forum solutions/votes, completed marketplace tasks, review stars). No ledger —
-    /// it is recomputed on demand so it always reflects current data.
+    /// (forum solutions/votes, completed marketplace tasks, review stars, minus a penalty
+    /// for late/overdue tasks). No ledger — it is recomputed on demand so it always
+    /// reflects current data.
     /// </summary>
     private async Task ApplyReputationAsync(PublicProfileDto dto, Guid userId, List<int> reviewStars)
     {
@@ -128,7 +129,9 @@ public class UserService : IUserService
         // Reviews above 3★ add, below 3★ subtract.
         var reviewScore = reviewStars.Sum(s => s - 3);
 
-        var points = solutions * 15 + upvotes * 2 + completedTasks * 10 + reviewScore * 3;
+        var latePenalty = await ComputeLatePenaltyAsync(userId);
+
+        var points = solutions * 15 + upvotes * 2 + completedTasks * 10 + reviewScore * 3 - latePenalty;
         dto.ReputationPoints = Math.Max(0, points);
 
         var badges = new List<string>();
@@ -138,6 +141,45 @@ public class UserService : IUserService
         if (dto.ReputationPoints >= 100) badges.Add("veteran");
         dto.Badges = badges;
     }
+
+    /// <summary>
+    /// Sums the reputation penalty for the user's late work: tasks assigned to them that
+    /// were either finished after their deadline or are still overdue. Each late task
+    /// costs points on a tier by how many days late it is (1d=−2, 3d=−5, 5d+=−10).
+    /// </summary>
+    private async Task<int> ComputeLatePenaltyAsync(Guid userId)
+    {
+        var now = DateTime.UtcNow;
+
+        // Assigned tasks with a deadline that are either done-late or still overdue.
+        var lateTasks = await _context.ProjectTasks
+            .Where(t => t.AssigneeId == userId
+                        && t.Deadline != null
+                        && ((t.Status == ProjectTaskStatus.Done && t.CompletedAt != null && t.CompletedAt > t.Deadline)
+                            || (t.Status != ProjectTaskStatus.Done && t.Deadline < now)))
+            .Select(t => new { t.Status, t.Deadline, t.CompletedAt })
+            .ToListAsync();
+
+        var penalty = 0;
+        foreach (var t in lateTasks)
+        {
+            // For a finished task measure to completion; for an unfinished one, to now.
+            var reference = t.Status == ProjectTaskStatus.Done ? t.CompletedAt!.Value : now;
+            var daysLate = (reference - t.Deadline!.Value).TotalDays;
+            penalty += LatePenalty(daysLate);
+        }
+
+        return penalty;
+    }
+
+    /// <summary>Maps how many days a task is late to a reputation penalty (tiered).</summary>
+    private static int LatePenalty(double daysLate) => daysLate switch
+    {
+        >= 5 => 10,
+        >= 3 => 5,
+        >= 1 => 2,
+        _ => 0, // less than a full day late costs nothing
+    };
 
     /// <inheritdoc />
     public async Task<Result<List<UserSearchResultDto>>> SearchUsersAsync(Guid currentUserId, string query)

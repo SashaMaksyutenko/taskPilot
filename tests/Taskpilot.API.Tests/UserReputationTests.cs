@@ -115,19 +115,36 @@ public class UserReputationTests
     }
 
     [Fact]
-    public async Task OnTimeCompletion_NoPenalty()
+    public async Task EarlyCompletion_AddsFifteen()
     {
         await using var ctx = TestDb.CreateContext();
         var user = await TestDb.AddUserAsync(ctx, "Dev");
         var poster = await TestDb.AddUserAsync(ctx, "Poster");
         var project = await TestDb.AddProjectAsync(ctx, poster);
         await AddCompletedMarketplaceTasksAsync(ctx, user, poster, 3); // 30
-        // Finished a day BEFORE the deadline → no penalty.
+        // Finished a full day BEFORE the deadline → +15.
         var deadline = DateTime.UtcNow.AddDays(-2);
         await AddProjectTaskAsync(ctx, project, user, ProjectTaskStatus.Done, deadline, deadline.AddDays(-1));
 
         var profile = await Create(ctx).GetPublicProfileAsync(user);
 
-        Assert.Equal(30, profile.Value!.ReputationPoints);
+        Assert.Equal(45, profile.Value!.ReputationPoints);
+    }
+
+    [Fact]
+    public async Task OnTimeCompletion_AddsTen()
+    {
+        await using var ctx = TestDb.CreateContext();
+        var user = await TestDb.AddUserAsync(ctx, "Dev");
+        var poster = await TestDb.AddUserAsync(ctx, "Poster");
+        var project = await TestDb.AddProjectAsync(ctx, poster);
+        await AddCompletedMarketplaceTasksAsync(ctx, user, poster, 3); // 30
+        // Finished 12 hours before the deadline (less than a full day early) → +10.
+        var deadline = DateTime.UtcNow.AddDays(-2);
+        await AddProjectTaskAsync(ctx, project, user, ProjectTaskStatus.Done, deadline, deadline.AddHours(-12));
+
+        var profile = await Create(ctx).GetPublicProfileAsync(user);
+
+        Assert.Equal(40, profile.Value!.ReputationPoints);
     }
 }

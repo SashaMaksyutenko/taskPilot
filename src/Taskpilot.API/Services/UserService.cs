@@ -129,9 +129,11 @@ public class UserService : IUserService
         // Reviews above 3★ add, below 3★ subtract.
         var reviewScore = reviewStars.Sum(s => s - 3);
 
+        var timelinessBonus = await ComputeTimelinessBonusAsync(userId);
         var latePenalty = await ComputeLatePenaltyAsync(userId);
 
-        var points = solutions * 15 + upvotes * 2 + completedTasks * 10 + reviewScore * 3 - latePenalty;
+        var points = solutions * 15 + upvotes * 2 + completedTasks * 10 + reviewScore * 3
+                     + timelinessBonus - latePenalty;
         dto.ReputationPoints = Math.Max(0, points);
 
         var badges = new List<string>();
@@ -140,6 +142,33 @@ public class UserService : IUserService
         if (completedTasks >= 3 && (dto.AverageRating ?? 0) >= 4) badges.Add("freelancer");
         if (dto.ReputationPoints >= 100) badges.Add("veteran");
         dto.Badges = badges;
+    }
+
+    /// <summary>
+    /// Sums the reputation bonus for the user's timely work: tasks assigned to them that
+    /// were finished on or before their deadline. Finishing a full day or more early is
+    /// worth +15, otherwise on-time is worth +10.
+    /// </summary>
+    private async Task<int> ComputeTimelinessBonusAsync(Guid userId)
+    {
+        // Finished tasks that met their deadline.
+        var onTimeTasks = await _context.ProjectTasks
+            .Where(t => t.AssigneeId == userId
+                        && t.Status == ProjectTaskStatus.Done
+                        && t.Deadline != null
+                        && t.CompletedAt != null
+                        && t.CompletedAt <= t.Deadline)
+            .Select(t => new { t.Deadline, t.CompletedAt })
+            .ToListAsync();
+
+        var bonus = 0;
+        foreach (var t in onTimeTasks)
+        {
+            var daysEarly = (t.Deadline!.Value - t.CompletedAt!.Value).TotalDays;
+            bonus += daysEarly >= 1 ? 15 : 10; // a full day early is worth more
+        }
+
+        return bonus;
     }
 
     /// <summary>

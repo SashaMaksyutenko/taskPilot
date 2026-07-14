@@ -10,4 +10,13 @@ public interface IReportService
 
     /// <summary>Renders a project health/performance report as an Excel workbook.</summary>
     Task<Result<byte[]>> ProjectReportXlsxAsync(Guid userId, Guid projectId);
+
+    /// <summary>
+    /// Renders a team-performance report as a PDF: per participant, their completion
+    /// rate, on-time rate, overdue count and reputation.
+    /// </summary>
+    Task<Result<byte[]>> TeamReportPdfAsync(Guid userId, Guid projectId);
+
+    /// <summary>Renders the team-performance report as an Excel workbook.</summary>
+    Task<Result<byte[]>> TeamReportXlsxAsync(Guid userId, Guid projectId);
 }

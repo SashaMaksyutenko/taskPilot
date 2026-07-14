@@ -79,6 +79,188 @@ public class ReportService : IReportService
         return new ReportData(project.Name, total, byStatus, overdue, completionPct, members);
     }
 
+    /// <summary>A participant's row in the team-performance report.</summary>
+    /// <param name="OnTimePct">Null when the member has finished no task that had a deadline.</param>
+    private sealed record TeamRow(
+        string Name,
+        int Assigned,
+        int Done,
+        int CompletionPct,
+        int? OnTimePct,
+        int Overdue,
+        int Reputation);
+
+    /// <summary>Everything the team-performance report needs.</summary>
+    private sealed record TeamReportData(string ProjectName, List<TeamRow> Rows);
+
+    /// <summary>
+    /// Loads the project's participants (owner + members) and scores each on their tasks,
+    /// plus their reputation from the persisted ledger. Null when the caller has no access.
+    /// </summary>
+    private async Task<TeamReportData?> GatherTeamAsync(Guid userId, Guid projectId)
+    {
+        var project = await _context.Projects
+            .Where(p => p.Id == projectId && (p.OwnerId == userId || p.Members.Any(m => m.UserId == userId)))
+            .Select(p => new
+            {
+                p.Name,
+                p.OwnerId,
+                MemberIds = p.Members.Select(m => m.UserId).ToList(),
+            })
+            .FirstOrDefaultAsync();
+        if (project is null)
+            return null;
+
+        // Everyone on the project, owner included, even if they hold no tasks.
+        var participantIds = project.MemberIds.Append(project.OwnerId).Distinct().ToList();
+
+        var names = await _context.Users
+            .Where(u => participantIds.Contains(u.Id))
+            .ToDictionaryAsync(u => u.Id, u => u.Name);
+
+        var tasks = await _context.ProjectTasks
+            .Where(t => t.ProjectId == projectId && t.AssigneeId != null && participantIds.Contains(t.AssigneeId!.Value))
+            .Select(t => new { AssigneeId = t.AssigneeId!.Value, t.Status, t.Deadline, t.CompletedAt })
+            .AsNoTracking()
+            .ToListAsync();
+
+        // Reputation comes straight from the ledger (sum of every recorded delta).
+        var reputation = await _context.ReputationEntries
+            .Where(e => participantIds.Contains(e.UserId))
+            .GroupBy(e => e.UserId)
+            .Select(g => new { UserId = g.Key, Total = g.Sum(e => e.Delta) })
+            .ToDictionaryAsync(x => x.UserId, x => x.Total);
+
+        var now = DateTime.UtcNow;
+        var rows = new List<TeamRow>();
+
+        foreach (var id in participantIds)
+        {
+            var mine = tasks.Where(t => t.AssigneeId == id).ToList();
+            var assigned = mine.Count;
+            var done = mine.Count(t => t.Status == ProjectTaskStatus.Done);
+            var overdue = mine.Count(t => t.Status != ProjectTaskStatus.Done && t.Deadline != null && t.Deadline < now);
+
+            // On-time rate is only meaningful over finished tasks that had a deadline.
+            var judged = mine.Where(t => t.Status == ProjectTaskStatus.Done && t.Deadline != null && t.CompletedAt != null).ToList();
+            var onTime = judged.Count(t => t.CompletedAt <= t.Deadline);
+
+            rows.Add(new TeamRow(
+                names.TryGetValue(id, out var name) ? name : "Unknown",
+                assigned,
+                done,
+                assigned > 0 ? (int)Math.Round(done * 100.0 / assigned) : 0,
+                judged.Count > 0 ? (int)Math.Round(onTime * 100.0 / judged.Count) : null,
+                overdue,
+                reputation.TryGetValue(id, out var rep) ? rep : 0));
+        }
+
+        // Strongest contributors first.
+        var ordered = rows.OrderByDescending(r => r.Done).ThenByDescending(r => r.Assigned).ToList();
+        return new TeamReportData(project.Name, ordered);
+    }
+
+    /// <inheritdoc />
+    public async Task<Result<byte[]>> TeamReportPdfAsync(Guid userId, Guid projectId)
+    {
+        var data = await GatherTeamAsync(userId, projectId);
+        if (data is null)
+            return Result<byte[]>.Fail("Project not found.");
+
+        var pdf = Document.Create(container =>
+        {
+            container.Page(page =>
+            {
+                page.Margin(30);
+                page.Size(PageSizes.A4);
+                page.DefaultTextStyle(x => x.FontSize(10));
+
+                page.Header().Column(col =>
+                {
+                    col.Item().Text($"Team performance — {data.ProjectName}").FontSize(18).Bold();
+                    col.Item().Text($"Generated {DateTime.UtcNow:u}").FontSize(8).FontColor(Colors.Grey.Medium);
+                });
+
+                page.Content().PaddingTop(12).Table(table =>
+                {
+                    table.ColumnsDefinition(c =>
+                    {
+                        c.RelativeColumn(3); // member
+                        c.RelativeColumn();  // assigned
+                        c.RelativeColumn();  // done
+                        c.RelativeColumn();  // completion %
+                        c.RelativeColumn();  // on-time %
+                        c.RelativeColumn();  // overdue
+                        c.RelativeColumn();  // reputation
+                    });
+
+                    table.Header(h =>
+                    {
+                        foreach (var head in new[] { "Member", "Assigned", "Done", "Completion", "On time", "Overdue", "Reputation" })
+                            h.Cell().Background(Colors.Grey.Lighten3).Padding(4).Text(head).Bold();
+                    });
+
+                    foreach (var r in data.Rows)
+                    {
+                        table.Cell().Padding(4).Text(r.Name);
+                        table.Cell().Padding(4).Text(r.Assigned.ToString());
+                        table.Cell().Padding(4).Text(r.Done.ToString());
+                        table.Cell().Padding(4).Text($"{r.CompletionPct}%");
+                        // An em dash when the member has finished nothing with a deadline.
+                        table.Cell().Padding(4).Text(r.OnTimePct is { } pct ? $"{pct}%" : "—");
+                        table.Cell().Padding(4).Text(r.Overdue.ToString());
+                        table.Cell().Padding(4).Text(r.Reputation.ToString());
+                    }
+                });
+            });
+        }).GeneratePdf();
+
+        _logger.LogInformation("Team report PDF generated. ProjectId: {ProjectId}, By: {UserId}", projectId, userId);
+        return Result<byte[]>.Ok(pdf);
+    }
+
+    /// <inheritdoc />
+    public async Task<Result<byte[]>> TeamReportXlsxAsync(Guid userId, Guid projectId)
+    {
+        var data = await GatherTeamAsync(userId, projectId);
+        if (data is null)
+            return Result<byte[]>.Fail("Project not found.");
+
+        using var workbook = new XLWorkbook();
+        var ws = workbook.Worksheets.Add("Team");
+
+        ws.Cell(1, 1).Value = "Project";
+        ws.Cell(1, 2).Value = data.ProjectName;
+        ws.Cell(2, 1).Value = "Generated (UTC)";
+        ws.Cell(2, 2).Value = DateTime.UtcNow.ToString("u");
+
+        string[] headers = { "Member", "Assigned", "Done", "Completion %", "On time %", "Overdue", "Reputation" };
+        const int headerRow = 4;
+        for (var c = 0; c < headers.Length; c++)
+            ws.Cell(headerRow, c + 1).Value = headers[c];
+        ws.Row(headerRow).Style.Font.Bold = true;
+
+        var row = headerRow + 1;
+        foreach (var r in data.Rows)
+        {
+            ws.Cell(row, 1).Value = r.Name;
+            ws.Cell(row, 2).Value = r.Assigned;
+            ws.Cell(row, 3).Value = r.Done;
+            ws.Cell(row, 4).Value = r.CompletionPct;
+            if (r.OnTimePct is { } pct) ws.Cell(row, 5).Value = pct;
+            else ws.Cell(row, 5).Value = "—";
+            ws.Cell(row, 6).Value = r.Overdue;
+            ws.Cell(row, 7).Value = r.Reputation;
+            row++;
+        }
+        ws.Columns().AdjustToContents();
+
+        using var stream = new MemoryStream();
+        workbook.SaveAs(stream);
+        _logger.LogInformation("Team report XLSX generated. ProjectId: {ProjectId}, By: {UserId}", projectId, userId);
+        return Result<byte[]>.Ok(stream.ToArray());
+    }
+
     /// <inheritdoc />
     public async Task<Result<byte[]>> ProjectReportPdfAsync(Guid userId, Guid projectId)
     {

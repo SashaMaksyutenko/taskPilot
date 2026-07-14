@@ -289,6 +289,23 @@ export default function BoardPage() {
     if (blob) download(blob, 'xlsx', `${project?.name ?? 'project'}-report`)
   }
 
+  const teamReportPdf = async () => {
+    const blob = await taskService.teamReportPdf(projectId).catch(() => null)
+    if (blob) download(blob, 'pdf', `${project?.name ?? 'project'}-team`)
+  }
+
+  const teamReportXlsx = async () => {
+    const blob = await taskService.teamReportXlsx(projectId).catch(() => null)
+    if (blob) download(blob, 'xlsx', `${project?.name ?? 'project'}-team`)
+  }
+
+  // The toolbar would be too crowded with four report buttons, so they live in a menu.
+  const [reportsOpen, setReportsOpen] = useState(false)
+  const runReport = (fn: () => Promise<void>) => {
+    setReportsOpen(false)
+    void fn()
+  }
+
   if (notFound) {
     return (
       <div className="mx-auto max-w-lg px-6 py-16">
@@ -321,12 +338,34 @@ export default function BoardPage() {
           <Button variant="secondary" size="sm" onClick={exportPdf}>
             {t('board.exportPdf')}
           </Button>
-          <Button variant="accent" size="sm" onClick={reportPdf}>
-            {t('board.reportPdf')}
-          </Button>
-          <Button variant="accent" size="sm" onClick={reportXlsx}>
-            {t('board.reportXlsx')}
-          </Button>
+          {/* Reports menu (project health + team performance, PDF/Excel each) */}
+          <div className="relative">
+            <Button variant="accent" size="sm" onClick={() => setReportsOpen((o) => !o)}>
+              {t('board.reports')} ▾
+            </Button>
+            {reportsOpen && (
+              <>
+                {/* Click anywhere else to close. */}
+                <div className="fixed inset-0 z-10" onClick={() => setReportsOpen(false)} />
+                <div className="absolute right-0 z-20 mt-1 w-56 overflow-hidden rounded-lg border border-border bg-surface shadow-elevated">
+                  {[
+                    { label: t('board.reportPdf'), run: reportPdf },
+                    { label: t('board.reportXlsx'), run: reportXlsx },
+                    { label: t('board.teamReportPdf'), run: teamReportPdf },
+                    { label: t('board.teamReportXlsx'), run: teamReportXlsx },
+                  ].map((item) => (
+                    <button
+                      key={item.label}
+                      onClick={() => runReport(item.run)}
+                      className="block w-full px-3 py-2 text-left text-sm hover:bg-canvas"
+                    >
+                      {item.label}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
         </div>
 
         {/* Add task (Editors and the owner only) */}

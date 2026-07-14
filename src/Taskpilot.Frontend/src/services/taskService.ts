@@ -130,6 +130,20 @@ export const taskService = {
       .then((r) => r.data as Blob)
   },
 
+  /** Downloads the team-performance report as a PDF blob. */
+  teamReportPdf(projectId: string): Promise<Blob> {
+    return api
+      .get(`/api/projects/${projectId}/report/team/pdf`, { responseType: 'blob' })
+      .then((r) => r.data as Blob)
+  },
+
+  /** Downloads the team-performance report as an Excel (.xlsx) blob. */
+  teamReportXlsx(projectId: string): Promise<Blob> {
+    return api
+      .get(`/api/projects/${projectId}/report/team/xlsx`, { responseType: 'blob' })
+      .then((r) => r.data as Blob)
+  },
+
   /** Moves only a task's deadline (calendar drag-and-drop); other fields stay. */
   reschedule(taskId: string, deadline: string | null): Promise<Task> {
     return api.post<Task>(`/api/tasks/${taskId}/reschedule`, { deadline }).then((r) => r.data)

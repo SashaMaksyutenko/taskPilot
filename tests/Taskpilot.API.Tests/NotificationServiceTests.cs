@@ -71,7 +71,7 @@ public class NotificationServiceTests
 
         // The in-app notification is stored and an email is sent to the recipient.
         Assert.Equal(1, await ctx.Notifications.CountAsync());
-        email.Verify(e => e.SendAsync("dana@example.com", "Dana", It.IsAny<string>(), It.IsAny<string>()), Times.Once);
+        email.Verify(e => e.SendAsync("dana@example.com", "Dana", It.IsAny<string>(), It.IsAny<string>(), It.IsAny<EmailAttachment?>()), Times.Once);
     }
 
     [Fact]
@@ -92,7 +92,7 @@ public class NotificationServiceTests
         await svc.CreateAsync(userId, NotificationType.Task, "You were assigned a task.", null);
 
         Assert.Equal(0, await ctx.Notifications.CountAsync());
-        email.Verify(e => e.SendAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+        email.Verify(e => e.SendAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<EmailAttachment?>()), Times.Never);
     }
 
     [Fact]
@@ -113,7 +113,7 @@ public class NotificationServiceTests
 
         // In-app notification stored; email skipped.
         Assert.Equal(1, await ctx.Notifications.CountAsync());
-        email.Verify(e => e.SendAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+        email.Verify(e => e.SendAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<EmailAttachment?>()), Times.Never);
     }
 
     [Fact]

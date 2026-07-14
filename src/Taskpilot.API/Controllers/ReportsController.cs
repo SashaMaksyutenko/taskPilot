@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Taskpilot.API.DTOs.Reports;
 using Taskpilot.API.Services;
 
 namespace Taskpilot.API.Controllers;
@@ -11,10 +12,47 @@ namespace Taskpilot.API.Controllers;
 public class ReportsController : BaseApiController
 {
     private readonly IReportService _reports;
+    private readonly IReportScheduleService _schedules;
 
-    public ReportsController(IReportService reports)
+    public ReportsController(IReportService reports, IReportScheduleService schedules)
     {
         _reports = reports;
+        _schedules = schedules;
+    }
+
+    /// <summary>Lists the current user's scheduled reports for this project.</summary>
+    [HttpGet("schedules")]
+    public async Task<IActionResult> GetSchedules(Guid projectId)
+    {
+        var userId = CurrentUserId();
+        if (userId is null) return Unauthorized();
+
+        var result = await _schedules.GetForProjectAsync(userId.Value, projectId);
+        return result.Succeeded ? Ok(result.Value) : NotFound(new { error = result.Error });
+    }
+
+    /// <summary>Schedules a recurring report email for this project.</summary>
+    [HttpPost("schedules")]
+    public async Task<IActionResult> CreateSchedule(Guid projectId, [FromBody] CreateReportScheduleDto dto)
+    {
+        var userId = CurrentUserId();
+        if (userId is null) return Unauthorized();
+
+        var result = await _schedules.CreateAsync(userId.Value, projectId, dto);
+        return result.Succeeded
+            ? StatusCode(StatusCodes.Status201Created, result.Value)
+            : BadRequest(new { error = result.Error });
+    }
+
+    /// <summary>Deletes one of the current user's scheduled reports.</summary>
+    [HttpDelete("schedules/{scheduleId:guid}")]
+    public async Task<IActionResult> DeleteSchedule(Guid projectId, Guid scheduleId)
+    {
+        var userId = CurrentUserId();
+        if (userId is null) return Unauthorized();
+
+        var result = await _schedules.DeleteAsync(userId.Value, scheduleId);
+        return result.Succeeded ? NoContent() : NotFound(new { error = result.Error });
     }
 
     /// <summary>Downloads the project report as a PDF.</summary>

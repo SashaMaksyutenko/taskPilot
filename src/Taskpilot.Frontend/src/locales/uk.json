@@ -477,6 +477,17 @@
     "reportXlsx": "Проєкт — Excel",
     "teamReportPdf": "Команда — PDF",
     "teamReportXlsx": "Команда — Excel",
+    "schedule": "Розсилка на email",
+    "scheduleRemove": "Прибрати розклад",
+    "kind": {
+      "Project": "Проєкт",
+      "Team": "Команда"
+    },
+    "freq": {
+      "Daily": "Щодня",
+      "Weekly": "Щотижня",
+      "Monthly": "Щомісяця"
+    },
     "addPlaceholder": "Додати задачу (у Backlog)…",
     "add": "Додати",
     "edit": "Редагувати",

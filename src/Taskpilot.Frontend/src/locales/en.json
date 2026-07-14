@@ -477,6 +477,17 @@
     "reportXlsx": "Project — Excel",
     "teamReportPdf": "Team — PDF",
     "teamReportXlsx": "Team — Excel",
+    "schedule": "Email schedule",
+    "scheduleRemove": "Remove schedule",
+    "kind": {
+      "Project": "Project",
+      "Team": "Team"
+    },
+    "freq": {
+      "Daily": "Daily",
+      "Weekly": "Weekly",
+      "Monthly": "Monthly"
+    },
     "addPlaceholder": "Add a task (goes to Backlog)…",
     "add": "Add",
     "edit": "Edit",

@@ -24,7 +24,7 @@ public class SmtpEmailSender : IEmailSender
     public bool IsEnabled => _options.SmtpConfigured;
 
     /// <inheritdoc />
-    public async Task SendAsync(string toEmail, string toName, string subject, string htmlBody)
+    public async Task SendAsync(string toEmail, string toName, string subject, string htmlBody, EmailAttachment? attachment = null)
     {
         if (!IsEnabled)
             return; // SMTP not configured — do nothing
@@ -45,6 +45,11 @@ public class SmtpEmailSender : IEmailSender
                 IsBodyHtml = true,
             };
             mail.To.Add(new MailAddress(toEmail, toName));
+
+            // The stream must outlive SendMailAsync, so dispose it after the send.
+            using var attachmentStream = attachment is null ? null : new MemoryStream(attachment.Content);
+            if (attachment is not null)
+                mail.Attachments.Add(new Attachment(attachmentStream!, attachment.FileName, attachment.ContentType));
 
             await client.SendMailAsync(mail);
             _logger.LogInformation("Email sent to {Email} via SMTP.", toEmail);

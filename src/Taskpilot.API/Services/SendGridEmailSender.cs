@@ -24,7 +24,7 @@ public class SendGridEmailSender : IEmailSender
     public bool IsEnabled => _options.SendGridConfigured;
 
     /// <inheritdoc />
-    public async Task SendAsync(string toEmail, string toName, string subject, string htmlBody)
+    public async Task SendAsync(string toEmail, string toName, string subject, string htmlBody, EmailAttachment? attachment = null)
     {
         if (!IsEnabled)
             return; // email delivery not configured — do nothing
@@ -36,6 +36,13 @@ public class SendGridEmailSender : IEmailSender
             var to = new EmailAddress(toEmail, toName);
             // Provide a plain-text fallback derived from the subject.
             var msg = MailHelper.CreateSingleEmail(from, to, subject, subject, htmlBody);
+
+            // SendGrid takes attachment bytes base64-encoded.
+            if (attachment is not null)
+                msg.AddAttachment(
+                    attachment.FileName,
+                    Convert.ToBase64String(attachment.Content),
+                    attachment.ContentType);
 
             var response = await client.SendEmailAsync(msg);
             if ((int)response.StatusCode >= 400)

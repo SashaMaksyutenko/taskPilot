@@ -99,6 +99,9 @@ public class TaskpilotDbContext : DbContext
     /// <summary>Delivery log for outgoing webhooks (status, retries, errors).</summary>
     public DbSet<WebhookDelivery> WebhookDeliveries => Set<WebhookDelivery>();
 
+    /// <summary>Recurring report emails users have scheduled.</summary>
+    public DbSet<ReportSchedule> ReportSchedules => Set<ReportSchedule>();
+
     /// <summary>Comments on project tasks.</summary>
     public DbSet<TaskComment> TaskComments => Set<TaskComment>();
 
@@ -733,6 +736,30 @@ public class TaskpilotDbContext : DbContext
             entity.HasOne(e => e.User)
                   .WithMany()
                   .HasForeignKey(e => e.UserId)
+                  .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // ReportSchedule configuration
+        modelBuilder.Entity<ReportSchedule>(entity =>
+        {
+            entity.HasKey(s => s.Id);
+
+            // Enums stored as readable strings.
+            entity.Property(s => s.Kind).HasConversion<string>().HasMaxLength(20).IsRequired();
+            entity.Property(s => s.Format).HasConversion<string>().HasMaxLength(20).IsRequired();
+            entity.Property(s => s.Frequency).HasConversion<string>().HasMaxLength(20).IsRequired();
+
+            entity.HasIndex(s => new { s.UserId, s.ProjectId });
+
+            // A schedule is personal and project-bound: it dies with either.
+            entity.HasOne(s => s.User)
+                  .WithMany()
+                  .HasForeignKey(s => s.UserId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(s => s.Project)
+                  .WithMany()
+                  .HasForeignKey(s => s.ProjectId)
                   .OnDelete(DeleteBehavior.Cascade);
         });
 

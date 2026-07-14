@@ -144,6 +144,26 @@ export const taskService = {
       .then((r) => r.data as Blob)
   },
 
+  /** Lists the current user's scheduled report emails for a project. */
+  getReportSchedules(projectId: string): Promise<ReportSchedule[]> {
+    return api.get<ReportSchedule[]>(`/api/projects/${projectId}/report/schedules`).then((r) => r.data)
+  },
+
+  /** Schedules a recurring report email for a project. */
+  createReportSchedule(
+    projectId: string,
+    data: { kind: string; format: string; frequency: string },
+  ): Promise<ReportSchedule> {
+    return api
+      .post<ReportSchedule>(`/api/projects/${projectId}/report/schedules`, data)
+      .then((r) => r.data)
+  },
+
+  /** Deletes a scheduled report email. */
+  deleteReportSchedule(projectId: string, scheduleId: string): Promise<void> {
+    return api.delete(`/api/projects/${projectId}/report/schedules/${scheduleId}`).then(() => undefined)
+  },
+
   /** Moves only a task's deadline (calendar drag-and-drop); other fields stay. */
   reschedule(taskId: string, deadline: string | null): Promise<Task> {
     return api.post<Task>(`/api/tasks/${taskId}/reschedule`, { deadline }).then((r) => r.data)
@@ -167,6 +187,17 @@ export const taskService = {
       .post<ExtensionRequest>(`/api/extension-requests/${requestId}/decision`, { approve })
       .then((r) => r.data)
   },
+}
+
+/** A recurring report email (mirrors the backend ReportScheduleDto). */
+export interface ReportSchedule {
+  id: string
+  projectId: string
+  kind: 'Project' | 'Team'
+  format: 'Pdf' | 'Xlsx'
+  frequency: 'Daily' | 'Weekly' | 'Monthly'
+  lastSentAt: string | null
+  createdAt: string
 }
 
 /** A task deadline-extension request (mirrors the backend ExtensionRequestDto). */

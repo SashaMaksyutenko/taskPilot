@@ -15,7 +15,7 @@ public class DigestServiceTests
     {
         var email = new Mock<IEmailSender>();
         email.SetupGet(e => e.IsEnabled).Returns(true);
-        email.Setup(e => e.SendAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
+        email.Setup(e => e.SendAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<EmailAttachment?>()))
              .Returns(Task.CompletedTask);
         return (new DigestService(ctx, email.Object, NullLogger<DigestService>.Instance), email);
     }
@@ -56,7 +56,7 @@ public class DigestServiceTests
         var sent = await svc.SendDueDigestsAsync();
 
         Assert.Equal(1, sent);
-        email.Verify(e => e.SendAsync(It.IsAny<string>(), "Dana", It.IsAny<string>(), It.IsAny<string>()), Times.Once);
+        email.Verify(e => e.SendAsync(It.IsAny<string>(), "Dana", It.IsAny<string>(), It.IsAny<string>(), It.IsAny<EmailAttachment?>()), Times.Once);
         // Cadence is stamped so a second run does nothing.
         Assert.Equal(0, await svc.SendDueDigestsAsync());
     }
@@ -72,7 +72,7 @@ public class DigestServiceTests
         var sent = await svc.SendDueDigestsAsync();
 
         Assert.Equal(0, sent);
-        email.Verify(e => e.SendAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+        email.Verify(e => e.SendAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<EmailAttachment?>()), Times.Never);
         var stamped = await ctx.Users.Where(u => u.Id == user).Select(u => u.LastDigestSentAt).FirstAsync();
         Assert.NotNull(stamped);
     }
@@ -88,7 +88,7 @@ public class DigestServiceTests
         var (svc, email) = Create(ctx);
 
         Assert.Equal(0, await svc.SendDueDigestsAsync());
-        email.Verify(e => e.SendAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+        email.Verify(e => e.SendAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<EmailAttachment?>()), Times.Never);
     }
 
     [Fact]
@@ -103,7 +103,7 @@ public class DigestServiceTests
         var (svc, email) = Create(ctx);
 
         Assert.Equal(0, await svc.SendDueDigestsAsync());
-        email.Verify(e => e.SendAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+        email.Verify(e => e.SendAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<EmailAttachment?>()), Times.Never);
     }
 
     [Fact]

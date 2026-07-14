@@ -13,7 +13,8 @@ import ResultState from '../components/ResultState'
 import { bookmarkService } from '../services/bookmarkService'
 import { useAppSelector } from '../store/hooks'
 import { projectService } from '../services/projectService'
-import { taskService } from '../services/taskService'
+import { apiErrorMessage } from '../lib/apiError'
+import { taskService, type ReportSchedule } from '../services/taskService'
 import { notify } from '../lib/toast'
 import { STATUS_COLUMNS, type Project, type Task, type TaskStatus } from '../types/project'
 
@@ -306,6 +307,37 @@ export default function BoardPage() {
     void fn()
   }
 
+  // Recurring report emails for this project (loaded when the menu opens).
+  const [schedules, setSchedules] = useState<ReportSchedule[]>([])
+  const [schedKind, setSchedKind] = useState('Project')
+  const [schedFormat, setSchedFormat] = useState('Pdf')
+  const [schedFreq, setSchedFreq] = useState('Weekly')
+  const [schedError, setSchedError] = useState('')
+
+  useEffect(() => {
+    if (!reportsOpen) return
+    taskService.getReportSchedules(projectId).then(setSchedules).catch(() => {})
+  }, [reportsOpen, projectId])
+
+  const addSchedule = async () => {
+    setSchedError('')
+    try {
+      const created = await taskService.createReportSchedule(projectId, {
+        kind: schedKind,
+        format: schedFormat,
+        frequency: schedFreq,
+      })
+      setSchedules((prev) => [created, ...prev])
+    } catch (e) {
+      setSchedError(apiErrorMessage(e))
+    }
+  }
+
+  const removeSchedule = async (id: string) => {
+    await taskService.deleteReportSchedule(projectId, id).catch(() => {})
+    setSchedules((prev) => prev.filter((s) => s.id !== id))
+  }
+
   if (notFound) {
     return (
       <div className="mx-auto max-w-lg px-6 py-16">
@@ -347,7 +379,8 @@ export default function BoardPage() {
               <>
                 {/* Click anywhere else to close. */}
                 <div className="fixed inset-0 z-10" onClick={() => setReportsOpen(false)} />
-                <div className="absolute right-0 z-20 mt-1 w-56 overflow-hidden rounded-lg border border-border bg-surface shadow-elevated">
+                <div className="absolute right-0 z-20 mt-1 w-80 overflow-hidden rounded-lg border border-border bg-surface shadow-elevated">
+                  {/* Download now */}
                   {[
                     { label: t('board.reportPdf'), run: reportPdf },
                     { label: t('board.reportXlsx'), run: reportXlsx },
@@ -362,6 +395,68 @@ export default function BoardPage() {
                       {item.label}
                     </button>
                   ))}
+
+                  {/* Recurring report emails */}
+                  <div className="border-t border-border p-3">
+                    <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted">
+                      {t('board.schedule')}
+                    </p>
+
+                    {schedules.length > 0 && (
+                      <ul className="mb-2 space-y-1">
+                        {schedules.map((s) => (
+                          <li key={s.id} className="flex items-center gap-2 text-xs">
+                            <span className="min-w-0 flex-1 truncate">
+                              {t(`board.kind.${s.kind}`, s.kind)} · {s.format} ·{' '}
+                              {t(`board.freq.${s.frequency}`, s.frequency)}
+                            </span>
+                            <button
+                              onClick={() => removeSchedule(s.id)}
+                              className="flex-none text-muted hover:text-red-600"
+                              title={t('board.scheduleRemove')}
+                            >
+                              ✕
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+
+                    <div className="flex gap-1">
+                      <select
+                        value={schedKind}
+                        onChange={(e) => setSchedKind(e.target.value)}
+                        className="min-w-0 flex-1 rounded border border-border bg-canvas px-1 py-1 text-xs"
+                      >
+                        <option value="Project">{t('board.kind.Project')}</option>
+                        <option value="Team">{t('board.kind.Team')}</option>
+                      </select>
+                      <select
+                        value={schedFormat}
+                        onChange={(e) => setSchedFormat(e.target.value)}
+                        className="rounded border border-border bg-canvas px-1 py-1 text-xs"
+                      >
+                        <option value="Pdf">PDF</option>
+                        <option value="Xlsx">Excel</option>
+                      </select>
+                      <select
+                        value={schedFreq}
+                        onChange={(e) => setSchedFreq(e.target.value)}
+                        className="min-w-0 flex-1 rounded border border-border bg-canvas px-1 py-1 text-xs"
+                      >
+                        <option value="Daily">{t('board.freq.Daily')}</option>
+                        <option value="Weekly">{t('board.freq.Weekly')}</option>
+                        <option value="Monthly">{t('board.freq.Monthly')}</option>
+                      </select>
+                      <button
+                        onClick={addSchedule}
+                        className="flex-none rounded bg-primary px-2 py-1 text-xs font-semibold text-white hover:bg-primary-hover"
+                      >
+                        +
+                      </button>
+                    </div>
+                    {schedError && <p className="mt-1 text-xs text-red-600">{schedError}</p>}
+                  </div>
                 </div>
               </>
             )}

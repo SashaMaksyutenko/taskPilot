@@ -22,7 +22,7 @@ public class PasswordResetServiceTests
     {
         var email = new Mock<IEmailSender>();
         email.SetupGet(e => e.IsEnabled).Returns(true);
-        email.Setup(e => e.SendAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
+        email.Setup(e => e.SendAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<EmailAttachment?>()))
              .Returns(Task.CompletedTask);
         var opts = Options.Create(new EmailOptions { FrontendBaseUrl = "http://localhost:5173" });
         return (new PasswordResetService(ctx, email.Object, opts, NullLogger<PasswordResetService>.Instance), email);
@@ -63,7 +63,7 @@ public class PasswordResetServiceTests
         await svc.RequestResetAsync("Dana@Example.com"); // case-insensitive
 
         Assert.Equal(1, await ctx.PasswordResetTokens.CountAsync());
-        email.Verify(e => e.SendAsync("dana@example.com", It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()), Times.Once);
+        email.Verify(e => e.SendAsync("dana@example.com", It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<EmailAttachment?>()), Times.Once);
     }
 
     [Fact]
@@ -75,7 +75,7 @@ public class PasswordResetServiceTests
         await svc.RequestResetAsync("nobody@example.com");
 
         Assert.Equal(0, await ctx.PasswordResetTokens.CountAsync());
-        email.Verify(e => e.SendAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+        email.Verify(e => e.SendAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<EmailAttachment?>()), Times.Never);
     }
 
     [Fact]

@@ -41,6 +41,10 @@
     "error": "The assistant could not answer right now.",
     "disabled": "The AI assistant is not configured on the server."
   },
+  "files": {
+    "shareLink": "Share link",
+    "linkCopied": "Copied!"
+  },
   "search": {
     "title": "Search",
     "placeholder": "Search projects, tasks, topics, people…",

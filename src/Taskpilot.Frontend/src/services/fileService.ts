@@ -34,4 +34,17 @@ export const fileService = {
   download(id: string): Promise<Blob> {
     return api.get(`/api/files/${id}`, { responseType: 'blob' }).then((r) => r.data as Blob)
   },
+
+  /**
+   * Creates (or returns) a public share link for a file — uploader only. Anyone with
+   * the URL can download it without signing in.
+   */
+  share(id: string): Promise<{ token: string; url: string }> {
+    return api.post<{ token: string; url: string }>(`/api/files/${id}/share`).then((r) => r.data)
+  },
+
+  /** Revokes a file's public share link. */
+  revokeShare(id: string): Promise<void> {
+    return api.delete(`/api/files/${id}/share`).then(() => undefined)
+  },
 }

@@ -1,3 +1,4 @@
+using System.Security.Cryptography;
 using Microsoft.EntityFrameworkCore;
 using Taskpilot.API.Common;
 using Taskpilot.API.Data;
@@ -101,4 +102,71 @@ public class FileService : IFileService
 
         return Result<FileDownload>.Ok(new FileDownload(fullPath, file.ContentType, file.FileName));
     }
+
+    /// <inheritdoc />
+    public async Task<Result<string>> CreateShareTokenAsync(Guid fileId, Guid userId)
+    {
+        var file = await _context.FileAttachments.FirstOrDefaultAsync(f => f.Id == fileId);
+        if (file is null)
+            return Result<string>.Fail("File not found.");
+
+        // Only the person who uploaded the file may expose it publicly.
+        if (file.UploaderId != userId)
+            return Result<string>.Fail("Only the uploader can share this file.");
+
+        // Sharing again returns the same link rather than rotating it.
+        if (string.IsNullOrEmpty(file.ShareToken))
+        {
+            file.ShareToken = GenerateToken();
+            file.SharedAt = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
+            _logger.LogInformation("File share link created. FileId: {FileId}, By: {UserId}", fileId, userId);
+        }
+
+        return Result<string>.Ok(file.ShareToken!);
+    }
+
+    /// <inheritdoc />
+    public async Task<Result> RevokeShareAsync(Guid fileId, Guid userId)
+    {
+        var file = await _context.FileAttachments.FirstOrDefaultAsync(f => f.Id == fileId);
+        if (file is null)
+            return Result.Fail("File not found.");
+
+        if (file.UploaderId != userId)
+            return Result.Fail("Only the uploader can revoke this share link.");
+
+        file.ShareToken = null;
+        file.SharedAt = null;
+        await _context.SaveChangesAsync();
+
+        _logger.LogInformation("File share link revoked. FileId: {FileId}, By: {UserId}", fileId, userId);
+        return Result.Ok();
+    }
+
+    /// <inheritdoc />
+    public async Task<Result<FileDownload>> GetForDownloadByTokenAsync(string token)
+    {
+        if (string.IsNullOrWhiteSpace(token))
+            return Result<FileDownload>.Fail("File not found.");
+
+        var file = await _context.FileAttachments
+            .AsNoTracking()
+            .FirstOrDefaultAsync(f => f.ShareToken == token);
+        if (file is null)
+            return Result<FileDownload>.Fail("File not found.");
+
+        var fullPath = Path.Combine(_uploadsRoot, file.StoredName);
+        if (!File.Exists(fullPath))
+        {
+            _logger.LogWarning("Shared file metadata exists but bytes are missing. FileId: {FileId}", file.Id);
+            return Result<FileDownload>.Fail("File not found.");
+        }
+
+        return Result<FileDownload>.Ok(new FileDownload(fullPath, file.ContentType, file.FileName));
+    }
+
+    /// <summary>Generates an unguessable URL-safe share token.</summary>
+    private static string GenerateToken() =>
+        Convert.ToHexString(RandomNumberGenerator.GetBytes(24)).ToLowerInvariant();
 }

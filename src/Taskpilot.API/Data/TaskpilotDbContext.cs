@@ -290,6 +290,10 @@ public class TaskpilotDbContext : DbContext
             entity.Property(f => f.StoredName).IsRequired().HasMaxLength(100);
             entity.Property(f => f.ContentType).IsRequired().HasMaxLength(150);
 
+            // Public share token: unique when set, looked up on anonymous download.
+            entity.Property(f => f.ShareToken).HasMaxLength(64);
+            entity.HasIndex(f => f.ShareToken).IsUnique();
+
             // Keep files even if the uploader is removed (restrict).
             entity.HasOne(f => f.Uploader)
                   .WithMany()

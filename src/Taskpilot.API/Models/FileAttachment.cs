@@ -29,4 +29,15 @@ public class FileAttachment
 
     /// <summary>UTC time the file was uploaded.</summary>
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+    // --- Public share link (opt-in) ---
+
+    /// <summary>
+    /// Secret token for the file's public share link; null while the file is not shared.
+    /// Anyone holding the token can download the file without signing in.
+    /// </summary>
+    public string? ShareToken { get; set; }
+
+    /// <summary>UTC time the share link was created; null while not shared.</summary>
+    public DateTime? SharedAt { get; set; }
 }

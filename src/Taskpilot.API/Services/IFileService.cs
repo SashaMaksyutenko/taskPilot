@@ -21,4 +21,16 @@ public interface IFileService
 
     /// <summary>Resolves a stored file by id for download.</summary>
     Task<Result<FileDownload>> GetForDownloadAsync(Guid id);
+
+    /// <summary>
+    /// Creates (or returns the existing) public share token for a file. Only the
+    /// uploader may share it. Anyone holding the token can download without signing in.
+    /// </summary>
+    Task<Result<string>> CreateShareTokenAsync(Guid fileId, Guid userId);
+
+    /// <summary>Revokes a file's share link (uploader only), invalidating the token.</summary>
+    Task<Result> RevokeShareAsync(Guid fileId, Guid userId);
+
+    /// <summary>Resolves a shared file by its token for anonymous download.</summary>
+    Task<Result<FileDownload>> GetForDownloadByTokenAsync(string token);
 }

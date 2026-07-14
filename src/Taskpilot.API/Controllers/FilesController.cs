@@ -44,4 +44,47 @@ public class FilesController : BaseApiController
         var download = result.Value!;
         return PhysicalFile(download.PhysicalPath, download.ContentType, download.FileName);
     }
+
+    /// <summary>
+    /// Creates (or returns) a public share link for a file — uploader only. Anyone with
+    /// the returned URL can download it without signing in.
+    /// </summary>
+    [HttpPost("{id:guid}/share")]
+    public async Task<IActionResult> Share(Guid id)
+    {
+        var userId = CurrentUserId();
+        if (userId is null) return Unauthorized();
+
+        var result = await _fileService.CreateShareTokenAsync(id, userId.Value);
+        if (!result.Succeeded)
+            return BadRequest(new { error = result.Error });
+
+        // Absolute URL so the client can copy it straight to the clipboard.
+        var url = $"{Request.Scheme}://{Request.Host}/api/files/shared/{result.Value}";
+        return Ok(new { token = result.Value, url });
+    }
+
+    /// <summary>Revokes a file's share link (uploader only).</summary>
+    [HttpDelete("{id:guid}/share")]
+    public async Task<IActionResult> RevokeShare(Guid id)
+    {
+        var userId = CurrentUserId();
+        if (userId is null) return Unauthorized();
+
+        var result = await _fileService.RevokeShareAsync(id, userId.Value);
+        return result.Succeeded ? NoContent() : BadRequest(new { error = result.Error });
+    }
+
+    /// <summary>Downloads a shared file by its token — no authentication required.</summary>
+    [HttpGet("shared/{token}")]
+    [AllowAnonymous]
+    public async Task<IActionResult> DownloadShared(string token)
+    {
+        var result = await _fileService.GetForDownloadByTokenAsync(token);
+        if (!result.Succeeded)
+            return NotFound(new { error = result.Error });
+
+        var download = result.Value!;
+        return PhysicalFile(download.PhysicalPath, download.ContentType, download.FileName);
+    }
 }

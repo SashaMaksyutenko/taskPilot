@@ -63,6 +63,73 @@ public class ReportServiceTests
         Assert.True(result.Value!.Length > 0);
     }
 
+    /// <summary>Adds a user with an explicit role (TestDb's helper always makes Developers).</summary>
+    private static async Task<Guid> AddUserWithRoleAsync(TaskpilotDbContext ctx, string name, Role role)
+    {
+        var id = Guid.NewGuid();
+        ctx.Users.Add(new User
+        {
+            Id = id, Name = name, Email = $"{id:N}@test.local",
+            PasswordHash = "h", Role = role, IsActive = true,
+        });
+        await ctx.SaveChangesAsync();
+        return id;
+    }
+
+    [Fact]
+    public async Task MarketplaceReport_NonAdmin_Fails()
+    {
+        await using var ctx = TestDb.CreateContext();
+        var dev = await TestDb.AddUserAsync(ctx, "Dev"); // Developer role
+
+        Assert.False((await Create(ctx).MarketplaceReportPdfAsync(dev)).Succeeded);
+        Assert.False((await Create(ctx).MarketplaceReportXlsxAsync(dev)).Succeeded);
+    }
+
+    [Fact]
+    public async Task MarketplaceReport_Admin_ProducesBothFormats()
+    {
+        await using var ctx = TestDb.CreateContext();
+        var admin = await AddUserWithRoleAsync(ctx, "Admin", Role.Admin);
+        var poster = await TestDb.AddUserAsync(ctx, "Poster");
+        var freelancer = await TestDb.AddUserAsync(ctx, "Freelancer");
+
+        // One completed & paid task, one still open.
+        var completedId = Guid.NewGuid();
+        ctx.MarketplaceTasks.Add(new MarketplaceTask
+        {
+            Id = completedId, Title = "Delivered", Description = "…", Budget = 120m,
+            Status = MarketplaceTaskStatus.Completed, PosterId = poster, AssigneeId = freelancer,
+            PaymentStatus = PaymentStatus.Paid, PaidAt = DateTime.UtcNow,
+        });
+        ctx.MarketplaceTasks.Add(new MarketplaceTask
+        {
+            Id = Guid.NewGuid(), Title = "Still open", Description = "…", Budget = 80m,
+            Status = MarketplaceTaskStatus.Open, PosterId = poster,
+        });
+        ctx.TaskApplications.Add(new TaskApplication
+        {
+            Id = Guid.NewGuid(), TaskId = completedId, ApplicantId = freelancer,
+            Status = ApplicationStatus.Accepted,
+        });
+        ctx.Reviews.Add(new Review
+        {
+            Id = Guid.NewGuid(), MarketplaceTaskId = completedId,
+            RaterId = poster, RateeId = freelancer, Stars = 5,
+        });
+        await ctx.SaveChangesAsync();
+
+        var pdf = await Create(ctx).MarketplaceReportPdfAsync(admin);
+        var xlsx = await Create(ctx).MarketplaceReportXlsxAsync(admin);
+
+        Assert.True(pdf.Succeeded);
+        Assert.True(pdf.Value!.Length > 0);
+        Assert.True(xlsx.Succeeded);
+        // The workbook is a zip archive ("PK" magic bytes).
+        Assert.Equal((byte)'P', xlsx.Value![0]);
+        Assert.Equal((byte)'K', xlsx.Value![1]);
+    }
+
     [Fact]
     public async Task TeamPdf_NonMember_Fails()
     {

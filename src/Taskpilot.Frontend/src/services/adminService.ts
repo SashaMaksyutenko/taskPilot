@@ -71,4 +71,18 @@ export const adminService = {
       .post<Appeal>(`/api/admin/appeals/${appealId}/resolve`, { approve, note })
       .then((r) => r.data)
   },
+
+  /** Downloads the organisation-wide marketplace report as a PDF blob. */
+  marketplaceReportPdf(): Promise<Blob> {
+    return api
+      .get('/api/admin/reports/marketplace/pdf', { responseType: 'blob' })
+      .then((r) => r.data as Blob)
+  },
+
+  /** Downloads the marketplace report as an Excel (.xlsx) blob. */
+  marketplaceReportXlsx(): Promise<Blob> {
+    return api
+      .get('/api/admin/reports/marketplace/xlsx', { responseType: 'blob' })
+      .then((r) => r.data as Blob)
+  },
 }

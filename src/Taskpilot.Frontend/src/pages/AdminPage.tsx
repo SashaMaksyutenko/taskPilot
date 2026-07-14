@@ -81,6 +81,22 @@ export default function AdminPage() {
   // Pending moderation appeals queue.
   const [appeals, setAppeals] = useState<Appeal[]>([])
   const loadAppeals = () => adminService.getAppeals('Pending').then(setAppeals).catch(() => {})
+
+  // Organisation-wide marketplace report (admin only, enforced server-side too).
+  const downloadMarketplaceReport = async (format: 'pdf' | 'xlsx') => {
+    const blob = await (format === 'pdf'
+      ? adminService.marketplaceReportPdf()
+      : adminService.marketplaceReportXlsx()
+    ).catch(() => null)
+    if (!blob) return
+
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `marketplace-report.${format}`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
   useEffect(() => {
     loadAppeals()
   }, [])
@@ -153,11 +169,23 @@ export default function AdminPage() {
   return (
     <>
     <div className="mx-auto max-w-5xl px-6 py-8">
-        <div className="mb-6 flex items-center gap-3">
+        <div className="mb-6 flex flex-wrap items-center gap-3">
           <h1 className="text-2xl font-bold">{t('admin.usersTitle', { count: total })}</h1>
+          <button
+            onClick={() => downloadMarketplaceReport('pdf')}
+            className="ml-auto rounded-lg border border-border px-3 py-1.5 text-sm font-semibold hover:bg-canvas"
+          >
+            {t('admin.marketReportPdf')}
+          </button>
+          <button
+            onClick={() => downloadMarketplaceReport('xlsx')}
+            className="rounded-lg border border-border px-3 py-1.5 text-sm font-semibold hover:bg-canvas"
+          >
+            {t('admin.marketReportXlsx')}
+          </button>
           <Link
             to="/admin/audit"
-            className="ml-auto rounded-lg border border-border px-3 py-1.5 text-sm font-semibold hover:bg-canvas"
+            className="rounded-lg border border-border px-3 py-1.5 text-sm font-semibold hover:bg-canvas"
           >
             {t('admin.auditLog')}
           </Link>

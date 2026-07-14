@@ -697,6 +697,8 @@
     "sortName": "Name (A–Z)",
     "sortRole": "By role",
     "auditLog": "Audit log →",
+    "marketReportPdf": "Marketplace — PDF",
+    "marketReportXlsx": "Marketplace — Excel",
     "name": "Name",
     "email": "Email",
     "role": "Role",

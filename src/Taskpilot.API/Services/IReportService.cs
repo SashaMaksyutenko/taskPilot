@@ -19,4 +19,13 @@ public interface IReportService
 
     /// <summary>Renders the team-performance report as an Excel workbook.</summary>
     Task<Result<byte[]>> TeamReportXlsxAsync(Guid userId, Guid projectId);
+
+    /// <summary>
+    /// Renders an organisation-wide marketplace report as a PDF (tasks by status,
+    /// applications, completion and payment totals, top freelancers). Admins only.
+    /// </summary>
+    Task<Result<byte[]>> MarketplaceReportPdfAsync(Guid userId);
+
+    /// <summary>Renders the marketplace report as an Excel workbook. Admins only.</summary>
+    Task<Result<byte[]>> MarketplaceReportXlsxAsync(Guid userId);
 }

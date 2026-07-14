@@ -697,6 +697,8 @@
     "sortName": "Ім'я (А–Я)",
     "sortRole": "За роллю",
     "auditLog": "Журнал аудиту →",
+    "marketReportPdf": "Маркетплейс — PDF",
+    "marketReportXlsx": "Маркетплейс — Excel",
     "name": "Ім'я",
     "email": "Пошта",
     "role": "Роль",

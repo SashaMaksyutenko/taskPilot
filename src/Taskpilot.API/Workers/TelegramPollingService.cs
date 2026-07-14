@@ -12,6 +12,12 @@ namespace Taskpilot.API.Workers;
 /// </summary>
 public class TelegramPollingService : BackgroundService
 {
+    // Back-off between failed polls: starts short, doubles up to a ceiling, and resets
+    // after the first success. Keeps an unreachable Telegram from hammering the network
+    // (and flooding the log) every few seconds.
+    private static readonly TimeSpan InitialRetryDelay = TimeSpan.FromSeconds(5);
+    private static readonly TimeSpan MaxRetryDelay = TimeSpan.FromMinutes(5);
+
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly IHttpClientFactory _httpFactory;
     private readonly TelegramOptions _options;
@@ -41,6 +47,7 @@ public class TelegramPollingService : BackgroundService
         var http = _httpFactory.CreateClient();
         http.Timeout = TimeSpan.FromSeconds(35); // longer than the long-poll timeout
         long offset = 0;
+        var retryDelay = InitialRetryDelay;
 
         while (!stoppingToken.IsCancellationRequested)
         {
@@ -50,11 +57,18 @@ public class TelegramPollingService : BackgroundService
                 var response = await http.GetAsync(url, stoppingToken);
                 if (!response.IsSuccessStatusCode)
                 {
-                    await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);
+                    // Telegram answered but rejected the call (bad token, rate limit…).
+                    _logger.LogWarning("Telegram getUpdates returned {Status}; retrying in {Delay}.",
+                        (int)response.StatusCode, retryDelay);
+                    retryDelay = await BackOffAsync(retryDelay, stoppingToken);
                     continue;
                 }
 
                 using var doc = JsonDocument.Parse(await response.Content.ReadAsStringAsync(stoppingToken));
+
+                // The call worked, so drop back to the short delay.
+                retryDelay = InitialRetryDelay;
+
                 if (!doc.RootElement.TryGetProperty("result", out var updates))
                     continue;
 
@@ -68,12 +82,29 @@ public class TelegramPollingService : BackgroundService
             {
                 break;
             }
+            catch (Exception ex) when (ex is HttpRequestException or OperationCanceledException)
+            {
+                // Telegram is unreachable (blocked, offline, timed out). Expected in some
+                // networks, so log one line without the stack trace and back off.
+                _logger.LogWarning("Telegram unreachable ({Reason}); retrying in {Delay}.",
+                    ex.Message, retryDelay);
+                retryDelay = await BackOffAsync(retryDelay, stoppingToken);
+            }
             catch (Exception ex)
             {
+                // Anything else is a real bug — keep the full stack trace.
                 _logger.LogError(ex, "Telegram polling error.");
-                await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);
+                retryDelay = await BackOffAsync(retryDelay, stoppingToken);
             }
         }
+    }
+
+    /// <summary>Waits out the current delay, then returns the next (doubled, capped) one.</summary>
+    private static async Task<TimeSpan> BackOffAsync(TimeSpan delay, CancellationToken stoppingToken)
+    {
+        await Task.Delay(delay, stoppingToken);
+        var next = delay * 2;
+        return next > MaxRetryDelay ? MaxRetryDelay : next;
     }
 
     /// <summary>Handles one update: links accounts on "/start &lt;code&gt;", replies to "/help".</summary>

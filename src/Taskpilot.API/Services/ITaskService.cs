@@ -25,6 +25,13 @@ public interface ITaskService
     /// <summary>Moves a task to another status; sets/clears CompletedAt for Done.</summary>
     Task<Result<TaskDto>> ChangeStatusAsync(Guid userId, Guid taskId, string status);
 
+    /// <summary>
+    /// Moves only a task's deadline (e.g. dragged to another day in the calendar),
+    /// leaving every other field untouched. Clears the task's overdue/escalation flags
+    /// so it is re-evaluated against the new date.
+    /// </summary>
+    Task<Result<TaskDto>> RescheduleAsync(Guid userId, Guid taskId, DateTime? deadline);
+
     /// <summary>Changes the status of several tasks at once; returns how many were updated.</summary>
     Task<Result<int>> BulkChangeStatusAsync(Guid userId, IEnumerable<Guid> taskIds, string status);
 

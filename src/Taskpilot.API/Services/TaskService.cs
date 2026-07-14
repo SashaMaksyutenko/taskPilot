@@ -301,6 +301,37 @@ public class TaskService : ITaskService
     }
 
     /// <inheritdoc />
+    public async Task<Result<TaskDto>> RescheduleAsync(Guid userId, Guid taskId, DateTime? deadline)
+    {
+        var task = await LoadAccessibleAsync(taskId, userId);
+        if (task is null)
+            return Result<TaskDto>.Fail("Task not found.");
+        if (!await ProjectAccess.CanWriteTaskAsync(_context, taskId, userId))
+            return Result<TaskDto>.Fail("You have read-only access to this project.");
+
+        // Only the deadline moves; every other field is left as-is.
+        task.Deadline = deadline;
+        // The task must be judged against its new date, not the old one.
+        task.OverdueNotifiedAt = null;
+        task.EscalatedAt = null;
+        task.EscalationLevel = 0;
+        task.UpdatedAt = DateTime.UtcNow;
+        await _context.SaveChangesAsync();
+
+        await _webhooks.DispatchAsync(WebhookEvents.TaskUpdated, new
+        {
+            taskId = task.Id,
+            title = task.Title,
+            projectId = task.ProjectId,
+            deadline = task.Deadline,
+            updatedAt = task.UpdatedAt,
+        });
+
+        _logger.LogInformation("Task rescheduled. TaskId: {TaskId}, Deadline: {Deadline}", taskId, deadline);
+        return Result<TaskDto>.Ok(await LoadDtoAsync(task.Id));
+    }
+
+    /// <inheritdoc />
     public async Task<Result<int>> BulkChangeStatusAsync(Guid userId, IEnumerable<Guid> taskIds, string status)
     {
         // Validate the status once before touching any task.

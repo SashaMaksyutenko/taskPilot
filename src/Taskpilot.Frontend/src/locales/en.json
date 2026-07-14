@@ -530,6 +530,7 @@
     "loading": "Loading…",
     "feedCopied": "Subscription link copied",
     "feedRegenerated": "Subscription link reset — update it in your calendar app",
+    "rescheduleFailed": "Could not move the task",
     "months": ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"],
     "weekdays": ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
   },

@@ -165,6 +165,17 @@ public class TasksController : BaseApiController
         return result.Succeeded ? Ok(result.Value) : BadRequest(new { error = result.Error });
     }
 
+    /// <summary>Moves only a task's deadline (calendar drag-and-drop); other fields stay.</summary>
+    [HttpPost("api/tasks/{taskId:guid}/reschedule")]
+    public async Task<IActionResult> Reschedule(Guid taskId, [FromBody] RescheduleTaskDto dto)
+    {
+        var userId = CurrentUserId();
+        if (userId is null) return Unauthorized();
+
+        var result = await _tasks.RescheduleAsync(userId.Value, taskId, dto.Deadline);
+        return result.Succeeded ? Ok(result.Value) : BadRequest(new { error = result.Error });
+    }
+
     /// <summary>Changes the status of several tasks at once.</summary>
     [HttpPost("api/tasks/bulk/status")]
     public async Task<IActionResult> BulkStatus([FromBody] BulkStatusDto dto)

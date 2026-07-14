@@ -22,6 +22,77 @@ public class TaskServiceTests
     }
 
     [Fact]
+    public async Task Reschedule_MovesOnlyTheDeadline()
+    {
+        using var ctx = TestDb.CreateContext();
+        var owner = await TestDb.AddUserAsync(ctx);
+        var projectId = await TestDb.AddProjectAsync(ctx, owner);
+        var svc = Create(ctx);
+        var created = (await svc.CreateTaskAsync(owner, projectId, new CreateTaskDto
+        {
+            Title = "Ship",
+            Description = "Keep me",
+            AssigneeId = owner,
+            Deadline = DateTime.UtcNow.AddDays(1),
+            Tags = new List<string> { "keep" },
+        })).Value!;
+
+        var newDeadline = DateTime.UtcNow.AddDays(5);
+        var result = await svc.RescheduleAsync(owner, created.Id, newDeadline);
+
+        Assert.True(result.Succeeded);
+        // Only the deadline moved — the other fields survive.
+        var task = await ctx.ProjectTasks.FirstAsync(x => x.Id == created.Id);
+        Assert.Equal(newDeadline, task.Deadline);
+        Assert.Equal("Keep me", task.Description);
+        Assert.Equal(owner, task.AssigneeId);
+        Assert.Contains("keep", task.Tags);
+    }
+
+    [Fact]
+    public async Task Reschedule_ClearsOverdueAndEscalationFlags()
+    {
+        using var ctx = TestDb.CreateContext();
+        var owner = await TestDb.AddUserAsync(ctx);
+        var projectId = await TestDb.AddProjectAsync(ctx, owner);
+        var svc = Create(ctx);
+        var created = (await svc.CreateTaskAsync(owner, projectId, new CreateTaskDto
+        {
+            Title = "Late",
+            Deadline = DateTime.UtcNow.AddDays(-9),
+        })).Value!;
+
+        // Pretend the background check already flagged and escalated it.
+        var task = await ctx.ProjectTasks.FirstAsync(x => x.Id == created.Id);
+        task.OverdueNotifiedAt = DateTime.UtcNow;
+        task.EscalatedAt = DateTime.UtcNow;
+        task.EscalationLevel = 3;
+        await ctx.SaveChangesAsync();
+
+        await svc.RescheduleAsync(owner, created.Id, DateTime.UtcNow.AddDays(7));
+
+        var moved = await ctx.ProjectTasks.FirstAsync(x => x.Id == created.Id);
+        Assert.Null(moved.OverdueNotifiedAt);
+        Assert.Null(moved.EscalatedAt);
+        Assert.Equal(0, moved.EscalationLevel);
+    }
+
+    [Fact]
+    public async Task Reschedule_NonMember_Fails()
+    {
+        using var ctx = TestDb.CreateContext();
+        var owner = await TestDb.AddUserAsync(ctx, "Owner");
+        var outsider = await TestDb.AddUserAsync(ctx, "Outsider");
+        var projectId = await TestDb.AddProjectAsync(ctx, owner);
+        var svc = Create(ctx);
+        var created = (await svc.CreateTaskAsync(owner, projectId, new CreateTaskDto { Title = "T" })).Value!;
+
+        var result = await svc.RescheduleAsync(outsider, created.Id, DateTime.UtcNow.AddDays(3));
+
+        Assert.False(result.Succeeded);
+    }
+
+    [Fact]
     public async Task CreateTask_DefaultsToBacklogAndMedium()
     {
         using var ctx = TestDb.CreateContext();

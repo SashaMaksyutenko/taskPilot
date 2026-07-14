@@ -9,6 +9,7 @@ import Input from '../components/ui/Input'
 import { cn } from '../lib/cn'
 import { notify } from '../lib/toast'
 import { calendarService } from '../services/calendarService'
+import { taskService } from '../services/taskService'
 import type { CalendarTask } from '../types/calendar'
 
 const STATUS_COLORS: Record<string, string> = {
@@ -97,6 +98,29 @@ export default function CalendarPage() {
   const isToday = (d: number) =>
     year === today.getFullYear() && month === today.getMonth() && d === today.getDate()
 
+  // Drag-and-drop reschedule: the day cell being hovered while dragging a task.
+  const [dragOverDay, setDragOverDay] = useState<number | null>(null)
+
+  const dropOnDay = async (day: number, taskId: string) => {
+    setDragOverDay(null)
+    const task = tasks.find((x) => x.id === taskId)
+    if (!task) return
+
+    const target = dateKey(year, month, day)
+    if (task.deadline.slice(0, 10) === target) return // dropped on its own day
+
+    // Keep the original time of day; only the date changes.
+    const newDeadline = `${target}T${task.deadline.slice(11) || '00:00:00Z'}`
+    // Optimistic move, rolled back if the request fails.
+    setTasks((prev) => prev.map((x) => (x.id === taskId ? { ...x, deadline: newDeadline } : x)))
+
+    const updated = await taskService.reschedule(taskId, newDeadline).catch(() => null)
+    if (!updated) {
+      setTasks((prev) => prev.map((x) => (x.id === taskId ? { ...x, deadline: task.deadline } : x)))
+      notify.error(t('calendar.rescheduleFailed'))
+    }
+  }
+
   return (
     <div className="mx-auto max-w-5xl">
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
@@ -153,9 +177,22 @@ export default function CalendarPage() {
             return (
               <div
                 key={i}
+                onDragOver={(e) => {
+                  if (!d) return
+                  e.preventDefault() // allow the drop
+                  setDragOverDay(d)
+                }}
+                onDragLeave={() => d && dragOverDay === d && setDragOverDay(null)}
+                onDrop={(e) => {
+                  if (!d) return
+                  e.preventDefault()
+                  const taskId = e.dataTransfer.getData('taskId')
+                  if (taskId) dropOnDay(d, taskId)
+                }}
                 className={cn(
-                  'min-h-28 p-2',
+                  'min-h-28 p-2 transition-colors',
                   d ? 'bg-surface' : 'bg-canvas/50',
+                  d !== null && dragOverDay === d && 'bg-primary/10 ring-2 ring-inset ring-primary',
                 )}
               >
                 {d && (
@@ -184,9 +221,11 @@ export default function CalendarPage() {
                           ]}
                         >
                           <div
+                            draggable
+                            onDragStart={(e) => e.dataTransfer.setData('taskId', task.id)}
                             title={`${task.title} · ${task.projectName} · ${t(`board.status.${task.status}`, task.status)}`}
                             className={cn(
-                              'cursor-pointer truncate rounded px-1.5 py-0.5 text-[11px] font-medium transition hover:opacity-80',
+                              'cursor-grab truncate rounded px-1.5 py-0.5 text-[11px] font-medium transition hover:opacity-80 active:cursor-grabbing',
                               STATUS_COLORS[task.status] ?? 'bg-border text-foreground',
                             )}
                             onClick={() => navigate(`/projects/${task.projectId}`)}

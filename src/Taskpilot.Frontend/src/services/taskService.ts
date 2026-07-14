@@ -130,6 +130,11 @@ export const taskService = {
       .then((r) => r.data as Blob)
   },
 
+  /** Moves only a task's deadline (calendar drag-and-drop); other fields stay. */
+  reschedule(taskId: string, deadline: string | null): Promise<Task> {
+    return api.post<Task>(`/api/tasks/${taskId}/reschedule`, { deadline }).then((r) => r.data)
+  },
+
   /** Lists a task's deadline-extension requests (newest first). */
   getExtensionRequests(taskId: string): Promise<ExtensionRequest[]> {
     return api.get<ExtensionRequest[]>(`/api/tasks/${taskId}/extension-requests`).then((r) => r.data)

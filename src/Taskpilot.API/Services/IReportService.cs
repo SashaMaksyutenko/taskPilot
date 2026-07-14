@@ -28,4 +28,19 @@ public interface IReportService
 
     /// <summary>Renders the marketplace report as an Excel workbook. Admins only.</summary>
     Task<Result<byte[]>> MarketplaceReportXlsxAsync(Guid userId);
+
+    /// <summary>Renders the audit log as a PDF (most recent entries first). Admins only.</summary>
+    Task<Result<byte[]>> AuditReportPdfAsync(Guid userId);
+
+    /// <summary>Renders the audit log as an Excel workbook. Admins only.</summary>
+    Task<Result<byte[]>> AuditReportXlsxAsync(Guid userId);
+
+    /// <summary>
+    /// Renders a user's activity report as a PDF (logins, tasks, chat, forum,
+    /// marketplace, reputation). Users may run it for themselves; admins for anyone.
+    /// </summary>
+    Task<Result<byte[]>> UserActivityReportPdfAsync(Guid callerId, Guid targetUserId);
+
+    /// <summary>Renders the user activity report as an Excel workbook.</summary>
+    Task<Result<byte[]>> UserActivityReportXlsxAsync(Guid callerId, Guid targetUserId);
 }

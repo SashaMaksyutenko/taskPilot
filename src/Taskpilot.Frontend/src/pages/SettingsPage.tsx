@@ -311,6 +311,19 @@ export default function SettingsPage() {
     URL.revokeObjectURL(url)
   }
 
+  // Personal activity report (logins, tasks, chat, forum, marketplace, reputation).
+  const downloadActivity = async (format: 'pdf' | 'xlsx') => {
+    if (!user) return
+    const blob = await userService.activityReport(user.id, format).catch(() => null)
+    if (!blob) return
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `activity-report.${format}`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
   const [warnings, setWarnings] = useState<Warning[]>([])
   const [appeals, setAppeals] = useState<Appeal[]>([])
   const [appealTarget, setAppealTarget] = useState<Warning | null>(null)
@@ -735,12 +748,26 @@ export default function SettingsPage() {
         <section className="mt-8 rounded-xl border border-border bg-surface p-6">
           <h2 className="mb-1 font-bold">{t('privacy.title')}</h2>
           <p className="mb-4 text-sm text-muted">{t('privacy.exportDesc')}</p>
-          <button
-            onClick={downloadData}
-            className="rounded-lg border border-border px-4 py-2 text-sm font-semibold hover:bg-canvas"
-          >
-            {t('privacy.export')}
-          </button>
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={downloadData}
+              className="rounded-lg border border-border px-4 py-2 text-sm font-semibold hover:bg-canvas"
+            >
+              {t('privacy.export')}
+            </button>
+            <button
+              onClick={() => downloadActivity('pdf')}
+              className="rounded-lg border border-border px-4 py-2 text-sm font-semibold hover:bg-canvas"
+            >
+              {t('privacy.activityPdf')}
+            </button>
+            <button
+              onClick={() => downloadActivity('xlsx')}
+              className="rounded-lg border border-border px-4 py-2 text-sm font-semibold hover:bg-canvas"
+            >
+              {t('privacy.activityXlsx')}
+            </button>
+          </div>
         </section>
 
         {/* Notification preferences */}

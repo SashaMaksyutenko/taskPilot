@@ -131,6 +131,84 @@ public class ReportServiceTests
     }
 
     [Fact]
+    public async Task AuditReport_NonAdmin_Fails()
+    {
+        await using var ctx = TestDb.CreateContext();
+        var dev = await TestDb.AddUserAsync(ctx, "Dev");
+
+        Assert.False((await Create(ctx).AuditReportPdfAsync(dev)).Succeeded);
+        Assert.False((await Create(ctx).AuditReportXlsxAsync(dev)).Succeeded);
+    }
+
+    [Fact]
+    public async Task AuditReport_Admin_ProducesBothFormats()
+    {
+        await using var ctx = TestDb.CreateContext();
+        var admin = await AddUserWithRoleAsync(ctx, "Admin", Role.Admin);
+        ctx.AuditLogs.Add(new AuditLog
+        {
+            Id = Guid.NewGuid(), ActorId = admin, ActorEmail = "admin@x.io",
+            Action = "auth.login.success", EntityType = "User", EntityId = admin.ToString(),
+            Details = "signed in", IpAddress = "127.0.0.1",
+        });
+        await ctx.SaveChangesAsync();
+
+        var pdf = await Create(ctx).AuditReportPdfAsync(admin);
+        var xlsx = await Create(ctx).AuditReportXlsxAsync(admin);
+
+        Assert.True(pdf.Succeeded);
+        Assert.True(pdf.Value!.Length > 0);
+        Assert.True(xlsx.Succeeded);
+        Assert.Equal((byte)'P', xlsx.Value![0]);
+        Assert.Equal((byte)'K', xlsx.Value![1]);
+    }
+
+    [Fact]
+    public async Task ActivityReport_ForSelf_IsAllowed()
+    {
+        await using var ctx = TestDb.CreateContext();
+        var user = await TestDb.AddUserAsync(ctx, "Dev");
+
+        var result = await Create(ctx).UserActivityReportPdfAsync(user, user);
+
+        Assert.True(result.Succeeded);
+        Assert.True(result.Value!.Length > 0);
+    }
+
+    [Fact]
+    public async Task ActivityReport_ForSomeoneElse_IsRefused()
+    {
+        await using var ctx = TestDb.CreateContext();
+        var me = await TestDb.AddUserAsync(ctx, "Me");
+        var other = await TestDb.AddUserAsync(ctx, "Other");
+
+        // A plain user cannot pull someone else's activity.
+        Assert.False((await Create(ctx).UserActivityReportPdfAsync(me, other)).Succeeded);
+    }
+
+    [Fact]
+    public async Task ActivityReport_AdminCanRunForAnyone_AndCountsActivity()
+    {
+        await using var ctx = TestDb.CreateContext();
+        var admin = await AddUserWithRoleAsync(ctx, "Admin", Role.Admin);
+        var target = await TestDb.AddUserAsync(ctx, "Target");
+        var project = await TestDb.AddProjectAsync(ctx, target);
+        await SeedTaskAsync(ctx, project, target, ProjectTaskStatus.Done, target);
+        ctx.ReputationEntries.Add(new ReputationEntry
+        {
+            Id = Guid.NewGuid(), UserId = target, Delta = 10,
+            Reason = ReputationReason.MarketplaceCompleted, Description = "Job",
+        });
+        await ctx.SaveChangesAsync();
+
+        var xlsx = await Create(ctx).UserActivityReportXlsxAsync(admin, target);
+
+        Assert.True(xlsx.Succeeded);
+        Assert.Equal((byte)'P', xlsx.Value![0]);
+        Assert.Equal((byte)'K', xlsx.Value![1]);
+    }
+
+    [Fact]
     public async Task TeamPdf_NonMember_Fails()
     {
         await using var ctx = TestDb.CreateContext();

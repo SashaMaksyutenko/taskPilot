@@ -79,6 +79,13 @@ export const userService = {
     return api.get<ReputationHistory>(`/api/users/${userId}/reputation/history`).then((r) => r.data)
   },
 
+  /** Downloads a user's activity report (yourself, or anyone if you're an admin). */
+  activityReport(userId: string, format: 'pdf' | 'xlsx'): Promise<Blob> {
+    return api
+      .get(`/api/users/${userId}/activity-report/${format}`, { responseType: 'blob' })
+      .then((r) => r.data as Blob)
+  },
+
   changePassword(currentPassword: string, newPassword: string): Promise<void> {
     return api
       .post('/api/users/me/change-password', { currentPassword, newPassword })

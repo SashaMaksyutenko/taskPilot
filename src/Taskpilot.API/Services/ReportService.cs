@@ -198,8 +198,7 @@ public class ReportService : IReportService
     /// </summary>
     private async Task<MarketplaceReportData?> GatherMarketplaceAsync(Guid userId)
     {
-        var isAdmin = await _context.Users.AnyAsync(u => u.Id == userId && u.Role == Role.Admin);
-        if (!isAdmin)
+        if (!await IsAdminAsync(userId))
             return null;
 
         var tasks = await _context.MarketplaceTasks
@@ -393,6 +392,287 @@ public class ReportService : IReportService
         using var stream = new MemoryStream();
         workbook.SaveAs(stream);
         _logger.LogInformation("Marketplace report XLSX generated. By: {UserId}", userId);
+        return Result<byte[]>.Ok(stream.ToArray());
+    }
+
+    // The audit log can be huge; a report caps at the most recent slice.
+    private const int AuditReportLimit = 500;
+
+    /// <summary>One audit entry in the report.</summary>
+    private sealed record AuditRow(DateTime At, string Actor, string Action, string Entity, string Details, string Ip);
+
+    /// <summary>Loads the most recent audit entries. Null when the caller is not an admin.</summary>
+    private async Task<List<AuditRow>?> GatherAuditAsync(Guid userId)
+    {
+        if (!await IsAdminAsync(userId))
+            return null;
+
+        var entries = await _context.AuditLogs
+            .OrderByDescending(a => a.CreatedAt)
+            .Take(AuditReportLimit)
+            .Select(a => new
+            {
+                a.CreatedAt,
+                a.ActorEmail,
+                a.Action,
+                a.EntityType,
+                a.EntityId,
+                a.Details,
+                a.IpAddress,
+            })
+            .AsNoTracking()
+            .ToListAsync();
+
+        return entries.Select(a => new AuditRow(
+            a.CreatedAt,
+            a.ActorEmail ?? "system",
+            a.Action,
+            // "User/3f2a…" reads better in a table than two separate columns.
+            a.EntityType is null ? "—" : $"{a.EntityType}/{Shorten(a.EntityId)}",
+            a.Details ?? string.Empty,
+            a.IpAddress ?? "—")).ToList();
+    }
+
+    /// <summary>True when the user holds the Admin role.</summary>
+    private Task<bool> IsAdminAsync(Guid userId) =>
+        _context.Users.AnyAsync(u => u.Id == userId && u.Role == Role.Admin);
+
+    /// <summary>Trims a long id to its first segment so tables stay readable.</summary>
+    private static string Shorten(string? id) =>
+        string.IsNullOrEmpty(id) ? "—" : (id.Length > 8 ? id[..8] : id);
+
+    /// <inheritdoc />
+    public async Task<Result<byte[]>> AuditReportPdfAsync(Guid userId)
+    {
+        var rows = await GatherAuditAsync(userId);
+        if (rows is null)
+            return Result<byte[]>.Fail("Only admins can run the audit report.");
+
+        var pdf = Document.Create(container =>
+        {
+            container.Page(page =>
+            {
+                page.Margin(20);
+                // Landscape: the audit table is wide.
+                page.Size(PageSizes.A4.Landscape());
+                page.DefaultTextStyle(x => x.FontSize(8));
+
+                page.Header().Column(col =>
+                {
+                    col.Item().Text("Audit log").FontSize(16).Bold();
+                    col.Item().Text($"Most recent {rows.Count} entries · generated {DateTime.UtcNow:u}")
+                        .FontSize(8).FontColor(Colors.Grey.Medium);
+                });
+
+                page.Content().PaddingTop(8).Table(table =>
+                {
+                    table.ColumnsDefinition(c =>
+                    {
+                        c.RelativeColumn(2);  // when
+                        c.RelativeColumn(2);  // actor
+                        c.RelativeColumn(2);  // action
+                        c.RelativeColumn(2);  // entity
+                        c.RelativeColumn(3);  // details
+                        c.RelativeColumn(1);  // ip
+                    });
+
+                    table.Header(h =>
+                    {
+                        foreach (var head in new[] { "When (UTC)", "Actor", "Action", "Entity", "Details", "IP" })
+                            h.Cell().Background(Colors.Grey.Lighten3).Padding(3).Text(head).Bold();
+                    });
+
+                    foreach (var r in rows)
+                    {
+                        table.Cell().Padding(3).Text($"{r.At:yyyy-MM-dd HH:mm}");
+                        table.Cell().Padding(3).Text(r.Actor);
+                        table.Cell().Padding(3).Text(r.Action);
+                        table.Cell().Padding(3).Text(r.Entity);
+                        table.Cell().Padding(3).Text(r.Details);
+                        table.Cell().Padding(3).Text(r.Ip);
+                    }
+                });
+
+                page.Footer().AlignCenter().Text(x =>
+                {
+                    x.CurrentPageNumber();
+                    x.Span(" / ");
+                    x.TotalPages();
+                });
+            });
+        }).GeneratePdf();
+
+        _logger.LogInformation("Audit report PDF generated. By: {UserId}", userId);
+        return Result<byte[]>.Ok(pdf);
+    }
+
+    /// <inheritdoc />
+    public async Task<Result<byte[]>> AuditReportXlsxAsync(Guid userId)
+    {
+        var rows = await GatherAuditAsync(userId);
+        if (rows is null)
+            return Result<byte[]>.Fail("Only admins can run the audit report.");
+
+        using var workbook = new XLWorkbook();
+        var ws = workbook.Worksheets.Add("Audit");
+
+        string[] headers = { "When (UTC)", "Actor", "Action", "Entity", "Details", "IP" };
+        for (var c = 0; c < headers.Length; c++)
+            ws.Cell(1, c + 1).Value = headers[c];
+        ws.Row(1).Style.Font.Bold = true;
+
+        var row = 2;
+        foreach (var r in rows)
+        {
+            ws.Cell(row, 1).Value = r.At.ToString("yyyy-MM-dd HH:mm:ss");
+            ws.Cell(row, 2).Value = r.Actor;
+            ws.Cell(row, 3).Value = r.Action;
+            ws.Cell(row, 4).Value = r.Entity;
+            ws.Cell(row, 5).Value = r.Details;
+            ws.Cell(row, 6).Value = r.Ip;
+            row++;
+        }
+        ws.Columns().AdjustToContents();
+
+        using var stream = new MemoryStream();
+        workbook.SaveAs(stream);
+        _logger.LogInformation("Audit report XLSX generated. By: {UserId}", userId);
+        return Result<byte[]>.Ok(stream.ToArray());
+    }
+
+    /// <summary>Everything the user-activity report shows, as label/value pairs plus a header.</summary>
+    private sealed record ActivityData(string Name, string Email, DateTime MemberSince, List<(string Label, int Value)> Metrics);
+
+    /// <summary>
+    /// Counts a user's activity across the app. Null when the caller may not see it
+    /// (only the user themselves, or an admin).
+    /// </summary>
+    private async Task<ActivityData?> GatherActivityAsync(Guid callerId, Guid targetUserId)
+    {
+        if (callerId != targetUserId && !await IsAdminAsync(callerId))
+            return null;
+
+        var user = await _context.Users
+            .Where(u => u.Id == targetUserId)
+            .Select(u => new { u.Name, u.Email, u.CreatedAt })
+            .FirstOrDefaultAsync();
+        if (user is null)
+            return null;
+
+        var metrics = new List<(string, int)>
+        {
+            ("Successful logins", await _context.AuditLogs
+                .CountAsync(a => a.ActorId == targetUserId && a.Action == "auth.login.success")),
+            ("Tasks assigned", await _context.ProjectTasks
+                .CountAsync(t => t.AssigneeId == targetUserId)),
+            ("Tasks completed", await _context.ProjectTasks
+                .CountAsync(t => t.AssigneeId == targetUserId && t.Status == ProjectTaskStatus.Done)),
+            ("Task comments", await _context.TaskComments
+                .CountAsync(c => c.AuthorId == targetUserId)),
+            ("Chat messages", await _context.Messages
+                .CountAsync(m => m.SenderId == targetUserId)),
+            ("Forum topics", await _context.ForumTopics
+                .CountAsync(t => t.AuthorId == targetUserId)),
+            ("Forum replies", await _context.ForumReplies
+                .CountAsync(r => r.AuthorId == targetUserId)),
+            ("Accepted solutions", await _context.ForumReplies
+                .CountAsync(r => r.AuthorId == targetUserId && r.IsSolution)),
+            ("Marketplace tasks posted", await _context.MarketplaceTasks
+                .CountAsync(t => t.PosterId == targetUserId)),
+            ("Marketplace applications", await _context.TaskApplications
+                .CountAsync(a => a.ApplicantId == targetUserId)),
+            ("Marketplace tasks delivered", await _context.MarketplaceTasks
+                .CountAsync(t => t.AssigneeId == targetUserId && t.Status == MarketplaceTaskStatus.Completed)),
+            // Straight from the persisted ledger, so it matches the profile's history.
+            ("Reputation (ledger)", await _context.ReputationEntries
+                .Where(e => e.UserId == targetUserId)
+                .SumAsync(e => (int?)e.Delta) ?? 0),
+        };
+
+        return new ActivityData(user.Name, user.Email, user.CreatedAt, metrics);
+    }
+
+    /// <inheritdoc />
+    public async Task<Result<byte[]>> UserActivityReportPdfAsync(Guid callerId, Guid targetUserId)
+    {
+        var data = await GatherActivityAsync(callerId, targetUserId);
+        if (data is null)
+            return Result<byte[]>.Fail("You can only run this report for yourself.");
+
+        var pdf = Document.Create(container =>
+        {
+            container.Page(page =>
+            {
+                page.Margin(30);
+                page.Size(PageSizes.A4);
+                page.DefaultTextStyle(x => x.FontSize(10));
+
+                page.Header().Column(col =>
+                {
+                    col.Item().Text($"Activity report — {data.Name}").FontSize(18).Bold();
+                    col.Item().Text($"{data.Email} · member since {data.MemberSince:yyyy-MM-dd} · generated {DateTime.UtcNow:u}")
+                        .FontSize(8).FontColor(Colors.Grey.Medium);
+                });
+
+                page.Content().PaddingTop(12).Table(table =>
+                {
+                    table.ColumnsDefinition(c => { c.RelativeColumn(3); c.RelativeColumn(); });
+                    table.Header(h =>
+                    {
+                        h.Cell().Background(Colors.Grey.Lighten3).Padding(4).Text("Metric").Bold();
+                        h.Cell().Background(Colors.Grey.Lighten3).Padding(4).Text("Value").Bold();
+                    });
+                    foreach (var (label, value) in data.Metrics)
+                    {
+                        table.Cell().Padding(4).Text(label);
+                        table.Cell().Padding(4).Text(value.ToString());
+                    }
+                });
+            });
+        }).GeneratePdf();
+
+        _logger.LogInformation("Activity report PDF generated. TargetUserId: {TargetUserId}, By: {CallerId}",
+            targetUserId, callerId);
+        return Result<byte[]>.Ok(pdf);
+    }
+
+    /// <inheritdoc />
+    public async Task<Result<byte[]>> UserActivityReportXlsxAsync(Guid callerId, Guid targetUserId)
+    {
+        var data = await GatherActivityAsync(callerId, targetUserId);
+        if (data is null)
+            return Result<byte[]>.Fail("You can only run this report for yourself.");
+
+        using var workbook = new XLWorkbook();
+        var ws = workbook.Worksheets.Add("Activity");
+
+        ws.Cell(1, 1).Value = "User";
+        ws.Cell(1, 2).Value = data.Name;
+        ws.Cell(2, 1).Value = "Email";
+        ws.Cell(2, 2).Value = data.Email;
+        ws.Cell(3, 1).Value = "Member since";
+        ws.Cell(3, 2).Value = data.MemberSince.ToString("yyyy-MM-dd");
+        ws.Cell(4, 1).Value = "Generated (UTC)";
+        ws.Cell(4, 2).Value = DateTime.UtcNow.ToString("u");
+
+        const int headerRow = 6;
+        ws.Cell(headerRow, 1).Value = "Metric";
+        ws.Cell(headerRow, 2).Value = "Value";
+        ws.Row(headerRow).Style.Font.Bold = true;
+
+        var row = headerRow + 1;
+        foreach (var (label, value) in data.Metrics)
+        {
+            ws.Cell(row, 1).Value = label;
+            ws.Cell(row, 2).Value = value;
+            row++;
+        }
+        ws.Columns().AdjustToContents();
+
+        using var stream = new MemoryStream();
+        workbook.SaveAs(stream);
+        _logger.LogInformation("Activity report XLSX generated. TargetUserId: {TargetUserId}, By: {CallerId}",
+            targetUserId, callerId);
         return Result<byte[]>.Ok(stream.ToArray());
     }
 

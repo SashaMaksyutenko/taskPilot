@@ -20,6 +20,7 @@ public class UsersController : BaseApiController
     private readonly IAppealService _appeals;
     private readonly IAuditService _audit;
     private readonly IReputationService _reputation;
+    private readonly IReportService _reports;
     private readonly IValidator<UpdateProfileDto> _updateProfileValidator;
     private readonly IValidator<ChangePasswordDto> _changePasswordValidator;
     private readonly IValidator<CreateAppealDto> _createAppealValidator;
@@ -30,6 +31,7 @@ public class UsersController : BaseApiController
         IAppealService appeals,
         IAuditService audit,
         IReputationService reputation,
+        IReportService reports,
         IValidator<UpdateProfileDto> updateProfileValidator,
         IValidator<ChangePasswordDto> changePasswordValidator,
         IValidator<CreateAppealDto> createAppealValidator)
@@ -39,6 +41,7 @@ public class UsersController : BaseApiController
         _appeals = appeals;
         _audit = audit;
         _reputation = reputation;
+        _reports = reports;
         _updateProfileValidator = updateProfileValidator;
         _changePasswordValidator = changePasswordValidator;
         _createAppealValidator = createAppealValidator;
@@ -71,6 +74,33 @@ public class UsersController : BaseApiController
     {
         var history = await _reputation.GetHistoryAsync(userId);
         return Ok(history);
+    }
+
+    /// <summary>Downloads a user's activity report as a PDF (yourself, or anyone if admin).</summary>
+    [HttpGet("{userId:guid}/activity-report/pdf")]
+    public async Task<IActionResult> ActivityReportPdf(Guid userId)
+    {
+        var callerId = CurrentUserId();
+        if (callerId is null) return Unauthorized();
+
+        var result = await _reports.UserActivityReportPdfAsync(callerId.Value, userId);
+        if (!result.Succeeded) return Forbid();
+        return File(result.Value!, "application/pdf", $"activity-report-{userId}.pdf");
+    }
+
+    /// <summary>Downloads a user's activity report as an Excel (.xlsx) workbook.</summary>
+    [HttpGet("{userId:guid}/activity-report/xlsx")]
+    public async Task<IActionResult> ActivityReportXlsx(Guid userId)
+    {
+        var callerId = CurrentUserId();
+        if (callerId is null) return Unauthorized();
+
+        var result = await _reports.UserActivityReportXlsxAsync(callerId.Value, userId);
+        if (!result.Succeeded) return Forbid();
+        return File(
+            result.Value!,
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            $"activity-report-{userId}.xlsx");
     }
 
     /// <summary>Serves a user's avatar image. Public so it can be used in &lt;img&gt; tags.</summary>

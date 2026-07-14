@@ -202,7 +202,9 @@
   "privacy": {
     "title": "Data & privacy",
     "exportDesc": "Download a copy of your personal data (profile, notes, projects, forum posts, comments) as JSON.",
-    "export": "Download my data"
+    "export": "Download my data",
+    "activityPdf": "Activity — PDF",
+    "activityXlsx": "Activity — Excel"
   },
   "sessions": {
     "title": "Active sessions",
@@ -750,6 +752,8 @@
     "title": "Admin · Audit log",
     "events": "({{count}} events)",
     "backToUsers": "← Users",
+    "exportPdf": "Export PDF",
+    "exportXlsx": "Export Excel",
     "filterPlaceholder": "Filter by action, e.g. auth.login.failed",
     "filter": "Filter",
     "clear": "Clear",

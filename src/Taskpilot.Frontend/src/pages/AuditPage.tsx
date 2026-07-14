@@ -32,6 +32,22 @@ export default function AuditPage() {
       .finally(() => setLoading(false))
   }, [page, action])
 
+  // Exports the most recent audit entries (the backend caps the slice).
+  const downloadAudit = async (format: 'pdf' | 'xlsx') => {
+    const blob = await (format === 'pdf'
+      ? adminService.auditReportPdf()
+      : adminService.auditReportXlsx()
+    ).catch(() => null)
+    if (!blob) return
+
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `audit-log.${format}`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
   const applyFilter = () => {
     setPage(1) // filtering resets to the first page
     setAction(actionInput.trim())
@@ -47,10 +63,22 @@ export default function AuditPage() {
 
   return (
     <div className="mx-auto max-w-6xl px-6 py-8">
-        <div className="mb-6 flex items-center gap-3">
+        <div className="mb-6 flex flex-wrap items-center gap-3">
           <h1 className="text-2xl font-bold">{t('audit.title')}</h1>
           <span className="text-sm text-muted">{t('audit.events', { count: total })}</span>
-          <Link to="/admin" className="ml-auto text-sm text-muted hover:underline">
+          <button
+            onClick={() => downloadAudit('pdf')}
+            className="ml-auto rounded-lg border border-border px-3 py-1.5 text-sm font-semibold hover:bg-canvas"
+          >
+            {t('audit.exportPdf')}
+          </button>
+          <button
+            onClick={() => downloadAudit('xlsx')}
+            className="rounded-lg border border-border px-3 py-1.5 text-sm font-semibold hover:bg-canvas"
+          >
+            {t('audit.exportXlsx')}
+          </button>
+          <Link to="/admin" className="text-sm text-muted hover:underline">
             {t('audit.backToUsers')}
           </Link>
         </div>

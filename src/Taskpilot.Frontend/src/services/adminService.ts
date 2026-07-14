@@ -85,4 +85,14 @@ export const adminService = {
       .get('/api/admin/reports/marketplace/xlsx', { responseType: 'blob' })
       .then((r) => r.data as Blob)
   },
+
+  /** Downloads the audit log (most recent entries) as a PDF blob. */
+  auditReportPdf(): Promise<Blob> {
+    return api.get('/api/admin/reports/audit/pdf', { responseType: 'blob' }).then((r) => r.data as Blob)
+  },
+
+  /** Downloads the audit log as an Excel (.xlsx) blob. */
+  auditReportXlsx(): Promise<Blob> {
+    return api.get('/api/admin/reports/audit/xlsx', { responseType: 'blob' }).then((r) => r.data as Blob)
+  },
 }

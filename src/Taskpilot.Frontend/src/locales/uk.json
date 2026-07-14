@@ -202,7 +202,9 @@
   "privacy": {
     "title": "Дані та приватність",
     "exportDesc": "Завантажте копію своїх персональних даних (профіль, нотатки, проєкти, дописи форуму, коментарі) у форматі JSON.",
-    "export": "Завантажити мої дані"
+    "export": "Завантажити мої дані",
+    "activityPdf": "Активність — PDF",
+    "activityXlsx": "Активність — Excel"
   },
   "sessions": {
     "title": "Активні сесії",
@@ -750,6 +752,8 @@
     "title": "Адмін · Журнал аудиту",
     "events": "(подій: {{count}})",
     "backToUsers": "← Користувачі",
+    "exportPdf": "Експорт PDF",
+    "exportXlsx": "Експорт Excel",
     "filterPlaceholder": "Фільтр за дією, напр. auth.login.failed",
     "filter": "Фільтрувати",
     "clear": "Очистити",

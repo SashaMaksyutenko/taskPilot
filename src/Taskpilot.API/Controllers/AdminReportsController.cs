@@ -46,4 +46,31 @@ public class AdminReportsController : BaseApiController
             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             "marketplace-report.xlsx");
     }
+
+    /// <summary>Downloads the audit log (most recent entries) as a PDF.</summary>
+    [HttpGet("audit/pdf")]
+    public async Task<IActionResult> AuditPdf()
+    {
+        var userId = CurrentUserId();
+        if (userId is null) return Unauthorized();
+
+        var result = await _reports.AuditReportPdfAsync(userId.Value);
+        if (!result.Succeeded) return Forbid();
+        return File(result.Value!, "application/pdf", "audit-log.pdf");
+    }
+
+    /// <summary>Downloads the audit log as an Excel (.xlsx) workbook.</summary>
+    [HttpGet("audit/xlsx")]
+    public async Task<IActionResult> AuditXlsx()
+    {
+        var userId = CurrentUserId();
+        if (userId is null) return Unauthorized();
+
+        var result = await _reports.AuditReportXlsxAsync(userId.Value);
+        if (!result.Succeeded) return Forbid();
+        return File(
+            result.Value!,
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            "audit-log.xlsx");
+    }
 }

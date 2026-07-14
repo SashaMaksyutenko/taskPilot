@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using Taskpilot.API.Common;
 using Taskpilot.API.Configuration;
 using Taskpilot.API.Data;
 using Taskpilot.API.Models;
@@ -39,6 +40,11 @@ public class NotificationDeliveryService : INotificationDeliveryService
     /// <inheritdoc />
     public async Task DeliverAsync(Guid recipientId, NotificationType type, string message, string? link)
     {
+        // Quiet hours hold back every out-of-band channel. The in-app notification was
+        // already stored by the caller, so nothing is lost — the bell just waits.
+        if (await IsInQuietHoursAsync(recipientId))
+            return;
+
         // Email is opted out independently per (type, Email channel).
         var emailMuted = await _context.NotificationPreferences
             .AnyAsync(p => p.UserId == recipientId && p.Type == type && p.Channel == NotificationChannel.Email);
@@ -51,6 +57,25 @@ public class NotificationDeliveryService : INotificationDeliveryService
 
         var pushUrl = AbsoluteUrl(link);
         await _push.SendToUserAsync(recipientId, "TaskPilot", message, pushUrl);
+    }
+
+    /// <summary>True when the recipient has quiet hours on and is inside their window.</summary>
+    private async Task<bool> IsInQuietHoursAsync(Guid recipientId)
+    {
+        var settings = await _context.Users
+            .Where(u => u.Id == recipientId)
+            .Select(u => new { u.QuietHoursEnabled, u.QuietHoursStart, u.QuietHoursEnd, u.TimeZoneId })
+            .AsNoTracking()
+            .FirstOrDefaultAsync();
+
+        if (settings is null || !settings.QuietHoursEnabled)
+            return false;
+
+        return QuietHours.IsQuiet(
+            settings.QuietHoursStart,
+            settings.QuietHoursEnd,
+            settings.TimeZoneId,
+            DateTime.UtcNow);
     }
 
     /// <summary>Sends the notification to the recipient's linked Telegram chat, if any.</summary>

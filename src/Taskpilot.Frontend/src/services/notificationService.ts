@@ -1,6 +1,17 @@
 import api from '../lib/api'
 import type { AppNotification } from '../types/notification'
 
+/**
+ * A quiet-hours window in the user's local hours. Inside it, email/Telegram/Viber/push
+ * are held back; in-app notifications still arrive.
+ */
+export interface QuietHours {
+  enabled: boolean
+  start: number
+  end: number
+  timeZoneId: string | null
+}
+
 /** REST calls for in-app notifications. */
 export const notificationService = {
   getNotifications(unreadOnly = false): Promise<AppNotification[]> {
@@ -21,17 +32,26 @@ export const notificationService = {
     return api.post('/api/notifications/read-all').then(() => undefined)
   },
 
-  /** Notification types the user muted, per channel, plus the digest cadence. */
+  /** Notification types the user muted, per channel, plus digest cadence and quiet hours. */
   getPreferences(): Promise<{
     disabledTypes: string[]
     disabledEmailTypes: string[]
     digestFrequency: string
+    quietHours: QuietHours
   }> {
     return api
-      .get<{ disabledTypes: string[]; disabledEmailTypes: string[]; digestFrequency: string }>(
-        '/api/notifications/preferences',
-      )
+      .get<{
+        disabledTypes: string[]
+        disabledEmailTypes: string[]
+        digestFrequency: string
+        quietHours: QuietHours
+      }>('/api/notifications/preferences')
       .then((r) => r.data)
+  },
+
+  /** Sets the quiet-hours window (out-of-band channels stay silent inside it). */
+  updateQuietHours(data: QuietHours): Promise<QuietHours> {
+    return api.put<QuietHours>('/api/notifications/quiet-hours', data).then((r) => r.data)
   },
 
   /** Sets how often the user receives a digest email (Off/Daily/Weekly). */

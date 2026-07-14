@@ -177,6 +177,57 @@ public class NotificationService : INotificationService
         return Result<string>.Ok(freq.ToString());
     }
 
+    /// <inheritdoc />
+    public async Task<Result<QuietHoursDto>> GetQuietHoursAsync(Guid userId)
+    {
+        var settings = await _context.Users
+            .Where(u => u.Id == userId)
+            .Select(u => new QuietHoursDto
+            {
+                Enabled = u.QuietHoursEnabled,
+                Start = u.QuietHoursStart,
+                End = u.QuietHoursEnd,
+                TimeZoneId = u.TimeZoneId,
+            })
+            .FirstOrDefaultAsync();
+
+        return settings is null
+            ? Result<QuietHoursDto>.Fail("User not found.")
+            : Result<QuietHoursDto>.Ok(settings);
+    }
+
+    /// <inheritdoc />
+    public async Task<Result<QuietHoursDto>> SetQuietHoursAsync(Guid userId, QuietHoursDto dto)
+    {
+        if (!QuietHours.IsValidHour(dto.Start) || !QuietHours.IsValidHour(dto.End))
+            return Result<QuietHoursDto>.Fail("Quiet hours must be between 0 and 23.");
+
+        // An unknown zone would silently fall back to UTC, so refuse it up front.
+        if (!QuietHours.IsKnownTimeZone(dto.TimeZoneId))
+            return Result<QuietHoursDto>.Fail("Unknown time zone.");
+
+        var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
+        if (user is null)
+            return Result<QuietHoursDto>.Fail("User not found.");
+
+        user.QuietHoursEnabled = dto.Enabled;
+        user.QuietHoursStart = dto.Start;
+        user.QuietHoursEnd = dto.End;
+        user.TimeZoneId = string.IsNullOrWhiteSpace(dto.TimeZoneId) ? null : dto.TimeZoneId.Trim();
+        await _context.SaveChangesAsync();
+
+        _logger.LogInformation("Quiet hours updated. UserId: {UserId}, Enabled: {Enabled}, {Start}–{End} {Zone}",
+            userId, dto.Enabled, dto.Start, dto.End, user.TimeZoneId ?? "UTC");
+
+        return Result<QuietHoursDto>.Ok(new QuietHoursDto
+        {
+            Enabled = user.QuietHoursEnabled,
+            Start = user.QuietHoursStart,
+            End = user.QuietHoursEnd,
+            TimeZoneId = user.TimeZoneId,
+        });
+    }
+
     /// <summary>Returns the notification types the user muted on the given channel.</summary>
     private async Task<Result<List<string>>> GetDisabledAsync(Guid userId, NotificationChannel channel)
     {

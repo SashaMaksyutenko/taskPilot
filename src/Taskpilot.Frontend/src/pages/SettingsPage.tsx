@@ -8,7 +8,7 @@ import { notify } from '../lib/toast'
 import { apiErrorMessage } from '../lib/apiError'
 import { enablePush, disablePush, getPushEnabled, pushSupported } from '../lib/push'
 import { authService } from '../services/authService'
-import { notificationService } from '../services/notificationService'
+import { notificationService, type QuietHours } from '../services/notificationService'
 import { userService, type UpdateProfileData } from '../services/userService'
 import { webhookService, type WebhookDelivery } from '../services/webhookService'
 import { apiKeyService, type ApiKey } from '../services/apiKeyService'
@@ -21,6 +21,9 @@ import AppealModal from '../components/AppealModal'
 
 // Notification types the user can toggle (mirror the backend NotificationType enum).
 const NOTIF_TYPES = ['Task', 'Chat', 'Forum', 'Marketplace', 'Moderation', 'General'] as const
+
+/** 0…23 — the clock hours a quiet window can start or end on. */
+const HOURS = Array.from({ length: 24 }, (_, h) => h)
 
 /** Friendly "Browser on OS" label from a user-agent string. */
 function deviceLabel(ua: string | null): string {
@@ -93,6 +96,8 @@ export default function SettingsPage() {
   const [disabledEmail, setDisabledEmail] = useState<string[]>([])
   // Digest email cadence: 'Off' | 'Daily' | 'Weekly'.
   const [digest, setDigest] = useState('Off')
+  // Quiet hours: out-of-band channels stay silent inside the window.
+  const [quiet, setQuiet] = useState<QuietHours>({ enabled: false, start: 22, end: 8, timeZoneId: null })
   useEffect(() => {
     notificationService
       .getPreferences()
@@ -100,6 +105,7 @@ export default function SettingsPage() {
         setDisabledNotif(p.disabledTypes)
         setDisabledEmail(p.disabledEmailTypes)
         setDigest(p.digestFrequency)
+        setQuiet(p.quietHours)
       })
       .catch(() => {})
   }, [])
@@ -107,6 +113,15 @@ export default function SettingsPage() {
   const changeDigest = (value: string) => {
     setDigest(value)
     notificationService.updateDigest(value).catch(() => {})
+  }
+
+  // The browser knows the user's IANA zone; send it so the window means their local time.
+  const browserTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone
+
+  const changeQuiet = (patch: Partial<QuietHours>) => {
+    const next = { ...quiet, ...patch, timeZoneId: quiet.timeZoneId ?? browserTimeZone }
+    setQuiet(next)
+    notificationService.updateQuietHours(next).catch(() => {})
   }
 
   // Browser (Web Push) notifications.
@@ -814,6 +829,53 @@ export default function SettingsPage() {
               <option value="Daily">{t('notifPrefs.digest.daily')}</option>
               <option value="Weekly">{t('notifPrefs.digest.weekly')}</option>
             </select>
+          </div>
+
+          {/* Quiet hours */}
+          <div className="mt-4 border-t border-border pt-4">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <p className="text-sm font-semibold">{t('notifPrefs.quiet.title')}</p>
+                <p className="text-xs text-muted">{t('notifPrefs.quiet.desc')}</p>
+              </div>
+              <input
+                type="checkbox"
+                checked={quiet.enabled}
+                onChange={(e) => changeQuiet({ enabled: e.target.checked })}
+              />
+            </div>
+
+            {quiet.enabled && (
+              <div className="mt-3 flex flex-wrap items-center gap-2 text-sm">
+                <span className="text-muted">{t('notifPrefs.quiet.from')}</span>
+                <select
+                  value={quiet.start}
+                  onChange={(e) => changeQuiet({ start: Number(e.target.value) })}
+                  className="rounded-lg border border-border bg-canvas px-2 py-1.5"
+                >
+                  {HOURS.map((h) => (
+                    <option key={h} value={h}>
+                      {String(h).padStart(2, '0')}:00
+                    </option>
+                  ))}
+                </select>
+                <span className="text-muted">{t('notifPrefs.quiet.to')}</span>
+                <select
+                  value={quiet.end}
+                  onChange={(e) => changeQuiet({ end: Number(e.target.value) })}
+                  className="rounded-lg border border-border bg-canvas px-2 py-1.5"
+                >
+                  {HOURS.map((h) => (
+                    <option key={h} value={h}>
+                      {String(h).padStart(2, '0')}:00
+                    </option>
+                  ))}
+                </select>
+                <span className="text-xs text-muted">
+                  {t('notifPrefs.quiet.zone', { zone: quiet.timeZoneId ?? browserTimeZone })}
+                </span>
+              </div>
+            )}
           </div>
         </section>
 

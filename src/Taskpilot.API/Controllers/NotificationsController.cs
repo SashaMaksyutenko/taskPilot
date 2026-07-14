@@ -82,7 +82,30 @@ public class NotificationsController : BaseApiController
         var inApp = await _notifications.GetDisabledTypesAsync(userId.Value);
         var email = await _notifications.GetDisabledEmailTypesAsync(userId.Value);
         var digest = await _notifications.GetDigestFrequencyAsync(userId.Value);
-        return Ok(new { disabledTypes = inApp.Value, disabledEmailTypes = email.Value, digestFrequency = digest.Value });
+        var quiet = await _notifications.GetQuietHoursAsync(userId.Value);
+        return Ok(new
+        {
+            disabledTypes = inApp.Value,
+            disabledEmailTypes = email.Value,
+            digestFrequency = digest.Value,
+            quietHours = quiet.Value,
+        });
+    }
+
+    /// <summary>
+    /// Sets the current user's quiet-hours window. Inside it, email/Telegram/Viber/push
+    /// are held back; in-app notifications still arrive in the bell.
+    /// </summary>
+    [HttpPut("quiet-hours")]
+    public async Task<IActionResult> UpdateQuietHours([FromBody] QuietHoursDto dto)
+    {
+        var userId = CurrentUserId();
+        if (userId is null) return Unauthorized();
+
+        var result = await _notifications.SetQuietHoursAsync(userId.Value, dto);
+        return result.Succeeded
+            ? Ok(result.Value)
+            : BadRequest(new { error = result.Error });
     }
 
     /// <summary>Sets how often the current user receives a digest email (Off/Daily/Weekly).</summary>

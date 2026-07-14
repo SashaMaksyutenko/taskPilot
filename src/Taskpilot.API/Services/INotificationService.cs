@@ -42,4 +42,10 @@ public interface INotificationService
 
     /// <summary>Sets the user's digest email cadence; returns the applied value.</summary>
     Task<Result<string>> SetDigestFrequencyAsync(Guid userId, string frequency);
+
+    /// <summary>Returns the user's quiet-hours window.</summary>
+    Task<Result<QuietHoursDto>> GetQuietHoursAsync(Guid userId);
+
+    /// <summary>Sets the user's quiet-hours window; returns the applied settings.</summary>
+    Task<Result<QuietHoursDto>> SetQuietHoursAsync(Guid userId, QuietHoursDto dto);
 }

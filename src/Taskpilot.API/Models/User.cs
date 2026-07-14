@@ -123,4 +123,24 @@ public class User
 
     /// <summary>UTC time the last digest was sent; null until the first one. Guards the cadence.</summary>
     public DateTime? LastDigestSentAt { get; set; }
+
+    // --- Quiet hours ---
+
+    /// <summary>
+    /// When true, out-of-band notifications (email, Telegram, Viber, push) are held back
+    /// during the user's quiet window. In-app notifications are still recorded.
+    /// </summary>
+    public bool QuietHoursEnabled { get; set; }
+
+    /// <summary>Local hour the quiet window opens (0–23). Defaults to 22:00.</summary>
+    public int QuietHoursStart { get; set; } = 22;
+
+    /// <summary>Local hour the quiet window closes (0–23). Defaults to 08:00.</summary>
+    public int QuietHoursEnd { get; set; } = 8;
+
+    /// <summary>
+    /// IANA time zone the quiet hours are expressed in (e.g. "Europe/Kyiv"); null falls
+    /// back to UTC. The browser reports this when the user saves their quiet hours.
+    /// </summary>
+    public string? TimeZoneId { get; set; }
 }

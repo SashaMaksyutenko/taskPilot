@@ -276,6 +276,13 @@
       "off": "Off",
       "daily": "Daily",
       "weekly": "Weekly"
+    },
+    "quiet": {
+      "title": "Quiet hours",
+      "desc": "No email, Telegram, Viber or push inside this window. In-app notifications still arrive.",
+      "from": "From",
+      "to": "to",
+      "zone": "time zone: {{zone}}"
     }
   },
   "mdToolbar": {

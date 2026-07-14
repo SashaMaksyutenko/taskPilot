@@ -96,6 +96,9 @@ public class TaskpilotDbContext : DbContext
     /// <summary>Users' saved search queries.</summary>
     public DbSet<SavedSearch> SavedSearches => Set<SavedSearch>();
 
+    /// <summary>Delivery log for outgoing webhooks (status, retries, errors).</summary>
+    public DbSet<WebhookDelivery> WebhookDeliveries => Set<WebhookDelivery>();
+
     /// <summary>Comments on project tasks.</summary>
     public DbSet<TaskComment> TaskComments => Set<TaskComment>();
 
@@ -730,6 +733,24 @@ public class TaskpilotDbContext : DbContext
             entity.HasOne(e => e.User)
                   .WithMany()
                   .HasForeignKey(e => e.UserId)
+                  .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // WebhookDelivery (delivery log) configuration
+        modelBuilder.Entity<WebhookDelivery>(entity =>
+        {
+            entity.HasKey(d => d.Id);
+
+            entity.Property(d => d.Event).IsRequired().HasMaxLength(60);
+            entity.Property(d => d.Error).HasMaxLength(500);
+
+            // Read per webhook, newest first.
+            entity.HasIndex(d => new { d.WebhookId, d.CreatedAt });
+
+            // Deleting a webhook removes its delivery history.
+            entity.HasOne(d => d.Webhook)
+                  .WithMany()
+                  .HasForeignKey(d => d.WebhookId)
                   .OnDelete(DeleteBehavior.Cascade);
         });
 

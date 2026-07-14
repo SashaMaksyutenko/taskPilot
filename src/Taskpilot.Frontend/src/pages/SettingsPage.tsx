@@ -10,7 +10,7 @@ import { enablePush, disablePush, getPushEnabled, pushSupported } from '../lib/p
 import { authService } from '../services/authService'
 import { notificationService } from '../services/notificationService'
 import { userService, type UpdateProfileData } from '../services/userService'
-import { webhookService } from '../services/webhookService'
+import { webhookService, type WebhookDelivery } from '../services/webhookService'
 import { apiKeyService, type ApiKey } from '../services/apiKeyService'
 import { fetchMe, logout } from '../store/authSlice'
 import { useAppDispatch, useAppSelector } from '../store/hooks'
@@ -348,6 +348,36 @@ export default function SettingsPage() {
   const removeWebhook = async (id: string) => {
     await webhookService.deleteWebhook(id).catch(() => {})
     loadWebhooks()
+  }
+
+  // Pause/resume, test-send, and the per-webhook delivery log (expanded on demand).
+  const toggleWebhook = async (w: Webhook) => {
+    const updated = await webhookService.setActive(w.id, !w.isActive).catch(() => null)
+    if (updated) setWebhooks((prev) => prev.map((x) => (x.id === w.id ? updated : x)))
+  }
+
+  const testWebhook = async (id: string) => {
+    const delivery = await webhookService.testWebhook(id).catch(() => null)
+    if (!delivery) return
+    if (delivery.success) notify.success(t('settings.webhookTestOk', { status: delivery.statusCode }))
+    else notify.error(t('settings.webhookTestFailed', { attempts: delivery.attempts }))
+    // Refresh the log if it is open for this webhook.
+    if (openLog === id) loadDeliveries(id)
+  }
+
+  const [openLog, setOpenLog] = useState<string | null>(null)
+  const [deliveries, setDeliveries] = useState<WebhookDelivery[]>([])
+
+  const loadDeliveries = (id: string) =>
+    webhookService.getDeliveries(id).then(setDeliveries).catch(() => setDeliveries([]))
+
+  const toggleLog = (id: string) => {
+    if (openLog === id) {
+      setOpenLog(null)
+      return
+    }
+    setOpenLog(id)
+    loadDeliveries(id)
   }
 
   useEffect(() => {
@@ -932,20 +962,68 @@ export default function SettingsPage() {
           ) : (
             <ul className="mb-4 space-y-2">
               {webhooks.map((w) => (
-                <li
-                  key={w.id}
-                  className="flex items-center gap-3 rounded-lg border border-border px-3 py-2 text-sm"
-                >
-                  <span className="rounded bg-canvas px-2 py-0.5 text-[11px] font-semibold">
-                    {w.event}
-                  </span>
-                  <span className="min-w-0 flex-1 truncate text-foreground">{w.url}</span>
-                  <button
-                    onClick={() => removeWebhook(w.id)}
-                    className="flex-none text-xs font-semibold text-red-600 hover:underline"
-                  >
-                    {t('settings.delete')}
-                  </button>
+                <li key={w.id} className="rounded-lg border border-border px-3 py-2 text-sm">
+                  <div className="flex items-center gap-3">
+                    <span className="rounded bg-canvas px-2 py-0.5 text-[11px] font-semibold">
+                      {w.event}
+                    </span>
+                    <span
+                      className={`min-w-0 flex-1 truncate ${w.isActive ? 'text-foreground' : 'text-muted line-through'}`}
+                    >
+                      {w.url}
+                    </span>
+                    <button
+                      onClick={() => toggleWebhook(w)}
+                      className="flex-none text-xs font-semibold text-primary hover:underline"
+                    >
+                      {w.isActive ? t('settings.webhookPause') : t('settings.webhookResume')}
+                    </button>
+                    <button
+                      onClick={() => testWebhook(w.id)}
+                      className="flex-none text-xs font-semibold text-primary hover:underline"
+                    >
+                      {t('settings.webhookTest')}
+                    </button>
+                    <button
+                      onClick={() => toggleLog(w.id)}
+                      className="flex-none text-xs font-semibold text-primary hover:underline"
+                    >
+                      {t('settings.webhookLog')}
+                    </button>
+                    <button
+                      onClick={() => removeWebhook(w.id)}
+                      className="flex-none text-xs font-semibold text-red-600 hover:underline"
+                    >
+                      {t('settings.delete')}
+                    </button>
+                  </div>
+
+                  {/* Delivery log for this webhook */}
+                  {openLog === w.id && (
+                    <div className="mt-2 border-t border-border pt-2">
+                      {deliveries.length === 0 ? (
+                        <p className="text-xs text-muted">{t('settings.webhookNoDeliveries')}</p>
+                      ) : (
+                        <ul className="space-y-1">
+                          {deliveries.map((d) => (
+                            <li key={d.id} className="flex items-center gap-2 text-xs">
+                              <span className={d.success ? 'text-green-600' : 'text-red-600'}>
+                                {d.success ? '✓' : '✗'}
+                              </span>
+                              <span className="font-mono">{d.statusCode ?? '—'}</span>
+                              <span className="text-muted">
+                                {t('settings.webhookAttempts', { count: d.attempts })}
+                              </span>
+                              {d.error && <span className="truncate text-muted">· {d.error}</span>}
+                              <span className="ml-auto flex-none text-muted">
+                                {new Date(d.createdAt).toLocaleString()}
+                              </span>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  )}
                 </li>
               ))}
             </ul>

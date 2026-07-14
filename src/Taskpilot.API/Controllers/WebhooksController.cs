@@ -61,4 +61,37 @@ public class WebhooksController : BaseApiController
             ? Ok(new { message = "Webhook deleted." })
             : NotFound(new { error = result.Error });
     }
+
+    /// <summary>Pauses or resumes a webhook (paused ones receive no events).</summary>
+    [HttpPut("{webhookId:guid}/active")]
+    public async Task<IActionResult> SetActive(Guid webhookId, [FromBody] SetWebhookActiveDto dto)
+    {
+        var userId = CurrentUserId();
+        if (userId is null) return Unauthorized();
+
+        var result = await _webhooks.SetActiveAsync(userId.Value, webhookId, dto.IsActive);
+        return result.Succeeded ? Ok(result.Value) : NotFound(new { error = result.Error });
+    }
+
+    /// <summary>Sends a sample payload to the webhook and returns the delivery outcome.</summary>
+    [HttpPost("{webhookId:guid}/test")]
+    public async Task<IActionResult> Test(Guid webhookId)
+    {
+        var userId = CurrentUserId();
+        if (userId is null) return Unauthorized();
+
+        var result = await _webhooks.TestAsync(userId.Value, webhookId);
+        return result.Succeeded ? Ok(result.Value) : NotFound(new { error = result.Error });
+    }
+
+    /// <summary>Lists a webhook's recent deliveries (newest first).</summary>
+    [HttpGet("{webhookId:guid}/deliveries")]
+    public async Task<IActionResult> GetDeliveries(Guid webhookId)
+    {
+        var userId = CurrentUserId();
+        if (userId is null) return Unauthorized();
+
+        var result = await _webhooks.GetDeliveriesAsync(userId.Value, webhookId);
+        return result.Succeeded ? Ok(result.Value) : NotFound(new { error = result.Error });
+    }
 }

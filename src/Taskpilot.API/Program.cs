@@ -9,6 +9,7 @@ using DotNetEnv;
 using FluentValidation;
 using MassTransit;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -51,7 +52,13 @@ if (string.IsNullOrWhiteSpace(connectionString))
 // Register the EF Core database context using the Npgsql (PostgreSQL) provider.
 // AddDbContext registers TaskpilotDbContext with a Scoped lifetime (one per request).
 builder.Services.AddDbContext<TaskpilotDbContext>(options =>
-    options.UseNpgsql(connectionString));
+    options.UseNpgsql(connectionString, npgsql =>
+        // A dropped connection or a brief network blip is retried instead of
+        // surfacing to the caller as a 500 (managed Postgres does this routinely).
+        npgsql.EnableRetryOnFailure(
+            maxRetryCount: 3,
+            maxRetryDelay: TimeSpan.FromSeconds(5),
+            errorCodesToAdd: null)));
 
 // CORS: allow the React dev frontend (http://localhost:5173) to call this API
 // from the browser. In production this origin should come from configuration.
@@ -300,12 +307,40 @@ builder.Services.AddHttpClient();
 // Token generation is stateless, so a singleton is fine.
 builder.Services.AddSingleton<ITokenService, TokenService>();
 
+// Behind a reverse proxy (Railway, Render, nginx…) the socket's remote address is the
+// PROXY, not the caller. Without this, every user on the internet would share one
+// rate-limit bucket and the audit log would record a single IP for everyone.
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    // The hosting platform's proxy is not known ahead of time; clearing these accepts
+    // the header from it (the platform is the only hop that can set it).
+    options.KnownNetworks.Clear();
+    options.KnownProxies.Clear();
+});
+
 // Rate limiting protects abusable endpoints from brute force and spam.
 // The "auth" policy allows max 5 requests per minute per client IP; once the
 // window is exceeded the request is rejected with 429 Too Many Requests.
 builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+    // A bare 429 with an empty body tells the user nothing. Answer with a readable
+    // error and a Retry-After header so the client can say "try again in N seconds".
+    options.OnRejected = async (context, cancellationToken) =>
+    {
+        var retryAfter = context.Lease.TryGetMetadata(MetadataName.RetryAfter, out var window)
+            ? (int)window.TotalSeconds
+            : 60;
+
+        context.HttpContext.Response.Headers.RetryAfter = retryAfter.ToString();
+        context.HttpContext.Response.ContentType = "application/json";
+        await context.HttpContext.Response.WriteAsJsonAsync(
+            new { error = "Too many requests. Please slow down.", retryAfterSeconds = retryAfter },
+            cancellationToken);
+    };
+
     options.AddPolicy("auth", httpContext =>
         RateLimitPartition.GetFixedWindowLimiter(
             // Partition by caller IP so one client cannot exhaust everyone's quota.
@@ -361,6 +396,22 @@ await DataSeeder.SeedAdminAsync(app.Services);
 
 // --- HTTP pipeline (middleware) ---
 
+// Must run first: everything downstream (rate limiting, the audit log, HTTPS
+// redirection) needs the caller's real IP and scheme, not the proxy's.
+app.UseForwardedHeaders();
+
+// Baseline security headers on every response.
+app.UseMiddleware<SecurityHeadersMiddleware>();
+
+// HTTPS is enforced in production only — local development runs over plain HTTP
+// (and forcing a redirect there would break the dev frontend and the API tests).
+if (!app.Environment.IsDevelopment())
+{
+    // Tell browsers to refuse plain HTTP to this host for a year.
+    app.UseHsts();
+    app.UseHttpsRedirection();
+}
+
 // Expose Swagger UI in Development only (browse and test endpoints at /swagger).
 if (app.Environment.IsDevelopment())
 {
@@ -376,8 +427,26 @@ if (app.Environment.IsDevelopment())
 // Root endpoint: simple liveness response.
 app.MapGet("/", () => "Taskpilot API is running");
 
-// Health-check endpoint for monitoring (returns status and server time in UTC).
-app.MapGet("/health", () => Results.Ok(new { status = "ok", timeUtc = DateTime.UtcNow }));
+// Health check for monitoring. It actually probes the database — a probe that always
+// answers "ok" is worse than none, because it hides an outage from your uptime monitor.
+app.MapGet("/health", async (TaskpilotDbContext db, CancellationToken cancellationToken) =>
+{
+    try
+    {
+        var reachable = await db.Database.CanConnectAsync(cancellationToken);
+        return reachable
+            ? Results.Ok(new { status = "ok", database = "up", timeUtc = DateTime.UtcNow })
+            : Results.Json(
+                new { status = "degraded", database = "down", timeUtc = DateTime.UtcNow },
+                statusCode: StatusCodes.Status503ServiceUnavailable);
+    }
+    catch (Exception ex)
+    {
+        return Results.Json(
+            new { status = "degraded", database = "down", error = ex.Message, timeUtc = DateTime.UtcNow },
+            statusCode: StatusCodes.Status503ServiceUnavailable);
+    }
+});
 
 // CORS must run before authentication/authorization and endpoint routing.
 app.UseCors(FrontendCorsPolicy);

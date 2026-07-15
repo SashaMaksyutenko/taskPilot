@@ -9,12 +9,16 @@ import '@fontsource/inter/600.css'
 import '@fontsource/inter/700.css'
 import './index.css'
 import './lib/i18n' // initialize localization (i18next) before the app renders
+import { registerServiceWorker } from './lib/registerServiceWorker'
 import App from './App.tsx'
 
 // Apply the saved theme before the app renders to avoid a flash of the wrong theme.
 if (localStorage.getItem('theme') === 'dark') {
   document.documentElement.classList.add('dark')
 }
+
+// Register the service worker so the app is installable and offline-aware.
+registerServiceWorker()
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

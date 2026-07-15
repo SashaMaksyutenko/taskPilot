@@ -1,0 +1,15 @@
+<!-- TaskPilot maskable app icon: full-bleed indigo background with the checklist mark
+     centred inside the safe zone (the OS may crop this to a circle/squircle). -->
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="TaskPilot">
+  <rect width="512" height="512" fill="#4F46E5"/>
+  <!-- The 64x64 logo mark, scaled ~4.7x and centred (kept well inside the 80% safe area). -->
+  <g transform="translate(106 106) scale(4.6875)" stroke-linejoin="round" stroke-linecap="round">
+    <path d="M19 6 H43 L54 17 V56 Q54 58 52 58 H19 Q17 58 17 56 V8 Q17 6 19 6 Z"
+          fill="#FFFFFF" stroke="#1E2A44" stroke-width="3.4"/>
+    <path d="M43 6 L54 17 H43 Z" fill="#F6BE2C" stroke="#1E2A44" stroke-width="3.4"/>
+    <path d="M22 28 l3 3 l5 -6" stroke="#F6BE2C" stroke-width="3.2"/>
+    <path d="M34 29 H47" stroke="#1E2A44" stroke-width="3.2"/>
+    <path d="M22 39 H47" stroke="#1E2A44" stroke-width="3.2"/>
+    <path d="M22 48 H41" stroke="#1E2A44" stroke-width="3.2"/>
+  </g>
+</svg>

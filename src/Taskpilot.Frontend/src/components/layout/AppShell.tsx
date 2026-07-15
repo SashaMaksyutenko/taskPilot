@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import Sidebar from './Sidebar'
 import TopBar from './TopBar'
 import ShortcutsHelp from '../ShortcutsHelp'
+import CommandPalette from '../CommandPalette'
 import { useNotifications } from '../../hooks/useNotifications'
 import { useShortcuts } from '../../hooks/useShortcuts'
 
@@ -19,10 +20,11 @@ export default function AppShell({ children }: { children?: ReactNode }) {
   return (
     <div className="flex min-h-screen bg-canvas">
       <ShortcutsHelp open={shortcuts.helpOpen} onClose={() => shortcuts.setHelpOpen(false)} />
+      <CommandPalette open={shortcuts.paletteOpen} onClose={() => shortcuts.setPaletteOpen(false)} />
       <Sidebar />
 
       <div className="flex min-w-0 flex-1 flex-col lg:pl-64">
-        <TopBar notifications={notifications} />
+        <TopBar notifications={notifications} onOpenPalette={() => shortcuts.setPaletteOpen(true)} />
 
         <main className="flex-1 px-4 py-6 sm:px-6 lg:px-8">
           {/* Subtle cross-fade between routes; keyed by path so each page animates in. */}

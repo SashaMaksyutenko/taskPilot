@@ -9,5 +9,10 @@ if (!Element.prototype.releasePointerCapture) {
   Element.prototype.releasePointerCapture = () => {}
 }
 
+// jsdom doesn't implement scrollIntoView; the command palette calls it on the active row.
+if (!Element.prototype.scrollIntoView) {
+  Element.prototype.scrollIntoView = () => {}
+}
+
 // Unmount React trees between tests so window listeners don't bleed across them.
 afterEach(() => cleanup())

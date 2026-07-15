@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 
 // The shortcut list: [keys, i18n label key].
 const SHORTCUTS: { keys: string[]; label: string }[] = [
+  { keys: ['⌘', 'K'], label: 'shortcuts.palette' },
   { keys: ['g', 'd'], label: 'shortcuts.dashboard' },
   { keys: ['g', 'p'], label: 'shortcuts.projects' },
   { keys: ['g', 'c'], label: 'shortcuts.calendar' },

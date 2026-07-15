@@ -63,6 +63,7 @@
   },
   "shortcuts": {
     "title": "Keyboard shortcuts",
+    "palette": "Command palette",
     "dashboard": "Go to dashboard",
     "projects": "Go to projects",
     "calendar": "Go to calendar",
@@ -72,6 +73,16 @@
     "notes": "Go to notes",
     "search": "Search",
     "help": "Show this help"
+  },
+  "cmd": {
+    "open": "Search",
+    "placeholder": "Jump to a page or search…",
+    "navigation": "Navigation",
+    "actions": "Actions",
+    "noResults": "No results.",
+    "navigate": "navigate",
+    "select": "select",
+    "close": "close"
   },
   "bookmarks": {
     "title": "Bookmarks",

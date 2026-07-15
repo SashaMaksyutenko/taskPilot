@@ -25,14 +25,23 @@ const GO_TO: Record<string, string> = {
 export function useShortcuts() {
   const navigate = useNavigate()
   const [helpOpen, setHelpOpen] = useState(false)
+  const [paletteOpen, setPaletteOpen] = useState(false)
   // Whether the previous key was "g" (start of a two-key navigation sequence).
   const awaitingG = useRef(false)
   const gTimer = useRef<number | null>(null)
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      // Cmd/Ctrl+K opens the command palette from anywhere — even from a text field.
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault()
+        setPaletteOpen((v) => !v)
+        return
+      }
+
       if (e.key === 'Escape') {
         setHelpOpen(false)
+        setPaletteOpen(false)
         return
       }
 
@@ -86,5 +95,5 @@ export function useShortcuts() {
     }
   }, [navigate])
 
-  return { helpOpen, setHelpOpen }
+  return { helpOpen, setHelpOpen, paletteOpen, setPaletteOpen }
 }

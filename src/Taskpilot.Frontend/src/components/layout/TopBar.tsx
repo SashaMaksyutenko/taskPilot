@@ -3,6 +3,7 @@ import {
   LogOut,
   Menu,
   Moon,
+  Search,
   Sun,
   X,
 } from 'lucide-react'
@@ -20,14 +21,23 @@ import { useAppDispatch, useAppSelector } from '../../store/hooks'
 
 type NotificationState = ReturnType<typeof useNotifications>
 
-/** Compact top bar: mobile menu, theme/lang toggles, notifications, user. */
-export default function TopBar({ notifications }: { notifications: NotificationState }) {
+/** Compact top bar: mobile menu, command palette, theme/lang toggles, notifications, user. */
+export default function TopBar({
+  notifications,
+  onOpenPalette,
+}: {
+  notifications: NotificationState
+  onOpenPalette: () => void
+}) {
   const dispatch = useAppDispatch()
   const navigate = useNavigate()
   const { t, i18n } = useTranslation()
   const user = useAppSelector((s) => s.auth.user)
   const [dark, setDark] = useState(() => document.documentElement.classList.contains('dark'))
   const [mobileOpen, setMobileOpen] = useState(false)
+
+  // Show the right modifier in the shortcut hint (⌘ on Mac, Ctrl elsewhere).
+  const isMac = typeof navigator !== 'undefined' && /Mac|iP(hone|ad|od)/.test(navigator.userAgent)
 
   const toggleTheme = () => {
     const next = !dark
@@ -59,6 +69,20 @@ export default function TopBar({ notifications }: { notifications: NotificationS
           <img src="/logo-mark.svg" alt="" className="h-7 w-7" />
           TaskPilot
         </NavLink>
+
+        {/* Command-palette launcher — invites the click and advertises the ⌘K/Ctrl+K shortcut. */}
+        <button
+          type="button"
+          onClick={onOpenPalette}
+          className="ml-1 flex items-center gap-2 rounded-lg border border-border bg-canvas/60 px-2.5 py-1.5 text-sm text-muted transition hover:bg-canvas hover:text-foreground lg:ml-2"
+          aria-label={t('cmd.open')}
+        >
+          <Search className="h-4 w-4" />
+          <span className="hidden sm:inline">{t('cmd.open')}</span>
+          <kbd className="hidden rounded border border-border bg-surface px-1.5 py-0.5 font-mono text-[11px] font-semibold text-muted sm:inline">
+            {isMac ? '⌘' : 'Ctrl'} K
+          </kbd>
+        </button>
 
         <div className="ml-auto flex items-center gap-1 sm:gap-2">
           <Tooltip label={t('topbar.language')}>

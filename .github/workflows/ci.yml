@@ -51,3 +51,6 @@ jobs:
       # `npm run build` runs the TypeScript type-check (tsc -b) then the Vite build.
       - name: Build
         run: npm run build
+
+      - name: Test
+        run: npm test

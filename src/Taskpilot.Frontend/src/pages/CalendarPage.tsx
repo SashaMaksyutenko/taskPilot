@@ -8,6 +8,7 @@ import Card from '../components/ui/Card'
 import Input from '../components/ui/Input'
 import { cn } from '../lib/cn'
 import { notify } from '../lib/toast'
+import { useDragAndDrop } from '../hooks/useDragAndDrop'
 import { calendarService } from '../services/calendarService'
 import { taskService } from '../services/taskService'
 import type { CalendarTask } from '../types/calendar'
@@ -98,11 +99,10 @@ export default function CalendarPage() {
   const isToday = (d: number) =>
     year === today.getFullYear() && month === today.getMonth() && d === today.getDate()
 
-  // Drag-and-drop reschedule: the day cell being hovered while dragging a task.
-  const [dragOverDay, setDragOverDay] = useState<number | null>(null)
-
-  const dropOnDay = async (day: number, taskId: string) => {
-    setDragOverDay(null)
+  // Drag-and-drop reschedule (pointer-based, so it works on touch too). The drop-zone
+  // key is the day number as a string.
+  const dropOnDay = async (dayKey: string, taskId: string) => {
+    const day = Number(dayKey)
     const task = tasks.find((x) => x.id === taskId)
     if (!task) return
 
@@ -120,6 +120,18 @@ export default function CalendarPage() {
       notify.error(t('calendar.rescheduleFailed'))
     }
   }
+
+  const dnd = useDragAndDrop({
+    onDrop: dropOnDay,
+    renderGhost: (id) => {
+      const task = tasks.find((x) => x.id === id)
+      return (
+        <div className="truncate rounded bg-primary px-2 py-1 text-[11px] font-medium text-white shadow-elevated">
+          {task?.title ?? ''}
+        </div>
+      )
+    },
+  })
 
   return (
     <div className="mx-auto max-w-5xl">
@@ -177,22 +189,11 @@ export default function CalendarPage() {
             return (
               <div
                 key={i}
-                onDragOver={(e) => {
-                  if (!d) return
-                  e.preventDefault() // allow the drop
-                  setDragOverDay(d)
-                }}
-                onDragLeave={() => d && dragOverDay === d && setDragOverDay(null)}
-                onDrop={(e) => {
-                  if (!d) return
-                  e.preventDefault()
-                  const taskId = e.dataTransfer.getData('taskId')
-                  if (taskId) dropOnDay(d, taskId)
-                }}
+                {...(d ? dnd.dropZoneProps(String(d)) : {})}
                 className={cn(
                   'min-h-28 p-2 transition-colors',
                   d ? 'bg-surface' : 'bg-canvas/50',
-                  d !== null && dragOverDay === d && 'bg-primary/10 ring-2 ring-inset ring-primary',
+                  d !== null && dnd.activeZone === String(d) && 'bg-primary/10 ring-2 ring-inset ring-primary',
                 )}
               >
                 {d && (
@@ -221,14 +222,17 @@ export default function CalendarPage() {
                           ]}
                         >
                           <div
-                            draggable
-                            onDragStart={(e) => e.dataTransfer.setData('taskId', task.id)}
+                            {...dnd.draggableProps(task.id)}
                             title={`${task.title} · ${task.projectName} · ${t(`board.status.${task.status}`, task.status)}`}
                             className={cn(
-                              'cursor-grab truncate rounded px-1.5 py-0.5 text-[11px] font-medium transition hover:opacity-80 active:cursor-grabbing',
+                              'truncate rounded px-1.5 py-0.5 text-[11px] font-medium transition hover:opacity-80',
                               STATUS_COLORS[task.status] ?? 'bg-border text-foreground',
+                              dnd.draggingId === task.id && 'opacity-40',
                             )}
-                            onClick={() => navigate(`/projects/${task.projectId}`)}
+                            onClick={() => {
+                              if (dnd.justDragged()) return
+                              navigate(`/projects/${task.projectId}`)
+                            }}
                           >
                             {task.title}
                           </div>
@@ -242,6 +246,7 @@ export default function CalendarPage() {
           })}
         </div>
       </Card>
+      {dnd.overlay}
     </div>
   )
 }

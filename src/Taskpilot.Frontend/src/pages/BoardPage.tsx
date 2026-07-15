@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import TaskActionsDropdown from '../components/TaskActionsDropdown'
@@ -13,6 +13,7 @@ import ResultState from '../components/ResultState'
 import { bookmarkService } from '../services/bookmarkService'
 import { useAppSelector } from '../store/hooks'
 import { projectService } from '../services/projectService'
+import { useDragAndDrop } from '../hooks/useDragAndDrop'
 import { apiErrorMessage } from '../lib/apiError'
 import { taskService, type ReportSchedule } from '../services/taskService'
 import { notify } from '../lib/toast'
@@ -66,7 +67,6 @@ export default function BoardPage() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   // Task awaiting delete confirmation.
   const [deletingTask, setDeletingTask] = useState<Task | null>(null)
-  const draggingId = useRef<string | null>(null)
   // Celebratory confetti shown briefly when a task is moved to Done.
   const [showConfetti, setShowConfetti] = useState(false)
 
@@ -116,18 +116,31 @@ export default function BoardPage() {
     setTasks((prev) => [...prev, created])
   }
 
-  const onDrop = async (status: TaskStatus, taskId: string) => {
+  const onDrop = async (status: string, taskId: string) => {
     const task = tasks.find((t) => t.id === taskId)
     if (!task || task.status === status) return
-    setTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, status } : t)))
+    setTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, status: status as TaskStatus } : t)))
     // Celebrate finishing a task.
     if (status === 'Done') setShowConfetti(true)
     try {
-      await taskService.changeStatus(taskId, status)
+      await taskService.changeStatus(taskId, status as TaskStatus)
     } catch {
       taskService.getTasks(projectId).then(setTasks).catch(() => {})
     }
   }
+
+  // Pointer-based drag-and-drop (works on touch, unlike the native HTML5 API).
+  const dnd = useDragAndDrop({
+    onDrop,
+    renderGhost: (id) => {
+      const task = tasks.find((t) => t.id === id)
+      return (
+        <div className="rounded-lg border border-primary bg-surface px-3 py-2 text-sm font-medium shadow-elevated">
+          {task?.title ?? ''}
+        </div>
+      )
+    },
+  })
 
   // Context-menu actions.
   const changePriority = async (task: Task, priority: string) => {
@@ -353,6 +366,7 @@ export default function BoardPage() {
   return (
     <div className="-mx-4 sm:-mx-6 lg:-mx-8">
         {showConfetti && <Confetti onDone={() => setShowConfetti(false)} />}
+        {dnd.overlay}
         <div className="mb-5 flex items-center gap-3">
           <Link to="/projects" className="text-sm text-muted hover:text-foreground hover:underline">
             {t('board.backToProjects')}
@@ -548,9 +562,10 @@ export default function BoardPage() {
             return (
               <div
                 key={col.key}
-                onDragOver={(e) => e.preventDefault()}
-                onDrop={(e) => onDrop(col.key, e.dataTransfer.getData('taskId') || draggingId.current || '')}
-                className={`rounded-xl border-t-4 bg-canvas p-3 ${columnAccent[col.key] ?? 'border-t-border'}`}
+                {...dnd.dropZoneProps(col.key)}
+                className={`rounded-xl border-t-4 bg-canvas p-3 transition-colors ${columnAccent[col.key] ?? 'border-t-border'} ${
+                  dnd.activeZone === col.key ? 'bg-primary/5 ring-2 ring-inset ring-primary/40' : ''
+                }`}
               >
                 <div className="mb-3 flex items-center justify-between px-1 text-sm font-bold">
                   <span className="flex items-center gap-2">
@@ -579,13 +594,15 @@ export default function BoardPage() {
                       onBookmark={() => toggleBookmark(task)}
                     >
                       <div
-                        draggable
-                        onDragStart={(e) => {
-                          draggingId.current = task.id
-                          e.dataTransfer.setData('taskId', task.id)
+                        {...dnd.draggableProps(task.id)}
+                        onClick={() => {
+                          // Ignore the click that fires right after a drag.
+                          if (dnd.justDragged()) return
+                          setSelectedTask(task)
                         }}
-                        onClick={() => setSelectedTask(task)}
-                        className="group relative cursor-grab rounded-lg border border-border bg-surface p-3 shadow-soft transition hover:border-primary/30 hover:shadow-card active:cursor-grabbing"
+                        className={`group relative rounded-lg border border-border bg-surface p-3 shadow-soft transition hover:border-primary/30 hover:shadow-card ${
+                          dnd.draggingId === task.id ? 'opacity-40' : ''
+                        }`}
                       >
                         {/* Hover three-dot menu (same actions as right-click) */}
                         <div className="absolute right-1 top-1 opacity-0 transition group-hover:opacity-100">

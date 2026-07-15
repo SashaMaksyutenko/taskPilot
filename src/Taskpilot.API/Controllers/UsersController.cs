@@ -113,7 +113,8 @@ public class UsersController : BaseApiController
             return NotFound(new { error = result.Error });
 
         var download = result.Value!;
-        return PhysicalFile(download.PhysicalPath, download.ContentType);
+        // ASP.NET disposes the stream once the response is written.
+        return File(download.Content, download.ContentType);
     }
 
     /// <summary>Uploads/replaces the current user's avatar (multipart/form-data, field "file").</summary>

@@ -42,7 +42,8 @@ public class FilesController : BaseApiController
             return NotFound(new { error = result.Error });
 
         var download = result.Value!;
-        return PhysicalFile(download.PhysicalPath, download.ContentType, download.FileName);
+        // ASP.NET disposes the stream once the response is written.
+        return File(download.Content, download.ContentType, download.FileName);
     }
 
     /// <summary>
@@ -85,6 +86,7 @@ public class FilesController : BaseApiController
             return NotFound(new { error = result.Error });
 
         var download = result.Value!;
-        return PhysicalFile(download.PhysicalPath, download.ContentType, download.FileName);
+        // ASP.NET disposes the stream once the response is written.
+        return File(download.Content, download.ContentType, download.FileName);
     }
 }

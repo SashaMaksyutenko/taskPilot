@@ -18,16 +18,14 @@ public class FileService : IFileService
     private const long MaxFileSizeBytes = 10 * 1024 * 1024;
 
     private readonly TaskpilotDbContext _context;
+    private readonly IFileStorage _storage;
     private readonly ILogger<FileService> _logger;
-    private readonly string _uploadsRoot;
 
-    public FileService(TaskpilotDbContext context, IWebHostEnvironment env, ILogger<FileService> logger)
+    public FileService(TaskpilotDbContext context, IFileStorage storage, ILogger<FileService> logger)
     {
         _context = context;
+        _storage = storage;
         _logger = logger;
-        // Files live in <contentRoot>/uploads (folder is gitignored).
-        _uploadsRoot = Path.Combine(env.ContentRootPath, "uploads");
-        Directory.CreateDirectory(_uploadsRoot);
     }
 
     /// <inheritdoc />
@@ -44,14 +42,16 @@ public class FileService : IFileService
 
         try
         {
-            // Random on-disk name keeps the original extension but avoids collisions
+            // Random storage key keeps the original extension but avoids collisions
             // and path-traversal from user-supplied names.
             var storedName = Guid.NewGuid().ToString("N") + Path.GetExtension(file.FileName);
-            var fullPath = Path.Combine(_uploadsRoot, storedName);
+            var contentType = string.IsNullOrWhiteSpace(file.ContentType)
+                ? "application/octet-stream"
+                : file.ContentType;
 
-            await using (var stream = File.Create(fullPath))
+            await using (var upload = file.OpenReadStream())
             {
-                await file.CopyToAsync(stream);
+                await _storage.SaveAsync(storedName, upload, contentType);
             }
 
             var entity = new FileAttachment
@@ -59,9 +59,7 @@ public class FileService : IFileService
                 Id = Guid.NewGuid(),
                 FileName = Path.GetFileName(file.FileName),
                 StoredName = storedName,
-                ContentType = string.IsNullOrWhiteSpace(file.ContentType)
-                    ? "application/octet-stream"
-                    : file.ContentType,
+                ContentType = contentType,
                 SizeBytes = file.Length,
                 UploaderId = uploaderId,
                 CreatedAt = DateTime.UtcNow,
@@ -93,14 +91,11 @@ public class FileService : IFileService
         if (file is null)
             return Result<FileDownload>.Fail("File not found.");
 
-        var fullPath = Path.Combine(_uploadsRoot, file.StoredName);
-        if (!File.Exists(fullPath))
-        {
-            _logger.LogWarning("File metadata exists but bytes are missing. FileId: {FileId}", id);
+        var content = await _storage.OpenReadAsync(file.StoredName);
+        if (content is null)
             return Result<FileDownload>.Fail("File not found.");
-        }
 
-        return Result<FileDownload>.Ok(new FileDownload(fullPath, file.ContentType, file.FileName));
+        return Result<FileDownload>.Ok(new FileDownload(content, file.ContentType, file.FileName));
     }
 
     /// <inheritdoc />
@@ -156,14 +151,11 @@ public class FileService : IFileService
         if (file is null)
             return Result<FileDownload>.Fail("File not found.");
 
-        var fullPath = Path.Combine(_uploadsRoot, file.StoredName);
-        if (!File.Exists(fullPath))
-        {
-            _logger.LogWarning("Shared file metadata exists but bytes are missing. FileId: {FileId}", file.Id);
+        var content = await _storage.OpenReadAsync(file.StoredName);
+        if (content is null)
             return Result<FileDownload>.Fail("File not found.");
-        }
 
-        return Result<FileDownload>.Ok(new FileDownload(fullPath, file.ContentType, file.FileName));
+        return Result<FileDownload>.Ok(new FileDownload(content, file.ContentType, file.FileName));
     }
 
     /// <summary>Generates an unguessable URL-safe share token.</summary>

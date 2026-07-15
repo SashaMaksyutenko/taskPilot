@@ -4,12 +4,14 @@ using Taskpilot.API.DTOs.Files;
 namespace Taskpilot.API.Services;
 
 /// <summary>
-/// Data needed to stream a stored file back to the client.
+/// Data needed to stream a stored file back to the client. Carries the bytes as a
+/// stream rather than a disk path, so the file can just as well live in an S3 bucket.
+/// The caller owns the stream and must dispose it (ASP.NET's <c>File(...)</c> does).
 /// </summary>
-/// <param name="PhysicalPath">Absolute path of the file on disk.</param>
+/// <param name="Content">The file's bytes.</param>
 /// <param name="ContentType">MIME type to send.</param>
 /// <param name="FileName">Original file name for the download.</param>
-public record FileDownload(string PhysicalPath, string ContentType, string FileName);
+public record FileDownload(Stream Content, string ContentType, string FileName);
 
 /// <summary>
 /// Handles file uploads and downloads (storage + metadata).

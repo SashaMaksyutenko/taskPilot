@@ -269,6 +269,15 @@ builder.Services.AddScoped<IVisitorService, VisitorService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IPasswordResetService, PasswordResetService>();
 builder.Services.AddScoped<IChatService, ChatService>();
+// File storage: an S3-compatible bucket when configured, the local disk otherwise.
+// This is what makes the app deployable — hosting platforms wipe the disk on restart.
+builder.Services.Configure<StorageOptions>(builder.Configuration.GetSection("Storage"));
+var storageOptions = builder.Configuration.GetSection("Storage").Get<StorageOptions>() ?? new StorageOptions();
+if (storageOptions.S3Configured)
+    builder.Services.AddSingleton<IFileStorage, S3FileStorage>();
+else
+    builder.Services.AddSingleton<IFileStorage, LocalFileStorage>();
+
 builder.Services.AddScoped<IFileService, FileService>();
 builder.Services.AddScoped<IForumService, ForumService>();
 builder.Services.AddScoped<IMarketplaceService, MarketplaceService>();

@@ -1,4 +1,3 @@
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Taskpilot.API.Data;
@@ -10,27 +9,18 @@ namespace Taskpilot.API.Tests;
 
 /// <summary>
 /// Unit tests for the file share-link flow in <see cref="FileService"/>: creating,
-/// resolving and revoking a public token. Uses a throwaway content root on disk.
+/// resolving and revoking a public token. The bytes live in an in-memory
+/// <see cref="IFileStorage"/> fake, so these tests say nothing about which backend
+/// (disk or S3) is in use — that is <see cref="LocalFileStorageTests"/>' job.
 /// </summary>
-public class FileShareTests : IDisposable
+public class FileShareTests
 {
-    private readonly string _contentRoot =
-        Path.Combine(Path.GetTempPath(), "taskpilot-tests", Guid.NewGuid().ToString("N"));
+    private readonly FakeStorage _storage = new();
 
-    public void Dispose()
-    {
-        if (Directory.Exists(_contentRoot))
-            Directory.Delete(_contentRoot, recursive: true);
-    }
+    private FileService Create(TaskpilotDbContext ctx) =>
+        new(ctx, _storage, NullLogger<FileService>.Instance);
 
-    private FileService Create(TaskpilotDbContext ctx)
-    {
-        var env = new Mock<IWebHostEnvironment>();
-        env.SetupGet(e => e.ContentRootPath).Returns(_contentRoot);
-        return new FileService(ctx, env.Object, NullLogger<FileService>.Instance);
-    }
-
-    /// <summary>Seeds a file row plus its bytes on disk so downloads can resolve.</summary>
+    /// <summary>Seeds a file row plus its bytes in storage so downloads can resolve.</summary>
     private async Task<Guid> SeedFileAsync(TaskpilotDbContext ctx, Guid uploaderId)
     {
         var id = Guid.NewGuid();
@@ -46,10 +36,32 @@ public class FileShareTests : IDisposable
         });
         await ctx.SaveChangesAsync();
 
-        var uploads = Path.Combine(_contentRoot, "uploads");
-        Directory.CreateDirectory(uploads);
-        await File.WriteAllTextAsync(Path.Combine(uploads, storedName), "hello");
+        await _storage.SaveAsync(storedName, new MemoryStream("hello"u8.ToArray()), "text/plain");
         return id;
+    }
+
+    /// <summary>An in-memory storage backend; keeps the tests off the disk entirely.</summary>
+    private sealed class FakeStorage : IFileStorage
+    {
+        private readonly Dictionary<string, byte[]> _objects = new();
+
+        public string Name => "fake";
+
+        public async Task SaveAsync(string storedName, Stream content, string contentType, CancellationToken cancellationToken = default)
+        {
+            using var buffer = new MemoryStream();
+            await content.CopyToAsync(buffer, cancellationToken);
+            _objects[storedName] = buffer.ToArray();
+        }
+
+        public Task<Stream?> OpenReadAsync(string storedName, CancellationToken cancellationToken = default) =>
+            Task.FromResult<Stream?>(_objects.TryGetValue(storedName, out var bytes) ? new MemoryStream(bytes) : null);
+
+        public Task DeleteAsync(string storedName, CancellationToken cancellationToken = default)
+        {
+            _objects.Remove(storedName);
+            return Task.CompletedTask;
+        }
     }
 
     [Fact]

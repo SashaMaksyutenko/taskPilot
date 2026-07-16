@@ -80,6 +80,7 @@
     "placeholder": "Jump to a page or search…",
     "navigation": "Navigation",
     "actions": "Actions",
+    "askAi": "Ask AI: \"{{query}}\"",
     "noResults": "No results.",
     "navigate": "navigate",
     "select": "select",

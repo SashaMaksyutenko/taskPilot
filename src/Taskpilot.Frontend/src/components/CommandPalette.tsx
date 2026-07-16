@@ -17,11 +17,13 @@ import {
   ShoppingBag,
   StickyNote,
   Bot,
+  Sparkles,
   type LucideIcon,
 } from 'lucide-react'
 import { useAppDispatch } from '../store/hooks'
 import { logout } from '../store/authSlice'
 import { searchService, type SearchResults } from '../services/searchService'
+import { chatbotService } from '../services/chatbotService'
 
 /** One selectable row in the palette. */
 interface PaletteItem {
@@ -63,8 +65,14 @@ export default function CommandPalette({ open, onClose }: { open: boolean; onClo
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<SearchResults>(empty)
   const [active, setActive] = useState(0)
+  const [aiEnabled, setAiEnabled] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
   const listRef = useRef<HTMLDivElement>(null)
+
+  // Whether to offer "Ask AI"; fetched once for the session.
+  useEffect(() => {
+    chatbotService.status().then((s) => setAiEnabled(s.enabled)).catch(() => setAiEnabled(false))
+  }, [])
 
   // Reset and focus whenever the palette opens.
   useEffect(() => {
@@ -146,16 +154,33 @@ export default function CommandPalette({ open, onClose }: { open: boolean; onClo
       },
     ].filter((a) => !q || a.label.toLowerCase().includes(q))
 
+    // "Ask AI" runs the typed text as a question — opens the assistant which auto-sends it.
+    // Exempt from the label filter since the item is inherently about the current query.
+    const term = query.trim()
+    const aiAction: PaletteItem[] =
+      aiEnabled && term.length >= 2
+        ? [
+            {
+              id: 'action:ask-ai',
+              section: t('cmd.actions'),
+              label: t('cmd.askAi', { query: term }),
+              icon: Sparkles,
+              run: act(() => navigate('/assistant', { state: { prompt: term } })),
+            },
+          ]
+        : []
+
     return [
       ...nav,
       ...group(t('search.projects'), results.projects, FolderKanban, (id) => `/projects/${id}`),
       ...group(t('search.tasks'), results.tasks, FileText, (id) => `/projects/${id}`),
       ...group(t('search.topics'), results.topics, MessageSquare, (id) => `/forum/${id}`),
       ...group(t('search.users'), results.users, Search, (id) => `/users/${id}`),
+      ...aiAction,
       ...actions,
     ]
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [query, results, t])
+  }, [query, results, t, aiEnabled])
 
   // Keep the active index in range as the list shrinks/grows.
   useEffect(() => {

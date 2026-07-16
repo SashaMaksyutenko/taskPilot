@@ -1,17 +1,19 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest'
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import CommandPalette from './CommandPalette'
 
 // Isolate the palette from routing, redux, i18n and the network.
-const { navigate, dispatch, search } = vi.hoisted(() => ({
+const { navigate, dispatch, search, status } = vi.hoisted(() => ({
   navigate: vi.fn(),
   dispatch: vi.fn(),
   search: vi.fn(),
+  status: vi.fn(),
 }))
 
 vi.mock('react-router-dom', () => ({ useNavigate: () => navigate }))
 vi.mock('../store/hooks', () => ({ useAppDispatch: () => dispatch }))
 vi.mock('../services/searchService', () => ({ searchService: { search } }))
+vi.mock('../services/chatbotService', () => ({ chatbotService: { status } }))
 // t() returns the key, so labels are their i18n keys (e.g. "nav.projects").
 vi.mock('react-i18next', () => ({ useTranslation: () => ({ t: (k: string) => k }) }))
 
@@ -22,6 +24,7 @@ describe('CommandPalette', () => {
     navigate.mockReset()
     dispatch.mockReset()
     search.mockReset().mockResolvedValue(emptyResults)
+    status.mockReset().mockResolvedValue({ enabled: true })
   })
 
   it('lists the navigation targets when open', () => {
@@ -80,6 +83,24 @@ describe('CommandPalette', () => {
     fireEvent.change(screen.getByPlaceholderText('cmd.placeholder'), { target: { value: 'nav.logout' } })
     fireEvent.click(await screen.findByText('nav.logout'))
     expect(dispatch).toHaveBeenCalled()
+  })
+
+  it('offers "Ask AI" for the typed query and opens the assistant with it', async () => {
+    render(<CommandPalette open onClose={() => {}} />)
+    fireEvent.change(screen.getByPlaceholderText('cmd.placeholder'), { target: { value: 'when is my next deadline' } })
+
+    const askAi = await screen.findByText('cmd.askAi')
+    fireEvent.click(askAi)
+    expect(navigate).toHaveBeenCalledWith('/assistant', { state: { prompt: 'when is my next deadline' } })
+  })
+
+  it('hides "Ask AI" when the assistant is disabled', async () => {
+    status.mockResolvedValue({ enabled: false })
+    render(<CommandPalette open onClose={() => {}} />)
+    fireEvent.change(screen.getByPlaceholderText('cmd.placeholder'), { target: { value: 'when is my next deadline' } })
+    // Let the status promise resolve, then confirm the row never appears.
+    await waitFor(() => expect(status).toHaveBeenCalled())
+    expect(screen.queryByText('cmd.askAi')).toBeNull()
   })
 
   it('Escape closes the palette', () => {

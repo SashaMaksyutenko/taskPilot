@@ -80,6 +80,7 @@
     "placeholder": "Перейти на сторінку або шукати…",
     "navigation": "Навігація",
     "actions": "Дії",
+    "askAi": "Запитати AI: «{{query}}»",
     "noResults": "Нічого не знайдено.",
     "navigate": "рух",
     "select": "вибрати",

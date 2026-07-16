@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { projectService } from '../services/projectService'
-import { userService, type UserSearchResult } from '../services/userService'
-import type { ProjectMember } from '../types/project'
-import Avatar from './Avatar'
+import { projectService } from '../../services/projectService'
+import { userService, type UserSearchResult } from '../../services/userService'
+import type { ProjectMember } from '../../types/project'
+import Avatar from '../Avatar'
 
 /**
  * Manage a project's collaborators. Everyone with access sees the roster; the owner

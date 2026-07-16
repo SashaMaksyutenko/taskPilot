@@ -1,7 +1,7 @@
 import * as ContextMenu from '@radix-ui/react-context-menu'
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
-import { menuContentClass as contentClass, menuItemClass as itemClass, menuSeparatorClass as separatorClass } from './contextMenuStyles'
+import { menuContentClass as contentClass, menuItemClass as itemClass, menuSeparatorClass as separatorClass } from '../contextMenuStyles'
 
 /**
  * Right-click context menu for a chat message: copy its text and (for your own

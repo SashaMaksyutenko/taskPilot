@@ -1,5 +1,5 @@
 import { Navigate, Outlet } from 'react-router-dom'
-import { useAppSelector } from '../store/hooks'
+import { useAppSelector } from '../../store/hooks'
 
 /**
  * Route guard for guest-only pages (login, register).

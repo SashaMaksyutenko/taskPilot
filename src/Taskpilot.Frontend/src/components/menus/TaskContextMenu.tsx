@@ -5,7 +5,7 @@ import {
   menuContentClass as contentClass,
   menuItemClass as itemClass,
   menuSeparatorClass as separatorClass,
-} from './contextMenuStyles'
+} from '../contextMenuStyles'
 
 const PRIORITIES = ['High', 'Medium', 'Low']
 

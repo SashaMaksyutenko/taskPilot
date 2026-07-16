@@ -1,14 +1,14 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import Avatar from './Avatar'
-import MentionText from './MentionText'
-import MentionField, { type MentionCandidate } from './MentionField'
-import { apiErrorMessage } from '../lib/apiError'
-import { createTaskConnection } from '../lib/taskHub'
-import { projectService } from '../services/projectService'
-import { taskService, type ExtensionRequest } from '../services/taskService'
-import { userService, type UserSearchResult } from '../services/userService'
-import type { Task, TaskComment } from '../types/project'
+import Avatar from '../Avatar'
+import MentionText from '../MentionText'
+import MentionField, { type MentionCandidate } from '../MentionField'
+import { apiErrorMessage } from '../../lib/apiError'
+import { createTaskConnection } from '../../lib/taskHub'
+import { projectService } from '../../services/projectService'
+import { taskService, type ExtensionRequest } from '../../services/taskService'
+import { userService, type UserSearchResult } from '../../services/userService'
+import type { Task, TaskComment } from '../../types/project'
 
 const PRIORITIES = ['Low', 'Medium', 'High']
 

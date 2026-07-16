@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { Navigate, Outlet } from 'react-router-dom'
-import { fetchMe } from '../store/authSlice'
-import { useAppDispatch, useAppSelector } from '../store/hooks'
+import { fetchMe } from '../../store/authSlice'
+import { useAppDispatch, useAppSelector } from '../../store/hooks'
 
 /**
  * Route guard for authenticated-only pages.

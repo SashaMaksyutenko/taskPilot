@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion'
 import { AlertTriangle, CheckCircle2, Inbox } from 'lucide-react'
 import type { ReactNode } from 'react'
-import { cn } from '../lib/cn'
+import { cn } from '../../lib/cn'
 
 type Variant = 'success' | 'error' | 'empty'
 

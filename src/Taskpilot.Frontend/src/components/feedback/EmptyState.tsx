@@ -1,6 +1,6 @@
 import LottieImport from 'lottie-react'
 import type { ReactNode } from 'react'
-import emptyAnimation from '../assets/lottie/empty.json'
+import emptyAnimation from '../../assets/lottie/empty.json'
 
 // CJS/ESM interop: under Vite the default import can arrive as the module
 // namespace object, so unwrap `.default` to get the actual component.

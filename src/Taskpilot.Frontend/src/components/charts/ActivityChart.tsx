@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
-import type { DayActivity } from '../types/stats'
+import type { DayActivity } from '../../types/stats'
 
 /**
  * Line chart of content created per day (forum topics and tasks) over the period.

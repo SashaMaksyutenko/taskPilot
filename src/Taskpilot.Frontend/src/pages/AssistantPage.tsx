@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import EmptyState from '../components/EmptyState'
+import EmptyState from '../components/feedback/EmptyState'
 import Markdown from '../components/Markdown'
 import { chatbotService, type ChatBotMessage } from '../services/chatbotService'
 

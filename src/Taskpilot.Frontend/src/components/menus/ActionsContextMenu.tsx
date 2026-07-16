@@ -1,6 +1,6 @@
 import * as ContextMenu from '@radix-ui/react-context-menu'
 import type { ReactNode } from 'react'
-import { menuContentClass as contentClass, menuItemClass as itemClass, menuSeparatorClass as separatorClass } from './contextMenuStyles'
+import { menuContentClass as contentClass, menuItemClass as itemClass, menuSeparatorClass as separatorClass } from '../contextMenuStyles'
 
 /** One entry in a context menu. Use the string 'separator' for a divider. */
 export type ContextAction = { label: string; onSelect: () => void; danger?: boolean } | 'separator'

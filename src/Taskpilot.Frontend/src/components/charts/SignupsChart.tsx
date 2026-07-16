@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
-import type { DayActivity } from '../types/stats'
+import type { DayActivity } from '../../types/stats'
 
 /**
  * Bar chart of new user registrations per day over the selected period.

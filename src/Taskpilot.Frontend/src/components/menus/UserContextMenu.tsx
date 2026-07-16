@@ -1,8 +1,8 @@
 import * as ContextMenu from '@radix-ui/react-context-menu'
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ROLES } from '../types/admin'
-import { menuContentClass as contentClass, menuItemClass as itemClass, menuSeparatorClass as separatorClass } from './contextMenuStyles'
+import { ROLES } from '../../types/admin'
+import { menuContentClass as contentClass, menuItemClass as itemClass, menuSeparatorClass as separatorClass } from '../contextMenuStyles'
 
 /**
  * Right-click context menu for a user row in the admin table: view profile,

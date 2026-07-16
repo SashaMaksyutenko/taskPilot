@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 import Avatar from '../components/Avatar'
-import EmptyState from '../components/EmptyState'
+import EmptyState from '../components/feedback/EmptyState'
 import {
   searchService,
   type SavedSearch,

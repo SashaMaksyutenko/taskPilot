@@ -1,6 +1,6 @@
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
 import { useTranslation } from 'react-i18next'
-import { menuContentClass, menuItemClass, menuSeparatorClass } from './contextMenuStyles'
+import { menuContentClass, menuItemClass, menuSeparatorClass } from '../contextMenuStyles'
 
 const PRIORITIES = ['High', 'Medium', 'Low']
 

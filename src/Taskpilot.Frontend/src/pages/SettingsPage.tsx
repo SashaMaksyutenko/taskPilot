@@ -17,7 +17,7 @@ import { useAppDispatch, useAppSelector } from '../store/hooks'
 import { WEBHOOK_EVENTS, type Webhook } from '../types/webhook'
 import type { Appeal, Warning } from '../types/admin'
 import type { Session } from '../types/auth'
-import AppealModal from '../components/AppealModal'
+import AppealModal from '../components/modals/AppealModal'
 
 // Notification types the user can toggle (mirror the backend NotificationType enum).
 const NOTIF_TYPES = ['Task', 'Chat', 'Forum', 'Marketplace', 'Moderation', 'General'] as const

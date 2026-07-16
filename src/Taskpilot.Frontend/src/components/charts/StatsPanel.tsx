@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next'
-import Card from './ui/Card'
-import type { AdminStats, PublicStats } from '../types/stats'
+import Card from '../ui/Card'
+import type { AdminStats, PublicStats } from '../../types/stats'
 
 function Stat({ value, label }: { value: string | number; label: string }) {
   return (

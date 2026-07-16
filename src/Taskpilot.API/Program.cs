@@ -100,10 +100,10 @@ builder.Services.AddHttpClient<ILinkedInAuthClient, LinkedInAuthClient>();
 builder.Services.Configure<StripeOptions>(builder.Configuration.GetSection("Stripe"));
 builder.Services.AddHttpClient<IPaymentClient, StripePaymentClient>();
 
-// OpenAI assistant (populated from .env: OpenAi__*). Disabled until an API key is set.
+// OpenAI (populated from .env: OpenAi__*). Disabled until an API key is set.
+// IChatBotClient powers AI subtask suggestions; the data-aware assistant is wired below.
 builder.Services.Configure<OpenAiOptions>(builder.Configuration.GetSection("OpenAi"));
 builder.Services.AddHttpClient<IChatBotClient, OpenAiChatBotClient>();
-builder.Services.AddScoped<IChatBotService, ChatBotService>();
 builder.Services.AddScoped<ITaskAiService, TaskAiService>();
 // Data-aware assistant: tool-calling OpenAI client + read/write toolboxes + agent loop.
 builder.Services.AddHttpClient<Taskpilot.API.Services.Assistant.IAssistantChatClient,

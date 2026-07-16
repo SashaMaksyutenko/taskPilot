@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react'
-import { Calendar, FolderKanban, Bell, AlertTriangle } from 'lucide-react'
+import { Calendar, FolderKanban, Bell, AlertTriangle, Sparkles, ArrowRight } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Link, useNavigate } from 'react-router-dom'
 import FadeIn from '../components/FadeIn'
 import Card from '../components/ui/Card'
 import Skeleton from '../components/ui/Skeleton'
 import { calendarService } from '../services/calendarService'
+import { chatbotService } from '../services/chatbotService'
 import { notificationService } from '../services/notificationService'
 import { projectService } from '../services/projectService'
 import { fetchMe } from '../store/authSlice'
@@ -29,6 +30,7 @@ export default function HomePage() {
   const [upcoming, setUpcoming] = useState(0)
   const [overdue, setOverdue] = useState<CalendarTask[]>([])
   const [notifications, setNotifications] = useState<AppNotification[]>([])
+  const [aiEnabled, setAiEnabled] = useState(false)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -46,6 +48,7 @@ export default function HomePage() {
       notificationService.getNotifications().then((n) => setNotifications(n.slice(0, 6))),
       calendarService.getTasks(isoDate(today), isoDate(in30)).then((t) => setUpcoming(t.length)),
       calendarService.getOverdue().then(setOverdue),
+      chatbotService.status().then((s) => setAiEnabled(s.enabled)),
     ]).finally(() => setLoading(false))
   }, [])
 
@@ -97,6 +100,8 @@ export default function HomePage() {
             </FadeIn>
           ))}
         </div>
+
+        {aiEnabled && <AssistantCard onAsk={(prompt) => navigate('/assistant', { state: { prompt } })} />}
 
         {overdue.length > 0 && (
           <Card className="mt-6 border-red-200 bg-red-50/50 p-5 dark:border-red-900/40 dark:bg-red-950/20">
@@ -175,6 +180,45 @@ export default function HomePage() {
         </div>
       </FadeIn>
     </div>
+  )
+}
+
+/** Prominent entry point to the data-aware AI assistant, with one-tap example prompts. */
+function AssistantCard({ onAsk }: { onAsk: (prompt: string) => void }) {
+  const { t } = useTranslation()
+  const examples = [t('dashboard.aiExample1'), t('dashboard.aiExample2'), t('dashboard.aiExample3')]
+
+  return (
+    <Card className="mt-6 overflow-hidden border-primary/20 bg-gradient-to-br from-primary/10 via-surface to-surface p-5">
+      <div className="flex flex-wrap items-start gap-4">
+        <div className="inline-flex flex-none rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 p-2.5 text-primary">
+          <Sparkles className="h-5 w-5" strokeWidth={2} />
+        </div>
+        <div className="min-w-0 flex-1">
+          <h2 className="font-bold">{t('dashboard.aiTitle')}</h2>
+          <p className="mt-0.5 text-sm text-muted">{t('dashboard.aiSubtitle')}</p>
+
+          <div className="mt-3 flex flex-wrap gap-2">
+            {examples.map((ex) => (
+              <button
+                key={ex}
+                onClick={() => onAsk(ex)}
+                className="rounded-full border border-border bg-surface px-3 py-1.5 text-xs font-medium text-foreground transition hover:border-primary hover:text-primary"
+              >
+                {ex}
+              </button>
+            ))}
+          </div>
+        </div>
+        <button
+          onClick={() => onAsk('')}
+          className="inline-flex flex-none items-center gap-1.5 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-primary-hover"
+        >
+          {t('dashboard.aiOpen')}
+          <ArrowRight className="h-4 w-4" />
+        </button>
+      </div>
+    </Card>
   )
 }
 

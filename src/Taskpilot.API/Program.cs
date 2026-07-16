@@ -105,6 +105,13 @@ builder.Services.Configure<OpenAiOptions>(builder.Configuration.GetSection("Open
 builder.Services.AddHttpClient<IChatBotClient, OpenAiChatBotClient>();
 builder.Services.AddScoped<IChatBotService, ChatBotService>();
 builder.Services.AddScoped<ITaskAiService, TaskAiService>();
+// Data-aware assistant: tool-calling OpenAI client + read-only toolbox + agent loop.
+builder.Services.AddHttpClient<Taskpilot.API.Services.Assistant.IAssistantChatClient,
+    Taskpilot.API.Services.Assistant.OpenAiAssistantClient>();
+builder.Services.AddScoped<Taskpilot.API.Services.Assistant.IAssistantToolbox,
+    Taskpilot.API.Services.Assistant.AssistantToolbox>();
+builder.Services.AddScoped<Taskpilot.API.Services.Assistant.IAssistantAgent,
+    Taskpilot.API.Services.Assistant.AssistantAgent>();
 
 // GIF search for chat (populated from .env: Gif__*). Disabled until an API key is set.
 builder.Services.Configure<GifOptions>(builder.Configuration.GetSection("Gif"));

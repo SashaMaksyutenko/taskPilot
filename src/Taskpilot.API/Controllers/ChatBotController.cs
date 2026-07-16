@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Taskpilot.API.DTOs.ChatBot;
-using Taskpilot.API.Services;
+using Taskpilot.API.Services.Assistant;
 
 namespace Taskpilot.API.Controllers;
 
@@ -11,25 +11,28 @@ namespace Taskpilot.API.Controllers;
 [Route("api/chatbot")]
 public class ChatBotController : BaseApiController
 {
-    private readonly IChatBotService _chatBot;
+    private readonly IAssistantAgent _assistant;
 
-    public ChatBotController(IChatBotService chatBot)
+    public ChatBotController(IAssistantAgent assistant)
     {
-        _chatBot = chatBot;
+        _assistant = assistant;
     }
 
     /// <summary>Whether the assistant is configured and available.</summary>
     [HttpGet("status")]
-    public IActionResult Status() => Ok(new { enabled = _chatBot.IsEnabled });
+    public IActionResult Status() => Ok(new { enabled = _assistant.IsEnabled });
 
-    /// <summary>Answers the user's latest message given the running conversation.</summary>
+    /// <summary>
+    /// Answers the user's latest message. The assistant can look up the caller's own
+    /// tasks, deadlines and projects via read-only tools before replying.
+    /// </summary>
     [HttpPost("ask")]
     public async Task<IActionResult> Ask([FromBody] ChatBotAskDto dto)
     {
         var userId = CurrentUserId();
         if (userId is null) return Unauthorized();
 
-        var result = await _chatBot.AskAsync(dto.Messages);
+        var result = await _assistant.AskAsync(userId.Value, dto.Messages);
         return result.Succeeded
             ? Ok(new { reply = result.Value })
             : BadRequest(new { error = result.Error });

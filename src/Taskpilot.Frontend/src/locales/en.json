@@ -33,11 +33,12 @@
   },
   "assistant": {
     "title": "AI Assistant",
-    "subtitle": "Ask anything about using TaskPilot.",
-    "empty": "Ask a question to get started — e.g. \"How do I create a project?\"",
+    "subtitle": "Ask about your tasks, deadlines and projects — or how to use TaskPilot.",
+    "empty": "Ask a question to get started — e.g. \"What tasks of mine are overdue?\"",
     "placeholder": "Message the assistant…",
     "send": "Send",
     "thinking": "Thinking…",
+    "fab": "Ask AI",
     "error": "The assistant could not answer right now.",
     "disabled": "The AI assistant is not configured on the server."
   },
@@ -411,7 +412,13 @@
     "quickActions": "Quick actions",
     "myProjects": "My projects",
     "calendar": "Calendar",
-    "openChat": "Open chat"
+    "openChat": "Open chat",
+    "aiTitle": "AI Assistant",
+    "aiSubtitle": "Ask about your tasks, deadlines and projects — I read your data to answer.",
+    "aiOpen": "Open assistant",
+    "aiExample1": "What tasks of mine are overdue?",
+    "aiExample2": "What's due this week?",
+    "aiExample3": "List my projects"
   },
   "settings": {
     "title": "Settings",

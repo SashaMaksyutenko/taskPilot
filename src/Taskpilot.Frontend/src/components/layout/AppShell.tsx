@@ -5,6 +5,7 @@ import Sidebar from './Sidebar'
 import TopBar from './TopBar'
 import ShortcutsHelp from '../ShortcutsHelp'
 import CommandPalette from '../CommandPalette'
+import AssistantFab from '../AssistantFab'
 import { useNotifications } from '../../hooks/useNotifications'
 import { useShortcuts } from '../../hooks/useShortcuts'
 
@@ -42,8 +43,11 @@ export default function AppShell({ children }: { children?: ReactNode }) {
         </main>
       </div>
 
-      {/* Real-time notification toasts */}
-      <div className="fixed bottom-4 right-4 z-50 flex w-80 flex-col gap-2">
+      {/* Floating shortcut to the AI assistant */}
+      <AssistantFab />
+
+      {/* Real-time notification toasts — lifted above the assistant button so they never overlap */}
+      <div className="fixed bottom-24 right-4 z-50 flex w-80 flex-col gap-2">
         <AnimatePresence initial={false}>
           {notifications.toasts.map((n) => (
             <motion.div

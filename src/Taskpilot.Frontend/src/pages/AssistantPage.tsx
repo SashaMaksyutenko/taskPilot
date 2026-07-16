@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import EmptyState from '../components/EmptyState'
 import Markdown from '../components/Markdown'
@@ -10,6 +11,7 @@ import { chatbotService, type ChatBotMessage } from '../services/chatbotService'
  */
 export default function AssistantPage() {
   const { t } = useTranslation()
+  const location = useLocation()
   const [enabled, setEnabled] = useState<boolean | null>(null)
   const [messages, setMessages] = useState<ChatBotMessage[]>([])
   const [input, setInput] = useState('')
@@ -24,8 +26,8 @@ export default function AssistantPage() {
     endRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, sending])
 
-  const send = async () => {
-    const text = input.trim()
+  const sendText = async (raw: string) => {
+    const text = raw.trim()
     if (!text || sending) return
     const next: ChatBotMessage[] = [...messages, { role: 'user', content: text }]
     setMessages(next)
@@ -40,6 +42,19 @@ export default function AssistantPage() {
       setSending(false)
     }
   }
+
+  const send = () => sendText(input)
+
+  // A prompt handed in via navigation state (e.g. from a dashboard example) is sent once.
+  useEffect(() => {
+    const prompt = (location.state as { prompt?: string } | null)?.prompt
+    if (prompt) {
+      sendText(prompt)
+      // Clear the state so a refresh or back-navigation doesn't resend it.
+      window.history.replaceState({}, '')
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {

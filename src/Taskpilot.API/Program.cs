@@ -105,11 +105,13 @@ builder.Services.Configure<OpenAiOptions>(builder.Configuration.GetSection("Open
 builder.Services.AddHttpClient<IChatBotClient, OpenAiChatBotClient>();
 builder.Services.AddScoped<IChatBotService, ChatBotService>();
 builder.Services.AddScoped<ITaskAiService, TaskAiService>();
-// Data-aware assistant: tool-calling OpenAI client + read-only toolbox + agent loop.
+// Data-aware assistant: tool-calling OpenAI client + read/write toolboxes + agent loop.
 builder.Services.AddHttpClient<Taskpilot.API.Services.Assistant.IAssistantChatClient,
     Taskpilot.API.Services.Assistant.OpenAiAssistantClient>();
+builder.Services.AddScoped<Taskpilot.API.Services.Assistant.AssistantToolbox>();          // read-only tools
+builder.Services.AddScoped<Taskpilot.API.Services.Assistant.AssistantActionsToolbox>();    // write/action tools
 builder.Services.AddScoped<Taskpilot.API.Services.Assistant.IAssistantToolbox,
-    Taskpilot.API.Services.Assistant.AssistantToolbox>();
+    Taskpilot.API.Services.Assistant.CompositeAssistantToolbox>();                          // agent sees both
 builder.Services.AddScoped<Taskpilot.API.Services.Assistant.IAssistantAgent,
     Taskpilot.API.Services.Assistant.AssistantAgent>();
 

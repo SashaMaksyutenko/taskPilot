@@ -10,9 +10,9 @@ public class CompositeAssistantToolbox : IAssistantToolbox
 {
     private readonly IReadOnlyList<IAssistantToolbox> _toolboxes;
 
-    public CompositeAssistantToolbox(AssistantToolbox read, AssistantActionsToolbox actions)
+    public CompositeAssistantToolbox(AssistantToolbox read, AssistantActionsToolbox actions, AssistantPeopleToolbox people)
     {
-        _toolboxes = new IAssistantToolbox[] { read, actions };
+        _toolboxes = new IAssistantToolbox[] { read, actions, people };
         Definitions = _toolboxes.SelectMany(t => t.Definitions).ToList();
     }
 

@@ -110,8 +110,9 @@ builder.Services.AddHttpClient<Taskpilot.API.Services.Assistant.IAssistantChatCl
     Taskpilot.API.Services.Assistant.OpenAiAssistantClient>();
 builder.Services.AddScoped<Taskpilot.API.Services.Assistant.AssistantToolbox>();          // read-only tools
 builder.Services.AddScoped<Taskpilot.API.Services.Assistant.AssistantActionsToolbox>();    // write/action tools
+builder.Services.AddScoped<Taskpilot.API.Services.Assistant.AssistantPeopleToolbox>();     // public profile lookup
 builder.Services.AddScoped<Taskpilot.API.Services.Assistant.IAssistantToolbox,
-    Taskpilot.API.Services.Assistant.CompositeAssistantToolbox>();                          // agent sees both
+    Taskpilot.API.Services.Assistant.CompositeAssistantToolbox>();                          // agent sees all
 builder.Services.AddScoped<Taskpilot.API.Services.Assistant.IAssistantAgent,
     Taskpilot.API.Services.Assistant.AssistantAgent>();
 

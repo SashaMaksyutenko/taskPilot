@@ -17,6 +17,7 @@ export default function AssistantPage() {
   const [input, setInput] = useState('')
   const [sending, setSending] = useState(false)
   const endRef = useRef<HTMLDivElement | null>(null)
+  const autoSent = useRef(false)
 
   useEffect(() => {
     chatbotService.status().then((s) => setEnabled(s.enabled)).catch(() => setEnabled(false))
@@ -46,9 +47,12 @@ export default function AssistantPage() {
   const send = () => sendText(input)
 
   // A prompt handed in via navigation state (e.g. from a dashboard example) is sent once.
+  // The guard must be a ref, not the `sending` state: StrictMode runs effects twice in dev
+  // and state hasn't updated on the second pass, which would send the prompt (and bill) twice.
   useEffect(() => {
     const prompt = (location.state as { prompt?: string } | null)?.prompt
-    if (prompt) {
+    if (prompt && !autoSent.current) {
+      autoSent.current = true
       sendText(prompt)
       // Clear the state so a refresh or back-navigation doesn't resend it.
       window.history.replaceState({}, '')

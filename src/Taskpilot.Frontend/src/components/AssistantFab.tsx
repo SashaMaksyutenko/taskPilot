@@ -5,8 +5,14 @@ import { useTranslation } from 'react-i18next'
 import { chatbotService } from '../services/chatbotService'
 
 /**
- * Floating shortcut to the AI assistant, shown on every authenticated page except
- * the assistant itself. Hidden entirely when the assistant is not configured server-side.
+ * Pages that own the bottom-right corner with their own composer/send button — the
+ * floating button would sit on top of it.
+ */
+const HIDDEN_ON = ['/assistant', '/chat']
+
+/**
+ * Floating shortcut to the AI assistant, shown on every authenticated page except those
+ * that own the bottom-right corner. Hidden entirely when the assistant is not configured.
  */
 export default function AssistantFab() {
   const { t } = useTranslation()
@@ -18,7 +24,7 @@ export default function AssistantFab() {
     chatbotService.status().then((s) => setEnabled(s.enabled)).catch(() => setEnabled(false))
   }, [])
 
-  if (!enabled || location.pathname === '/assistant') return null
+  if (!enabled || HIDDEN_ON.includes(location.pathname)) return null
 
   return (
     <button

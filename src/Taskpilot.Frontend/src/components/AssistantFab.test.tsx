@@ -40,4 +40,11 @@ describe('AssistantFab', () => {
     await waitFor(() => expect(status).toHaveBeenCalled())
     expect(container.querySelector('button')).toBeNull()
   })
+
+  it('hides itself on chat, which owns the bottom-right corner with its own send button', async () => {
+    loc.pathname = '/chat'
+    const { container } = render(<AssistantFab />)
+    await waitFor(() => expect(status).toHaveBeenCalled())
+    expect(container.querySelector('button')).toBeNull()
+  })
 })

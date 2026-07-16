@@ -100,6 +100,45 @@ public class AssistantToolboxTests
         Assert.Equal(1, proj.GetProperty("done").GetInt32());
     }
 
+    [Theory]
+    [InlineData("null")]   // model omitted arguments (JSON null)
+    [InlineData("")]        // empty arguments
+    [InlineData("[]")]      // non-object arguments
+    public async Task ToolsTolerateMissingOrNonObjectArguments(string args)
+    {
+        await using var ctx = TestDb.CreateContext();
+        var me = await TestDb.AddUserAsync(ctx, "Me");
+        var project = await TestDb.AddProjectAsync(ctx, me);
+        await AddTaskAsync(ctx, project, me, ProjectTaskStatus.InProgress, DateTime.UtcNow.AddDays(3), "Soon");
+
+        var toolbox = new AssistantToolbox(ctx);
+
+        // Must not throw — a bare tool call with no arguments should still work with defaults.
+        var upcoming = await toolbox.ExecuteAsync(me, "get_upcoming_deadlines", args);
+        Assert.Equal(1, JsonDocument.Parse(upcoming).RootElement.GetProperty("count").GetInt32());
+
+        var mine = await toolbox.ExecuteAsync(me, "get_my_tasks", args);
+        Assert.Equal(1, JsonDocument.Parse(mine).RootElement.GetProperty("count").GetInt32());
+    }
+
+    [Fact]
+    public async Task GetUpcomingDeadlines_AcceptsDaysAsString()
+    {
+        await using var ctx = TestDb.CreateContext();
+        var me = await TestDb.AddUserAsync(ctx, "Me");
+        var project = await TestDb.AddProjectAsync(ctx, me);
+        await AddTaskAsync(ctx, project, me, ProjectTaskStatus.InProgress, DateTime.UtcNow.AddDays(3), "Soon");
+        await AddTaskAsync(ctx, project, me, ProjectTaskStatus.InProgress, DateTime.UtcNow.AddDays(10), "Later");
+
+        var toolbox = new AssistantToolbox(ctx);
+        // Some models pass numbers as strings.
+        var json = await toolbox.ExecuteAsync(me, "get_upcoming_deadlines", "{\"days\":\"5\"}");
+
+        using var doc = JsonDocument.Parse(json);
+        Assert.Equal(5, doc.RootElement.GetProperty("days").GetInt32());
+        Assert.Equal(1, doc.RootElement.GetProperty("count").GetInt32()); // only the 3-day task
+    }
+
     [Fact]
     public async Task UnknownTool_ReturnsError()
     {

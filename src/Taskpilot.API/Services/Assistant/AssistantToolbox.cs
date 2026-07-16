@@ -140,7 +140,13 @@ public class AssistantToolbox : IAssistantToolbox
         try
         {
             using var doc = JsonDocument.Parse(string.IsNullOrWhiteSpace(json) ? "{}" : json);
-            return doc.RootElement.TryGetProperty(prop, out var v) && v.TryGetInt32(out var n) ? n : null;
+            // The model may omit arguments entirely (JSON null) or send a non-object; treat as "no value".
+            if (doc.RootElement.ValueKind != JsonValueKind.Object || !doc.RootElement.TryGetProperty(prop, out var v))
+                return null;
+            if (v.ValueKind == JsonValueKind.Number && v.TryGetInt32(out var n)) return n;
+            // Some models pass numbers as strings, e.g. {"days":"7"}.
+            if (v.ValueKind == JsonValueKind.String && int.TryParse(v.GetString(), out var m)) return m;
+            return null;
         }
         catch (JsonException) { return null; }
     }
@@ -150,9 +156,9 @@ public class AssistantToolbox : IAssistantToolbox
         try
         {
             using var doc = JsonDocument.Parse(string.IsNullOrWhiteSpace(json) ? "{}" : json);
-            return doc.RootElement.TryGetProperty(prop, out var v) && v.ValueKind == JsonValueKind.String
-                ? v.GetString()
-                : null;
+            if (doc.RootElement.ValueKind != JsonValueKind.Object || !doc.RootElement.TryGetProperty(prop, out var v))
+                return null;
+            return v.ValueKind == JsonValueKind.String ? v.GetString() : null;
         }
         catch (JsonException) { return null; }
     }

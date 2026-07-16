@@ -56,6 +56,47 @@ public class AssistantToolbox : IAssistantToolbox
         new("list_my_projects",
             "Lists the projects the user owns or is a member of, with task counts.",
             NoParams),
+        new("list_marketplace_tasks",
+            "Lists tasks posted on the public marketplace (freelance gigs) — budget, status, required "
+            + "skills, poster and application count. Use for any question about the marketplace/market. "
+            + "Optionally filter by status.",
+            new
+            {
+                type = "object",
+                properties = new
+                {
+                    status = new
+                    {
+                        type = "string",
+                        description = "Optional lifecycle filter.",
+                        @enum = new[] { "Open", "InProgress", "Submitted", "Completed", "Cancelled" },
+                    },
+                },
+            }),
+        new("search_taskpilot",
+            "Searches the user's projects and tasks, plus public forum topics and users, for a keyword. "
+            + "Use to find something by name.",
+            new
+            {
+                type = "object",
+                properties = new { query = new { type = "string", description = "The text to search for." } },
+                required = new[] { "query" },
+            }),
+        new("get_forum_topics",
+            "Lists the most recent public forum topics (title, author, reply count).",
+            NoParams),
+        new("get_notifications",
+            "Returns the user's unread notifications.",
+            NoParams),
+        new("get_project_stats",
+            "For one of the user's projects (found by name), returns totals, a status breakdown, "
+            + "per-assignee workload and the overdue count.",
+            new
+            {
+                type = "object",
+                properties = new { project = new { type = "string", description = "The project name, or part of it." } },
+                required = new[] { "project" },
+            }),
     };
 
     /// <inheritdoc />
@@ -65,6 +106,11 @@ public class AssistantToolbox : IAssistantToolbox
         "get_upcoming_deadlines" => GetUpcomingDeadlinesAsync(userId, ReadInt(argumentsJson, "days") ?? 7),
         "get_my_tasks" => GetMyTasksAsync(userId, ReadString(argumentsJson, "status")),
         "list_my_projects" => ListMyProjectsAsync(userId),
+        "list_marketplace_tasks" => ListMarketplaceTasksAsync(ReadString(argumentsJson, "status")),
+        "search_taskpilot" => SearchAsync(userId, ReadString(argumentsJson, "query")),
+        "get_forum_topics" => GetForumTopicsAsync(ReadInt(argumentsJson, "limit") ?? 5),
+        "get_notifications" => GetNotificationsAsync(userId),
+        "get_project_stats" => GetProjectStatsAsync(userId, ReadString(argumentsJson, "project")),
         _ => Task.FromResult(Json(new { error = $"Unknown tool: {toolName}" })),
     };
 
@@ -149,6 +195,128 @@ public class AssistantToolbox : IAssistantToolbox
             .ToListAsync();
 
         return Json(new { count = rows.Count, projects = rows });
+    }
+
+    private async Task<string> ListMarketplaceTasksAsync(string? status)
+    {
+        // The marketplace is public — every user sees every gig, so no per-user scoping here.
+        var query = _context.MarketplaceTasks.AsQueryable();
+        if (!string.IsNullOrWhiteSpace(status) && Enum.TryParse<MarketplaceTaskStatus>(status, ignoreCase: true, out var s))
+            query = query.Where(m => m.Status == s);
+
+        var rows = await query
+            .OrderByDescending(m => m.CreatedAt)
+            .Take(MaxRows)
+            .Select(m => new
+            {
+                title = m.Title,
+                budget = m.Budget,
+                status = m.Status.ToString(),
+                skills = m.RequiredSkills,
+                poster = m.Poster.Name,
+                applications = m.Applications.Count,
+                deadline = m.Deadline,
+            })
+            .AsNoTracking()
+            .ToListAsync();
+
+        return Json(new { count = rows.Count, tasks = rows });
+    }
+
+    private async Task<string> SearchAsync(Guid userId, string? query)
+    {
+        if (string.IsNullOrWhiteSpace(query))
+            return Json(new { error = "Provide a search query." });
+        var q = query.Trim().ToLower();
+
+        var projects = await _context.Projects
+            .Where(p => (p.OwnerId == userId || p.Members.Any(m => m.UserId == userId)) && p.Name.ToLower().Contains(q))
+            .OrderBy(p => p.Name).Take(5)
+            .Select(p => new { name = p.Name })
+            .AsNoTracking().ToListAsync();
+
+        var tasks = await _context.ProjectTasks
+            .Where(t => (t.Project.OwnerId == userId || t.Project.Members.Any(m => m.UserId == userId))
+                        && t.Title.ToLower().Contains(q))
+            .OrderByDescending(t => t.CreatedAt).Take(5)
+            .Select(t => new { title = t.Title, project = t.Project.Name, status = t.Status.ToString() })
+            .AsNoTracking().ToListAsync();
+
+        // Forum topics and users are public in the app's search.
+        var topics = await _context.ForumTopics
+            .Where(t => t.Title.ToLower().Contains(q))
+            .OrderByDescending(t => t.CreatedAt).Take(5)
+            .Select(t => new { title = t.Title, author = t.Author.Name })
+            .AsNoTracking().ToListAsync();
+
+        var users = await _context.Users
+            .Where(u => u.IsActive && u.Name.ToLower().Contains(q))
+            .OrderBy(u => u.Name).Take(5)
+            .Select(u => new { name = u.Name })
+            .AsNoTracking().ToListAsync();
+
+        return Json(new { projects, tasks, topics, users });
+    }
+
+    private async Task<string> GetForumTopicsAsync(int take)
+    {
+        if (take is < 1 or > MaxRows) take = 5;
+        var rows = await _context.ForumTopics
+            .OrderByDescending(t => t.IsPinned).ThenByDescending(t => t.CreatedAt)
+            .Take(take)
+            .Select(t => new
+            {
+                title = t.Title,
+                author = t.Author.Name,
+                replies = t.Replies.Count,
+                pinned = t.IsPinned,
+                createdAt = t.CreatedAt,
+            })
+            .AsNoTracking().ToListAsync();
+
+        return Json(new { count = rows.Count, topics = rows });
+    }
+
+    private async Task<string> GetNotificationsAsync(Guid userId)
+    {
+        var rows = await _context.Notifications
+            .Where(n => n.RecipientId == userId && !n.IsRead)
+            .OrderByDescending(n => n.CreatedAt)
+            .Take(MaxRows)
+            .Select(n => new { message = n.Message, type = n.Type.ToString(), createdAt = n.CreatedAt })
+            .AsNoTracking().ToListAsync();
+
+        return Json(new { unread = rows.Count, notifications = rows });
+    }
+
+    private async Task<string> GetProjectStatsAsync(Guid userId, string? projectName)
+    {
+        if (string.IsNullOrWhiteSpace(projectName))
+            return Json(new { error = "Provide a project name." });
+        var q = projectName.Trim().ToLower();
+
+        var project = await _context.Projects
+            .Where(p => (p.OwnerId == userId || p.Members.Any(m => m.UserId == userId)) && p.Name.ToLower().Contains(q))
+            .OrderBy(p => p.Name.Length) // prefer the closest (shortest) name match
+            .Select(p => new { p.Id, p.Name })
+            .FirstOrDefaultAsync();
+        if (project is null)
+            return Json(new { error = $"No project you can access matches '{projectName}'." });
+
+        var now = DateTime.UtcNow;
+        var tasks = await _context.ProjectTasks
+            .Where(t => t.ProjectId == project.Id)
+            .Select(t => new { t.Status, t.Deadline, assignee = t.Assignee != null ? t.Assignee.Name : null })
+            .AsNoTracking().ToListAsync();
+
+        var byStatus = tasks.GroupBy(t => t.Status.ToString()).ToDictionary(g => g.Key, g => g.Count());
+        var workload = tasks
+            .GroupBy(t => t.assignee ?? "Unassigned")
+            .Select(g => new { assignee = g.Key, tasks = g.Count() })
+            .OrderByDescending(x => x.tasks).ToList();
+        var overdue = tasks.Count(t => t.Deadline != null && t.Deadline < now && t.Status != ProjectTaskStatus.Done);
+
+        return Json(new { project = project.Name, total = tasks.Count, overdue, byStatus, workload });
     }
 
     // --- helpers ---

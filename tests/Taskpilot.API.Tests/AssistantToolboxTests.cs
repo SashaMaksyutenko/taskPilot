@@ -151,6 +151,112 @@ public class AssistantToolboxTests
     }
 
     [Fact]
+    public async Task ListMarketplaceTasks_ReturnsGigsWithDetailsAndFiltersByStatus()
+    {
+        await using var ctx = TestDb.CreateContext();
+        var poster = await TestDb.AddUserAsync(ctx, "Poster");
+        ctx.MarketplaceTasks.Add(new MarketplaceTask
+        {
+            Id = Guid.NewGuid(), Title = "Need a logo", Description = "d", Budget = 200m,
+            RequiredSkills = "Design", Status = MarketplaceTaskStatus.Open, PosterId = poster,
+        });
+        ctx.MarketplaceTasks.Add(new MarketplaceTask
+        {
+            Id = Guid.NewGuid(), Title = "Build X", Description = "d", Budget = 500m,
+            Status = MarketplaceTaskStatus.Completed, PosterId = poster,
+        });
+        await ctx.SaveChangesAsync();
+
+        // Any user can see the marketplace, so scoping is not required — pass an unrelated id.
+        var toolbox = new AssistantToolbox(ctx);
+
+        var all = await toolbox.ExecuteAsync(Guid.NewGuid(), "list_marketplace_tasks", "{}");
+        Assert.Equal(2, JsonDocument.Parse(all).RootElement.GetProperty("count").GetInt32());
+
+        var open = await toolbox.ExecuteAsync(Guid.NewGuid(), "list_marketplace_tasks", "{\"status\":\"Open\"}");
+        using var doc = JsonDocument.Parse(open);
+        Assert.Equal(1, doc.RootElement.GetProperty("count").GetInt32());
+        var gig = doc.RootElement.GetProperty("tasks")[0];
+        Assert.Equal("Need a logo", gig.GetProperty("title").GetString());
+        Assert.Equal(200, gig.GetProperty("budget").GetInt32());
+        Assert.Equal("Poster", gig.GetProperty("poster").GetString());
+    }
+
+    [Fact]
+    public async Task Search_FindsMatchesButRespectsProjectAccess()
+    {
+        await using var ctx = TestDb.CreateContext();
+        var me = await TestDb.AddUserAsync(ctx, "Me");
+        var stranger = await TestDb.AddUserAsync(ctx, "Designer Dan");
+        var mine = await TestDb.AddProjectAsync(ctx, me, "Alpha");
+        var foreign = await TestDb.AddProjectAsync(ctx, stranger, "Beta");
+        await AddTaskAsync(ctx, mine, me, ProjectTaskStatus.InProgress, null, "Design homepage");
+        await AddTaskAsync(ctx, foreign, stranger, ProjectTaskStatus.InProgress, null, "Design logo"); // no access
+        ctx.ForumTopics.Add(new ForumTopic { Id = Guid.NewGuid(), Title = "Design tips", Body = "b", AuthorId = stranger });
+        await ctx.SaveChangesAsync();
+
+        var toolbox = new AssistantToolbox(ctx);
+        var json = await toolbox.ExecuteAsync(me, "search_taskpilot", "{\"query\":\"design\"}");
+
+        using var doc = JsonDocument.Parse(json);
+        var taskTitles = doc.RootElement.GetProperty("tasks").EnumerateArray().Select(x => x.GetProperty("title").GetString()).ToList();
+        Assert.Contains("Design homepage", taskTitles);
+        Assert.DoesNotContain("Design logo", taskTitles); // task in a project I can't access
+        Assert.Single(doc.RootElement.GetProperty("topics").EnumerateArray());
+        Assert.Single(doc.RootElement.GetProperty("users").EnumerateArray()); // "Designer Dan"
+    }
+
+    [Fact]
+    public async Task GetNotifications_ReturnsUnreadOnly()
+    {
+        await using var ctx = TestDb.CreateContext();
+        var me = await TestDb.AddUserAsync(ctx, "Me");
+        ctx.Notifications.Add(new Notification { Id = Guid.NewGuid(), RecipientId = me, Type = NotificationType.Task, Message = "New task assigned", IsRead = false });
+        ctx.Notifications.Add(new Notification { Id = Guid.NewGuid(), RecipientId = me, Type = NotificationType.General, Message = "Old news", IsRead = true });
+        await ctx.SaveChangesAsync();
+
+        var toolbox = new AssistantToolbox(ctx);
+        var json = await toolbox.ExecuteAsync(me, "get_notifications", "{}");
+
+        using var doc = JsonDocument.Parse(json);
+        Assert.Equal(1, doc.RootElement.GetProperty("unread").GetInt32());
+        Assert.Equal("New task assigned", doc.RootElement.GetProperty("notifications")[0].GetProperty("message").GetString());
+    }
+
+    [Fact]
+    public async Task GetProjectStats_BreaksDownByStatusAndWorkload()
+    {
+        await using var ctx = TestDb.CreateContext();
+        var me = await TestDb.AddUserAsync(ctx, "Me");
+        var mate = await TestDb.AddUserAsync(ctx, "Mate");
+        var project = await TestDb.AddProjectAsync(ctx, me, "Progress");
+        await AddTaskAsync(ctx, project, me, ProjectTaskStatus.Done, null, "d1");
+        await AddTaskAsync(ctx, project, me, ProjectTaskStatus.Done, null, "d2");
+        await AddTaskAsync(ctx, project, me, ProjectTaskStatus.InProgress, null, "wip");
+        await AddTaskAsync(ctx, project, mate, ProjectTaskStatus.InProgress, DateTime.UtcNow.AddDays(-1), "late"); // overdue
+
+        var toolbox = new AssistantToolbox(ctx);
+        var json = await toolbox.ExecuteAsync(me, "get_project_stats", "{\"project\":\"Progress\"}");
+
+        using var doc = JsonDocument.Parse(json);
+        Assert.Equal("Progress", doc.RootElement.GetProperty("project").GetString());
+        Assert.Equal(4, doc.RootElement.GetProperty("total").GetInt32());
+        Assert.Equal(1, doc.RootElement.GetProperty("overdue").GetInt32());
+        Assert.Equal(2, doc.RootElement.GetProperty("byStatus").GetProperty("Done").GetInt32());
+    }
+
+    [Fact]
+    public async Task GetProjectStats_UnknownProject_ReturnsError()
+    {
+        await using var ctx = TestDb.CreateContext();
+        var me = await TestDb.AddUserAsync(ctx, "Me");
+        var toolbox = new AssistantToolbox(ctx);
+
+        var json = await toolbox.ExecuteAsync(me, "get_project_stats", "{\"project\":\"Nope\"}");
+        Assert.True(JsonDocument.Parse(json).RootElement.TryGetProperty("error", out _));
+    }
+
+    [Fact]
     public async Task UnknownTool_ReturnsError()
     {
         await using var ctx = TestDb.CreateContext();

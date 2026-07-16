@@ -48,6 +48,10 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # ESLint fails the job only on errors (warnings are allowed through).
+      - name: Lint
+        run: npm run lint
+
       # `npm run build` runs the TypeScript type-check (tsc -b) then the Vite build.
       - name: Build
         run: npm run build

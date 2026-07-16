@@ -501,6 +501,7 @@
     "exportXlsx": "Експорт Excel",
     "exportPdf": "Експорт PDF",
     "reports": "Звіти",
+    "view": { "board": "Дошка", "gantt": "Таймлайн" },
     "reportPdf": "Проєкт — PDF",
     "reportXlsx": "Проєкт — Excel",
     "teamReportPdf": "Команда — PDF",
@@ -573,6 +574,10 @@
     "commentPlaceholder": "Напишіть коментар… (Ctrl+Enter — надіслати)",
     "addComment": "Коментувати",
     "deleteComment": "Видалити коментар"
+  },
+  "gantt": {
+    "empty": "Ще немає задач із дедлайном — встановіть його, щоб побачити таймлайн.",
+    "unscheduled": "Не показано — без дедлайну: {{n}}"
   },
   "calendar": {
     "title": "Календар",

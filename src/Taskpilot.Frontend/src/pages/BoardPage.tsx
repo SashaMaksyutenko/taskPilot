@@ -8,6 +8,8 @@ import ProjectMembersModal from '../components/modals/ProjectMembersModal'
 import ConfirmDialog from '../components/modals/ConfirmDialog'
 import Button from '../components/ui/Button'
 import Input from '../components/ui/Input'
+import Card from '../components/ui/Card'
+import GanttChart from '../components/GanttChart'
 import Confetti from '../components/feedback/Confetti'
 import ResultState from '../components/feedback/ResultState'
 import { bookmarkService } from '../services/bookmarkService'
@@ -315,6 +317,7 @@ export default function BoardPage() {
 
   // The toolbar would be too crowded with four report buttons, so they live in a menu.
   const [reportsOpen, setReportsOpen] = useState(false)
+  const [view, setView] = useState<'board' | 'gantt'>('board')
   const runReport = (fn: () => Promise<void>) => {
     setReportsOpen(false)
     void fn()
@@ -372,7 +375,23 @@ export default function BoardPage() {
             {t('board.backToProjects')}
           </Link>
           <h1 className="text-xl font-bold">{project?.name ?? t('board.title')}</h1>
-          <Button variant="secondary" size="sm" className="ml-auto" onClick={() => setMembersOpen(true)}>
+
+          {/* Board / timeline switcher */}
+          <div className="ml-auto inline-flex overflow-hidden rounded-lg border border-border">
+            {(['board', 'gantt'] as const).map((v) => (
+              <button
+                key={v}
+                onClick={() => setView(v)}
+                className={`px-3 py-1.5 text-sm font-medium transition ${
+                  view === v ? 'bg-primary text-white' : 'text-foreground hover:bg-canvas'
+                }`}
+              >
+                {t(`board.view.${v}`)}
+              </button>
+            ))}
+          </div>
+
+          <Button variant="secondary" size="sm" onClick={() => setMembersOpen(true)}>
             {t('members.button')}
           </Button>
           <Button variant="secondary" size="sm" onClick={exportCsv}>
@@ -555,7 +574,15 @@ export default function BoardPage() {
           </div>
         )}
 
+        {/* Timeline (Gantt) — same filtered tasks as the board */}
+        {view === 'gantt' && (
+          <Card className="p-4">
+            <GanttChart tasks={visibleTasks} onSelect={setSelectedTask} />
+          </Card>
+        )}
+
         {/* Columns */}
+        {view === 'board' && (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
           {STATUS_COLUMNS.map((col) => {
             const colTasks = visibleTasks.filter((t) => t.status === col.key)
@@ -666,6 +693,7 @@ export default function BoardPage() {
             )
           })}
         </div>
+        )}
 
       {selectedTask && (
         <TaskDetailModal

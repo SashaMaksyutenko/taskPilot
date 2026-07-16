@@ -501,6 +501,7 @@
     "exportXlsx": "Export Excel",
     "exportPdf": "Export PDF",
     "reports": "Reports",
+    "view": { "board": "Board", "gantt": "Timeline" },
     "reportPdf": "Project — PDF",
     "reportXlsx": "Project — Excel",
     "teamReportPdf": "Team — PDF",
@@ -573,6 +574,10 @@
     "commentPlaceholder": "Write a comment… (Ctrl+Enter to post)",
     "addComment": "Comment",
     "deleteComment": "Delete comment"
+  },
+  "gantt": {
+    "empty": "No tasks with a deadline yet — set one to see the timeline.",
+    "unscheduled": "Not shown — no deadline set: {{n}}"
   },
   "calendar": {
     "title": "Calendar",

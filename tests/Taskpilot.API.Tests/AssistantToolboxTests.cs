@@ -27,23 +27,34 @@ public class AssistantToolboxTests
     }
 
     [Fact]
-    public async Task GetOverdueTasks_OnlyMineAndOverdue()
+    public async Task GetOverdueTasks_CoversMyProjectsAndNamesTheAssignee()
     {
         await using var ctx = TestDb.CreateContext();
         var me = await TestDb.AddUserAsync(ctx, "Me");
-        var other = await TestDb.AddUserAsync(ctx, "Other");
-        var project = await TestDb.AddProjectAsync(ctx, me);
-        await AddTaskAsync(ctx, project, me, ProjectTaskStatus.InProgress, DateTime.UtcNow.AddDays(-2), "Mine overdue");
-        await AddTaskAsync(ctx, project, me, ProjectTaskStatus.Done, DateTime.UtcNow.AddDays(-2), "Mine done");        // excluded (done)
-        await AddTaskAsync(ctx, project, me, ProjectTaskStatus.InProgress, DateTime.UtcNow.AddDays(2), "Mine future");  // excluded (not overdue)
-        await AddTaskAsync(ctx, project, other, ProjectTaskStatus.InProgress, DateTime.UtcNow.AddDays(-2), "Not mine"); // excluded (other user)
+        var teammate = await TestDb.AddUserAsync(ctx, "Teammate");
+        var stranger = await TestDb.AddUserAsync(ctx, "Stranger");
+        var mine = await TestDb.AddProjectAsync(ctx, me, "Mine");
+        var foreign = await TestDb.AddProjectAsync(ctx, stranger, "Foreign"); // I have no access
+
+        await AddTaskAsync(ctx, mine, me, ProjectTaskStatus.InProgress, DateTime.UtcNow.AddDays(-2), "Mine overdue");
+        // A teammate's overdue task in my project must still appear — this is the dashboard's behaviour.
+        await AddTaskAsync(ctx, mine, teammate, ProjectTaskStatus.InProgress, DateTime.UtcNow.AddDays(-3), "Teammate overdue");
+        await AddTaskAsync(ctx, mine, me, ProjectTaskStatus.Done, DateTime.UtcNow.AddDays(-2), "Mine done");       // excluded (done)
+        await AddTaskAsync(ctx, mine, me, ProjectTaskStatus.InProgress, DateTime.UtcNow.AddDays(2), "Mine future"); // excluded (not overdue)
+        await AddTaskAsync(ctx, foreign, stranger, ProjectTaskStatus.InProgress, DateTime.UtcNow.AddDays(-2), "Hidden"); // excluded (no access)
 
         var toolbox = new AssistantToolbox(ctx);
         var json = await toolbox.ExecuteAsync(me, "get_overdue_tasks", "{}");
 
         using var doc = JsonDocument.Parse(json);
-        Assert.Equal(1, doc.RootElement.GetProperty("count").GetInt32());
-        Assert.Equal("Mine overdue", doc.RootElement.GetProperty("tasks")[0].GetProperty("title").GetString());
+        Assert.Equal(2, doc.RootElement.GetProperty("count").GetInt32());
+        var tasks = doc.RootElement.GetProperty("tasks");
+        var titles = tasks.EnumerateArray().Select(x => x.GetProperty("title").GetString()).ToList();
+        Assert.Contains("Mine overdue", titles);
+        Assert.Contains("Teammate overdue", titles);
+        Assert.DoesNotContain("Hidden", titles);
+        // The assignee is reported so the assistant can answer "who is it assigned to?".
+        Assert.Equal("Teammate", tasks[0].GetProperty("assignee").GetString()); // ordered by deadline; -3d first
     }
 
     [Fact]

@@ -27,17 +27,19 @@ public class AssistantToolbox : IAssistantToolbox
     public IReadOnlyList<ToolDefinition> Definitions { get; } = new List<ToolDefinition>
     {
         new("get_overdue_tasks",
-            "Returns the tasks assigned to the user that are overdue (past their deadline and not done).",
+            "Returns overdue tasks (past deadline, not done) across every project the user owns or is a member of, "
+            + "including each task's assignee. Use this for questions about what is overdue on the team/board.",
             NoParams),
         new("get_upcoming_deadlines",
-            "Returns the user's tasks due within the next N days (default 7).",
+            "Returns tasks due within the next N days (default 7) across every project the user owns or is a member of, "
+            + "including each task's assignee.",
             new
             {
                 type = "object",
                 properties = new { days = new { type = "integer", description = "How many days ahead to look (default 7)." } },
             }),
         new("get_my_tasks",
-            "Returns tasks assigned to the user, optionally filtered by status.",
+            "Returns tasks assigned to the user personally, optionally filtered by status.",
             new
             {
                 type = "object",
@@ -69,12 +71,22 @@ public class AssistantToolbox : IAssistantToolbox
     private async Task<string> GetOverdueTasksAsync(Guid userId)
     {
         var now = DateTime.UtcNow;
+        // Scope by project access (owner or member), matching the dashboard's "Overdue tasks" list —
+        // so the assistant sees the same tasks the user does, including ones assigned to teammates.
         var rows = await _context.ProjectTasks
-            .Where(t => t.AssigneeId == userId && t.Status != ProjectTaskStatus.Done
+            .Where(t => (t.Project.OwnerId == userId || t.Project.Members.Any(m => m.UserId == userId))
+                        && t.Status != ProjectTaskStatus.Done
                         && t.Deadline != null && t.Deadline < now)
             .OrderBy(t => t.Deadline)
             .Take(MaxRows)
-            .Select(t => new { title = t.Title, project = t.Project.Name, deadline = t.Deadline, status = t.Status.ToString() })
+            .Select(t => new
+            {
+                title = t.Title,
+                project = t.Project.Name,
+                assignee = t.Assignee != null ? t.Assignee.Name : null,
+                deadline = t.Deadline,
+                status = t.Status.ToString(),
+            })
             .AsNoTracking()
             .ToListAsync();
 
@@ -87,11 +99,19 @@ public class AssistantToolbox : IAssistantToolbox
         var now = DateTime.UtcNow;
         var until = now.AddDays(days);
         var rows = await _context.ProjectTasks
-            .Where(t => t.AssigneeId == userId && t.Status != ProjectTaskStatus.Done
+            .Where(t => (t.Project.OwnerId == userId || t.Project.Members.Any(m => m.UserId == userId))
+                        && t.Status != ProjectTaskStatus.Done
                         && t.Deadline != null && t.Deadline >= now && t.Deadline <= until)
             .OrderBy(t => t.Deadline)
             .Take(MaxRows)
-            .Select(t => new { title = t.Title, project = t.Project.Name, deadline = t.Deadline, status = t.Status.ToString() })
+            .Select(t => new
+            {
+                title = t.Title,
+                project = t.Project.Name,
+                assignee = t.Assignee != null ? t.Assignee.Name : null,
+                deadline = t.Deadline,
+                status = t.Status.ToString(),
+            })
             .AsNoTracking()
             .ToListAsync();
 

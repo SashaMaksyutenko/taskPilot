@@ -257,6 +257,24 @@ public class AssistantToolboxTests
     }
 
     [Fact]
+    public async Task GetPlatformStats_CountsUsersAndForumActivity()
+    {
+        await using var ctx = TestDb.CreateContext();
+        await TestDb.AddUserAsync(ctx, "Alice");
+        await TestDb.AddUserAsync(ctx, "Bob");
+        var author = await TestDb.AddUserAsync(ctx, "Carol");
+        ctx.ForumTopics.Add(new ForumTopic { Id = Guid.NewGuid(), Title = "Welcome", Body = "b", AuthorId = author });
+        await ctx.SaveChangesAsync();
+
+        var toolbox = new AssistantToolbox(ctx);
+        var json = await toolbox.ExecuteAsync(Guid.NewGuid(), "get_platform_stats", "{}");
+
+        using var doc = JsonDocument.Parse(json);
+        Assert.Equal(3, doc.RootElement.GetProperty("totalUsers").GetInt32());
+        Assert.Equal(1, doc.RootElement.GetProperty("forumTopics").GetInt32());
+    }
+
+    [Fact]
     public async Task UnknownTool_ReturnsError()
     {
         await using var ctx = TestDb.CreateContext();

@@ -24,7 +24,8 @@ public class AssistantAgent : IAssistantAgent
         "list_marketplace_tasks covers the public marketplace gigs; search_taskpilot finds projects, " +
         "tasks, forum topics and users by keyword; get_forum_topics lists recent forum threads; " +
         "get_notifications returns the user's unread notifications; get_project_stats summarises one " +
-        "project (status breakdown, per-assignee workload, overdue count). You can also act: create_task " +
+        "project (status breakdown, per-assignee workload, overdue count); get_platform_stats returns " +
+        "site-wide totals (registered/active users, newest user, forum topics and posts). You can also act: create_task " +
         "adds a task to a project and apply_to_marketplace_task applies to a gig — call these ONLY when " +
         "the user explicitly asks you to create or apply, never speculatively, and confirm what you did " +
         "afterwards. Only call tools relevant to the question and answer just what was asked — do not " +

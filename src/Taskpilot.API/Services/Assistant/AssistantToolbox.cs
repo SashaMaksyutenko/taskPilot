@@ -97,6 +97,11 @@ public class AssistantToolbox : IAssistantToolbox
                 properties = new { project = new { type = "string", description = "The project name, or part of it." } },
                 required = new[] { "project" },
             }),
+        new("get_platform_stats",
+            "Returns public, site-wide TaskPilot statistics: total registered users, active users, the "
+            + "newest user, and total forum topics and posts. Use for questions about how many users or "
+            + "topics the platform has overall.",
+            NoParams),
     };
 
     /// <inheritdoc />
@@ -111,6 +116,7 @@ public class AssistantToolbox : IAssistantToolbox
         "get_forum_topics" => GetForumTopicsAsync(ReadInt(argumentsJson, "limit") ?? 5),
         "get_notifications" => GetNotificationsAsync(userId),
         "get_project_stats" => GetProjectStatsAsync(userId, ReadString(argumentsJson, "project")),
+        "get_platform_stats" => GetPlatformStatsAsync(),
         _ => Task.FromResult(Json(new { error = $"Unknown tool: {toolName}" })),
     };
 
@@ -317,6 +323,19 @@ public class AssistantToolbox : IAssistantToolbox
         var overdue = tasks.Count(t => t.Deadline != null && t.Deadline < now && t.Status != ProjectTaskStatus.Done);
 
         return Json(new { project = project.Name, total = tasks.Count, overdue, byStatus, workload });
+    }
+
+    private async Task<string> GetPlatformStatsAsync()
+    {
+        // Public, site-wide numbers — the same set shown on the public stats footer.
+        var totalUsers = await _context.Users.CountAsync();
+        var activeUsers = await _context.Users.CountAsync(u => u.IsActive);
+        var newestUser = await _context.Users
+            .OrderByDescending(u => u.CreatedAt).Select(u => u.Name).FirstOrDefaultAsync();
+        var forumTopics = await _context.ForumTopics.CountAsync();
+        var forumPosts = await _context.ForumReplies.CountAsync();
+
+        return Json(new { totalUsers, activeUsers, newestUser, forumTopics, forumPosts });
     }
 
     // --- helpers ---

@@ -372,11 +372,15 @@ builder.Services.AddRateLimiter(options =>
                 QueueLimit = 0, // reject immediately instead of queueing
             }));
 
-    // Global limit applied to every request: max 100 per minute, partitioned by
-    // authenticated user (JWT "sub") so the quota follows the person across IPs,
-    // falling back to the caller IP for anonymous requests. Real-time hub paths
-    // and the health probe are exempt so long-lived connections and monitoring
-    // are never throttled.
+    // Global limit applied to every request, partitioned by authenticated user (JWT "sub")
+    // so the quota follows the person across IPs, falling back to the caller IP for
+    // anonymous requests. Real-time hub paths and the health probe are exempt so
+    // long-lived connections and monitoring are never throttled.
+    //
+    // The limit is per MINUTE and this app is request-heavy: one data page fires ~8-16
+    // calls (and React StrictMode doubles every mount effect in dev). At the old limit of
+    // 100 a user hit 429 after ~6 page switches, which looked like "my data disappeared".
+    // 300/min still stops scripted abuse but leaves normal clicking far below the cap.
     options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(httpContext =>
     {
         var path = httpContext.Request.Path;
@@ -390,7 +394,7 @@ builder.Services.AddRateLimiter(options =>
 
         return RateLimitPartition.GetFixedWindowLimiter(partitionKey, _ => new FixedWindowRateLimiterOptions
         {
-            PermitLimit = 100,
+            PermitLimit = 300,
             Window = TimeSpan.FromMinutes(1),
             QueueLimit = 0,
         });

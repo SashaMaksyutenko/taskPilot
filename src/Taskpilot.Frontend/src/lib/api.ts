@@ -34,11 +34,17 @@ api.interceptors.request.use((config) => {
  * Shared in-flight refresh: a burst of 401s (a page firing several requests at once)
  * must trigger exactly ONE refresh call, with everyone awaiting the same promise.
  */
-let refreshing: Promise<string | null> | null = null
+let refreshing: Promise<RefreshResult> | null = null
 
-async function refreshAccessToken(): Promise<string | null> {
+/**
+ * `fatal` means the server rejected the refresh token itself — the session is genuinely
+ * over. A network blip, a 429 or a 5xx is transient and must NOT destroy a valid session.
+ */
+type RefreshResult = { token: string | null; fatal: boolean }
+
+async function refreshAccessToken(): Promise<RefreshResult> {
   const refreshToken = tokenStorage.getRefresh()
-  if (!refreshToken) return null
+  if (!refreshToken) return { token: null, fatal: true }
   try {
     // A bare axios call on purpose: going through `api` would re-enter this interceptor.
     const { data } = await axios.post(
@@ -47,9 +53,10 @@ async function refreshAccessToken(): Promise<string | null> {
       { headers: { 'Content-Type': 'application/json' } },
     )
     tokenStorage.update(data.accessToken, data.refreshToken)
-    return data.accessToken as string
-  } catch {
-    return null // refresh token expired/revoked — the session really is over
+    return { token: data.accessToken as string, fatal: false }
+  } catch (error) {
+    const status = axios.isAxiosError(error) ? error.response?.status : undefined
+    return { token: null, fatal: status === 400 || status === 401 }
   }
 }
 
@@ -69,12 +76,16 @@ api.interceptors.response.use(
     const pending = (refreshing ??= refreshAccessToken().finally(() => {
       refreshing = null
     }))
-    const token = await pending
+    const { token, fatal } = await pending
 
     if (!token) {
-      // Session is genuinely over: drop the tokens and let the app land on the login page.
-      tokenStorage.clear()
-      if (!window.location.pathname.startsWith('/login')) window.location.assign('/login')
+      // Only a rejected refresh token ends the session. On a transient failure we simply
+      // let the caller see the error — dropping the tokens would log the user out over a
+      // network blip.
+      if (fatal) {
+        tokenStorage.clear()
+        if (!window.location.pathname.startsWith('/login')) window.location.assign('/login')
+      }
       return Promise.reject(error)
     }
 

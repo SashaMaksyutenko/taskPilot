@@ -108,7 +108,10 @@ export const fetchMe = createAsyncThunk(
     try {
       return await authService.getMe()
     } catch (error) {
-      return rejectWithValue(toErrorMessage(error))
+      // Keep the HTTP status: only a real 401 means "signed out". A network blip, a 429
+      // or a 5xx must not be mistaken for an expired session.
+      const status = error instanceof AxiosError ? error.response?.status : undefined
+      return rejectWithValue({ message: toErrorMessage(error), status })
     }
   },
 )
@@ -222,10 +225,16 @@ const authSlice = createSlice({
         state.user = action.payload as User
         state.isAuthenticated = true
       })
-      .addCase(fetchMe.rejected, (state) => {
-        // Token is missing/expired — treat as signed out.
-        state.user = null
-        state.isAuthenticated = false
+      .addCase(fetchMe.rejected, (state, action) => {
+        // Only a genuine 401 means signed out — and by now the api interceptor has already
+        // tried to refresh the token, so a 401 here really is an ended session. Anything
+        // else (offline, 429, 5xx) is transient: keep the session, or a blip would blank
+        // the whole app and bounce the user to the login page.
+        const status = (action.payload as { status?: number } | undefined)?.status
+        if (status === 401) {
+          state.user = null
+          state.isAuthenticated = false
+        }
       })
   },
 })

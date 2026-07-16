@@ -69,12 +69,30 @@ describe('api 401 → refresh → retry', () => {
     expect(post).toHaveBeenCalledTimes(1) // not three
   })
 
-  it('gives up and clears the session when the refresh token is rejected', async () => {
-    vi.spyOn(axios, 'post').mockRejectedValue(new Error('refresh expired'))
+  it('ends the session only when the server rejects the refresh token itself (401)', async () => {
+    vi.spyOn(axios, 'post').mockImplementation(async () => {
+      throw new AxiosError('invalid refresh token', '401', undefined, null, { status: 401 } as never)
+    })
 
     await expect(api.get('/api/projects')).rejects.toBeTruthy()
     expect(tokenStorage.getAccess()).toBeNull()
     expect(tokenStorage.getRefresh()).toBeNull()
+  })
+
+  it.each([
+    ['a network blip', new AxiosError('Network Error', 'ERR_NETWORK')],
+    ['a 429', new AxiosError('rate limited', '429', undefined, null, { status: 429 } as never)],
+    ['a 503', new AxiosError('down', '503', undefined, null, { status: 503 } as never)],
+  ])('keeps the session when the refresh fails on %s', async (_label, err) => {
+    vi.spyOn(axios, 'post').mockImplementation(async () => {
+      throw err
+    })
+
+    // The call still fails, but the session must survive — logging the user out over a
+    // transient failure is what made the app "lose" everything.
+    await expect(api.get('/api/projects')).rejects.toBeTruthy()
+    expect(tokenStorage.getAccess()).toBe('stale')
+    expect(tokenStorage.getRefresh()).toBe('refresh-1')
   })
 
   it('passes non-401 errors straight through without refreshing', async () => {

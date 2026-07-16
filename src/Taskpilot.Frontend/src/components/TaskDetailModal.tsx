@@ -84,6 +84,45 @@ export default function TaskDetailModal({
   const [subtasks, setSubtasks] = useState<Task[]>([])
   const [newSubtask, setNewSubtask] = useState('')
 
+  // AI subtask suggestions (shown only when the server has an LLM key configured).
+  const [aiEnabled, setAiEnabled] = useState(false)
+  const [aiLoading, setAiLoading] = useState(false)
+  const [aiSuggestions, setAiSuggestions] = useState<string[]>([])
+  const [aiSelected, setAiSelected] = useState<Set<string>>(new Set())
+  useEffect(() => {
+    taskService.aiEnabled().then(setAiEnabled).catch(() => setAiEnabled(false))
+  }, [])
+
+  const suggestSubtasks = async () => {
+    setAiLoading(true)
+    const suggestions = await taskService.suggestSubtasks(task.id).catch(() => null)
+    setAiLoading(false)
+    if (!suggestions) return
+    setAiSuggestions(suggestions)
+    setAiSelected(new Set(suggestions)) // pre-select all
+  }
+
+  const toggleSuggestion = (s: string) =>
+    setAiSelected((prev) => {
+      const next = new Set(prev)
+      next.has(s) ? next.delete(s) : next.add(s)
+      return next
+    })
+
+  // Creates the picked suggestions as real subtasks, then clears the suggestion list.
+  const addSelectedSuggestions = async () => {
+    const chosen = aiSuggestions.filter((s) => aiSelected.has(s))
+    const created = await Promise.all(
+      chosen.map((title) =>
+        taskService.createTask(task.projectId, { title, parentTaskId: task.id }).catch(() => null),
+      ),
+    )
+    const ok = created.filter((t): t is Task => t !== null)
+    if (ok.length) setSubtasks((prev) => [...prev, ...ok])
+    setAiSuggestions([])
+    setAiSelected(new Set())
+  }
+
   // Time tracking: accumulated seconds + the start time of a running timer (if any).
   const [timeSpent, setTimeSpent] = useState(task.timeSpentSeconds)
   const [timerStartedAt, setTimerStartedAt] = useState<string | null>(task.timerStartedAt)
@@ -490,14 +529,64 @@ export default function TaskDetailModal({
 
         {/* Subtasks */}
         <div className="mb-4 border-t border-border pt-4">
-          <label className="mb-2 block text-sm font-medium text-foreground">
-            {t('taskModal.subtasks')}{' '}
-            {subtasks.length > 0 && (
-              <span className="text-muted">
-                ({subtasks.filter((s) => s.status === 'Done').length}/{subtasks.length})
-              </span>
+          <div className="mb-2 flex items-center justify-between">
+            <label className="block text-sm font-medium text-foreground">
+              {t('taskModal.subtasks')}{' '}
+              {subtasks.length > 0 && (
+                <span className="text-muted">
+                  ({subtasks.filter((s) => s.status === 'Done').length}/{subtasks.length})
+                </span>
+              )}
+            </label>
+            {/* AI suggestions (only when the assistant is configured on the server) */}
+            {aiEnabled && (
+              <button
+                type="button"
+                onClick={suggestSubtasks}
+                disabled={aiLoading}
+                className="flex items-center gap-1 rounded-lg border border-border px-2 py-1 text-xs font-semibold text-primary hover:bg-canvas disabled:opacity-50"
+              >
+                ✨ {aiLoading ? t('taskModal.aiThinking') : t('taskModal.aiSuggest')}
+              </button>
             )}
-          </label>
+          </div>
+
+          {/* AI suggestion picker */}
+          {aiSuggestions.length > 0 && (
+            <div className="mb-3 rounded-lg border border-primary/30 bg-primary/5 p-2">
+              <p className="mb-1 px-1 text-xs text-muted">{t('taskModal.aiPick')}</p>
+              <ul className="space-y-0.5">
+                {aiSuggestions.map((s) => (
+                  <li key={s} className="flex items-center gap-2 px-1 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={aiSelected.has(s)}
+                      onChange={() => toggleSuggestion(s)}
+                      className="h-4 w-4 accent-primary"
+                    />
+                    <span className="min-w-0 flex-1">{s}</span>
+                  </li>
+                ))}
+              </ul>
+              <div className="mt-2 flex gap-2">
+                <button
+                  type="button"
+                  onClick={addSelectedSuggestions}
+                  disabled={aiSelected.size === 0}
+                  className="rounded-lg bg-primary px-2.5 py-1 text-xs font-semibold text-white hover:bg-primary-hover disabled:opacity-50"
+                >
+                  {t('taskModal.aiAdd', { count: aiSelected.size })}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAiSuggestions([])}
+                  className="rounded-lg px-2.5 py-1 text-xs font-semibold text-muted hover:bg-canvas"
+                >
+                  {t('taskModal.cancel')}
+                </button>
+              </div>
+            </div>
+          )}
 
           {subtasks.length > 0 && (
             <ul className="mb-2 space-y-1">

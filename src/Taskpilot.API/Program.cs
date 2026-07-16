@@ -104,6 +104,7 @@ builder.Services.AddHttpClient<IPaymentClient, StripePaymentClient>();
 builder.Services.Configure<OpenAiOptions>(builder.Configuration.GetSection("OpenAi"));
 builder.Services.AddHttpClient<IChatBotClient, OpenAiChatBotClient>();
 builder.Services.AddScoped<IChatBotService, ChatBotService>();
+builder.Services.AddScoped<ITaskAiService, TaskAiService>();
 
 // GIF search for chat (populated from .env: Gif__*). Disabled until an API key is set.
 builder.Services.Configure<GifOptions>(builder.Configuration.GetSection("Gif"));

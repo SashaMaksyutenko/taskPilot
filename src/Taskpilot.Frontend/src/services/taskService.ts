@@ -169,6 +169,18 @@ export const taskService = {
     return api.post<Task>(`/api/tasks/${taskId}/reschedule`, { deadline }).then((r) => r.data)
   },
 
+  /** Whether AI features (e.g. subtask suggestions) are configured on the server. */
+  aiEnabled(): Promise<boolean> {
+    return api.get<{ enabled: boolean }>('/api/tasks/ai/status').then((r) => r.data.enabled)
+  },
+
+  /** Asks the AI to propose subtasks for a task; returns suggested titles. */
+  suggestSubtasks(taskId: string): Promise<string[]> {
+    return api
+      .post<{ suggestions: string[] }>(`/api/tasks/${taskId}/ai/subtasks`)
+      .then((r) => r.data.suggestions)
+  },
+
   /** Lists a task's deadline-extension requests (newest first). */
   getExtensionRequests(taskId: string): Promise<ExtensionRequest[]> {
     return api.get<ExtensionRequest[]>(`/api/tasks/${taskId}/extension-requests`).then((r) => r.data)

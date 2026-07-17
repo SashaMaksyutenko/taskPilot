@@ -95,4 +95,25 @@ export const adminService = {
   auditReportXlsx(): Promise<Blob> {
     return api.get('/api/admin/reports/audit/xlsx', { responseType: 'blob' }).then((r) => r.data as Blob)
   },
+
+  /** Reads the organization settings (storage limits) plus current usage. */
+  getSettings(): Promise<OrganizationSettings> {
+    return api.get<OrganizationSettings>('/api/admin/settings').then((r) => r.data)
+  },
+
+  /** Updates the organization's storage limits. */
+  updateSettings(maxUploadBytes: number, storageQuotaBytes: number): Promise<OrganizationSettings> {
+    return api
+      .put<OrganizationSettings>('/api/admin/settings', { maxUploadBytes, storageQuotaBytes })
+      .then((r) => r.data)
+  },
+}
+
+/** Organization-wide settings (mirrors the backend OrganizationSettingsDto). */
+export interface OrganizationSettings {
+  maxUploadBytes: number
+  storageQuotaBytes: number
+  /** Bytes currently used by all stored files. */
+  storageUsedBytes: number
+  updatedAt: string | null
 }

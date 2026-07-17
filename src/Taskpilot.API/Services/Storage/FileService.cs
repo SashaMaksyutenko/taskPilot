@@ -14,9 +14,6 @@ namespace Taskpilot.API.Services;
 /// </summary>
 public class FileService : IFileService
 {
-    // Max upload size: 10 MB (per the product spec).
-    private const long MaxFileSizeBytes = 10 * 1024 * 1024;
-
     private readonly TaskpilotDbContext _context;
     private readonly IFileStorage _storage;
     private readonly ILogger<FileService> _logger;
@@ -34,8 +31,22 @@ public class FileService : IFileService
         if (file is null || file.Length == 0)
             return Result<FileAttachmentDto>.Fail("No file was provided.");
 
-        if (file.Length > MaxFileSizeBytes)
-            return Result<FileAttachmentDto>.Fail("File exceeds the 10 MB limit.");
+        // Limits come from the admin-editable organization settings, not a constant, so an
+        // admin can change them without a redeploy.
+        var (maxUploadBytes, storageQuotaBytes) = await GetStorageLimitsAsync();
+
+        if (file.Length > maxUploadBytes)
+            return Result<FileAttachmentDto>.Fail($"File exceeds the {FormatSize(maxUploadBytes)} limit.");
+
+        // Enforce the whole-organization quota: reject if this upload would push total
+        // stored bytes over it. SumAsync over an empty table returns null, hence the cast.
+        var usedBytes = await _context.FileAttachments.SumAsync(f => (long?)f.SizeBytes) ?? 0;
+        if (usedBytes + file.Length > storageQuotaBytes)
+        {
+            _logger.LogWarning("Upload blocked: storage quota reached. Used: {Used}, Quota: {Quota}, Incoming: {Size}",
+                usedBytes, storageQuotaBytes, file.Length);
+            return Result<FileAttachmentDto>.Fail("The organization's storage quota has been reached.");
+        }
 
         _logger.LogInformation("Saving file. Name: {Name}, Size: {Size}, UploaderId: {UploaderId}",
             file.FileName, file.Length, uploaderId);
@@ -212,4 +223,24 @@ public class FileService : IFileService
     /// <summary>Generates an unguessable URL-safe share token.</summary>
     private static string GenerateToken() =>
         Convert.ToHexString(RandomNumberGenerator.GetBytes(24)).ToLowerInvariant();
+
+    /// <summary>
+    /// Reads the current per-file and organization storage limits from the settings row,
+    /// falling back to the model defaults when the row is missing (e.g. a test database or
+    /// one restored from before the settings seed).
+    /// </summary>
+    private async Task<(long MaxUploadBytes, long StorageQuotaBytes)> GetStorageLimitsAsync()
+    {
+        var settings = await _context.OrganizationSettings.AsNoTracking().FirstOrDefaultAsync();
+        return (
+            settings?.MaxUploadBytes ?? OrganizationSettings.DefaultMaxUploadBytes,
+            settings?.StorageQuotaBytes ?? OrganizationSettings.DefaultStorageQuotaBytes);
+    }
+
+    /// <summary>
+    /// Formats a byte count for a user-facing message: megabytes once it is at least 1 MB,
+    /// otherwise the raw bytes — so a small (e.g. test) limit never renders as "0 MB".
+    /// </summary>
+    private static string FormatSize(long bytes) =>
+        bytes >= 1024 * 1024 ? $"{bytes / (1024 * 1024)} MB" : $"{bytes} bytes";
 }

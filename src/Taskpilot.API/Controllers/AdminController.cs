@@ -21,6 +21,7 @@ public class AdminController : BaseApiController
     private readonly IOverdueService _overdue;
     private readonly IWarningService _warnings;
     private readonly IAppealService _appeals;
+    private readonly IOrganizationSettingsService _settings;
     private readonly IValidator<IssueWarningDto> _issueWarningValidator;
 
     public AdminController(
@@ -30,6 +31,7 @@ public class AdminController : BaseApiController
         IOverdueService overdue,
         IWarningService warnings,
         IAppealService appeals,
+        IOrganizationSettingsService settings,
         IValidator<IssueWarningDto> issueWarningValidator)
     {
         _adminService = adminService;
@@ -38,6 +40,7 @@ public class AdminController : BaseApiController
         _overdue = overdue;
         _warnings = warnings;
         _appeals = appeals;
+        _settings = settings;
         _issueWarningValidator = issueWarningValidator;
     }
 
@@ -69,6 +72,25 @@ public class AdminController : BaseApiController
     {
         var result = await _stats.GetActivityAsync(days);
         return Ok(result.Value);
+    }
+
+    /// <summary>Returns the organization settings (storage limits) plus current usage.</summary>
+    [HttpGet("settings")]
+    public async Task<IActionResult> GetSettings()
+    {
+        var result = await _settings.GetAsync();
+        return Ok(result);
+    }
+
+    /// <summary>Updates the organization's storage limits.</summary>
+    [HttpPut("settings")]
+    public async Task<IActionResult> UpdateSettings([FromBody] UpdateOrganizationSettingsDto dto)
+    {
+        var adminId = CurrentUserId();
+        if (adminId is null) return Unauthorized();
+
+        var result = await _settings.UpdateAsync(dto, adminId.Value, CurrentUserEmail(), ClientIp());
+        return result.Succeeded ? Ok(result.Value) : BadRequest(new { error = result.Error });
     }
 
     /// <summary>Runs the overdue-tasks check now (otherwise it runs on a timer).</summary>

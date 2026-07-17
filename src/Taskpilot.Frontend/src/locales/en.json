@@ -799,6 +799,15 @@
     "period90": "Last 3 months",
     "period365": "Last year"
   },
+  "storage": {
+    "title": "Storage",
+    "usage": "{{used}} MB of {{total}} MB used",
+    "maxUpload": "Max file size (MB)",
+    "quota": "Storage quota (MB)",
+    "save": "Save",
+    "saved": "Settings saved.",
+    "loadFailed": "Could not load storage settings."
+  },
   "profile": {
     "notFound": "User not found.",
     "memberSince": "Member since {{date}}",

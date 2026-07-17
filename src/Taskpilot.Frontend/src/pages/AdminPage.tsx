@@ -7,6 +7,7 @@ import StatusChart from '../components/charts/StatusChart'
 import SignupsChart from '../components/charts/SignupsChart'
 import ActivityChart from '../components/charts/ActivityChart'
 import StatsPanel from '../components/charts/StatsPanel'
+import StorageSettings from '../components/StorageSettings'
 import UserContextMenu from '../components/menus/UserContextMenu'
 import WarnUserModal from '../components/modals/WarnUserModal'
 import { adminService } from '../services/adminService'
@@ -223,6 +224,9 @@ export default function AdminPage() {
             <ActivityChart activity={activity} />
           </div>
         </div>
+
+        {/* Organization storage limits */}
+        <StorageSettings />
 
         {/* Pending appeals queue */}
         {appeals.length > 0 && (

@@ -132,6 +132,9 @@ public class TaskpilotDbContext : DbContext
     /// <summary>One-time password-reset tokens (hashed).</summary>
     public DbSet<PasswordResetToken> PasswordResetTokens => Set<PasswordResetToken>();
 
+    /// <summary>Organization-wide settings (a single seeded row).</summary>
+    public DbSet<OrganizationSettings> OrganizationSettings => Set<OrganizationSettings>();
+
     /// <summary>
     /// Налаштування моделі (Fluent API): обмеження, індекси, перетворення типів.
     /// Викликається EF Core під час побудови моделі та генерації міграцій.
@@ -146,6 +149,20 @@ public class TaskpilotDbContext : DbContext
         {
             entity.HasKey(v => v.Id);
             entity.HasIndex(v => new { v.Day, v.IpHash }).IsUnique();
+        });
+
+        // Organization settings: a single seeded row so a fresh database always has the
+        // default limits, and reads never have to cope with an empty table.
+        modelBuilder.Entity<OrganizationSettings>(entity =>
+        {
+            entity.HasKey(s => s.Id);
+            entity.HasData(new OrganizationSettings
+            {
+                Id = Models.OrganizationSettings.SingletonId,
+                MaxUploadBytes = Models.OrganizationSettings.DefaultMaxUploadBytes,
+                StorageQuotaBytes = Models.OrganizationSettings.DefaultStorageQuotaBytes,
+                UpdatedAt = null,
+            });
         });
 
         // Конфігурація сутності User

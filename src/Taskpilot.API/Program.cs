@@ -301,6 +301,7 @@ builder.Services.AddScoped<INotificationDeliveryService, NotificationDeliverySer
 builder.Services.AddScoped<IApiKeyService, ApiKeyService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IAdminService, AdminService>();
+builder.Services.AddScoped<IOrganizationSettingsService, OrganizationSettingsService>();
 builder.Services.AddScoped<IWarningService, WarningService>();
 builder.Services.AddScoped<IAppealService, AppealService>();
 builder.Services.AddScoped<IProjectService, ProjectService>();

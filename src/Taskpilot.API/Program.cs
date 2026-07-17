@@ -100,6 +100,10 @@ builder.Services.AddHttpClient<ILinkedInAuthClient, LinkedInAuthClient>();
 builder.Services.Configure<StripeOptions>(builder.Configuration.GetSection("Stripe"));
 builder.Services.AddHttpClient<IPaymentClient, StripePaymentClient>();
 
+// Security hardening (populated from .env: Security__*). The admin IP allowlist is off
+// until Security__AdminIpAllowlist lists at least one IP/CIDR.
+builder.Services.Configure<SecurityOptions>(builder.Configuration.GetSection("Security"));
+
 // OpenAI (populated from .env: OpenAi__*). Disabled until an API key is set.
 // IChatBotClient powers AI subtask suggestions; the data-aware assistant is wired below.
 builder.Services.Configure<OpenAiOptions>(builder.Configuration.GetSection("OpenAi"));
@@ -426,6 +430,10 @@ app.UseForwardedHeaders();
 
 // Baseline security headers on every response.
 app.UseMiddleware<SecurityHeadersMiddleware>();
+
+// Network-level gate on the admin API (off unless Security__AdminIpAllowlist is set).
+// Runs right after UseForwardedHeaders so it judges the caller's real IP.
+app.UseMiddleware<AdminIpAllowlistMiddleware>();
 
 // HTTPS is enforced in production only — local development runs over plain HTTP
 // (and forcing a redirect there would break the dev frontend and the API tests).

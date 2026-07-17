@@ -35,4 +35,16 @@ public interface IFileService
 
     /// <summary>Resolves a shared file by its token for anonymous download.</summary>
     Task<Result<FileDownload>> GetForDownloadByTokenAsync(string token);
+
+    /// <summary>
+    /// Permanently removes a file — both its metadata row and its bytes. Only the
+    /// uploader may delete their file.
+    /// </summary>
+    /// <remarks>
+    /// Refuses while a chat message still points at the file: that foreign key is
+    /// Restrict on purpose (a message keeps its attachment even if the message goes),
+    /// so deleting would either fail at the database or silently gut someone's message.
+    /// </remarks>
+    /// <returns>Ok when the file is gone; a failure describing why not otherwise.</returns>
+    Task<Result> DeleteAsync(Guid fileId, Guid userId);
 }

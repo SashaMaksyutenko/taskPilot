@@ -65,6 +65,20 @@ public class FilesController : BaseApiController
         return Ok(new { token = result.Value, url });
     }
 
+    /// <summary>
+    /// Permanently deletes a file and its bytes (uploader only). Fails while a chat
+    /// message still points at it.
+    /// </summary>
+    [HttpDelete("{id:guid}")]
+    public async Task<IActionResult> Delete(Guid id)
+    {
+        var userId = CurrentUserId();
+        if (userId is null) return Unauthorized();
+
+        var result = await _fileService.DeleteAsync(id, userId.Value);
+        return result.Succeeded ? NoContent() : BadRequest(new { error = result.Error });
+    }
+
     /// <summary>Revokes a file's share link (uploader only).</summary>
     [HttpDelete("{id:guid}/share")]
     public async Task<IActionResult> RevokeShare(Guid id)

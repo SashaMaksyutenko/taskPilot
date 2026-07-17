@@ -284,9 +284,15 @@ public class UserService : IUserService
         if (!saved.Succeeded)
             return Result<UserDto>.Fail(saved.Error!);
 
+        // Remember the outgoing avatar: nothing else references it, so once the pointer
+        // moves it would be orphaned (row + bytes) forever.
+        var previousAvatarId = user.AvatarFileId;
+
         user.AvatarFileId = saved.Value!.Id;
         user.UpdatedAt = DateTime.UtcNow;
         await _context.SaveChangesAsync();
+
+        await DeleteReplacedAvatarAsync(previousAvatarId, userId);
 
         _logger.LogInformation("Avatar set. UserId: {UserId}, FileId: {FileId}", userId, user.AvatarFileId);
         return Result<UserDto>.Ok(UserMapper.ToDto(user));
@@ -299,12 +305,37 @@ public class UserService : IUserService
         if (user is null)
             return Result<UserDto>.Fail("User not found.");
 
+        var previousAvatarId = user.AvatarFileId;
+
         user.AvatarFileId = null;
         user.UpdatedAt = DateTime.UtcNow;
         await _context.SaveChangesAsync();
 
+        await DeleteReplacedAvatarAsync(previousAvatarId, userId);
+
         _logger.LogInformation("Avatar removed. UserId: {UserId}", userId);
         return Result<UserDto>.Ok(UserMapper.ToDto(user));
+    }
+
+    /// <summary>
+    /// Deletes an avatar image the user no longer points at, so replacing or removing an
+    /// avatar does not leak a file row and its bytes.
+    /// </summary>
+    /// <remarks>
+    /// Best-effort on purpose: the avatar change itself already succeeded and has been
+    /// saved, so a failure to clean up the old image must not fail the caller's request.
+    /// </remarks>
+    /// <param name="previousAvatarId">The outgoing avatar's file id; null when there was none.</param>
+    /// <param name="userId">Owner of the avatar — also the file's uploader.</param>
+    private async Task DeleteReplacedAvatarAsync(Guid? previousAvatarId, Guid userId)
+    {
+        if (previousAvatarId is not { } fileId)
+            return;
+
+        var deleted = await _files.DeleteAsync(fileId, userId);
+        if (!deleted.Succeeded)
+            _logger.LogWarning("Could not delete the replaced avatar. FileId: {FileId}, Reason: {Reason}",
+                fileId, deleted.Error);
     }
 
     /// <inheritdoc />

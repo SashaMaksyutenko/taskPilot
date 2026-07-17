@@ -158,6 +158,57 @@ public class FileService : IFileService
         return Result<FileDownload>.Ok(new FileDownload(content, file.ContentType, file.FileName));
     }
 
+    /// <inheritdoc />
+    public async Task<Result> DeleteAsync(Guid fileId, Guid userId)
+    {
+        _logger.LogInformation("DeleteAsync started. FileId: {FileId}, UserId: {UserId}", fileId, userId);
+
+        var file = await _context.FileAttachments.FirstOrDefaultAsync(f => f.Id == fileId);
+        if (file is null)
+            return Result.Fail("File not found.");
+
+        if (file.UploaderId != userId)
+        {
+            _logger.LogWarning("Delete blocked: not the uploader. FileId: {FileId}, UserId: {UserId}", fileId, userId);
+            return Result.Fail("Only the uploader can delete this file.");
+        }
+
+        // Message.FileAttachmentId is a Restrict foreign key, so the database would
+        // refuse this delete anyway — catch it here and say why instead of throwing.
+        if (await _context.Messages.AnyAsync(m => m.FileAttachmentId == fileId))
+        {
+            _logger.LogWarning("Delete blocked: file is attached to a message. FileId: {FileId}", fileId);
+            return Result.Fail("This file is attached to a chat message and cannot be deleted.");
+        }
+
+        // User.AvatarFileId is a bare Guid with no foreign key, so nothing stops the
+        // row from going: clear the pointer by hand or the profile renders a broken image.
+        var avatarOwners = await _context.Users.Where(u => u.AvatarFileId == fileId).ToListAsync();
+        foreach (var owner in avatarOwners)
+        {
+            owner.AvatarFileId = null;
+            owner.UpdatedAt = DateTime.UtcNow;
+        }
+
+        var storedName = file.StoredName;
+        _context.FileAttachments.Remove(file);
+        await _context.SaveChangesAsync();
+
+        // Bytes last, and never fatally: once the row is committed the bytes are just
+        // garbage, whereas deleting them first could leave a row pointing at nothing.
+        try
+        {
+            await _storage.DeleteAsync(storedName);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "File row deleted but its bytes could not be removed. StoredName: {StoredName}", storedName);
+        }
+
+        _logger.LogInformation("File deleted. FileId: {FileId}, By: {UserId}", fileId, userId);
+        return Result.Ok();
+    }
+
     /// <summary>Generates an unguessable URL-safe share token.</summary>
     private static string GenerateToken() =>
         Convert.ToHexString(RandomNumberGenerator.GetBytes(24)).ToLowerInvariant();

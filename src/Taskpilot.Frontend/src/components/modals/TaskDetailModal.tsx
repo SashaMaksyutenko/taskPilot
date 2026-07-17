@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import Avatar from '../Avatar'
 import MentionText from '../MentionText'
 import MentionField, { type MentionCandidate } from '../MentionField'
+import TaskHistory from '../TaskHistory'
 import { apiErrorMessage } from '../../lib/apiError'
 import { createTaskConnection } from '../../lib/taskHub'
 import { projectService } from '../../services/projectService'
@@ -34,11 +35,14 @@ export default function TaskDetailModal({
   onClose,
   onSaved,
   onDeleted,
+  showHistory = false,
 }: {
   task: Task
   onClose: () => void
   onSaved: (task: Task) => void
   onDeleted: (taskId: string) => void
+  /** Opens the history section straight away (the "View history" menu action). */
+  showHistory?: boolean
 }) {
   const { t } = useTranslation()
   const [title, setTitle] = useState(task.title)
@@ -428,6 +432,9 @@ export default function TaskDetailModal({
           </div>
           {extError && <p className="text-xs text-red-600">{extError}</p>}
         </div>
+
+        {/* Task history (audit trail); loads only when expanded */}
+        <TaskHistory taskId={task.id} defaultOpen={showHistory} />
 
         {/* Time tracking */}
         <label className="mb-1 block text-sm font-medium text-foreground">{t('taskModal.timeTracking')}</label>

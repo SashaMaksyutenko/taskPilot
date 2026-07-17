@@ -17,6 +17,7 @@ export default function TaskActionsDropdown({
   onAssign,
   moveTargets,
   onMove,
+  onViewHistory,
   onDelete,
 }: {
   onEdit: () => void
@@ -27,6 +28,7 @@ export default function TaskActionsDropdown({
   onAssign: (userId: string | null) => void
   moveTargets: { id: string; name: string }[]
   onMove: (projectId: string) => void
+  onViewHistory: () => void
   onDelete: () => void
 }) {
   const { t } = useTranslation()
@@ -112,6 +114,10 @@ export default function TaskActionsDropdown({
               </DropdownMenu.Portal>
             </DropdownMenu.Sub>
           )}
+
+          <DropdownMenu.Item className={menuItemClass} onSelect={onViewHistory}>
+            {t('board.viewHistory')}
+          </DropdownMenu.Item>
 
           <DropdownMenu.Separator className={menuSeparatorClass} />
 

@@ -23,6 +23,7 @@ export default function TaskContextMenu({
   onAssign,
   moveTargets,
   onMove,
+  onViewHistory,
   onDelete,
   bookmarked,
   onBookmark,
@@ -36,6 +37,7 @@ export default function TaskContextMenu({
   onAssign: (userId: string | null) => void
   moveTargets: { id: string; name: string }[]
   onMove: (projectId: string) => void
+  onViewHistory: () => void
   onDelete: () => void
   bookmarked?: boolean
   onBookmark?: () => void
@@ -123,6 +125,10 @@ export default function TaskContextMenu({
               </ContextMenu.Portal>
             </ContextMenu.Sub>
           )}
+
+          <ContextMenu.Item className={itemClass} onSelect={onViewHistory}>
+            {t('board.viewHistory')}
+          </ContextMenu.Item>
 
           <ContextMenu.Separator className={separatorClass} />
 

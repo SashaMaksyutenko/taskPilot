@@ -57,6 +57,15 @@ export default function BoardPage() {
   const [tasks, setTasks] = useState<Task[]>([])
   const [newTitle, setNewTitle] = useState('')
   const [selectedTask, setSelectedTask] = useState<Task | null>(null)
+  // Whether the detail modal should open straight onto the task's history
+  // ("View history" in the menus) rather than the edit form.
+  const [openOnHistory, setOpenOnHistory] = useState(false)
+
+  /** Opens the task's detail modal, optionally jumping to its history. */
+  const openTask = (task: Task, history = false) => {
+    setOpenOnHistory(history)
+    setSelectedTask(task)
+  }
   const [membersOpen, setMembersOpen] = useState(false)
   const [canWrite, setCanWrite] = useState(true)
   // Other projects this task can be moved to (owned/active, excluding the current one).
@@ -608,7 +617,7 @@ export default function BoardPage() {
                   {colTasks.map((task) => (
                     <TaskContextMenu
                       key={task.id}
-                      onEdit={() => setSelectedTask(task)}
+                      onEdit={() => openTask(task)}
                       onDuplicate={() => duplicateTask(task)}
                       onCopyLink={() => copyLink(task)}
                       onChangePriority={(p) => changePriority(task, p)}
@@ -616,6 +625,7 @@ export default function BoardPage() {
                       onAssign={(uid) => assign(task, uid)}
                       moveTargets={moveTargets}
                       onMove={(pid) => moveTask(task, pid)}
+                      onViewHistory={() => openTask(task, true)}
                       onDelete={() => setDeletingTask(task)}
                       bookmarked={bookmarkedTaskIds.has(task.id)}
                       onBookmark={() => toggleBookmark(task)}
@@ -625,7 +635,7 @@ export default function BoardPage() {
                         onClick={() => {
                           // Ignore the click that fires right after a drag.
                           if (dnd.justDragged()) return
-                          setSelectedTask(task)
+                          openTask(task)
                         }}
                         className={`group relative rounded-lg border border-border bg-surface p-3 shadow-soft transition hover:border-primary/30 hover:shadow-card ${
                           dnd.draggingId === task.id ? 'opacity-40' : ''
@@ -634,7 +644,7 @@ export default function BoardPage() {
                         {/* Hover three-dot menu (same actions as right-click) */}
                         <div className="absolute right-1 top-1 opacity-0 transition group-hover:opacity-100">
                           <TaskActionsDropdown
-                            onEdit={() => setSelectedTask(task)}
+                            onEdit={() => openTask(task)}
                             onDuplicate={() => duplicateTask(task)}
                             onCopyLink={() => copyLink(task)}
                             onChangePriority={(p) => changePriority(task, p)}
@@ -642,6 +652,7 @@ export default function BoardPage() {
                             onAssign={(uid) => assign(task, uid)}
                             moveTargets={moveTargets}
                             onMove={(pid) => moveTask(task, pid)}
+                            onViewHistory={() => openTask(task, true)}
                             onDelete={() => setDeletingTask(task)}
                           />
                         </div>
@@ -698,6 +709,7 @@ export default function BoardPage() {
       {selectedTask && (
         <TaskDetailModal
           task={selectedTask}
+          showHistory={openOnHistory}
           onClose={() => setSelectedTask(null)}
           onSaved={(updated) => setTasks((prev) => prev.map((t) => (t.id === updated.id ? updated : t)))}
           onDeleted={(taskId) => setTasks((prev) => prev.filter((t) => t.id !== taskId))}

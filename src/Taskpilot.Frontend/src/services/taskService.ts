@@ -199,6 +199,28 @@ export const taskService = {
       .post<ExtensionRequest>(`/api/extension-requests/${requestId}/decision`, { approve })
       .then((r) => r.data)
   },
+
+  /** The task's history (audit trail), newest first. */
+  getHistory(taskId: string): Promise<TaskHistoryEntry[]> {
+    return api.get<TaskHistoryEntry[]>(`/api/tasks/${taskId}/history`).then((r) => r.data)
+  },
+}
+
+/**
+ * One line of a task's history (mirrors the backend TaskHistoryEntryDto).
+ * The actor's email and IP are deliberately not part of this contract — teammates
+ * read this, and only admins see the full audit entry.
+ */
+export interface TaskHistoryEntry {
+  id: string
+  /** Stable dotted code, e.g. "task.status.changed". */
+  action: string
+  actorId: string | null
+  /** Null when the action was performed by the system or the account is gone. */
+  actorName: string | null
+  /** Server-rendered description of the change, e.g. "Status: Backlog → Done". */
+  details: string | null
+  createdAt: string
 }
 
 /** A recurring report email (mirrors the backend ReportScheduleDto). */

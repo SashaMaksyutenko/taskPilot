@@ -491,6 +491,7 @@
     "assignTo": "Assign to",
     "unassign": "Unassign",
     "moveToProject": "Move to project",
+    "viewHistory": "View history",
     "selected": "{{count}} selected",
     "bulkMoveTo": "Move to…",
     "bulkDelete": "Delete",
@@ -531,6 +532,23 @@
       "High": "High",
       "Medium": "Medium",
       "Low": "Low"
+    }
+  },
+  "history": {
+    "title": "History",
+    "loading": "Loading…",
+    "empty": "Nothing has changed yet.",
+    "failed": "Could not load the history.",
+    "system": "System",
+    "action": {
+      "task": {
+        "created": "Created",
+        "updated": "Edited",
+        "status": { "changed": "Status" },
+        "rescheduled": "Rescheduled",
+        "moved": "Moved",
+        "deleted": "Deleted"
+      }
     }
   },
   "extension": {

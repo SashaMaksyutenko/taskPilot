@@ -65,10 +65,24 @@ public class AdminService : IAdminService
             _ => query.OrderByDescending(u => u.CreatedAt), // "newest" (default)
         };
 
+        // Project to the columns AdminUserDto needs. Loading whole rows here dragged every
+        // listed user's password hash and 2FA secret into memory, a page at a time.
         var users = await ordered
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .AsNoTracking()
+            .Select(u => new User
+            {
+                Id = u.Id,
+                Name = u.Name,
+                AvatarFileId = u.AvatarFileId,
+                Email = u.Email,
+                Role = u.Role,
+                IsActive = u.IsActive,
+                BannedUntil = u.BannedUntil,
+                MutedUntil = u.MutedUntil,
+                CreatedAt = u.CreatedAt,
+            })
             .ToListAsync();
 
         return Result<PagedResult<AdminUserDto>>.Ok(new PagedResult<AdminUserDto>

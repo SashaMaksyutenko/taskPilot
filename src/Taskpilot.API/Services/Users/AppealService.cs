@@ -68,11 +68,10 @@ public class AppealService : IAppealService
     /// <inheritdoc />
     public async Task<Result<List<AppealDto>>> GetMineAsync(Guid userId)
     {
-        var rows = await _context.Appeals
-            .Where(a => a.UserId == userId)
-            .Include(a => a.User)
-            .Include(a => a.Warning)
-            .OrderByDescending(a => a.CreatedAt)
+        var rows = await ProjectForMapping(
+                _context.Appeals
+                    .Where(a => a.UserId == userId)
+                    .OrderByDescending(a => a.CreatedAt))
             .AsNoTracking()
             .ToListAsync();
 
@@ -82,19 +81,17 @@ public class AppealService : IAppealService
     /// <inheritdoc />
     public async Task<Result<List<AppealDto>>> GetAllAsync(string? status = null)
     {
-        var query = _context.Appeals
-            .Include(a => a.User)
-            .Include(a => a.Warning)
-            .AsQueryable();
+        var query = _context.Appeals.AsQueryable();
 
         // Optional status filter (e.g. "Pending").
         if (!string.IsNullOrWhiteSpace(status) && Enum.TryParse<AppealStatus>(status, ignoreCase: true, out var parsed))
             query = query.Where(a => a.Status == parsed);
 
-        var rows = await query
-            // Pending first, then newest.
-            .OrderBy(a => a.Status)
-            .ThenByDescending(a => a.CreatedAt)
+        var rows = await ProjectForMapping(
+                query
+                    // Pending first, then newest.
+                    .OrderBy(a => a.Status)
+                    .ThenByDescending(a => a.CreatedAt))
             .AsNoTracking()
             .ToListAsync();
 
@@ -154,13 +151,31 @@ public class AppealService : IAppealService
 
     private async Task<AppealDto> LoadDtoAsync(Guid appealId)
     {
-        var appeal = await _context.Appeals
-            .Include(a => a.User)
-            .Include(a => a.Warning)
+        var appeal = await ProjectForMapping(_context.Appeals.Where(a => a.Id == appealId))
             .AsNoTracking()
-            .FirstAsync(a => a.Id == appealId);
+            .FirstAsync();
         return MapDto(appeal);
     }
+
+    /// <summary>
+    /// Narrows an appeal query to what <see cref="MapDto"/> actually reads.
+    /// Include(a => a.User) pulls every User column — password hash and 2FA secret
+    /// included — when the DTO only shows the name.
+    /// </summary>
+    private static IQueryable<Appeal> ProjectForMapping(IQueryable<Appeal> query) =>
+        query.Select(a => new Appeal
+        {
+            Id = a.Id,
+            UserId = a.UserId,
+            User = new User { Name = a.User.Name },
+            WarningId = a.WarningId,
+            Warning = a.Warning == null ? null : new UserWarning { Reason = a.Warning.Reason },
+            Message = a.Message,
+            Status = a.Status,
+            ReviewNote = a.ReviewNote,
+            CreatedAt = a.CreatedAt,
+            ReviewedAt = a.ReviewedAt,
+        });
 
     private static AppealDto MapDto(Appeal a) => new()
     {

@@ -489,10 +489,32 @@ public class AuthService : IAuthService
 
         try
         {
-            // AsNoTracking: read-only query, no change tracking (faster).
+            // Select ONLY the columns UserDto needs. Loading the whole row here pulled the
+            // password hash, the 2FA secret and the calendar feed token into memory on every
+            // page load (/me runs on each app mount) — none of which this response uses.
             var user = await _context.Users
                 .AsNoTracking()
-                .FirstOrDefaultAsync(u => u.Id == userId);
+                .Where(u => u.Id == userId)
+                .Select(u => new User
+                {
+                    Id = u.Id,
+                    Name = u.Name,
+                    Email = u.Email,
+                    Role = u.Role,
+                    IsActive = u.IsActive,
+                    TwoFactorEnabled = u.TwoFactorEnabled,
+                    AvatarFileId = u.AvatarFileId,
+                    Title = u.Title,
+                    Bio = u.Bio,
+                    Location = u.Location,
+                    Website = u.Website,
+                    LinkedIn = u.LinkedIn,
+                    GitHub = u.GitHub,
+                    Phone = u.Phone,
+                    ShowEmail = u.ShowEmail,
+                    CreatedAt = u.CreatedAt,
+                })
+                .FirstOrDefaultAsync();
 
             if (user is null)
             {

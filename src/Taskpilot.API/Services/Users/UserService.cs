@@ -84,10 +84,29 @@ public class UserService : IUserService
     /// <inheritdoc />
     public async Task<Result<PublicProfileDto>> GetPublicProfileAsync(Guid userId)
     {
-        // Read-only lookup of the public profile.
+        // Read-only lookup, projected to just the columns PublicProfileDto needs — this is a
+        // public endpoint, so the password hash and 2FA secret have no business being loaded.
         var user = await _context.Users
             .AsNoTracking()
-            .FirstOrDefaultAsync(u => u.Id == userId);
+            .Where(u => u.Id == userId)
+            .Select(u => new User
+            {
+                Id = u.Id,
+                Name = u.Name,
+                Role = u.Role,
+                AvatarFileId = u.AvatarFileId,
+                Title = u.Title,
+                Bio = u.Bio,
+                Location = u.Location,
+                ShowEmail = u.ShowEmail,
+                Email = u.Email, // gated by ShowEmail inside the mapper
+                Website = u.Website,
+                LinkedIn = u.LinkedIn,
+                GitHub = u.GitHub,
+                Phone = u.Phone,
+                CreatedAt = u.CreatedAt,
+            })
+            .FirstOrDefaultAsync();
 
         if (user is null)
             return Result<PublicProfileDto>.Fail("User not found.");

@@ -41,7 +41,20 @@ public class OrganizationSettingsService : IOrganizationSettingsService
             MaxUploadBytes = settings.MaxUploadBytes,
             StorageQuotaBytes = settings.StorageQuotaBytes,
             StorageUsedBytes = usedBytes,
+            MarketplaceEnabled = settings.MarketplaceEnabled,
+            ForumEnabled = settings.ForumEnabled,
             UpdatedAt = settings.UpdatedAt,
+        };
+    }
+
+    /// <inheritdoc />
+    public async Task<FeatureFlagsDto> GetFeatureFlagsAsync()
+    {
+        var settings = await LoadOrDefaultAsync();
+        return new FeatureFlagsDto
+        {
+            MarketplaceEnabled = settings.MarketplaceEnabled,
+            ForumEnabled = settings.ForumEnabled,
         };
     }
 
@@ -72,6 +85,8 @@ public class OrganizationSettingsService : IOrganizationSettingsService
 
         settings.MaxUploadBytes = dto.MaxUploadBytes;
         settings.StorageQuotaBytes = dto.StorageQuotaBytes;
+        settings.MarketplaceEnabled = dto.MarketplaceEnabled;
+        settings.ForumEnabled = dto.ForumEnabled;
         settings.UpdatedAt = DateTime.UtcNow;
         await _context.SaveChangesAsync();
 
@@ -81,7 +96,8 @@ public class OrganizationSettingsService : IOrganizationSettingsService
             actorEmail: adminEmail,
             entityType: nameof(OrganizationSettings),
             entityId: settings.Id.ToString(),
-            details: $"MaxUpload={dto.MaxUploadBytes}; Quota={dto.StorageQuotaBytes}",
+            details: $"MaxUpload={dto.MaxUploadBytes}; Quota={dto.StorageQuotaBytes}; " +
+                     $"Marketplace={dto.MarketplaceEnabled}; Forum={dto.ForumEnabled}",
             ipAddress: ip);
 
         _logger.LogInformation("Organization settings updated by {AdminId}.", adminId);
@@ -92,6 +108,8 @@ public class OrganizationSettingsService : IOrganizationSettingsService
             MaxUploadBytes = settings.MaxUploadBytes,
             StorageQuotaBytes = settings.StorageQuotaBytes,
             StorageUsedBytes = usedBytes,
+            MarketplaceEnabled = settings.MarketplaceEnabled,
+            ForumEnabled = settings.ForumEnabled,
             UpdatedAt = settings.UpdatedAt,
         });
     }

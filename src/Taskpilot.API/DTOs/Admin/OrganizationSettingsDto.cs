@@ -12,6 +12,12 @@ public class OrganizationSettingsDto
     /// <summary>Bytes currently used by all stored files — so the admin sees headroom.</summary>
     public long StorageUsedBytes { get; set; }
 
+    /// <summary>Whether the public task Marketplace is available.</summary>
+    public bool MarketplaceEnabled { get; set; }
+
+    /// <summary>Whether the discussion Forum is available.</summary>
+    public bool ForumEnabled { get; set; }
+
     /// <summary>UTC time the settings were last changed; null if never edited.</summary>
     public DateTime? UpdatedAt { get; set; }
 }
@@ -24,4 +30,20 @@ public class UpdateOrganizationSettingsDto
 
     /// <summary>New organization-wide storage quota, in bytes.</summary>
     public long StorageQuotaBytes { get; set; }
+
+    /// <summary>Whether the public task Marketplace is available.</summary>
+    public bool MarketplaceEnabled { get; set; }
+
+    /// <summary>Whether the discussion Forum is available.</summary>
+    public bool ForumEnabled { get; set; }
+}
+
+/// <summary>
+/// The subset of settings any signed-in user may read — the feature flags the client uses
+/// to hide navigation for disabled features. Deliberately excludes storage limits.
+/// </summary>
+public class FeatureFlagsDto
+{
+    public bool MarketplaceEnabled { get; set; }
+    public bool ForumEnabled { get; set; }
 }

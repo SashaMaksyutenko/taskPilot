@@ -501,6 +501,9 @@ app.UseMiddleware<VisitorTrackingMiddleware>();
 // role is known). Must precede endpoint execution.
 app.UseMiddleware<ViewerReadOnlyMiddleware>();
 
+// Block the API of any feature the admin has switched off (Marketplace / Forum).
+app.UseMiddleware<FeatureGateMiddleware>();
+
 // Map attribute-routed controllers (e.g. POST /api/auth/register).
 app.MapControllers();
 

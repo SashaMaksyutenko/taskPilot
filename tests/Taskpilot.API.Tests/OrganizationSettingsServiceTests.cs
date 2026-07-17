@@ -131,4 +131,62 @@ public class OrganizationSettingsServiceTests
         Assert.False(result.Succeeded);
         Assert.Equal("The per-file limit cannot exceed the storage quota.", result.Error);
     }
+
+    [Fact]
+    public async Task Update_PersistsTheFeatureFlags()
+    {
+        await using var ctx = TestDb.CreateContext();
+        ctx.OrganizationSettings.Add(new OrganizationSettings { Id = OrganizationSettings.SingletonId });
+        await ctx.SaveChangesAsync();
+        var svc = Create(ctx);
+
+        var result = await svc.UpdateAsync(
+            new UpdateOrganizationSettingsDto
+            {
+                MaxUploadBytes = OrganizationSettings.DefaultMaxUploadBytes,
+                StorageQuotaBytes = OrganizationSettings.DefaultStorageQuotaBytes,
+                MarketplaceEnabled = false,
+                ForumEnabled = true,
+            },
+            Guid.NewGuid(), "admin@test.local", null);
+
+        Assert.True(result.Succeeded);
+        Assert.False(result.Value!.MarketplaceEnabled);
+        Assert.True(result.Value!.ForumEnabled);
+        var saved = await ctx.OrganizationSettings.SingleAsync();
+        Assert.False(saved.MarketplaceEnabled);
+        Assert.True(saved.ForumEnabled);
+    }
+
+    [Fact]
+    public async Task GetFeatureFlags_ReturnsTheStoredFlags()
+    {
+        await using var ctx = TestDb.CreateContext();
+        ctx.OrganizationSettings.Add(new OrganizationSettings
+        {
+            Id = OrganizationSettings.SingletonId,
+            MarketplaceEnabled = false,
+            ForumEnabled = true,
+        });
+        await ctx.SaveChangesAsync();
+        var svc = Create(ctx);
+
+        var flags = await svc.GetFeatureFlagsAsync();
+
+        Assert.False(flags.MarketplaceEnabled);
+        Assert.True(flags.ForumEnabled);
+    }
+
+    [Fact]
+    public async Task GetFeatureFlags_WithoutARow_DefaultsToBothEnabled()
+    {
+        await using var ctx = TestDb.CreateContext();
+        var svc = Create(ctx);
+
+        var flags = await svc.GetFeatureFlagsAsync();
+
+        // A database predating the settings seed must not silently hide features.
+        Assert.True(flags.MarketplaceEnabled);
+        Assert.True(flags.ForumEnabled);
+    }
 }

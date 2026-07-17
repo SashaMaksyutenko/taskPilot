@@ -17,8 +17,14 @@ public interface IOrganizationSettingsService
     Task<OrganizationSettingsDto> GetAsync();
 
     /// <summary>
-    /// Updates the storage limits. Both must be positive and a single file may not be
-    /// allowed to exceed the whole quota.
+    /// Updates the storage limits and feature flags. Limits must be positive and a single
+    /// file may not be allowed to exceed the whole quota.
     /// </summary>
     Task<Result<OrganizationSettingsDto>> UpdateAsync(UpdateOrganizationSettingsDto dto, Guid adminId, string? adminEmail, string? ip);
+
+    /// <summary>
+    /// Returns just the feature flags — readable by any signed-in user so the client can
+    /// hide navigation for disabled features.
+    /// </summary>
+    Task<FeatureFlagsDto> GetFeatureFlagsAsync();
 }

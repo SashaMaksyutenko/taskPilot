@@ -36,6 +36,18 @@ public class OrganizationSettings
     /// </summary>
     public long StorageQuotaBytes { get; set; } = DefaultStorageQuotaBytes;
 
+    /// <summary>
+    /// Whether the public task Marketplace is available. When off, the whole
+    /// <c>/api/marketplace</c> surface is blocked and the UI hides its entry point.
+    /// </summary>
+    public bool MarketplaceEnabled { get; set; } = true;
+
+    /// <summary>
+    /// Whether the discussion Forum is available. When off, the whole <c>/api/forum</c>
+    /// surface is blocked and the UI hides its entry point.
+    /// </summary>
+    public bool ForumEnabled { get; set; } = true;
+
     /// <summary>UTC time the settings were last changed (null until first edited).</summary>
     public DateTime? UpdatedAt { get; set; }
 }

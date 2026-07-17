@@ -161,6 +161,8 @@ public class TaskpilotDbContext : DbContext
                 Id = Models.OrganizationSettings.SingletonId,
                 MaxUploadBytes = Models.OrganizationSettings.DefaultMaxUploadBytes,
                 StorageQuotaBytes = Models.OrganizationSettings.DefaultStorageQuotaBytes,
+                MarketplaceEnabled = true,
+                ForumEnabled = true,
                 UpdatedAt = null,
             });
         });

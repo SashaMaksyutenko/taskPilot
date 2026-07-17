@@ -53,6 +53,13 @@ public interface ITaskService
     Task<Result> DeleteTaskAsync(Guid userId, Guid taskId);
 
     /// <summary>
+    /// Returns the task's history (audit trail) newest first: who created, edited, moved,
+    /// rescheduled or deleted it and what changed. Readable by anyone with access to the
+    /// task's project, so it omits the actor's email and IP.
+    /// </summary>
+    Task<Result<List<TaskHistoryEntryDto>>> GetHistoryAsync(Guid userId, Guid taskId);
+
+    /// <summary>
     /// Returns the user's tasks (across all their projects) that have a deadline
     /// within the [from, to] range — used to render the calendar.
     /// </summary>

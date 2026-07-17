@@ -128,6 +128,17 @@ public class TasksController : BaseApiController
         return result.Succeeded ? Ok(result.Value) : NotFound(new { error = result.Error });
     }
 
+    /// <summary>Returns the task's history (who changed what, newest first).</summary>
+    [HttpGet("api/tasks/{taskId:guid}/history")]
+    public async Task<IActionResult> GetHistory(Guid taskId)
+    {
+        var userId = CurrentUserId();
+        if (userId is null) return Unauthorized();
+
+        var result = await _tasks.GetHistoryAsync(userId.Value, taskId);
+        return result.Succeeded ? Ok(result.Value) : NotFound(new { error = result.Error });
+    }
+
     /// <summary>Lists a task's subtasks (children).</summary>
     [HttpGet("api/tasks/{taskId:guid}/subtasks")]
     public async Task<IActionResult> GetSubtasks(Guid taskId)

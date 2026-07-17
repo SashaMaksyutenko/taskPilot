@@ -17,7 +17,7 @@ public class TaskServiceTests
     private static (TaskService svc, Mock<INotificationService> notifications) CreateWithMock(TaskpilotDbContext ctx)
     {
         var notifications = new Mock<INotificationService>();
-        var svc = new TaskService(ctx, new Mock<IWebhookService>().Object, notifications.Object, new Mock<IReputationService>().Object, NullLogger<TaskService>.Instance);
+        var svc = new TaskService(ctx, new Mock<IWebhookService>().Object, notifications.Object, new Mock<IReputationService>().Object, new Mock<IAuditService>().Object, NullLogger<TaskService>.Instance);
         return (svc, notifications);
     }
 

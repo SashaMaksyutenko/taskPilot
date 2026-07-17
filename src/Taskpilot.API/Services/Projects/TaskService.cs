@@ -21,6 +21,7 @@ public class TaskService : ITaskService
     private readonly IWebhookService _webhooks;
     private readonly INotificationService _notifications;
     private readonly IReputationService _reputation;
+    private readonly IAuditService _audit;
     private readonly ILogger<TaskService> _logger;
 
     public TaskService(
@@ -28,13 +29,67 @@ public class TaskService : ITaskService
         IWebhookService webhooks,
         INotificationService notifications,
         IReputationService reputation,
+        IAuditService audit,
         ILogger<TaskService> logger)
     {
         _context = context;
         _webhooks = webhooks;
         _notifications = notifications;
         _reputation = reputation;
+        _audit = audit;
         _logger = logger;
+    }
+
+    // --- audit trail (a task's history) ---
+
+    /// <summary>
+    /// Records one entry in the task's history. The audit trail stores the actor's email
+    /// as a snapshot, so we look it up here rather than threading it through every
+    /// public method signature.
+    /// </summary>
+    /// <param name="actorId">User performing the action.</param>
+    /// <param name="action">One of <see cref="TaskAuditActions"/>.</param>
+    /// <param name="taskId">Task the entry belongs to.</param>
+    /// <param name="details">Human-readable description of the change.</param>
+    private async Task AuditAsync(Guid actorId, string action, Guid taskId, string? details)
+    {
+        // FirstOrDefaultAsync returns null if the actor no longer exists — the audit
+        // entry is still written, just without the email snapshot.
+        var actorEmail = await _context.Users
+            .AsNoTracking()                          // read-only lookup, no change tracking
+            .Where(u => u.Id == actorId)
+            .Select(u => u.Email)                    // fetch only the column we need
+            .FirstOrDefaultAsync();
+
+        await _audit.LogAsync(
+            action: action,
+            actorId: actorId,
+            actorEmail: actorEmail,
+            entityType: nameof(ProjectTask),
+            entityId: taskId.ToString(),
+            details: details);
+    }
+
+    /// <summary>Formats a deadline for the history text; null becomes "none".</summary>
+    private static string Moment(DateTime? value) => value?.ToString("yyyy-MM-dd HH:mm") ?? "none";
+
+    /// <summary>Formats a tag list for the history text; an empty list becomes "none".</summary>
+    private static string TagList(List<string>? tags) =>
+        tags is null || tags.Count == 0 ? "none" : string.Join(", ", tags);
+
+    /// <summary>Looks up a user's display name for the history text; null id becomes "nobody".</summary>
+    private async Task<string> AssigneeNameAsync(Guid? userId)
+    {
+        if (userId is not { } id)
+            return "nobody";
+
+        var name = await _context.Users.AsNoTracking()
+            .Where(u => u.Id == id)
+            .Select(u => u.Name)
+            .FirstOrDefaultAsync();
+
+        // A removed account leaves its tasks behind, so fall back rather than showing a raw id.
+        return name ?? "Deleted user";
     }
 
     /// <summary>Notifies an assignee they were given a task (skips self-assignment).</summary>
@@ -132,6 +187,9 @@ public class TaskService : ITaskService
         await EnsureAssigneeHasAccessAsync(projectId, task.AssigneeId);
         await NotifyAssignedAsync(task.AssigneeId, userId, task);
 
+        // Open the task's history. The title is recorded because it can be edited later.
+        await AuditAsync(userId, TaskAuditActions.Created, task.Id, $"Created \"{task.Title}\" ({task.Priority}).");
+
         _logger.LogInformation("Task created. TaskId: {TaskId}, ProjectId: {ProjectId}", task.Id, projectId);
         return Result<TaskDto>.Ok(await LoadDtoAsync(task.Id));
     }
@@ -208,8 +266,15 @@ public class TaskService : ITaskService
             !await _context.Users.AnyAsync(u => u.Id == dto.AssigneeId.Value))
             return Result<TaskDto>.Fail("Assignee not found.");
 
-        // Remember the previous assignee so we only notify on an actual change.
+        // Snapshot the reported fields before they are overwritten. The assignee is also
+        // used further down to notify only on an actual change.
         var previousAssigneeId = task.AssigneeId;
+        var previousTitle = task.Title;
+        var previousDescription = task.Description;
+        var previousPriority = task.Priority;
+        var previousDeadline = task.Deadline;
+        // Copy the tags: task.Tags is replaced below, and we need the old contents afterwards.
+        var previousTags = new List<string>(task.Tags ?? new List<string>());
 
         task.Title = dto.Title.Trim();
         task.Description = dto.Description?.Trim();
@@ -220,6 +285,25 @@ public class TaskService : ITaskService
             task.Tags = NormalizeTags(dto.Tags);
         task.UpdatedAt = DateTime.UtcNow;
         await _context.SaveChangesAsync();
+
+        // Record what actually changed; an update that touches nothing leaves no history.
+        var changes = new List<string>();
+        if (previousTitle != task.Title)
+            changes.Add($"Title: \"{previousTitle}\" → \"{task.Title}\"");
+        if (previousDescription != task.Description)
+            changes.Add("Description edited");   // bodies can be long, so only the fact is recorded
+        if (previousPriority != task.Priority)
+            changes.Add($"Priority: {previousPriority} → {task.Priority}");
+        if (previousDeadline != task.Deadline)
+            changes.Add($"Deadline: {Moment(previousDeadline)} → {Moment(task.Deadline)}");
+        if (previousAssigneeId != task.AssigneeId)
+            changes.Add($"Assignee: {await AssigneeNameAsync(previousAssigneeId)} → {await AssigneeNameAsync(task.AssigneeId)}");
+        // SequenceEqual compares the two lists item by item, in order
+        if (!previousTags.SequenceEqual(task.Tags ?? new List<string>()))
+            changes.Add($"Tags: {TagList(previousTags)} → {TagList(task.Tags)}");
+
+        if (changes.Count > 0)
+            await AuditAsync(userId, TaskAuditActions.Updated, task.Id, string.Join("; ", changes));
 
         await _webhooks.DispatchAsync(WebhookEvents.TaskUpdated, new
         {
@@ -254,11 +338,18 @@ public class TaskService : ITaskService
         if (!await ProjectAccess.CanWriteTaskAsync(_context, taskId, userId))
             return Result<TaskDto>.Fail("You have read-only access to this project.");
 
+        // Remember where the task came from so the history can show the transition.
+        var previousStatus = task.Status;
+
         task.Status = parsed;
         // Track completion time when moving to/away from Done.
         task.CompletedAt = parsed == ProjectTaskStatus.Done ? DateTime.UtcNow : null;
         task.UpdatedAt = DateTime.UtcNow;
         await _context.SaveChangesAsync();
+
+        // Dropping a task back onto its own column changes nothing — no history entry.
+        if (previousStatus != parsed)
+            await AuditAsync(userId, TaskAuditActions.StatusChanged, task.Id, $"Status: {previousStatus} → {parsed}");
 
         // Notify the assignee that someone else moved their task.
         var notified = new HashSet<Guid> { userId };
@@ -309,6 +400,8 @@ public class TaskService : ITaskService
         if (!await ProjectAccess.CanWriteTaskAsync(_context, taskId, userId))
             return Result<TaskDto>.Fail("You have read-only access to this project.");
 
+        var previousDeadline = task.Deadline;
+
         // Only the deadline moves; every other field is left as-is.
         task.Deadline = deadline;
         // The task must be judged against its new date, not the old one.
@@ -326,6 +419,11 @@ public class TaskService : ITaskService
             deadline = task.Deadline,
             updatedAt = task.UpdatedAt,
         });
+
+        // Dropping a task back onto its own day changes nothing — no history entry.
+        if (previousDeadline != deadline)
+            await AuditAsync(userId, TaskAuditActions.Rescheduled, task.Id,
+                $"Deadline: {Moment(previousDeadline)} → {Moment(deadline)}");
 
         _logger.LogInformation("Task rescheduled. TaskId: {TaskId}, Deadline: {Deadline}", taskId, deadline);
         return Result<TaskDto>.Ok(await LoadDtoAsync(task.Id));
@@ -405,6 +503,9 @@ public class TaskService : ITaskService
         // Notify the assignee (if someone other than the duplicator).
         await NotifyAssignedAsync(copy.AssigneeId, userId, copy);
 
+        // The history belongs to the new task and records where it came from.
+        await AuditAsync(userId, TaskAuditActions.Created, copy.Id, $"Duplicated from \"{source.Title}\".");
+
         _logger.LogInformation("Task duplicated. SourceTaskId: {SourceTaskId}, NewTaskId: {NewTaskId}", taskId, copy.Id);
         return Result<TaskDto>.Ok(await LoadDtoAsync(copy.Id));
     }
@@ -427,6 +528,10 @@ public class TaskService : ITaskService
         if (!await ProjectAccess.CanWriteAsync(_context, targetProjectId, userId))
             return Result<TaskDto>.Fail("You have read-only access to the target project.");
 
+        // Read the source name off the loaded navigation before the move: reassigning
+        // ProjectId does not refresh task.Project, and after SaveChanges it is ambiguous.
+        var sourceProjectName = task.Project.Name;
+
         // Move the task itself; it detaches from any parent (which stays behind).
         task.ProjectId = targetProjectId;
         task.ParentTaskId = null;
@@ -441,6 +546,14 @@ public class TaskService : ITaskService
         }
 
         await _context.SaveChangesAsync();
+
+        var targetProjectName = await _context.Projects.AsNoTracking()
+            .Where(p => p.Id == targetProjectId)
+            .Select(p => p.Name)
+            .FirstOrDefaultAsync() ?? "unknown";
+
+        await AuditAsync(userId, TaskAuditActions.Moved, task.Id,
+            $"Project: \"{sourceProjectName}\" → \"{targetProjectName}\"");
 
         _logger.LogInformation("Task moved. TaskId: {TaskId}, TargetProjectId: {TargetProjectId}, Subtasks: {Count}",
             taskId, targetProjectId, children.Count);
@@ -498,9 +611,60 @@ public class TaskService : ITaskService
         if (!await ProjectAccess.CanWriteTaskAsync(_context, taskId, userId))
             return Result.Fail("You have read-only access to this project.");
 
+        // Keep the title: after the row is gone the history is all that is left of it.
+        var title = task.Title;
+
         _context.ProjectTasks.Remove(task);
         await _context.SaveChangesAsync();
+
+        // The audit trail intentionally has no foreign key to the task, so this entry
+        // outlives the row it describes.
+        await AuditAsync(userId, TaskAuditActions.Deleted, taskId, $"Deleted \"{title}\".");
+
+        _logger.LogInformation("Task deleted. TaskId: {TaskId}, UserId: {UserId}", taskId, userId);
         return Result.Ok();
+    }
+
+    /// <inheritdoc />
+    public async Task<Result<List<TaskHistoryEntryDto>>> GetHistoryAsync(Guid userId, Guid taskId)
+    {
+        // Anyone who can see the task can read its history (Viewers included) — this is
+        // a read, so Editor rights are not required.
+        if (await LoadAccessibleAsync(taskId, userId) is null)
+            return Result<List<TaskHistoryEntryDto>>.Fail("Task not found.");
+
+        var entityId = taskId.ToString();
+
+        // The audit trail has no foreign key to the task (entries outlive deleted rows),
+        // so the task's history is selected by entity type + id, newest first. The actor's
+        // name is resolved with a left join: GroupJoin + SelectMany(DefaultIfEmpty) keeps
+        // entries whose actor was since deleted.
+        var entries = await _context.AuditLogs
+            .AsNoTracking()
+            .Where(a => a.EntityType == nameof(ProjectTask) && a.EntityId == entityId)
+            .OrderByDescending(a => a.CreatedAt)          // newest first
+            .GroupJoin(
+                _context.Users.AsNoTracking(),
+                a => a.ActorId,
+                u => u.Id,
+                (a, users) => new { Entry = a, Users = users })
+            .SelectMany(
+                x => x.Users.DefaultIfEmpty(),            // keep the entry even with no match
+                (x, user) => new TaskHistoryEntryDto
+                {
+                    Id = x.Entry.Id,
+                    Action = x.Entry.Action,
+                    ActorId = x.Entry.ActorId,
+                    ActorName = user != null ? user.Name : null,
+                    Details = x.Entry.Details,
+                    CreatedAt = x.Entry.CreatedAt,
+                    // ActorEmail and IpAddress are deliberately not exposed to teammates.
+                })
+            .ToListAsync();
+
+        _logger.LogInformation("Task history read. TaskId: {TaskId}, UserId: {UserId}, Entries: {Count}",
+            taskId, userId, entries.Count);
+        return Result<List<TaskHistoryEntryDto>>.Ok(entries);
     }
 
     /// <inheritdoc />

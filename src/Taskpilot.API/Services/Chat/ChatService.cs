@@ -50,11 +50,12 @@ public class ChatService : IChatService
         try
         {
             // Look for an existing direct conversation that contains both users.
-            var existing = await _context.Conversations
-                .Where(c => c.Type == ConversationType.Direct
-                            && c.Participants.Any(p => p.UserId == userId)
-                            && c.Participants.Any(p => p.UserId == otherUserId))
-                .Include(c => c.Participants).ThenInclude(p => p.User)
+            var existing = await ProjectForMapping(
+                    _context.Conversations
+                        .Where(c => c.Type == ConversationType.Direct
+                                    && c.Participants.Any(p => p.UserId == userId)
+                                    && c.Participants.Any(p => p.UserId == otherUserId)))
+                .AsNoTracking()
                 .FirstOrDefaultAsync();
 
             if (existing is not null)
@@ -127,10 +128,10 @@ public class ChatService : IChatService
     {
         _logger.LogInformation("GetUserConversations. UserId: {UserId}", userId);
 
-        var conversations = await _context.Conversations
-            .Where(c => c.Participants.Any(p => p.UserId == userId))
-            .Include(c => c.Participants).ThenInclude(p => p.User)
-            .OrderByDescending(c => c.CreatedAt)
+        var conversations = await ProjectForMapping(
+                _context.Conversations
+                    .Where(c => c.Participants.Any(p => p.UserId == userId))
+                    .OrderByDescending(c => c.CreatedAt))
             .AsNoTracking()
             .ToListAsync();
 
@@ -424,12 +425,35 @@ public class ChatService : IChatService
     /// <summary>Loads a conversation (with participants) and maps it to a DTO.</summary>
     private async Task<ConversationDto> LoadConversationDtoAsync(Guid conversationId)
     {
-        var conversation = await _context.Conversations
-            .Include(c => c.Participants).ThenInclude(p => p.User)
+        var conversation = await ProjectForMapping(
+                _context.Conversations.Where(c => c.Id == conversationId))
             .AsNoTracking()
-            .FirstAsync(c => c.Id == conversationId);
+            .FirstAsync();
         return MapConversation(conversation);
     }
+
+    /// <summary>
+    /// Narrows a conversation query to exactly what <see cref="MapConversation"/> reads.
+    /// Include(c => c.Participants).ThenInclude(p => p.User) pulls EVERY User column —
+    /// password hash, 2FA secret, feed token — for every participant of every conversation,
+    /// when all the DTO needs is the name and the avatar id.
+    /// </summary>
+    private static IQueryable<Conversation> ProjectForMapping(IQueryable<Conversation> query) =>
+        query.Select(c => new Conversation
+        {
+            Id = c.Id,
+            Type = c.Type,
+            Name = c.Name,
+            CreatedAt = c.CreatedAt,
+            Participants = c.Participants
+                .Select(p => new ConversationParticipant
+                {
+                    UserId = p.UserId,
+                    LastReadAt = p.LastReadAt,
+                    User = new User { Id = p.User.Id, Name = p.User.Name, AvatarFileId = p.User.AvatarFileId },
+                })
+                .ToList(),
+        });
 
     private static ConversationDto MapConversation(Conversation c) => new()
     {

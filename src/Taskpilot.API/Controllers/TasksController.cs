@@ -54,6 +54,31 @@ public class TasksController : BaseApiController
         return Ok(result.Value);
     }
 
+    /// <summary>
+    /// Returns the project team's availability: each participant with the tasks assigned to
+    /// them that fall due between ?from and ?to (defaults to the next month).
+    /// </summary>
+    [HttpGet("api/projects/{projectId:guid}/team-workload")]
+    public async Task<IActionResult> GetTeamWorkload(Guid projectId, [FromQuery] DateTime? from, [FromQuery] DateTime? to)
+    {
+        var userId = CurrentUserId();
+        if (userId is null) return Unauthorized();
+
+        // Query-string dates bind as Unspecified kind; PostgreSQL 'timestamptz' requires
+        // UTC, so mark them as UTC before querying.
+        var fromDate = from.HasValue
+            ? DateTime.SpecifyKind(from.Value, DateTimeKind.Utc)
+            : DateTime.UtcNow.Date;
+        var toRaw = to.HasValue
+            ? DateTime.SpecifyKind(to.Value, DateTimeKind.Utc)
+            : fromDate.AddMonths(1);
+        // Make the 'to' day inclusive: cover the whole day, not just its midnight.
+        var toDate = toRaw.Date.AddDays(1).AddTicks(-1);
+
+        var result = await _tasks.GetProjectTeamWorkloadAsync(userId.Value, projectId, fromDate, toDate);
+        return result.Succeeded ? Ok(result.Value) : NotFound(new { error = result.Error });
+    }
+
     /// <summary>Exports a project's tasks as a CSV file.</summary>
     [HttpGet("api/projects/{projectId:guid}/tasks/export")]
     public async Task<IActionResult> Export(Guid projectId)

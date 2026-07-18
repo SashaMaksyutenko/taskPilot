@@ -69,6 +69,13 @@ public interface ITaskService
     Task<Result<List<CalendarTaskDto>>> GetOverdueTasksAsync(Guid userId);
 
     /// <summary>
+    /// Returns each participant of a project (owner + members) with the tasks assigned to
+    /// them that fall due within [from, to] — the team's availability. Readable by any
+    /// participant of the project.
+    /// </summary>
+    Task<Result<List<TeamMemberWorkloadDto>>> GetProjectTeamWorkloadAsync(Guid userId, Guid projectId, DateTime from, DateTime to);
+
+    /// <summary>
     /// Exports a project's tasks as a CSV document (the caller must own the project).
     /// </summary>
     Task<Result<string>> ExportTasksCsvAsync(Guid userId, Guid projectId);

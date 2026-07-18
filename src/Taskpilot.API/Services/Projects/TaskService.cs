@@ -7,6 +7,7 @@ using Taskpilot.API.Common;
 using Taskpilot.API.Data;
 using Taskpilot.API.DTOs.Calendar;
 using Taskpilot.API.DTOs.Projects;
+using Taskpilot.API.Mappers;
 using Taskpilot.API.Models;
 
 namespace Taskpilot.API.Services;
@@ -722,6 +723,66 @@ public class TaskService : ITaskService
         }).ToList();
 
         return Result<List<CalendarTaskDto>>.Ok(items);
+    }
+
+    /// <inheritdoc />
+    public async Task<Result<List<TeamMemberWorkloadDto>>> GetProjectTeamWorkloadAsync(
+        Guid userId, Guid projectId, DateTime from, DateTime to)
+    {
+        // Any participant (owner or member, Viewer included) may see the team's workload:
+        // this is a read, so Editor rights are not required.
+        var project = await _context.Projects
+            .Include(p => p.Owner)
+            .Include(p => p.Members).ThenInclude(m => m.User)
+            .AsNoTracking()
+            .FirstOrDefaultAsync(p => p.Id == projectId);
+        if (project is null || (project.OwnerId != userId && project.Members.All(m => m.UserId != userId)))
+            return Result<List<TeamMemberWorkloadDto>>.Fail("Project not found.");
+
+        // The project's assigned tasks that fall due within the range, ordered by deadline.
+        // Unassigned tasks are excluded — this view is about who is busy, so a task with no
+        // owner has nobody to attribute it to.
+        var tasks = await _context.ProjectTasks
+            .Where(t => t.ProjectId == projectId
+                        && t.AssigneeId != null
+                        && t.Deadline != null
+                        && t.Deadline >= from
+                        && t.Deadline <= to)
+            .OrderBy(t => t.Deadline)
+            .AsNoTracking()
+            .ToListAsync();
+
+        // Build the participant list: owner first, then members alphabetically. Every
+        // participant is included even with no tasks, so the view also shows who is free.
+        var participants = new List<(Guid Id, string Name, string? Avatar, bool IsOwner)>
+        {
+            (project.OwnerId, project.Owner.Name, UserMapper.AvatarUrl(project.Owner), true),
+        };
+        participants.AddRange(project.Members
+            .OrderBy(m => m.User.Name)
+            .Select(m => (m.UserId, m.User.Name, UserMapper.AvatarUrl(m.User), false)));
+
+        var workload = participants.Select(p => new TeamMemberWorkloadDto
+        {
+            UserId = p.Id,
+            Name = p.Name,
+            AvatarUrl = p.Avatar,
+            IsOwner = p.IsOwner,
+            // Group the already-loaded tasks by assignee in memory (small lists).
+            Tasks = tasks.Where(t => t.AssigneeId == p.Id).Select(t => new CalendarTaskDto
+            {
+                Id = t.Id,
+                Title = t.Title,
+                ProjectId = t.ProjectId,
+                ProjectName = project.Name,
+                Status = t.Status.ToString(),
+                Priority = t.Priority.ToString(),
+                Deadline = t.Deadline!.Value,
+            }).ToList(),
+        }).ToList();
+
+        _logger.LogInformation("Team workload read. ProjectId: {ProjectId}, Members: {Count}", projectId, workload.Count);
+        return Result<List<TeamMemberWorkloadDto>>.Ok(workload);
     }
 
     /// <inheritdoc />

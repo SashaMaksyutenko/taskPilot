@@ -4,15 +4,15 @@ using Xunit;
 namespace Taskpilot.API.Tests;
 
 /// <summary>
-/// Unit tests for <see cref="EmailDomainAllowlist"/> — the registration gate. Getting a
+/// Unit tests for <see cref="EmailDomainList"/> — the registration gate. Getting a
 /// boundary wrong either blocks everyone or lets any domain in, so the edges are pinned.
 /// </summary>
-public class EmailDomainAllowlistTests
+public class EmailDomainListTests
 {
     [Fact]
     public void EmptyConfig_IsOff_AndAllowsAnyDomain()
     {
-        var list = EmailDomainAllowlist.Parse("");
+        var list = EmailDomainList.Parse("");
 
         Assert.False(list.IsEnabled);
         Assert.True(list.IsAllowed("anyone@wherever.com"));
@@ -21,7 +21,7 @@ public class EmailDomainAllowlistTests
     [Fact]
     public void AllowsOnlyListedDomains_CaseInsensitive()
     {
-        var list = EmailDomainAllowlist.Parse("acme.com, acme.io");
+        var list = EmailDomainList.Parse("acme.com, acme.io");
 
         Assert.True(list.IsEnabled);
         Assert.True(list.IsAllowed("alice@acme.com"));
@@ -32,7 +32,7 @@ public class EmailDomainAllowlistTests
     [Fact]
     public void StripsLeadingAt_AndIgnoresBlanks()
     {
-        var list = EmailDomainAllowlist.Parse("@acme.com, , ,  @acme.io  ");
+        var list = EmailDomainList.Parse("@acme.com, , ,  @acme.io  ");
 
         Assert.Equal(2, list.Domains.Count);
         Assert.True(list.IsAllowed("x@acme.com"));
@@ -42,7 +42,7 @@ public class EmailDomainAllowlistTests
     [Fact]
     public void MatchesTheDomainAfterTheLastAt()
     {
-        var list = EmailDomainAllowlist.Parse("acme.com");
+        var list = EmailDomainList.Parse("acme.com");
 
         // A '+' or extra '@' in the local part must not fool the domain check.
         Assert.True(list.IsAllowed("weird@name@acme.com"));
@@ -56,15 +56,46 @@ public class EmailDomainAllowlistTests
     [InlineData("trailing@")]
     public void MalformedEmails_AreRejectedWhenTheListIsOn(string? email)
     {
-        var list = EmailDomainAllowlist.Parse("acme.com");
+        var list = EmailDomainList.Parse("acme.com");
         Assert.False(list.IsAllowed(email));
     }
 
     [Fact]
     public void Domains_AreDeduplicatedAndLowerCased()
     {
-        var list = EmailDomainAllowlist.Parse("Acme.com, ACME.COM, acme.com");
+        var list = EmailDomainList.Parse("Acme.com, ACME.COM, acme.com");
         Assert.Single(list.Domains);
         Assert.Contains("acme.com", list.Domains);
+    }
+
+    // --- denylist semantics (Contains): an empty list blocks nothing ---
+
+    [Fact]
+    public void Contains_OnAnEmptyList_IsAlwaysFalse_SoNothingIsBlocked()
+    {
+        var list = EmailDomainList.Parse("");
+
+        Assert.False(list.Contains("anyone@wherever.com"));
+        Assert.False(list.Contains(null));
+    }
+
+    [Fact]
+    public void Contains_MatchesOnlyListedDomains_CaseInsensitive()
+    {
+        var list = EmailDomainList.Parse("spam.example, junk.example");
+
+        Assert.True(list.Contains("bot@spam.example"));
+        Assert.True(list.Contains("BOT@JUNK.EXAMPLE"));
+        Assert.False(list.Contains("alice@acme.com"));
+    }
+
+    [Fact]
+    public void Contains_UsesTheDomainAfterTheLastAt()
+    {
+        var list = EmailDomainList.Parse("spam.example");
+
+        // An extra '@' in the local part must not smuggle a blocked domain past the check.
+        Assert.True(list.Contains("weird@name@spam.example"));
+        Assert.False(list.Contains("weird@spam.example@acme.com"));
     }
 }

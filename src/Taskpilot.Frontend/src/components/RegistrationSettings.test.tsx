@@ -21,6 +21,7 @@ const org = (over: Partial<OrganizationSettings> = {}): OrganizationSettings => 
   marketplaceEnabled: true,
   forumEnabled: true,
   allowedEmailDomains: '',
+  blockedEmailDomains: '',
   updatedAt: null,
   ...over,
 })
@@ -57,7 +58,7 @@ describe('RegistrationSettings', () => {
     fireEvent.change(input, { target: { value: '@Acme.COM' } })
     fireEvent.click(screen.getByText('registration.save'))
 
-    await waitFor(() => expect(updateRegistration).toHaveBeenCalledWith('@Acme.COM'))
+    await waitFor(() => expect(updateRegistration).toHaveBeenCalledWith('@Acme.COM', ''))
     // The input reflects the normalized value returned by the server.
     expect(await screen.findByDisplayValue('acme.com')).toBeTruthy()
     expect(screen.getByText('registration.saved')).toBeTruthy()
@@ -72,6 +73,28 @@ describe('RegistrationSettings', () => {
 
     fireEvent.change(screen.getByDisplayValue('acme.com'), { target: { value: 'acme.io' } })
     expect(button.disabled).toBe(false)
+  })
+
+  it('shows and saves the blocked-domain denylist', async () => {
+    getSettings.mockResolvedValue(org({ allowedEmailDomains: '', blockedEmailDomains: 'spam.example' }))
+    updateRegistration.mockResolvedValue(
+      org({ allowedEmailDomains: '', blockedEmailDomains: 'spam.example, junk.example' }),
+    )
+    render(<RegistrationSettings />)
+
+    // Registration stays open, but the blocked list is reported alongside it.
+    expect(await screen.findByText(/registration.openNow/)).toBeTruthy()
+    expect(screen.getByText(/registration.blockedNow.*spam.example/)).toBeTruthy()
+
+    fireEvent.change(screen.getByDisplayValue('spam.example'), {
+      target: { value: 'spam.example, junk.example' },
+    })
+    fireEvent.click(screen.getByText('registration.save'))
+
+    // Allowlist unchanged (empty), denylist sent as edited.
+    await waitFor(() =>
+      expect(updateRegistration).toHaveBeenCalledWith('', 'spam.example, junk.example'),
+    )
   })
 
   it('fetches exactly once under StrictMode', async () => {

@@ -164,6 +164,7 @@ public class TaskpilotDbContext : DbContext
                 MarketplaceEnabled = true,
                 ForumEnabled = true,
                 AllowedEmailDomains = string.Empty,
+                BlockedEmailDomains = string.Empty,
                 UpdatedAt = null,
             });
         });

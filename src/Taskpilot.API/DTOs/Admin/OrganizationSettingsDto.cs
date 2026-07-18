@@ -21,6 +21,9 @@ public class OrganizationSettingsDto
     /// <summary>Comma-separated email domains allowed to register; empty means any domain.</summary>
     public string AllowedEmailDomains { get; set; } = string.Empty;
 
+    /// <summary>Comma-separated email domains barred from registering; empty blocks nothing.</summary>
+    public string BlockedEmailDomains { get; set; } = string.Empty;
+
     /// <summary>UTC time the settings were last changed; null if never edited.</summary>
     public DateTime? UpdatedAt { get; set; }
 }
@@ -57,6 +60,12 @@ public class UpdateRegistrationDto
     /// any domain.
     /// </summary>
     public string AllowedEmailDomains { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Comma-separated email domains barred from registering. Empty blocks nothing.
+    /// Applied before the allowlist.
+    /// </summary>
+    public string BlockedEmailDomains { get; set; } = string.Empty;
 }
 
 /// <summary>

@@ -4,15 +4,19 @@ import { adminService } from '../services/adminService'
 import { apiErrorMessage } from '../lib/apiError'
 
 /**
- * Admin panel card for who may self-register: a comma-separated email-domain allowlist.
- * Empty means registration is open to any domain, so the current state is spelled out —
- * typing a domain here silently locks out every other domain, which is easy to do by
- * accident. Uses a dedicated endpoint that touches only this setting.
+ * Admin panel card for who may self-register, via two email-domain lists:
+ * an allowlist ("only these domains") and a denylist ("everyone except these").
+ * The state actually in force is spelled out, because an allowlist entry silently locks
+ * out every other domain — easy to do by accident. Uses a dedicated endpoint that touches
+ * only these settings.
  */
 export default function RegistrationSettings() {
   const { t } = useTranslation()
-  const [domains, setDomains] = useState('')
-  const [saved, setSavedValue] = useState('')
+  const [allowed, setAllowed] = useState('')
+  const [blocked, setBlocked] = useState('')
+  // The values currently stored on the server, used for the summary and the dirty check.
+  const [savedAllowed, setSavedAllowed] = useState('')
+  const [savedBlocked, setSavedBlocked] = useState('')
   const [ready, setReady] = useState(false)
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null)
@@ -25,8 +29,10 @@ export default function RegistrationSettings() {
     adminService
       .getSettings()
       .then((s) => {
-        setDomains(s.allowedEmailDomains)
-        setSavedValue(s.allowedEmailDomains)
+        setAllowed(s.allowedEmailDomains)
+        setBlocked(s.blockedEmailDomains)
+        setSavedAllowed(s.allowedEmailDomains)
+        setSavedBlocked(s.blockedEmailDomains)
         setReady(true)
       })
       .catch(() => setMessage({ ok: false, text: t('registration.loadFailed') }))
@@ -36,10 +42,12 @@ export default function RegistrationSettings() {
     setSaving(true)
     setMessage(null)
     try {
-      const updated = await adminService.updateRegistration(domains.trim())
-      // The server returns the normalized value ("@Acme.com" -> "acme.com"), so show that.
-      setDomains(updated.allowedEmailDomains)
-      setSavedValue(updated.allowedEmailDomains)
+      const updated = await adminService.updateRegistration(allowed.trim(), blocked.trim())
+      // Show the normalized values the server stored ("@Acme.COM" -> "acme.com").
+      setAllowed(updated.allowedEmailDomains)
+      setBlocked(updated.blockedEmailDomains)
+      setSavedAllowed(updated.allowedEmailDomains)
+      setSavedBlocked(updated.blockedEmailDomains)
       setMessage({ ok: true, text: t('registration.saved') })
     } catch (e) {
       setMessage({ ok: false, text: apiErrorMessage(e) })
@@ -50,6 +58,8 @@ export default function RegistrationSettings() {
 
   if (!ready && !message) return null
 
+  const dirty = allowed !== savedAllowed || blocked !== savedBlocked
+
   return (
     <section className="mb-6 rounded-xl border border-border bg-surface p-5">
       <h2 className="mb-1 font-bold">{t('registration.title')}</h2>
@@ -58,25 +68,39 @@ export default function RegistrationSettings() {
         <>
           {/* Spell out what is in force right now, so the effect is never a surprise. */}
           <p className="mb-3 text-sm text-muted">
-            {saved.trim().length === 0
+            {savedAllowed.trim().length === 0
               ? t('registration.openNow')
-              : t('registration.restrictedNow', { domains: saved })}
+              : t('registration.restrictedNow', { domains: savedAllowed })}
+            {savedBlocked.trim().length > 0 && ` ${t('registration.blockedNow', { domains: savedBlocked })}`}
           </p>
 
-          <label className="block text-sm">
-            <span className="mb-1 block font-medium text-foreground">{t('registration.domains')}</span>
-            <input
-              value={domains}
-              onChange={(e) => setDomains(e.target.value)}
-              placeholder={t('registration.placeholder')}
-              className="w-full max-w-md rounded-lg border border-border bg-canvas px-3 py-1.5 text-foreground outline-none focus:border-primary"
-            />
-          </label>
-          <p className="mt-1 text-xs text-muted">{t('registration.hint')}</p>
+          <div className="space-y-3">
+            <label className="block text-sm">
+              <span className="mb-1 block font-medium text-foreground">{t('registration.domains')}</span>
+              <input
+                value={allowed}
+                onChange={(e) => setAllowed(e.target.value)}
+                placeholder={t('registration.placeholder')}
+                className="w-full max-w-md rounded-lg border border-border bg-canvas px-3 py-1.5 text-foreground outline-none focus:border-primary"
+              />
+              <span className="mt-1 block text-xs text-muted">{t('registration.hint')}</span>
+            </label>
+
+            <label className="block text-sm">
+              <span className="mb-1 block font-medium text-foreground">{t('registration.blocked')}</span>
+              <input
+                value={blocked}
+                onChange={(e) => setBlocked(e.target.value)}
+                placeholder={t('registration.blockedPlaceholder')}
+                className="w-full max-w-md rounded-lg border border-border bg-canvas px-3 py-1.5 text-foreground outline-none focus:border-primary"
+              />
+              <span className="mt-1 block text-xs text-muted">{t('registration.blockedHint')}</span>
+            </label>
+          </div>
 
           <button
             onClick={save}
-            disabled={saving || domains === saved}
+            disabled={saving || !dirty}
             className="mt-3 rounded-lg bg-primary px-4 py-1.5 text-sm font-semibold text-white hover:bg-primary-hover disabled:opacity-50"
           >
             {t('registration.save')}

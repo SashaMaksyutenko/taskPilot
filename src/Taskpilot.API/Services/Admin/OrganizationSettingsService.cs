@@ -113,15 +113,18 @@ public class OrganizationSettingsService : IOrganizationSettingsService
     public async Task<Result<OrganizationSettingsDto>> UpdateRegistrationAsync(
         UpdateRegistrationDto dto, Guid adminId, string? adminEmail, string? ip)
     {
-        _logger.LogInformation("UpdateRegistration by {AdminId}. Domains: {Domains}", adminId, dto.AllowedEmailDomains);
+        _logger.LogInformation("UpdateRegistration by {AdminId}. Allowed: {Allowed}, Blocked: {Blocked}",
+            adminId, dto.AllowedEmailDomains, dto.BlockedEmailDomains);
 
-        // Normalize through the allowlist parser and store its canonical form, so the stored
-        // value is always clean ("@Acme.COM, , foo" -> "acme.com, foo").
-        var normalized = string.Join(", ", EmailDomainAllowlist.Parse(dto.AllowedEmailDomains).Domains);
+        // Normalize through the parser and store the canonical form, so the stored value is
+        // always clean ("@Acme.COM, , foo" -> "acme.com, foo").
+        var allowed = string.Join(", ", EmailDomainList.Parse(dto.AllowedEmailDomains).Domains);
+        var blocked = string.Join(", ", EmailDomainList.Parse(dto.BlockedEmailDomains).Domains);
 
         var settings = await GetOrCreateAsync();
         // Touches ONLY the registration fields — storage and features are left as they were.
-        settings.AllowedEmailDomains = normalized;
+        settings.AllowedEmailDomains = allowed;
+        settings.BlockedEmailDomains = blocked;
         settings.UpdatedAt = DateTime.UtcNow;
         await _context.SaveChangesAsync();
 
@@ -131,7 +134,8 @@ public class OrganizationSettingsService : IOrganizationSettingsService
             actorEmail: adminEmail,
             entityType: nameof(OrganizationSettings),
             entityId: settings.Id.ToString(),
-            details: $"AllowedEmailDomains={(normalized.Length == 0 ? "(any)" : normalized)}",
+            details: $"Allowed={(allowed.Length == 0 ? "(any)" : allowed)}; " +
+                     $"Blocked={(blocked.Length == 0 ? "(none)" : blocked)}",
             ipAddress: ip);
 
         _logger.LogInformation("Registration settings updated by {AdminId}.", adminId);
@@ -150,6 +154,7 @@ public class OrganizationSettingsService : IOrganizationSettingsService
             MarketplaceEnabled = settings.MarketplaceEnabled,
             ForumEnabled = settings.ForumEnabled,
             AllowedEmailDomains = settings.AllowedEmailDomains,
+            BlockedEmailDomains = settings.BlockedEmailDomains,
             UpdatedAt = settings.UpdatedAt,
         };
     }

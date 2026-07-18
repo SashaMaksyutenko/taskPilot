@@ -51,9 +51,16 @@ public class OrganizationSettings
     /// <summary>
     /// Comma-separated email domains allowed to self-register (e.g. "acme.com, acme.io").
     /// Empty means registration is open to any domain. Enforced in
-    /// <c>AuthService.RegisterAsync</c> via <see cref="Common.EmailDomainAllowlist"/>.
+    /// <c>AuthService.RegisterAsync</c> via <see cref="Common.EmailDomainList"/>.
     /// </summary>
     public string AllowedEmailDomains { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Comma-separated email domains barred from registering (e.g. "spam.example").
+    /// Empty blocks nothing. Checked BEFORE the allowlist, so a blocked domain is refused
+    /// even if it would otherwise be allowed.
+    /// </summary>
+    public string BlockedEmailDomains { get; set; } = string.Empty;
 
     /// <summary>UTC time the settings were last changed (null until first edited).</summary>
     public DateTime? UpdatedAt { get; set; }

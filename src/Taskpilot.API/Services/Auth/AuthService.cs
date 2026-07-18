@@ -66,14 +66,23 @@ public class AuthService : IAuthService
             // Normalize the email for a case-insensitive uniqueness check and storage.
             var email = dto.Email.Trim().ToLowerInvariant();
 
-            // Enforce the admin's email-domain allowlist (empty = open to any domain).
-            var allowedDomains = await _context.OrganizationSettings
+            // Enforce the admin's registration domain controls in one round-trip.
+            var domainRules = await _context.OrganizationSettings
                 .AsNoTracking()
-                .Select(s => s.AllowedEmailDomains)
+                .Select(s => new { s.AllowedEmailDomains, s.BlockedEmailDomains })
                 .FirstOrDefaultAsync();
-            if (!EmailDomainAllowlist.Parse(allowedDomains).IsAllowed(email))
+
+            // Denylist first: a blocked domain is refused even if the allowlist would permit it.
+            if (EmailDomainList.Parse(domainRules?.BlockedEmailDomains).Contains(email))
             {
-                _logger.LogWarning("Registration blocked: email domain not allowed. Email: {Email}", email);
+                _logger.LogWarning("Registration blocked: email domain is on the denylist. Email: {Email}", email);
+                return Result<Guid>.Fail("This email domain is not allowed to register.");
+            }
+
+            // Then the allowlist (empty = open to any domain).
+            if (!EmailDomainList.Parse(domainRules?.AllowedEmailDomains).IsAllowed(email))
+            {
+                _logger.LogWarning("Registration blocked: email domain not on the allowlist. Email: {Email}", email);
                 return Result<Guid>.Fail("Registration is restricted to specific email domains.");
             }
 

@@ -116,12 +116,18 @@ export const adminService = {
   },
 
   /**
-   * Updates only the registration email-domain allowlist. The server normalizes the value
-   * (lower-cases, strips "@", de-duplicates) and returns the stored form.
+   * Updates only the registration domain controls (allowlist + denylist). The server
+   * normalizes both values (lower-cases, strips "@", de-duplicates) and returns them.
    */
-  updateRegistration(allowedEmailDomains: string): Promise<OrganizationSettings> {
+  updateRegistration(
+    allowedEmailDomains: string,
+    blockedEmailDomains: string,
+  ): Promise<OrganizationSettings> {
     return api
-      .put<OrganizationSettings>('/api/admin/settings/registration', { allowedEmailDomains })
+      .put<OrganizationSettings>('/api/admin/settings/registration', {
+        allowedEmailDomains,
+        blockedEmailDomains,
+      })
       .then((r) => r.data)
   },
 }
@@ -138,5 +144,7 @@ export interface OrganizationSettings {
   forumEnabled: boolean
   /** Comma-separated email domains allowed to register; empty means any domain. */
   allowedEmailDomains: string
+  /** Comma-separated email domains barred from registering; empty blocks nothing. */
+  blockedEmailDomains: string
   updatedAt: string | null
 }

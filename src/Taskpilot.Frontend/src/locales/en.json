@@ -828,6 +828,10 @@
     "domains": "Allowed email domains",
     "placeholder": "acme.com, acme.io",
     "hint": "Comma-separated. Leave empty to let anyone sign up — any domain you enter blocks all the others.",
+    "blocked": "Blocked email domains",
+    "blockedPlaceholder": "spam.example, junk.example",
+    "blockedHint": "Comma-separated. These domains can never register, even if the allowlist above permits them.",
+    "blockedNow": "Blocked: {{domains}}.",
     "save": "Save",
     "saved": "Registration settings saved.",
     "loadFailed": "Could not load registration settings."

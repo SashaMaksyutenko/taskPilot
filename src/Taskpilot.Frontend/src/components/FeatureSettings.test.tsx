@@ -24,6 +24,7 @@ const org = (over: Partial<OrganizationSettings> = {}): OrganizationSettings => 
   marketplaceEnabled: true,
   forumEnabled: true,
   allowedEmailDomains: '',
+  blockedEmailDomains: '',
   updatedAt: null,
   ...over,
 })

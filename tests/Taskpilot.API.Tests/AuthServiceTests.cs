@@ -174,6 +174,63 @@ public class AuthServiceTests
     }
 
     [Fact]
+    public async Task RegisterAsync_BlocksADomainOnTheDenylist_WhileOthersStillRegister()
+    {
+        using var ctx = CreateContext();
+        ctx.OrganizationSettings.Add(new OrganizationSettings
+        {
+            Id = OrganizationSettings.SingletonId,
+            BlockedEmailDomains = "spam.example",
+            // Allowlist stays empty: registration is open to everyone EXCEPT the blocked domain.
+        });
+        await ctx.SaveChangesAsync();
+        var svc = CreateService(ctx);
+
+        var blocked = await svc.RegisterAsync(new RegisterDto
+        {
+            Name = "Bot",
+            Email = "bot@spam.example",
+            Password = "Secret123",
+        });
+        var allowed = await svc.RegisterAsync(new RegisterDto
+        {
+            Name = "Alice",
+            Email = "alice@anywhere.com",
+            Password = "Secret123",
+        });
+
+        Assert.False(blocked.Succeeded);
+        Assert.Equal("This email domain is not allowed to register.", blocked.Error);
+        Assert.True(allowed.Succeeded);          // an open allowlist still lets everyone else in
+        Assert.Equal(1, await ctx.Users.CountAsync());
+    }
+
+    [Fact]
+    public async Task RegisterAsync_DenylistWins_EvenWhenTheDomainIsAlsoAllowed()
+    {
+        using var ctx = CreateContext();
+        ctx.OrganizationSettings.Add(new OrganizationSettings
+        {
+            Id = OrganizationSettings.SingletonId,
+            AllowedEmailDomains = "acme.com",
+            BlockedEmailDomains = "acme.com",   // contradictory config: deny must take priority
+        });
+        await ctx.SaveChangesAsync();
+        var svc = CreateService(ctx);
+
+        var result = await svc.RegisterAsync(new RegisterDto
+        {
+            Name = "Alice",
+            Email = "alice@acme.com",
+            Password = "Secret123",
+        });
+
+        Assert.False(result.Succeeded);
+        Assert.Equal("This email domain is not allowed to register.", result.Error);
+        Assert.Equal(0, await ctx.Users.CountAsync());
+    }
+
+    [Fact]
     public async Task LoginAsync_CorrectCredentials_ReturnsTokensAndStoresRefresh()
     {
         using var ctx = CreateContext();

@@ -10,17 +10,21 @@ namespace Taskpilot.API.Tests;
 /// </summary>
 public class PostgresConnectionStringTests
 {
+    // NOTE: every fixture below uses the reserved .example / .invalid domains and obviously
+    // fake credentials. A realistic-looking host with a plausible password trips secret
+    // scanners (GitGuardian flagged an earlier version of this file as a leak).
     [Fact]
-    public void ConvertsARailwayStyleUri()
+    public void ConvertsAManagedHostStyleUri()
     {
+        // Same shape a managed host publishes: sub-domain, custom port, generated database.
         var result = PostgresConnectionString.Normalize(
-            "postgresql://postgres:secret@containers.railway.app:6543/railway");
+            "postgresql://postgres:examplepassword@containers.db.example:6543/railway");
 
-        Assert.Contains("Host=containers.railway.app", result);
+        Assert.Contains("Host=containers.db.example", result);
         Assert.Contains("Port=6543", result);
         Assert.Contains("Database=railway", result);
         Assert.Contains("Username=postgres", result);
-        Assert.Contains("Password=secret", result);
+        Assert.Contains("Password=examplepassword", result);
         // Prefer, not Require: TLS is used when the server offers it, but a plain local
         // Postgres still connects instead of hard-failing at startup.
         Assert.Contains("SSL Mode=Prefer", result);
@@ -90,7 +94,8 @@ public class PostgresConnectionStringTests
     [Fact]
     public void LeavesAKeyValueConnectionStringUnchanged()
     {
-        const string keyValue = "Host=localhost;Port=5433;Database=taskpilot;Username=postgres;Password=x";
+        const string keyValue =
+            "Host=localhost;Port=5433;Database=taskpilot;Username=postgres;Password=examplepassword";
 
         Assert.Equal(keyValue, PostgresConnectionString.Normalize(keyValue));
     }

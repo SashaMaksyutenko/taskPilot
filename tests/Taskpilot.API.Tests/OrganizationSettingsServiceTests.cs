@@ -190,6 +190,36 @@ public class OrganizationSettingsServiceTests
     }
 
     [Fact]
+    public async Task UpdateRegistration_NormalizesTheDomains_AndLeavesOtherFieldsUntouched()
+    {
+        await using var ctx = TestDb.CreateContext();
+        ctx.OrganizationSettings.Add(new OrganizationSettings
+        {
+            Id = OrganizationSettings.SingletonId,
+            MaxUploadBytes = 7_000_000,
+            MarketplaceEnabled = false,
+        });
+        await ctx.SaveChangesAsync();
+        var svc = Create(ctx);
+        var adminId = Guid.NewGuid();
+
+        var result = await svc.UpdateRegistrationAsync(
+            new UpdateRegistrationDto { AllowedEmailDomains = "@Acme.COM, , acme.com,  foo.io " },
+            adminId, "admin@test.local", "127.0.0.1");
+
+        Assert.True(result.Succeeded);
+        var saved = await ctx.OrganizationSettings.SingleAsync();
+        // Cleaned: lower-cased, '@' stripped, de-duplicated, blanks dropped.
+        Assert.Equal("acme.com, foo.io", saved.AllowedEmailDomains);
+        // Storage and feature fields survive a registration-only update.
+        Assert.Equal(7_000_000, saved.MaxUploadBytes);
+        Assert.False(saved.MarketplaceEnabled);
+        _audit.Verify(a => a.LogAsync(
+            "admin.settings.registration.updated", adminId, "admin@test.local",
+            nameof(OrganizationSettings), It.IsAny<string>(), It.IsAny<string>(), "127.0.0.1"), Times.Once);
+    }
+
+    [Fact]
     public async Task GetFeatureFlags_ReturnsTheStoredFlags()
     {
         await using var ctx = TestDb.CreateContext();

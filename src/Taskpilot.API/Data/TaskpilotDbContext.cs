@@ -163,6 +163,7 @@ public class TaskpilotDbContext : DbContext
                 StorageQuotaBytes = Models.OrganizationSettings.DefaultStorageQuotaBytes,
                 MarketplaceEnabled = true,
                 ForumEnabled = true,
+                AllowedEmailDomains = string.Empty,
                 UpdatedAt = null,
             });
         });

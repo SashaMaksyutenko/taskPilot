@@ -26,6 +26,12 @@ public interface IOrganizationSettingsService
     Task<Result<OrganizationSettingsDto>> UpdateFeaturesAsync(UpdateFeaturesDto dto, Guid adminId, string? adminEmail, string? ip);
 
     /// <summary>
+    /// Updates only the registration controls — the email-domain allowlist — leaving the
+    /// storage limits and feature flags untouched. The value is normalized before storage.
+    /// </summary>
+    Task<Result<OrganizationSettingsDto>> UpdateRegistrationAsync(UpdateRegistrationDto dto, Guid adminId, string? adminEmail, string? ip);
+
+    /// <summary>
     /// Returns just the feature flags — readable by any signed-in user so the client can
     /// hide navigation for disabled features.
     /// </summary>

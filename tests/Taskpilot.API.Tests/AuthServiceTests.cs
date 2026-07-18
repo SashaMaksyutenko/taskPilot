@@ -127,6 +127,53 @@ public class AuthServiceTests
     }
 
     [Fact]
+    public async Task RegisterAsync_BlocksAnEmailOutsideTheDomainAllowlist()
+    {
+        using var ctx = CreateContext();
+        ctx.OrganizationSettings.Add(new OrganizationSettings
+        {
+            Id = OrganizationSettings.SingletonId,
+            AllowedEmailDomains = "acme.com",
+        });
+        await ctx.SaveChangesAsync();
+        var svc = CreateService(ctx);
+
+        var result = await svc.RegisterAsync(new RegisterDto
+        {
+            Name = "Mallory",
+            Email = "mallory@evil.com",
+            Password = "Secret123",
+        });
+
+        Assert.False(result.Succeeded);
+        Assert.Equal("Registration is restricted to specific email domains.", result.Error);
+        Assert.Equal(0, await ctx.Users.CountAsync());          // no user created
+    }
+
+    [Fact]
+    public async Task RegisterAsync_AllowsAnEmailOnTheDomainAllowlist()
+    {
+        using var ctx = CreateContext();
+        ctx.OrganizationSettings.Add(new OrganizationSettings
+        {
+            Id = OrganizationSettings.SingletonId,
+            AllowedEmailDomains = "acme.com",
+        });
+        await ctx.SaveChangesAsync();
+        var svc = CreateService(ctx);
+
+        var result = await svc.RegisterAsync(new RegisterDto
+        {
+            Name = "Alice",
+            Email = "alice@acme.com",
+            Password = "Secret123",
+        });
+
+        Assert.True(result.Succeeded);
+        Assert.Equal(1, await ctx.Users.CountAsync());
+    }
+
+    [Fact]
     public async Task LoginAsync_CorrectCredentials_ReturnsTokensAndStoresRefresh()
     {
         using var ctx = CreateContext();

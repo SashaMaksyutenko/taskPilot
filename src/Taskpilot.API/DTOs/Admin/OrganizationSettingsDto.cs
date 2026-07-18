@@ -18,6 +18,9 @@ public class OrganizationSettingsDto
     /// <summary>Whether the discussion Forum is available.</summary>
     public bool ForumEnabled { get; set; }
 
+    /// <summary>Comma-separated email domains allowed to register; empty means any domain.</summary>
+    public string AllowedEmailDomains { get; set; } = string.Empty;
+
     /// <summary>UTC time the settings were last changed; null if never edited.</summary>
     public DateTime? UpdatedAt { get; set; }
 }
@@ -44,6 +47,16 @@ public class UpdateFeaturesDto
 
     /// <summary>Whether the discussion Forum is available.</summary>
     public bool ForumEnabled { get; set; }
+}
+
+/// <summary>Registration controls an admin may change (independent of storage and features).</summary>
+public class UpdateRegistrationDto
+{
+    /// <summary>
+    /// Comma-separated email domains allowed to self-register. Empty opens registration to
+    /// any domain.
+    /// </summary>
+    public string AllowedEmailDomains { get; set; } = string.Empty;
 }
 
 /// <summary>

@@ -48,6 +48,13 @@ public class OrganizationSettings
     /// </summary>
     public bool ForumEnabled { get; set; } = true;
 
+    /// <summary>
+    /// Comma-separated email domains allowed to self-register (e.g. "acme.com, acme.io").
+    /// Empty means registration is open to any domain. Enforced in
+    /// <c>AuthService.RegisterAsync</c> via <see cref="Common.EmailDomainAllowlist"/>.
+    /// </summary>
+    public string AllowedEmailDomains { get; set; } = string.Empty;
+
     /// <summary>UTC time the settings were last changed (null until first edited).</summary>
     public DateTime? UpdatedAt { get; set; }
 }

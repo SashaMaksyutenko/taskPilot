@@ -104,6 +104,17 @@ public class AdminController : BaseApiController
         return result.Succeeded ? Ok(result.Value) : BadRequest(new { error = result.Error });
     }
 
+    /// <summary>Updates the registration email-domain allowlist (leaves storage and features untouched).</summary>
+    [HttpPut("settings/registration")]
+    public async Task<IActionResult> UpdateRegistration([FromBody] UpdateRegistrationDto dto)
+    {
+        var adminId = CurrentUserId();
+        if (adminId is null) return Unauthorized();
+
+        var result = await _settings.UpdateRegistrationAsync(dto, adminId.Value, CurrentUserEmail(), ClientIp());
+        return result.Succeeded ? Ok(result.Value) : BadRequest(new { error = result.Error });
+    }
+
     /// <summary>Runs the overdue-tasks check now (otherwise it runs on a timer).</summary>
     [HttpPost("overdue-check")]
     public async Task<IActionResult> RunOverdueCheck()

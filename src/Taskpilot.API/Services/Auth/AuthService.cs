@@ -66,6 +66,17 @@ public class AuthService : IAuthService
             // Normalize the email for a case-insensitive uniqueness check and storage.
             var email = dto.Email.Trim().ToLowerInvariant();
 
+            // Enforce the admin's email-domain allowlist (empty = open to any domain).
+            var allowedDomains = await _context.OrganizationSettings
+                .AsNoTracking()
+                .Select(s => s.AllowedEmailDomains)
+                .FirstOrDefaultAsync();
+            if (!EmailDomainAllowlist.Parse(allowedDomains).IsAllowed(email))
+            {
+                _logger.LogWarning("Registration blocked: email domain not allowed. Email: {Email}", email);
+                return Result<Guid>.Fail("Registration is restricted to specific email domains.");
+            }
+
             // Check whether a user with this email already exists.
             // AnyAsync runs a fast EXISTS query and returns true/false.
             var emailTaken = await _context.Users.AnyAsync(u => u.Email == email);

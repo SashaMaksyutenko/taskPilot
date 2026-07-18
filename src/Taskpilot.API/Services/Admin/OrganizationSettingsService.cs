@@ -109,6 +109,35 @@ public class OrganizationSettingsService : IOrganizationSettingsService
         return Result<OrganizationSettingsDto>.Ok(await BuildDtoAsync(settings));
     }
 
+    /// <inheritdoc />
+    public async Task<Result<OrganizationSettingsDto>> UpdateRegistrationAsync(
+        UpdateRegistrationDto dto, Guid adminId, string? adminEmail, string? ip)
+    {
+        _logger.LogInformation("UpdateRegistration by {AdminId}. Domains: {Domains}", adminId, dto.AllowedEmailDomains);
+
+        // Normalize through the allowlist parser and store its canonical form, so the stored
+        // value is always clean ("@Acme.COM, , foo" -> "acme.com, foo").
+        var normalized = string.Join(", ", EmailDomainAllowlist.Parse(dto.AllowedEmailDomains).Domains);
+
+        var settings = await GetOrCreateAsync();
+        // Touches ONLY the registration fields — storage and features are left as they were.
+        settings.AllowedEmailDomains = normalized;
+        settings.UpdatedAt = DateTime.UtcNow;
+        await _context.SaveChangesAsync();
+
+        await _audit.LogAsync(
+            action: "admin.settings.registration.updated",
+            actorId: adminId,
+            actorEmail: adminEmail,
+            entityType: nameof(OrganizationSettings),
+            entityId: settings.Id.ToString(),
+            details: $"AllowedEmailDomains={(normalized.Length == 0 ? "(any)" : normalized)}",
+            ipAddress: ip);
+
+        _logger.LogInformation("Registration settings updated by {AdminId}.", adminId);
+        return Result<OrganizationSettingsDto>.Ok(await BuildDtoAsync(settings));
+    }
+
     /// <summary>Builds the read DTO for a settings row, including live storage usage.</summary>
     private async Task<OrganizationSettingsDto> BuildDtoAsync(OrganizationSettings settings)
     {
@@ -120,6 +149,7 @@ public class OrganizationSettingsService : IOrganizationSettingsService
             StorageUsedBytes = usedBytes,
             MarketplaceEnabled = settings.MarketplaceEnabled,
             ForumEnabled = settings.ForumEnabled,
+            AllowedEmailDomains = settings.AllowedEmailDomains,
             UpdatedAt = settings.UpdatedAt,
         };
     }

@@ -23,6 +23,7 @@ const org = (over: Partial<OrganizationSettings> = {}): OrganizationSettings => 
   storageUsedBytes: 0,
   marketplaceEnabled: true,
   forumEnabled: true,
+  allowedEmailDomains: '',
   updatedAt: null,
   ...over,
 })

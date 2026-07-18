@@ -114,6 +114,16 @@ export const adminService = {
       .put<OrganizationSettings>('/api/admin/settings/features', { marketplaceEnabled, forumEnabled })
       .then((r) => r.data)
   },
+
+  /**
+   * Updates only the registration email-domain allowlist. The server normalizes the value
+   * (lower-cases, strips "@", de-duplicates) and returns the stored form.
+   */
+  updateRegistration(allowedEmailDomains: string): Promise<OrganizationSettings> {
+    return api
+      .put<OrganizationSettings>('/api/admin/settings/registration', { allowedEmailDomains })
+      .then((r) => r.data)
+  },
 }
 
 /** Organization-wide settings (mirrors the backend OrganizationSettingsDto). */
@@ -126,5 +136,7 @@ export interface OrganizationSettings {
   marketplaceEnabled: boolean
   /** Whether the discussion Forum is available. */
   forumEnabled: boolean
+  /** Comma-separated email domains allowed to register; empty means any domain. */
+  allowedEmailDomains: string
   updatedAt: string | null
 }

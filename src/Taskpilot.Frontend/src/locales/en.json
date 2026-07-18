@@ -821,6 +821,17 @@
     "marketplace": "Marketplace enabled",
     "forum": "Forum enabled"
   },
+  "registration": {
+    "title": "Registration",
+    "openNow": "Anyone can sign up — registration is open to any email domain.",
+    "restrictedNow": "Only these domains can sign up: {{domains}}",
+    "domains": "Allowed email domains",
+    "placeholder": "acme.com, acme.io",
+    "hint": "Comma-separated. Leave empty to let anyone sign up — any domain you enter blocks all the others.",
+    "save": "Save",
+    "saved": "Registration settings saved.",
+    "loadFailed": "Could not load registration settings."
+  },
   "profile": {
     "notFound": "User not found.",
     "memberSince": "Member since {{date}}",

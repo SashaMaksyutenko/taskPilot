@@ -21,6 +21,7 @@ const settings = (over: Partial<OrganizationSettings> = {}): OrganizationSetting
   storageUsedBytes: 512 * 1024 * 1024,
   marketplaceEnabled: true,
   forumEnabled: true,
+  allowedEmailDomains: '',
   updatedAt: null,
   ...over,
 })

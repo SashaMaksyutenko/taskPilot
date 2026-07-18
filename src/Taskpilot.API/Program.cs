@@ -13,6 +13,7 @@ using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using Taskpilot.API.Common;
 using Taskpilot.API.Configuration;
 using Taskpilot.API.Consumers;
 using Taskpilot.API.Data;
@@ -39,14 +40,18 @@ var builder = WebApplication.CreateBuilder(args);
 
 // The connection string lives only in .env (key: ConnectionStrings__DefaultConnection).
 // .NET maps the "__" separator in env vars to the ":" config hierarchy.
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+// Managed hosts (Railway, Render, Heroku) instead expose a single DATABASE_URL, so that is
+// accepted as a fallback and converted to the key-value form Npgsql needs.
+var connectionString = PostgresConnectionString.Normalize(
+    builder.Configuration.GetConnectionString("DefaultConnection")
+    ?? builder.Configuration["DATABASE_URL"]);
 
 // Fail fast with a clear message if the connection string is not configured.
 if (string.IsNullOrWhiteSpace(connectionString))
 {
     throw new InvalidOperationException(
-        "Connection string 'DefaultConnection' is not configured. " +
-        "Copy .env.example to .env and set ConnectionStrings__DefaultConnection.");
+        "No database connection configured. Set ConnectionStrings__DefaultConnection " +
+        "(see .env.example) or DATABASE_URL when deploying to a managed host.");
 }
 
 // Register the EF Core database context using the Npgsql (PostgreSQL) provider.
@@ -60,13 +65,23 @@ builder.Services.AddDbContext<TaskpilotDbContext>(options =>
             maxRetryDelay: TimeSpan.FromSeconds(5),
             errorCodesToAdd: null)));
 
-// CORS: allow the React dev frontend (http://localhost:5173) to call this API
-// from the browser. In production this origin should come from configuration.
+// CORS: which browser origins may call this API. Comma-separated in configuration
+// (Cors__AllowedOrigins), e.g. "https://taskpilot.vercel.app". The Vite dev server is
+// always allowed so local development needs no configuration at all.
 const string FrontendCorsPolicy = "frontend";
+const string ViteDevOrigin = "http://localhost:5173";
+var allowedOrigins = (builder.Configuration["Cors:AllowedOrigins"] ?? string.Empty)
+    .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+    // A trailing slash makes the origin never match, and it is an easy thing to paste.
+    .Select(o => o.TrimEnd('/'))
+    .Append(ViteDevOrigin)
+    .Distinct(StringComparer.OrdinalIgnoreCase)
+    .ToArray();
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy(FrontendCorsPolicy, policy =>
-        policy.WithOrigins("http://localhost:5173")
+        policy.WithOrigins(allowedOrigins)
               .AllowAnyHeader()
               .AllowAnyMethod()
               // Required for SignalR WebSocket connections from the browser.

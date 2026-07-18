@@ -18,8 +18,10 @@ FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS final
 WORKDIR /app
 COPY --from=build /app/publish .
 
-# Listen on port 8080 inside the container (configuration comes from env vars).
+# Listen on 8080 by default (docker-compose), but honour the PORT variable that managed
+# hosts such as Railway inject — they route traffic to that port only. The shell form of
+# ENTRYPOINT is required so ${PORT} is expanded at runtime rather than baked in at build.
 ENV ASPNETCORE_URLS=http://+:8080
 EXPOSE 8080
 
-ENTRYPOINT ["dotnet", "Taskpilot.API.dll"]
+ENTRYPOINT ["/bin/sh", "-c", "ASPNETCORE_URLS=http://+:${PORT:-8080} exec dotnet Taskpilot.API.dll"]

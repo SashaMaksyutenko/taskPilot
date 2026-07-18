@@ -111,6 +111,23 @@ import instead.
 
 ---
 
+## Deployment
+
+Free-tier hosting: backend + PostgreSQL on **Railway**, frontend on **Vercel** ($0/month).
+
+See **[docs/deployment.md](docs/deployment.md)** for the step-by-step guide.
+
+The essentials:
+
+- The root `Dockerfile` builds the API and honours the `PORT` a managed host injects.
+- The database can be configured with a single `DATABASE_URL` (`postgresql://…`) — the app
+  converts it to the form Npgsql needs. Migrations run automatically on startup.
+- Set `Cors__AllowedOrigins` to the deployed frontend URL, or the browser blocks every
+  request from it. `http://localhost:5173` is always allowed.
+- The frontend needs `VITE_API_URL` pointing at the API (baked in at build time).
+
+---
+
 ## Testing
 
 ```bash

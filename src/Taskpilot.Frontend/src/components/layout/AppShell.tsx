@@ -8,6 +8,7 @@ import CommandPalette from '../CommandPalette'
 import AssistantFab from '../AssistantFab'
 import { useNotifications } from '../../hooks/useNotifications'
 import { useShortcuts } from '../../hooks/useShortcuts'
+import { FeaturesProvider } from '../../hooks/useFeatures'
 
 /**
  * Authenticated app chrome: fixed sidebar, top bar and scrollable main area.
@@ -19,6 +20,7 @@ export default function AppShell({ children }: { children?: ReactNode }) {
   const shortcuts = useShortcuts()
 
   return (
+    <FeaturesProvider>
     <div className="flex min-h-screen bg-canvas">
       <ShortcutsHelp open={shortcuts.helpOpen} onClose={() => shortcuts.setHelpOpen(false)} />
       <CommandPalette open={shortcuts.paletteOpen} onClose={() => shortcuts.setPaletteOpen(false)} />
@@ -78,5 +80,6 @@ export default function AppShell({ children }: { children?: ReactNode }) {
         </AnimatePresence>
       </div>
     </div>
+    </FeaturesProvider>
   )
 }

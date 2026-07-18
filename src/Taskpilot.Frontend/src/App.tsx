@@ -3,6 +3,7 @@ import { ToastContainer } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
 import AppShell from './components/layout/AppShell'
 import AdminRoute from './components/routing/AdminRoute'
+import FeatureRoute from './components/routing/FeatureRoute'
 import GuestRoute from './components/routing/GuestRoute'
 import ProtectedRoute from './components/routing/ProtectedRoute'
 import AdminPage from './pages/AdminPage'
@@ -68,10 +69,15 @@ function App() {
             <Route path="/projects" element={<ProjectsPage />} />
             <Route path="/projects/:projectId" element={<BoardPage />} />
             <Route path="/calendar" element={<CalendarPage />} />
-            <Route path="/forum" element={<ForumPage />} />
-            <Route path="/forum/:topicId" element={<TopicPage />} />
-            <Route path="/marketplace" element={<MarketplacePage />} />
-            <Route path="/marketplace/:taskId" element={<MarketplaceTaskPage />} />
+            {/* Forum + Marketplace can be switched off org-wide by an admin. */}
+            <Route element={<FeatureRoute feature="forum" />}>
+              <Route path="/forum" element={<ForumPage />} />
+              <Route path="/forum/:topicId" element={<TopicPage />} />
+            </Route>
+            <Route element={<FeatureRoute feature="marketplace" />}>
+              <Route path="/marketplace" element={<MarketplacePage />} />
+              <Route path="/marketplace/:taskId" element={<MarketplaceTaskPage />} />
+            </Route>
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="/notes" element={<NotesPage />} />
             <Route path="/bookmarks" element={<BookmarksPage />} />

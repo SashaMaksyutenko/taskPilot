@@ -21,6 +21,7 @@ import {
   type LucideIcon,
 } from 'lucide-react'
 import { useAppDispatch } from '../store/hooks'
+import { useFeatures } from '../hooks/useFeatures'
 import { logout } from '../store/authSlice'
 import { searchService, type SearchResults } from '../services/searchService'
 import { chatbotService } from '../services/chatbotService'
@@ -61,6 +62,7 @@ export default function CommandPalette({ open, onClose }: { open: boolean; onClo
   const { t } = useTranslation()
   const navigate = useNavigate()
   const dispatch = useAppDispatch()
+  const features = useFeatures()
 
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<SearchResults>(empty)
@@ -108,8 +110,14 @@ export default function CommandPalette({ open, onClose }: { open: boolean; onClo
   const items = useMemo<PaletteItem[]>(() => {
     const q = query.trim().toLowerCase()
 
-    const nav: PaletteItem[] = NAV.filter(([, key]) => !q || t(key).toLowerCase().includes(q)).map(
-      ([to, key, icon]) => ({
+    const nav: PaletteItem[] = NAV
+      // Drop the entry point for any feature the admin has switched off.
+      .filter(([to]) =>
+        (to !== '/forum' || features.forumEnabled) &&
+        (to !== '/marketplace' || features.marketplaceEnabled),
+      )
+      .filter(([, key]) => !q || t(key).toLowerCase().includes(q))
+      .map(([to, key, icon]) => ({
         id: 'nav:' + to,
         section: t('cmd.navigation'),
         label: t(key),
@@ -180,7 +188,7 @@ export default function CommandPalette({ open, onClose }: { open: boolean; onClo
       ...actions,
     ]
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [query, results, t, aiEnabled])
+  }, [query, results, t, aiEnabled, features])
 
   // Keep the active index in range as the list shrinks/grows.
   useEffect(() => {

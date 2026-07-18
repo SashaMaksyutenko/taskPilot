@@ -16,6 +16,7 @@ import { useTranslation } from 'react-i18next'
 import { NavLink } from 'react-router-dom'
 import { cn } from '../../lib/cn'
 import { useAppSelector } from '../../store/hooks'
+import { useFeatures } from '../../hooks/useFeatures'
 
 const LINKS = [
   { to: '/', key: 'nav.dashboard', icon: LayoutDashboard, end: true },
@@ -34,9 +35,17 @@ const LINKS = [
 export function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
   const { t } = useTranslation()
   const user = useAppSelector((s) => s.auth.user)
+  const features = useFeatures()
+
+  // Hide the entry point for any feature the admin has switched off.
+  const visibleLinks = LINKS.filter((l) => {
+    if (l.to === '/forum') return features.forumEnabled
+    if (l.to === '/marketplace') return features.marketplaceEnabled
+    return true
+  })
   const links = user?.role === 'Admin'
-    ? [...LINKS, { to: '/admin', key: 'nav.admin', icon: Shield, end: false as const }]
-    : LINKS
+    ? [...visibleLinks, { to: '/admin', key: 'nav.admin', icon: Shield, end: false as const }]
+    : visibleLinks
 
   return (
     <nav className="space-y-0.5">

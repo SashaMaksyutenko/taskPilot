@@ -806,7 +806,13 @@
     "quota": "Storage quota (MB)",
     "save": "Save",
     "saved": "Settings saved.",
-    "loadFailed": "Could not load storage settings."
+    "loadFailed": "Could not load settings."
+  },
+  "features": {
+    "title": "Features",
+    "hint": "Changes apply immediately.",
+    "marketplace": "Marketplace enabled",
+    "forum": "Forum enabled"
   },
   "profile": {
     "notFound": "User not found.",

@@ -14,7 +14,6 @@ const toMb1 = (bytes: number) => (bytes / BYTES_PER_MB).toFixed(1)
 /**
  * Admin panel section for the organization's storage limits: shows current usage against
  * the quota and lets the admin edit the per-file cap and the total quota (entered in MB).
- * Its own component so the already-long AdminPage does not grow further.
  */
 export default function StorageSettings() {
   const { t } = useTranslation()
@@ -43,7 +42,7 @@ export default function StorageSettings() {
     setSaving(true)
     setMessage(null)
     try {
-      const updated = await adminService.updateSettings(
+      const updated = await adminService.updateStorage(
         Number(maxUploadMb) * BYTES_PER_MB,
         Number(quotaMb) * BYTES_PER_MB,
       )

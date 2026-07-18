@@ -22,15 +22,23 @@ public class OrganizationSettingsDto
     public DateTime? UpdatedAt { get; set; }
 }
 
-/// <summary>Fields an admin may change on the organization's settings.</summary>
-public class UpdateOrganizationSettingsDto
+/// <summary>
+/// Storage limits an admin may change. Separate from the feature flags so each update
+/// touches only its own fields — the settings PUT is not a whole-record replace, so
+/// changing limits can never reset the feature flags (or vice versa).
+/// </summary>
+public class UpdateStorageDto
 {
     /// <summary>New per-file upload cap, in bytes.</summary>
     public long MaxUploadBytes { get; set; }
 
     /// <summary>New organization-wide storage quota, in bytes.</summary>
     public long StorageQuotaBytes { get; set; }
+}
 
+/// <summary>Feature flags an admin may change (independent of the storage limits).</summary>
+public class UpdateFeaturesDto
+{
     /// <summary>Whether the public task Marketplace is available.</summary>
     public bool MarketplaceEnabled { get; set; }
 

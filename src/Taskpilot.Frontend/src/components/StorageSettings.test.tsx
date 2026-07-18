@@ -12,19 +12,21 @@ vi.mock('react-i18next', () => ({
 }))
 
 vi.mock('../services/adminService', () => ({
-  adminService: { getSettings: vi.fn(), updateSettings: vi.fn() },
+  adminService: { getSettings: vi.fn(), updateStorage: vi.fn() },
 }))
 
 const settings = (over: Partial<OrganizationSettings> = {}): OrganizationSettings => ({
   maxUploadBytes: 10 * 1024 * 1024,
   storageQuotaBytes: 1024 * 1024 * 1024,
   storageUsedBytes: 512 * 1024 * 1024,
+  marketplaceEnabled: true,
+  forumEnabled: true,
   updatedAt: null,
   ...over,
 })
 
 const getSettings = vi.mocked(adminService.getSettings)
-const updateSettings = vi.mocked(adminService.updateSettings)
+const updateStorage = vi.mocked(adminService.updateStorage)
 
 describe('StorageSettings', () => {
   beforeEach(() => vi.clearAllMocks())
@@ -50,31 +52,32 @@ describe('StorageSettings', () => {
     expect(getSettings).toHaveBeenCalledTimes(1)
   })
 
-  it('saves the edited limits converted back to bytes', async () => {
+  it('saves the edited limits converted back to bytes (storage endpoint only)', async () => {
     getSettings.mockResolvedValue(settings())
-    updateSettings.mockResolvedValue(settings({ maxUploadBytes: 20 * 1024 * 1024 }))
+    updateStorage.mockResolvedValue(settings({ maxUploadBytes: 20 * 1024 * 1024 }))
     render(<StorageSettings />)
 
     const maxInput = await screen.findByDisplayValue('10')
     fireEvent.change(maxInput, { target: { value: '20' } })
     fireEvent.click(screen.getByText('storage.save'))
 
-    // 20 MB → bytes; quota unchanged at 1024 MB → bytes.
+    // 20 MB → bytes; quota unchanged at 1024 MB → bytes. No feature flags are sent —
+    // the storage endpoint touches only the limits.
     await waitFor(() =>
-      expect(updateSettings).toHaveBeenCalledWith(20 * 1024 * 1024, 1024 * 1024 * 1024),
+      expect(updateStorage).toHaveBeenCalledWith(20 * 1024 * 1024, 1024 * 1024 * 1024),
     )
     expect(await screen.findByText('storage.saved')).toBeTruthy()
   })
 
   it('shows an error when saving fails', async () => {
     getSettings.mockResolvedValue(settings())
-    updateSettings.mockRejectedValue(new Error('boom'))
+    updateStorage.mockRejectedValue(new Error('boom'))
     render(<StorageSettings />)
 
     fireEvent.click(await screen.findByText('storage.save'))
 
     // The failure surfaces rather than silently doing nothing.
-    await waitFor(() => expect(updateSettings).toHaveBeenCalled())
+    await waitFor(() => expect(updateStorage).toHaveBeenCalled())
     expect(screen.queryByText('storage.saved')).toBeNull()
   })
 })

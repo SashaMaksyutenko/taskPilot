@@ -101,10 +101,17 @@ export const adminService = {
     return api.get<OrganizationSettings>('/api/admin/settings').then((r) => r.data)
   },
 
-  /** Updates the organization's storage limits. */
-  updateSettings(maxUploadBytes: number, storageQuotaBytes: number): Promise<OrganizationSettings> {
+  /** Updates only the storage limits (the feature flags are left untouched). */
+  updateStorage(maxUploadBytes: number, storageQuotaBytes: number): Promise<OrganizationSettings> {
     return api
-      .put<OrganizationSettings>('/api/admin/settings', { maxUploadBytes, storageQuotaBytes })
+      .put<OrganizationSettings>('/api/admin/settings/storage', { maxUploadBytes, storageQuotaBytes })
+      .then((r) => r.data)
+  },
+
+  /** Updates only the feature flags (the storage limits are left untouched). */
+  updateFeatures(marketplaceEnabled: boolean, forumEnabled: boolean): Promise<OrganizationSettings> {
+    return api
+      .put<OrganizationSettings>('/api/admin/settings/features', { marketplaceEnabled, forumEnabled })
       .then((r) => r.data)
   },
 }
@@ -115,5 +122,9 @@ export interface OrganizationSettings {
   storageQuotaBytes: number
   /** Bytes currently used by all stored files. */
   storageUsedBytes: number
+  /** Whether the public task Marketplace is available. */
+  marketplaceEnabled: boolean
+  /** Whether the discussion Forum is available. */
+  forumEnabled: boolean
   updatedAt: string | null
 }

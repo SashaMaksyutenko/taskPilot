@@ -86,8 +86,8 @@ public class OrganizationSettingsServiceTests
         var svc = Create(ctx);
         var adminId = Guid.NewGuid();
 
-        var result = await svc.UpdateAsync(
-            new UpdateOrganizationSettingsDto { MaxUploadBytes = 20_000_000, StorageQuotaBytes = 50_000_000 },
+        var result = await svc.UpdateStorageAsync(
+            new UpdateStorageDto { MaxUploadBytes = 20_000_000, StorageQuotaBytes = 50_000_000 },
             adminId, "admin@test.local", "127.0.0.1");
 
         Assert.True(result.Succeeded);
@@ -96,19 +96,44 @@ public class OrganizationSettingsServiceTests
         Assert.Equal(50_000_000, saved.StorageQuotaBytes);
         Assert.NotNull(saved.UpdatedAt);
         _audit.Verify(a => a.LogAsync(
-            "admin.settings.updated", adminId, "admin@test.local",
+            "admin.settings.storage.updated", adminId, "admin@test.local",
             nameof(OrganizationSettings), It.IsAny<string>(), It.IsAny<string>(), "127.0.0.1"), Times.Once);
     }
 
     [Fact]
-    public async Task Update_RejectsNonPositiveLimits()
+    public async Task UpdateStorage_LeavesTheFeatureFlagsUntouched()
+    {
+        // The whole-record trap: changing limits must NOT reset the flags.
+        await using var ctx = TestDb.CreateContext();
+        ctx.OrganizationSettings.Add(new OrganizationSettings
+        {
+            Id = OrganizationSettings.SingletonId,
+            MarketplaceEnabled = false,   // start with a non-default flag
+            ForumEnabled = false,
+        });
+        await ctx.SaveChangesAsync();
+        var svc = Create(ctx);
+
+        var result = await svc.UpdateStorageAsync(
+            new UpdateStorageDto { MaxUploadBytes = 20_000_000, StorageQuotaBytes = 50_000_000 },
+            Guid.NewGuid(), "admin@test.local", null);
+
+        Assert.True(result.Succeeded);
+        var saved = await ctx.OrganizationSettings.SingleAsync();
+        // Flags survive a storage-only update.
+        Assert.False(saved.MarketplaceEnabled);
+        Assert.False(saved.ForumEnabled);
+    }
+
+    [Fact]
+    public async Task UpdateStorage_RejectsNonPositiveLimits()
     {
         await using var ctx = TestDb.CreateContext();
         await SeedSettingsAsync(ctx, OrganizationSettings.DefaultMaxUploadBytes, OrganizationSettings.DefaultStorageQuotaBytes);
         var svc = Create(ctx);
 
-        var result = await svc.UpdateAsync(
-            new UpdateOrganizationSettingsDto { MaxUploadBytes = 0, StorageQuotaBytes = 50_000_000 },
+        var result = await svc.UpdateStorageAsync(
+            new UpdateStorageDto { MaxUploadBytes = 0, StorageQuotaBytes = 50_000_000 },
             Guid.NewGuid(), "admin@test.local", null);
 
         Assert.False(result.Succeeded);
@@ -118,14 +143,14 @@ public class OrganizationSettingsServiceTests
     }
 
     [Fact]
-    public async Task Update_RejectsAPerFileLimitLargerThanTheQuota()
+    public async Task UpdateStorage_RejectsAPerFileLimitLargerThanTheQuota()
     {
         await using var ctx = TestDb.CreateContext();
         await SeedSettingsAsync(ctx, OrganizationSettings.DefaultMaxUploadBytes, OrganizationSettings.DefaultStorageQuotaBytes);
         var svc = Create(ctx);
 
-        var result = await svc.UpdateAsync(
-            new UpdateOrganizationSettingsDto { MaxUploadBytes = 100_000_000, StorageQuotaBytes = 50_000_000 },
+        var result = await svc.UpdateStorageAsync(
+            new UpdateStorageDto { MaxUploadBytes = 100_000_000, StorageQuotaBytes = 50_000_000 },
             Guid.NewGuid(), "admin@test.local", null);
 
         Assert.False(result.Succeeded);
@@ -133,22 +158,22 @@ public class OrganizationSettingsServiceTests
     }
 
     [Fact]
-    public async Task Update_PersistsTheFeatureFlags()
+    public async Task UpdateFeatures_PersistsFlagsAndLeavesLimitsUntouched()
     {
         await using var ctx = TestDb.CreateContext();
-        ctx.OrganizationSettings.Add(new OrganizationSettings { Id = OrganizationSettings.SingletonId });
+        ctx.OrganizationSettings.Add(new OrganizationSettings
+        {
+            Id = OrganizationSettings.SingletonId,
+            MaxUploadBytes = 7_000_000,       // non-default limits
+            StorageQuotaBytes = 42_000_000,
+        });
         await ctx.SaveChangesAsync();
         var svc = Create(ctx);
+        var adminId = Guid.NewGuid();
 
-        var result = await svc.UpdateAsync(
-            new UpdateOrganizationSettingsDto
-            {
-                MaxUploadBytes = OrganizationSettings.DefaultMaxUploadBytes,
-                StorageQuotaBytes = OrganizationSettings.DefaultStorageQuotaBytes,
-                MarketplaceEnabled = false,
-                ForumEnabled = true,
-            },
-            Guid.NewGuid(), "admin@test.local", null);
+        var result = await svc.UpdateFeaturesAsync(
+            new UpdateFeaturesDto { MarketplaceEnabled = false, ForumEnabled = true },
+            adminId, "admin@test.local", "127.0.0.1");
 
         Assert.True(result.Succeeded);
         Assert.False(result.Value!.MarketplaceEnabled);
@@ -156,6 +181,12 @@ public class OrganizationSettingsServiceTests
         var saved = await ctx.OrganizationSettings.SingleAsync();
         Assert.False(saved.MarketplaceEnabled);
         Assert.True(saved.ForumEnabled);
+        // Limits survive a features-only update.
+        Assert.Equal(7_000_000, saved.MaxUploadBytes);
+        Assert.Equal(42_000_000, saved.StorageQuotaBytes);
+        _audit.Verify(a => a.LogAsync(
+            "admin.settings.features.updated", adminId, "admin@test.local",
+            nameof(OrganizationSettings), It.IsAny<string>(), It.IsAny<string>(), "127.0.0.1"), Times.Once);
     }
 
     [Fact]

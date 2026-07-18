@@ -31,20 +31,8 @@ public class OrganizationSettingsService : IOrganizationSettingsService
     public async Task<OrganizationSettingsDto> GetAsync()
     {
         var settings = await LoadOrDefaultAsync();
-        var usedBytes = await _context.FileAttachments.SumAsync(f => (long?)f.SizeBytes) ?? 0;
-
-        _logger.LogInformation("Organization settings read. UsedBytes: {Used}, Quota: {Quota}",
-            usedBytes, settings.StorageQuotaBytes);
-
-        return new OrganizationSettingsDto
-        {
-            MaxUploadBytes = settings.MaxUploadBytes,
-            StorageQuotaBytes = settings.StorageQuotaBytes,
-            StorageUsedBytes = usedBytes,
-            MarketplaceEnabled = settings.MarketplaceEnabled,
-            ForumEnabled = settings.ForumEnabled,
-            UpdatedAt = settings.UpdatedAt,
-        };
+        _logger.LogInformation("Organization settings read. Quota: {Quota}", settings.StorageQuotaBytes);
+        return await BuildDtoAsync(settings);
     }
 
     /// <inheritdoc />
@@ -59,10 +47,10 @@ public class OrganizationSettingsService : IOrganizationSettingsService
     }
 
     /// <inheritdoc />
-    public async Task<Result<OrganizationSettingsDto>> UpdateAsync(
-        UpdateOrganizationSettingsDto dto, Guid adminId, string? adminEmail, string? ip)
+    public async Task<Result<OrganizationSettingsDto>> UpdateStorageAsync(
+        UpdateStorageDto dto, Guid adminId, string? adminEmail, string? ip)
     {
-        _logger.LogInformation("UpdateOrganizationSettings by {AdminId}. MaxUpload: {Max}, Quota: {Quota}",
+        _logger.LogInformation("UpdateStorage by {AdminId}. MaxUpload: {Max}, Quota: {Quota}",
             adminId, dto.MaxUploadBytes, dto.StorageQuotaBytes);
 
         // Both limits must be positive; a zero or negative limit would silently block
@@ -74,36 +62,58 @@ public class OrganizationSettingsService : IOrganizationSettingsService
         if (dto.MaxUploadBytes > dto.StorageQuotaBytes)
             return Result<OrganizationSettingsDto>.Fail("The per-file limit cannot exceed the storage quota.");
 
-        // The row is seeded by the migration, but create it defensively if it is somehow
-        // missing (e.g. a database restored from before the seed).
-        var settings = await _context.OrganizationSettings.FirstOrDefaultAsync();
-        if (settings is null)
-        {
-            settings = new OrganizationSettings { Id = OrganizationSettings.SingletonId };
-            _context.OrganizationSettings.Add(settings);
-        }
-
+        var settings = await GetOrCreateAsync();
+        // Touches ONLY the storage fields — the feature flags are left exactly as they were.
         settings.MaxUploadBytes = dto.MaxUploadBytes;
         settings.StorageQuotaBytes = dto.StorageQuotaBytes;
+        settings.UpdatedAt = DateTime.UtcNow;
+        await _context.SaveChangesAsync();
+
+        await _audit.LogAsync(
+            action: "admin.settings.storage.updated",
+            actorId: adminId,
+            actorEmail: adminEmail,
+            entityType: nameof(OrganizationSettings),
+            entityId: settings.Id.ToString(),
+            details: $"MaxUpload={dto.MaxUploadBytes}; Quota={dto.StorageQuotaBytes}",
+            ipAddress: ip);
+
+        _logger.LogInformation("Storage limits updated by {AdminId}.", adminId);
+        return Result<OrganizationSettingsDto>.Ok(await BuildDtoAsync(settings));
+    }
+
+    /// <inheritdoc />
+    public async Task<Result<OrganizationSettingsDto>> UpdateFeaturesAsync(
+        UpdateFeaturesDto dto, Guid adminId, string? adminEmail, string? ip)
+    {
+        _logger.LogInformation("UpdateFeatures by {AdminId}. Marketplace: {M}, Forum: {F}",
+            adminId, dto.MarketplaceEnabled, dto.ForumEnabled);
+
+        var settings = await GetOrCreateAsync();
+        // Touches ONLY the feature flags — the storage limits are left exactly as they were.
         settings.MarketplaceEnabled = dto.MarketplaceEnabled;
         settings.ForumEnabled = dto.ForumEnabled;
         settings.UpdatedAt = DateTime.UtcNow;
         await _context.SaveChangesAsync();
 
         await _audit.LogAsync(
-            action: "admin.settings.updated",
+            action: "admin.settings.features.updated",
             actorId: adminId,
             actorEmail: adminEmail,
             entityType: nameof(OrganizationSettings),
             entityId: settings.Id.ToString(),
-            details: $"MaxUpload={dto.MaxUploadBytes}; Quota={dto.StorageQuotaBytes}; " +
-                     $"Marketplace={dto.MarketplaceEnabled}; Forum={dto.ForumEnabled}",
+            details: $"Marketplace={dto.MarketplaceEnabled}; Forum={dto.ForumEnabled}",
             ipAddress: ip);
 
-        _logger.LogInformation("Organization settings updated by {AdminId}.", adminId);
+        _logger.LogInformation("Feature flags updated by {AdminId}.", adminId);
+        return Result<OrganizationSettingsDto>.Ok(await BuildDtoAsync(settings));
+    }
 
+    /// <summary>Builds the read DTO for a settings row, including live storage usage.</summary>
+    private async Task<OrganizationSettingsDto> BuildDtoAsync(OrganizationSettings settings)
+    {
         var usedBytes = await _context.FileAttachments.SumAsync(f => (long?)f.SizeBytes) ?? 0;
-        return Result<OrganizationSettingsDto>.Ok(new OrganizationSettingsDto
+        return new OrganizationSettingsDto
         {
             MaxUploadBytes = settings.MaxUploadBytes,
             StorageQuotaBytes = settings.StorageQuotaBytes,
@@ -111,7 +121,22 @@ public class OrganizationSettingsService : IOrganizationSettingsService
             MarketplaceEnabled = settings.MarketplaceEnabled,
             ForumEnabled = settings.ForumEnabled,
             UpdatedAt = settings.UpdatedAt,
-        });
+        };
+    }
+
+    /// <summary>
+    /// Returns the tracked singleton settings row, creating it if it is somehow missing
+    /// (e.g. a database restored from before the settings seed).
+    /// </summary>
+    private async Task<OrganizationSettings> GetOrCreateAsync()
+    {
+        var settings = await _context.OrganizationSettings.FirstOrDefaultAsync();
+        if (settings is null)
+        {
+            settings = new OrganizationSettings { Id = OrganizationSettings.SingletonId };
+            _context.OrganizationSettings.Add(settings);
+        }
+        return settings;
     }
 
     /// <summary>

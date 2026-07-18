@@ -8,6 +8,7 @@ import SignupsChart from '../components/charts/SignupsChart'
 import ActivityChart from '../components/charts/ActivityChart'
 import StatsPanel from '../components/charts/StatsPanel'
 import StorageSettings from '../components/StorageSettings'
+import FeatureSettings from '../components/FeatureSettings'
 import UserContextMenu from '../components/menus/UserContextMenu'
 import WarnUserModal from '../components/modals/WarnUserModal'
 import { adminService } from '../services/adminService'
@@ -225,8 +226,9 @@ export default function AdminPage() {
           </div>
         </div>
 
-        {/* Organization storage limits */}
+        {/* Organization storage limits and feature toggles (separate concerns, separate cards) */}
         <StorageSettings />
+        <FeatureSettings />
 
         {/* Pending appeals queue */}
         {appeals.length > 0 && (

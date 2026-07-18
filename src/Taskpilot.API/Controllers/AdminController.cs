@@ -82,14 +82,25 @@ public class AdminController : BaseApiController
         return Ok(result);
     }
 
-    /// <summary>Updates the organization's storage limits.</summary>
-    [HttpPut("settings")]
-    public async Task<IActionResult> UpdateSettings([FromBody] UpdateOrganizationSettingsDto dto)
+    /// <summary>Updates the organization's storage limits (leaves feature flags untouched).</summary>
+    [HttpPut("settings/storage")]
+    public async Task<IActionResult> UpdateStorage([FromBody] UpdateStorageDto dto)
     {
         var adminId = CurrentUserId();
         if (adminId is null) return Unauthorized();
 
-        var result = await _settings.UpdateAsync(dto, adminId.Value, CurrentUserEmail(), ClientIp());
+        var result = await _settings.UpdateStorageAsync(dto, adminId.Value, CurrentUserEmail(), ClientIp());
+        return result.Succeeded ? Ok(result.Value) : BadRequest(new { error = result.Error });
+    }
+
+    /// <summary>Updates the organization's feature flags (leaves storage limits untouched).</summary>
+    [HttpPut("settings/features")]
+    public async Task<IActionResult> UpdateFeatures([FromBody] UpdateFeaturesDto dto)
+    {
+        var adminId = CurrentUserId();
+        if (adminId is null) return Unauthorized();
+
+        var result = await _settings.UpdateFeaturesAsync(dto, adminId.Value, CurrentUserEmail(), ClientIp());
         return result.Succeeded ? Ok(result.Value) : BadRequest(new { error = result.Error });
     }
 

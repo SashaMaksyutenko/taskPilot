@@ -1,5 +1,6 @@
 import api from '../lib/api'
 import type { Task, TaskComment, TaskStatus } from '../types/project'
+import type { CalendarTask } from '../types/calendar'
 
 /** REST calls for project tasks. */
 export const taskService = {
@@ -204,6 +205,28 @@ export const taskService = {
   getHistory(taskId: string): Promise<TaskHistoryEntry[]> {
     return api.get<TaskHistoryEntry[]>(`/api/tasks/${taskId}/history`).then((r) => r.data)
   },
+
+  /**
+   * The project team's availability: each participant with the tasks assigned to them
+   * that fall due in [from, to] (defaults to the next month on the server).
+   */
+  getTeamWorkload(projectId: string, from?: string, to?: string): Promise<TeamMemberWorkload[]> {
+    return api
+      .get<TeamMemberWorkload[]>(`/api/projects/${projectId}/team-workload`, {
+        params: { ...(from ? { from } : {}), ...(to ? { to } : {}) },
+      })
+      .then((r) => r.data)
+  },
+}
+
+/** One participant's workload (mirrors the backend TeamMemberWorkloadDto). */
+export interface TeamMemberWorkload {
+  userId: string
+  name: string
+  avatarUrl: string | null
+  isOwner: boolean
+  /** Tasks assigned to this participant that fall due in range, ordered by deadline. */
+  tasks: CalendarTask[]
 }
 
 /**

@@ -10,6 +10,7 @@ import Button from '../components/ui/Button'
 import Input from '../components/ui/Input'
 import Card from '../components/ui/Card'
 import GanttChart from '../components/GanttChart'
+import TeamWorkload from '../components/TeamWorkload'
 import Confetti from '../components/feedback/Confetti'
 import ResultState from '../components/feedback/ResultState'
 import { bookmarkService } from '../services/bookmarkService'
@@ -326,7 +327,7 @@ export default function BoardPage() {
 
   // The toolbar would be too crowded with four report buttons, so they live in a menu.
   const [reportsOpen, setReportsOpen] = useState(false)
-  const [view, setView] = useState<'board' | 'gantt'>('board')
+  const [view, setView] = useState<'board' | 'gantt' | 'team'>('board')
   const runReport = (fn: () => Promise<void>) => {
     setReportsOpen(false)
     void fn()
@@ -387,7 +388,7 @@ export default function BoardPage() {
 
           {/* Board / timeline switcher */}
           <div className="ml-auto inline-flex overflow-hidden rounded-lg border border-border">
-            {(['board', 'gantt'] as const).map((v) => (
+            {(['board', 'gantt', 'team'] as const).map((v) => (
               <button
                 key={v}
                 onClick={() => setView(v)}
@@ -589,6 +590,9 @@ export default function BoardPage() {
             <GanttChart tasks={visibleTasks} onSelect={setSelectedTask} />
           </Card>
         )}
+
+        {/* Team availability — who is busy with what over the next month */}
+        {view === 'team' && <TeamWorkload projectId={projectId} />}
 
         {/* Columns */}
         {view === 'board' && (

@@ -502,7 +502,7 @@
     "exportXlsx": "Export Excel",
     "exportPdf": "Export PDF",
     "reports": "Reports",
-    "view": { "board": "Board", "gantt": "Timeline" },
+    "view": { "board": "Board", "gantt": "Timeline", "team": "Team" },
     "reportPdf": "Project — PDF",
     "reportXlsx": "Project — Excel",
     "teamReportPdf": "Team — PDF",
@@ -596,6 +596,13 @@
   "gantt": {
     "empty": "No tasks with a deadline yet — set one to see the timeline.",
     "unscheduled": "Not shown — no deadline set: {{n}}"
+  },
+  "team": {
+    "loading": "Loading…",
+    "failed": "Could not load the team's workload.",
+    "owner": "Owner",
+    "free": "No upcoming tasks — free.",
+    "taskCount": "{{count}} tasks"
   },
   "calendar": {
     "title": "Calendar",

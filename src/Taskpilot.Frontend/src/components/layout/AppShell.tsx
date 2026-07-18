@@ -8,7 +8,7 @@ import CommandPalette from '../CommandPalette'
 import AssistantFab from '../AssistantFab'
 import { useNotifications } from '../../hooks/useNotifications'
 import { useShortcuts } from '../../hooks/useShortcuts'
-import { FeaturesProvider } from '../../hooks/useFeatures'
+import { FeaturesProvider } from '../FeaturesProvider'
 
 /**
  * Authenticated app chrome: fixed sidebar, top bar and scrollable main area.

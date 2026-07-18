@@ -1,7 +1,8 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import FeatureSettings from './FeatureSettings'
-import { FeaturesProvider, useFeatures } from '../hooks/useFeatures'
+import { FeaturesProvider } from './FeaturesProvider'
+import { useFeatures } from '../hooks/useFeatures'
 import { adminService, type OrganizationSettings } from '../services/adminService'
 import { settingsService } from '../services/settingsService'
 

@@ -1,7 +1,8 @@
 import { StrictMode } from 'react'
 import { describe, expect, it, vi, beforeEach } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
-import { FeaturesProvider, useFeatures } from './useFeatures'
+import { FeaturesProvider } from '../components/FeaturesProvider'
+import { useFeatures } from './useFeatures'
 import { settingsService } from '../services/settingsService'
 
 vi.mock('../services/settingsService', () => ({

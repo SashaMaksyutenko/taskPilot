@@ -119,16 +119,12 @@ export const adminService = {
    * Updates only the registration domain controls (allowlist + denylist). The server
    * normalizes both values (lower-cases, strips "@", de-duplicates) and returns them.
    */
-  updateRegistration(
-    allowedEmailDomains: string,
-    blockedEmailDomains: string,
-  ): Promise<OrganizationSettings> {
-    return api
-      .put<OrganizationSettings>('/api/admin/settings/registration', {
-        allowedEmailDomains,
-        blockedEmailDomains,
-      })
-      .then((r) => r.data)
+  updateRegistration(update: {
+    allowedEmailDomains: string
+    blockedEmailDomains: string
+    maxMembers: number
+  }): Promise<OrganizationSettings> {
+    return api.put<OrganizationSettings>('/api/admin/settings/registration', update).then((r) => r.data)
   },
 }
 
@@ -146,5 +142,9 @@ export interface OrganizationSettings {
   allowedEmailDomains: string
   /** Comma-separated email domains barred from registering; empty blocks nothing. */
   blockedEmailDomains: string
+  /** Largest number of active accounts allowed; 0 means unlimited. */
+  maxMembers: number
+  /** How many active accounts exist right now. */
+  activeMembers: number
   updatedAt: string | null
 }

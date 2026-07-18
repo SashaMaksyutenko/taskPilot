@@ -62,6 +62,12 @@ public class OrganizationSettings
     /// </summary>
     public string BlockedEmailDomains { get; set; } = string.Empty;
 
+    /// <summary>
+    /// Largest number of ACTIVE user accounts allowed. Zero means unlimited. When the
+    /// organization is full, self-registration is refused (existing users are unaffected).
+    /// </summary>
+    public int MaxMembers { get; set; }
+
     /// <summary>UTC time the settings were last changed (null until first edited).</summary>
     public DateTime? UpdatedAt { get; set; }
 }

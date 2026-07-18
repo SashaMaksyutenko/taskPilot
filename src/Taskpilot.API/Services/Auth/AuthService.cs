@@ -66,24 +66,36 @@ public class AuthService : IAuthService
             // Normalize the email for a case-insensitive uniqueness check and storage.
             var email = dto.Email.Trim().ToLowerInvariant();
 
-            // Enforce the admin's registration domain controls in one round-trip.
-            var domainRules = await _context.OrganizationSettings
+            // Enforce the admin's registration controls, all read in one round-trip.
+            var rules = await _context.OrganizationSettings
                 .AsNoTracking()
-                .Select(s => new { s.AllowedEmailDomains, s.BlockedEmailDomains })
+                .Select(s => new { s.AllowedEmailDomains, s.BlockedEmailDomains, s.MaxMembers })
                 .FirstOrDefaultAsync();
 
             // Denylist first: a blocked domain is refused even if the allowlist would permit it.
-            if (EmailDomainList.Parse(domainRules?.BlockedEmailDomains).Contains(email))
+            if (EmailDomainList.Parse(rules?.BlockedEmailDomains).Contains(email))
             {
                 _logger.LogWarning("Registration blocked: email domain is on the denylist. Email: {Email}", email);
                 return Result<Guid>.Fail("This email domain is not allowed to register.");
             }
 
             // Then the allowlist (empty = open to any domain).
-            if (!EmailDomainList.Parse(domainRules?.AllowedEmailDomains).IsAllowed(email))
+            if (!EmailDomainList.Parse(rules?.AllowedEmailDomains).IsAllowed(email))
             {
                 _logger.LogWarning("Registration blocked: email domain not on the allowlist. Email: {Email}", email);
                 return Result<Guid>.Fail("Registration is restricted to specific email domains.");
+            }
+
+            // Finally the seat limit (0 = unlimited). Only ACTIVE accounts count, so banning
+            // or deleting a user frees a seat.
+            if (rules is { MaxMembers: > 0 })
+            {
+                var activeMembers = await _context.Users.CountAsync(u => u.IsActive);
+                if (activeMembers >= rules.MaxMembers)
+                {
+                    _logger.LogWarning("Registration blocked: member limit reached. Limit: {Limit}", rules.MaxMembers);
+                    return Result<Guid>.Fail("The organization has reached its member limit.");
+                }
             }
 
             // Check whether a user with this email already exists.

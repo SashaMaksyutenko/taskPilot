@@ -22,6 +22,8 @@ const org = (over: Partial<OrganizationSettings> = {}): OrganizationSettings => 
   forumEnabled: true,
   allowedEmailDomains: '',
   blockedEmailDomains: '',
+  maxMembers: 0,
+  activeMembers: 0,
   updatedAt: null,
   ...over,
 })
@@ -37,7 +39,8 @@ describe('RegistrationSettings', () => {
     render(<RegistrationSettings />)
 
     // The empty state must be explicit — an admin should never have to guess.
-    expect(await screen.findByText('registration.openNow')).toBeTruthy()
+    // Partial match: the same line also reports seat usage.
+    expect(await screen.findByText(/registration.openNow/)).toBeTruthy()
   })
 
   it('lists the domains in force when the allowlist is set', async () => {
@@ -58,7 +61,13 @@ describe('RegistrationSettings', () => {
     fireEvent.change(input, { target: { value: '@Acme.COM' } })
     fireEvent.click(screen.getByText('registration.save'))
 
-    await waitFor(() => expect(updateRegistration).toHaveBeenCalledWith('@Acme.COM', ''))
+    await waitFor(() =>
+      expect(updateRegistration).toHaveBeenCalledWith({
+        allowedEmailDomains: '@Acme.COM',
+        blockedEmailDomains: '',
+        maxMembers: 0,
+      }),
+    )
     // The input reflects the normalized value returned by the server.
     expect(await screen.findByDisplayValue('acme.com')).toBeTruthy()
     expect(screen.getByText('registration.saved')).toBeTruthy()
@@ -93,8 +102,39 @@ describe('RegistrationSettings', () => {
 
     // Allowlist unchanged (empty), denylist sent as edited.
     await waitFor(() =>
-      expect(updateRegistration).toHaveBeenCalledWith('', 'spam.example, junk.example'),
+      expect(updateRegistration).toHaveBeenCalledWith({
+        allowedEmailDomains: '',
+        blockedEmailDomains: 'spam.example, junk.example',
+        maxMembers: 0,
+      }),
     )
+  })
+
+  it('reports seat usage and saves the member limit', async () => {
+    getSettings.mockResolvedValue(org({ maxMembers: 5, activeMembers: 3 }))
+    updateRegistration.mockResolvedValue(org({ maxMembers: 10, activeMembers: 3 }))
+    render(<RegistrationSettings />)
+
+    // Usage is spelled out so the admin sees the headroom.
+    expect(await screen.findByText(/registration.seatsNow.*"used":3.*"total":"5"/)).toBeTruthy()
+
+    fireEvent.change(screen.getByDisplayValue('5'), { target: { value: '10' } })
+    fireEvent.click(screen.getByText('registration.save'))
+
+    await waitFor(() =>
+      expect(updateRegistration).toHaveBeenCalledWith({
+        allowedEmailDomains: '',
+        blockedEmailDomains: '',
+        maxMembers: 10,
+      }),
+    )
+  })
+
+  it('says the member count is unlimited when the limit is zero', async () => {
+    getSettings.mockResolvedValue(org({ maxMembers: 0, activeMembers: 7 }))
+    render(<RegistrationSettings />)
+
+    expect(await screen.findByText(/registration.seatsUnlimited.*"used":7/)).toBeTruthy()
   })
 
   it('fetches exactly once under StrictMode', async () => {

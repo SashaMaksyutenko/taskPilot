@@ -121,10 +121,14 @@ public class OrganizationSettingsService : IOrganizationSettingsService
         var allowed = string.Join(", ", EmailDomainList.Parse(dto.AllowedEmailDomains).Domains);
         var blocked = string.Join(", ", EmailDomainList.Parse(dto.BlockedEmailDomains).Domains);
 
+        // A negative limit is meaningless; treat it as "unlimited" rather than rejecting.
+        var maxMembers = Math.Max(0, dto.MaxMembers);
+
         var settings = await GetOrCreateAsync();
         // Touches ONLY the registration fields — storage and features are left as they were.
         settings.AllowedEmailDomains = allowed;
         settings.BlockedEmailDomains = blocked;
+        settings.MaxMembers = maxMembers;
         settings.UpdatedAt = DateTime.UtcNow;
         await _context.SaveChangesAsync();
 
@@ -135,7 +139,8 @@ public class OrganizationSettingsService : IOrganizationSettingsService
             entityType: nameof(OrganizationSettings),
             entityId: settings.Id.ToString(),
             details: $"Allowed={(allowed.Length == 0 ? "(any)" : allowed)}; " +
-                     $"Blocked={(blocked.Length == 0 ? "(none)" : blocked)}",
+                     $"Blocked={(blocked.Length == 0 ? "(none)" : blocked)}; " +
+                     $"MaxMembers={(maxMembers == 0 ? "(unlimited)" : maxMembers.ToString())}",
             ipAddress: ip);
 
         _logger.LogInformation("Registration settings updated by {AdminId}.", adminId);
@@ -146,6 +151,7 @@ public class OrganizationSettingsService : IOrganizationSettingsService
     private async Task<OrganizationSettingsDto> BuildDtoAsync(OrganizationSettings settings)
     {
         var usedBytes = await _context.FileAttachments.SumAsync(f => (long?)f.SizeBytes) ?? 0;
+        var activeMembers = await _context.Users.CountAsync(u => u.IsActive);
         return new OrganizationSettingsDto
         {
             MaxUploadBytes = settings.MaxUploadBytes,
@@ -155,6 +161,8 @@ public class OrganizationSettingsService : IOrganizationSettingsService
             ForumEnabled = settings.ForumEnabled,
             AllowedEmailDomains = settings.AllowedEmailDomains,
             BlockedEmailDomains = settings.BlockedEmailDomains,
+            MaxMembers = settings.MaxMembers,
+            ActiveMembers = activeMembers,
             UpdatedAt = settings.UpdatedAt,
         };
     }

@@ -14,9 +14,12 @@ export default function RegistrationSettings() {
   const { t } = useTranslation()
   const [allowed, setAllowed] = useState('')
   const [blocked, setBlocked] = useState('')
+  const [maxMembers, setMaxMembers] = useState('0')
+  const [activeMembers, setActiveMembers] = useState(0)
   // The values currently stored on the server, used for the summary and the dirty check.
   const [savedAllowed, setSavedAllowed] = useState('')
   const [savedBlocked, setSavedBlocked] = useState('')
+  const [savedMax, setSavedMax] = useState('0')
   const [ready, setReady] = useState(false)
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null)
@@ -31,8 +34,11 @@ export default function RegistrationSettings() {
       .then((s) => {
         setAllowed(s.allowedEmailDomains)
         setBlocked(s.blockedEmailDomains)
+        setMaxMembers(String(s.maxMembers))
         setSavedAllowed(s.allowedEmailDomains)
         setSavedBlocked(s.blockedEmailDomains)
+        setSavedMax(String(s.maxMembers))
+        setActiveMembers(s.activeMembers)
         setReady(true)
       })
       .catch(() => setMessage({ ok: false, text: t('registration.loadFailed') }))
@@ -42,12 +48,19 @@ export default function RegistrationSettings() {
     setSaving(true)
     setMessage(null)
     try {
-      const updated = await adminService.updateRegistration(allowed.trim(), blocked.trim())
+      const updated = await adminService.updateRegistration({
+        allowedEmailDomains: allowed.trim(),
+        blockedEmailDomains: blocked.trim(),
+        maxMembers: Number(maxMembers) || 0,
+      })
       // Show the normalized values the server stored ("@Acme.COM" -> "acme.com").
       setAllowed(updated.allowedEmailDomains)
       setBlocked(updated.blockedEmailDomains)
+      setMaxMembers(String(updated.maxMembers))
       setSavedAllowed(updated.allowedEmailDomains)
       setSavedBlocked(updated.blockedEmailDomains)
+      setSavedMax(String(updated.maxMembers))
+      setActiveMembers(updated.activeMembers)
       setMessage({ ok: true, text: t('registration.saved') })
     } catch (e) {
       setMessage({ ok: false, text: apiErrorMessage(e) })
@@ -58,7 +71,7 @@ export default function RegistrationSettings() {
 
   if (!ready && !message) return null
 
-  const dirty = allowed !== savedAllowed || blocked !== savedBlocked
+  const dirty = allowed !== savedAllowed || blocked !== savedBlocked || maxMembers !== savedMax
 
   return (
     <section className="mb-6 rounded-xl border border-border bg-surface p-5">
@@ -72,6 +85,10 @@ export default function RegistrationSettings() {
               ? t('registration.openNow')
               : t('registration.restrictedNow', { domains: savedAllowed })}
             {savedBlocked.trim().length > 0 && ` ${t('registration.blockedNow', { domains: savedBlocked })}`}
+            {' '}
+            {Number(savedMax) > 0
+              ? t('registration.seatsNow', { used: activeMembers, total: savedMax })
+              : t('registration.seatsUnlimited', { used: activeMembers })}
           </p>
 
           <div className="space-y-3">
@@ -95,6 +112,18 @@ export default function RegistrationSettings() {
                 className="w-full max-w-md rounded-lg border border-border bg-canvas px-3 py-1.5 text-foreground outline-none focus:border-primary"
               />
               <span className="mt-1 block text-xs text-muted">{t('registration.blockedHint')}</span>
+            </label>
+
+            <label className="block text-sm">
+              <span className="mb-1 block font-medium text-foreground">{t('registration.maxMembers')}</span>
+              <input
+                type="number"
+                min={0}
+                value={maxMembers}
+                onChange={(e) => setMaxMembers(e.target.value)}
+                className="w-28 rounded-lg border border-border bg-canvas px-3 py-1.5 text-foreground outline-none focus:border-primary"
+              />
+              <span className="mt-1 block text-xs text-muted">{t('registration.maxMembersHint')}</span>
             </label>
           </div>
 

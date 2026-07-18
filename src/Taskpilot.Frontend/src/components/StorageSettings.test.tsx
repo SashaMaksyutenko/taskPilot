@@ -23,6 +23,8 @@ const settings = (over: Partial<OrganizationSettings> = {}): OrganizationSetting
   forumEnabled: true,
   allowedEmailDomains: '',
   blockedEmailDomains: '',
+  maxMembers: 0,
+  activeMembers: 0,
   updatedAt: null,
   ...over,
 })

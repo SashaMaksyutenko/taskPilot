@@ -24,6 +24,12 @@ public class OrganizationSettingsDto
     /// <summary>Comma-separated email domains barred from registering; empty blocks nothing.</summary>
     public string BlockedEmailDomains { get; set; } = string.Empty;
 
+    /// <summary>Largest number of active accounts allowed; 0 means unlimited.</summary>
+    public int MaxMembers { get; set; }
+
+    /// <summary>How many active accounts exist right now — so the admin sees the headroom.</summary>
+    public int ActiveMembers { get; set; }
+
     /// <summary>UTC time the settings were last changed; null if never edited.</summary>
     public DateTime? UpdatedAt { get; set; }
 }
@@ -66,6 +72,9 @@ public class UpdateRegistrationDto
     /// Applied before the allowlist.
     /// </summary>
     public string BlockedEmailDomains { get; set; } = string.Empty;
+
+    /// <summary>Largest number of active accounts allowed; 0 (or negative) means unlimited.</summary>
+    public int MaxMembers { get; set; }
 }
 
 /// <summary>

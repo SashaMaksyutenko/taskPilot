@@ -832,6 +832,10 @@
     "blockedPlaceholder": "spam.example, junk.example",
     "blockedHint": "Comma-separated. These domains can never register, even if the allowlist above permits them.",
     "blockedNow": "Blocked: {{domains}}.",
+    "maxMembers": "Member limit",
+    "maxMembersHint": "Largest number of active accounts. 0 means unlimited; banned or deleted accounts free up a seat.",
+    "seatsNow": "{{used}} of {{total}} seats used.",
+    "seatsUnlimited": "{{used}} active members — no limit set.",
     "save": "Save",
     "saved": "Registration settings saved.",
     "loadFailed": "Could not load registration settings."

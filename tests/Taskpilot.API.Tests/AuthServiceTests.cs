@@ -231,6 +231,99 @@ public class AuthServiceTests
     }
 
     [Fact]
+    public async Task RegisterAsync_RefusesWhenTheMemberLimitIsReached()
+    {
+        using var ctx = CreateContext();
+        ctx.OrganizationSettings.Add(new OrganizationSettings
+        {
+            Id = OrganizationSettings.SingletonId,
+            MaxMembers = 1,
+        });
+        ctx.Users.Add(new User
+        {
+            Id = Guid.NewGuid(),
+            Name = "Seat taken",
+            Email = "first@example.com",
+            PasswordHash = "hash",
+            IsActive = true,
+        });
+        await ctx.SaveChangesAsync();
+        var svc = CreateService(ctx);
+
+        var result = await svc.RegisterAsync(new RegisterDto
+        {
+            Name = "Second",
+            Email = "second@example.com",
+            Password = "Secret123",
+        });
+
+        Assert.False(result.Succeeded);
+        Assert.Equal("The organization has reached its member limit.", result.Error);
+        Assert.Equal(1, await ctx.Users.CountAsync());
+    }
+
+    [Fact]
+    public async Task RegisterAsync_InactiveAccountsDoNotConsumeASeat()
+    {
+        using var ctx = CreateContext();
+        ctx.OrganizationSettings.Add(new OrganizationSettings
+        {
+            Id = OrganizationSettings.SingletonId,
+            MaxMembers = 1,
+        });
+        // A banned/deactivated account frees its seat, so the limit counts ACTIVE users only.
+        ctx.Users.Add(new User
+        {
+            Id = Guid.NewGuid(),
+            Name = "Banned",
+            Email = "banned@example.com",
+            PasswordHash = "hash",
+            IsActive = false,
+        });
+        await ctx.SaveChangesAsync();
+        var svc = CreateService(ctx);
+
+        var result = await svc.RegisterAsync(new RegisterDto
+        {
+            Name = "Newcomer",
+            Email = "newcomer@example.com",
+            Password = "Secret123",
+        });
+
+        Assert.True(result.Succeeded);
+    }
+
+    [Fact]
+    public async Task RegisterAsync_ZeroMemberLimit_MeansUnlimited()
+    {
+        using var ctx = CreateContext();
+        ctx.OrganizationSettings.Add(new OrganizationSettings
+        {
+            Id = OrganizationSettings.SingletonId,
+            MaxMembers = 0,   // the default: no cap
+        });
+        ctx.Users.Add(new User
+        {
+            Id = Guid.NewGuid(),
+            Name = "Existing",
+            Email = "existing@example.com",
+            PasswordHash = "hash",
+            IsActive = true,
+        });
+        await ctx.SaveChangesAsync();
+        var svc = CreateService(ctx);
+
+        var result = await svc.RegisterAsync(new RegisterDto
+        {
+            Name = "Anyone",
+            Email = "anyone@example.com",
+            Password = "Secret123",
+        });
+
+        Assert.True(result.Succeeded);
+    }
+
+    [Fact]
     public async Task LoginAsync_CorrectCredentials_ReturnsTokensAndStoresRefresh()
     {
         using var ctx = CreateContext();

@@ -165,6 +165,7 @@ public class TaskpilotDbContext : DbContext
                 ForumEnabled = true,
                 AllowedEmailDomains = string.Empty,
                 BlockedEmailDomains = string.Empty,
+                MaxMembers = 0,
                 UpdatedAt = null,
             });
         });

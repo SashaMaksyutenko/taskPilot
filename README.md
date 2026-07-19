@@ -113,7 +113,8 @@ import instead.
 
 ## Deployment
 
-Free-tier hosting: backend + PostgreSQL on **Railway**, frontend on **Vercel** ($0/month).
+Free-tier hosting: PostgreSQL on **Neon**, backend on **Render**, frontend on **Vercel**
+($0/month). Nothing is host-specific — Fly.io, Koyeb, Railway or a VPS work the same way.
 
 See **[docs/deployment.md](docs/deployment.md)** for the step-by-step guide.
 

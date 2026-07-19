@@ -1,24 +1,48 @@
 # Deploying TaskPilot
 
-Free-tier deployment: **backend + PostgreSQL on Railway**, **frontend on Vercel**.
+Free-tier deployment: **PostgreSQL on Neon**, **backend on Render**, **frontend on Vercel**.
 Total cost: $0/month.
 
-The order matters — deploy the backend first, the frontend second, then come back and
-tell the backend the frontend's address (CORS). Each step below says why.
+Nothing here is host-specific: the API reads the standard `PORT` and `DATABASE_URL`
+variables every container platform injects, so Railway, Fly.io, Koyeb or a VPS work the
+same way — only the dashboard clicks differ.
+
+The order matters — database first, then the backend, then the frontend, and finally back
+to the backend to tell it the frontend's address (CORS). Each step below says why.
+
+> Free tiers change often. Check the current limits on each provider before relying on them.
 
 ---
 
-## 1. Backend + database on Railway
+## 1. Database on Neon
 
-1. **Create the project.** [railway.app](https://railway.app) → *New Project* →
-   *Deploy from GitHub repo* → pick this repository.
-2. **Add PostgreSQL.** In the project: *New* → *Database* → *Add PostgreSQL*.
-   Railway creates it and exposes a `DATABASE_URL` variable.
-3. **Point the API at the database.** Open the API service → *Variables* → add:
+Neon gives a free serverless Postgres that does not expire, which is why it is used here
+instead of a host-bundled database.
+
+1. Sign up at [neon.tech](https://neon.tech) and create a project (any region near you).
+2. Copy the **connection string** it shows — it looks like:
+
+   ```
+   postgresql://user:password@ep-something.eu-central-1.aws.neon.tech/dbname?sslmode=require
+   ```
+
+That single string is all the API needs; it is converted to the form Npgsql expects
+automatically, including the TLS settings.
+
+---
+
+## 2. Backend on Render
+
+1. Sign up at [render.com](https://render.com) → *New* → **Web Service** → connect this
+   GitHub repository.
+2. **Runtime: Docker.** Render finds the root `Dockerfile` on its own — leave the build and
+   start commands empty. The image reads the `PORT` Render injects.
+3. **Instance type:** Free.
+4. **Environment variables:**
 
    | Variable | Value |
    | --- | --- |
-   | `DATABASE_URL` | `${{Postgres.DATABASE_URL}}` (Railway's reference syntax) |
+   | `DATABASE_URL` | the Neon connection string from step 1 |
    | `ASPNETCORE_ENVIRONMENT` | `Production` |
    | `Jwt__Key` | a long random string (see below) |
    | `Jwt__Issuer` | `Taskpilot.API` |
@@ -32,17 +56,20 @@ tell the backend the frontend's address (CORS). Each step below says why.
    openssl rand -base64 48
    ```
 
-4. **Deploy.** Railway builds the root `Dockerfile` automatically. No start command
-   needed — the image reads Railway's injected `PORT`.
-5. **Generate a domain.** Service → *Settings* → *Networking* → *Generate Domain*.
-   Note it down, e.g. `https://taskpilot-api.up.railway.app`.
-6. **Check it is alive:** open `https://<your-api-domain>/health` — it should return `ok`.
+5. **Deploy**, then note the URL, e.g. `https://taskpilot-api.onrender.com`.
+6. **Check it is alive:** open `https://<your-api-domain>/health` — it should report
+   `"status":"ok"` and `"database":"up"`. If the database line is missing or the service
+   crashes, the connection string is wrong — that is the first thing to check.
 
 Database migrations run automatically on startup, so there is no manual migration step.
 
+**Free instances sleep** after about 15 minutes of inactivity; the next request wakes them
+and can take 30–60 seconds. Fine for a portfolio demo — just do not panic at the first
+slow load, and open the API URL once before showing the app to someone.
+
 ---
 
-## 2. Frontend on Vercel
+## 3. Frontend on Vercel
 
 1. [vercel.com](https://vercel.com) → *Add New* → *Project* → import the same repository.
 2. **Root Directory:** `src/Taskpilot.Frontend` ← easy to miss; without it the build fails.
@@ -52,7 +79,7 @@ Database migrations run automatically on startup, so there is no manual migratio
 
    | Variable | Value |
    | --- | --- |
-   | `VITE_API_URL` | your Railway API URL, e.g. `https://taskpilot-api.up.railway.app` |
+   | `VITE_API_URL` | your Render API URL, e.g. `https://taskpilot-api.onrender.com` |
 
    This is baked in at build time, so changing it later requires a redeploy.
 4. **Deploy**, then note the domain, e.g. `https://taskpilot.vercel.app`.
@@ -62,15 +89,15 @@ client-side routes (`/projects/<id>`) survive a refresh or a shared link.
 
 ---
 
-## 3. Connect the two (CORS)
+## 4. Connect the two (CORS)
 
-Back on Railway, add one more variable to the API service:
+Back on Render, add one more variable to the API service:
 
 | Variable | Value |
 | --- | --- |
 | `Cors__AllowedOrigins` | your Vercel URL, e.g. `https://taskpilot.vercel.app` |
 
-Railway redeploys automatically. **Until this is set, the browser blocks every request
+Render redeploys automatically. **Until this is set, the browser blocks every request
 from the deployed site** — the app will look broken with network errors in the console,
 even though the API itself is healthy.
 
@@ -79,10 +106,10 @@ is always allowed, so local development keeps working against the deployed API.
 
 ---
 
-## 4. Verify
+## 5. Verify
 
 1. Open the Vercel URL and register an account (or log in with the admin credentials set
-   in step 1).
+   in step 2).
 2. Create a project and a task — this proves the database is connected and writable.
 3. Open the browser console: no CORS errors.
 
@@ -91,7 +118,7 @@ is always allowed, so local development keeps working against the deployed API.
 ## Optional integrations
 
 Everything below is **off unless configured** — the app runs fine without any of it.
-Add the variables on Railway to switch a feature on:
+Add the variables on Render to switch a feature on:
 
 | Feature | Variables |
 | --- | --- |
@@ -114,13 +141,26 @@ needs the matching public client ids at build time (`VITE_GOOGLE_CLIENT_ID`,
 
 ## Things worth knowing
 
-- **File uploads are ephemeral by default.** Railway's filesystem resets on every deploy,
-  so uploaded files and avatars disappear. Configure the `Storage__*` variables above
-  (Cloudflare R2 has a free tier) to keep them.
+- **File uploads are ephemeral by default.** A container's filesystem resets on every
+  deploy (and on Render's free tier, on every sleep/wake), so uploaded files and avatars
+  disappear. Configure the `Storage__*` variables above — Cloudflare R2 has a free tier —
+  to keep them.
 - **Locking yourself out of registration.** The admin panel can restrict sign-ups by email
   domain and cap the member count. An allowlist means *only* those domains may register —
   leave it empty for an open demo.
-- **Free-tier sleeping.** Railway's free plan may idle the service; the first request after
-  an idle period is slow while it wakes.
+- **Free-tier sleeping.** Render idles a free service after inactivity; the first request
+  afterwards is slow while it wakes. Hitting `/health` before a demo warms it up.
 - **Secrets never go in the repo.** `.env` is gitignored; everything above lives in the
-  Railway/Vercel dashboards.
+  Render/Vercel dashboards.
+
+### Other hosts
+
+The app is not tied to Render. Anything that can run a Docker container and set
+environment variables works, because the image reads the standard `PORT` and the API
+accepts a standard `DATABASE_URL`:
+
+- **Fly.io** — no sleeping, but usually asks for a card.
+- **Koyeb** — free instance, similar to Render.
+- **Railway** — the original target; its free trial is time-limited, so it now needs a
+  paid plan.
+- **A VPS** — `docker compose up` with the bundled `docker-compose.yml`.

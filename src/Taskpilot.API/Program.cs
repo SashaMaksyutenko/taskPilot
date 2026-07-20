@@ -42,9 +42,12 @@ var builder = WebApplication.CreateBuilder(args);
 // .NET maps the "__" separator in env vars to the ":" config hierarchy.
 // Managed hosts (Railway, Render, Heroku) instead expose a single DATABASE_URL, so that is
 // accepted as a fallback and converted to the key-value form Npgsql needs.
+var explicitConnection = builder.Configuration.GetConnectionString("DefaultConnection");
+var connectionSource = string.IsNullOrWhiteSpace(explicitConnection)
+    ? "DATABASE_URL"
+    : "ConnectionStrings:DefaultConnection";
 var connectionString = PostgresConnectionString.Normalize(
-    builder.Configuration.GetConnectionString("DefaultConnection")
-    ?? builder.Configuration["DATABASE_URL"]);
+    explicitConnection ?? builder.Configuration["DATABASE_URL"]);
 
 // Fail fast with a clear message if the connection string is not configured.
 if (string.IsNullOrWhiteSpace(connectionString))
@@ -53,6 +56,13 @@ if (string.IsNullOrWhiteSpace(connectionString))
         "No database connection configured. Set ConnectionStrings__DefaultConnection " +
         "(see .env.example) or DATABASE_URL when deploying to a managed host.");
 }
+
+// Announce WHICH setting won and where it points (never the password). Deploying with a
+// leftover local ConnectionStrings__DefaultConnection silently overrides the host's
+// DATABASE_URL, and the only symptom is a refused connection to localhost — this line
+// makes that obvious in the very first lines of the log.
+Console.WriteLine(
+    $"[Database] Using {connectionSource} -> {PostgresConnectionString.Describe(connectionString)}");
 
 // Register the EF Core database context using the Npgsql (PostgreSQL) provider.
 // AddDbContext registers TaskpilotDbContext with a Scoped lifetime (one per request).

@@ -116,4 +116,24 @@ public class PostgresConnectionStringTests
     {
         Assert.Null(PostgresConnectionString.Normalize(input));
     }
+
+    [Fact]
+    public void Describe_ShowsWhereItPoints_ButNeverThePassword()
+    {
+        var normalized = PostgresConnectionString.Normalize(
+            "postgresql://neondb_owner:supersecret@ep-x.eu-central-1.aws.neon.example/neondb?sslmode=require");
+
+        var described = PostgresConnectionString.Describe(normalized);
+
+        Assert.Equal("ep-x.eu-central-1.aws.neon.example:5432/neondb", described);
+        // This string goes into startup logs, so a credential leak here would be a real one.
+        Assert.DoesNotContain("supersecret", described);
+        Assert.DoesNotContain("neondb_owner", described);
+    }
+
+    [Fact]
+    public void Describe_HandlesAMissingConnectionString()
+    {
+        Assert.Equal("(none)", PostgresConnectionString.Describe(null));
+    }
 }

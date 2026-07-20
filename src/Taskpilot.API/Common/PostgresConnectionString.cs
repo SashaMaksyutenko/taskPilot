@@ -59,6 +59,29 @@ public static class PostgresConnectionString
     }
 
     /// <summary>
+    /// A short, safe summary of a connection string for startup logs: host, port and
+    /// database only. The password is NEVER included, so this can be logged anywhere.
+    /// </summary>
+    public static string Describe(string? connectionString)
+    {
+        if (string.IsNullOrWhiteSpace(connectionString))
+            return "(none)";
+
+        var parts = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var pair in connectionString.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        {
+            var kv = pair.Split('=', 2);
+            if (kv.Length == 2)
+                parts[kv[0].Trim()] = kv[1].Trim();
+        }
+
+        var host = parts.GetValueOrDefault("Host", "?");
+        var port = parts.GetValueOrDefault("Port", "5432");
+        var database = parts.GetValueOrDefault("Database", "?");
+        return $"{host}:{port}/{database}";
+    }
+
+    /// <summary>
     /// Reads an <c>sslmode</c> query parameter (the libpq spelling, e.g. "verify-full") and
     /// maps it to the Npgsql <c>SSL Mode</c> value. Null when absent or unrecognised.
     /// </summary>

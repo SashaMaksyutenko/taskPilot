@@ -44,13 +44,7 @@ public class S3FileStorage : IFileStorage, IDisposable
             // R2 and friends ignore the region but the SDK still wants one set.
             config.AuthenticationRegion = string.IsNullOrWhiteSpace(settings.Region) ? "auto" : settings.Region;
 
-            // Cloudflare R2 rejects the SDK's default chunked payload signature, so uploads
-            // must go up unsigned. The SDK only permits that over HTTPS — which R2 always is.
-            // A plain-HTTP endpoint (a local MinIO, say) keeps normal signing instead, so
-            // both work rather than failing with "must be sent over HTTPS".
-            _disablePayloadSigning = settings.ServiceUrl
-                .TrimStart()
-                .StartsWith("https://", StringComparison.OrdinalIgnoreCase);
+            _disablePayloadSigning = ResolvePayloadSigning(settings);
         }
         else
         {
@@ -58,7 +52,34 @@ public class S3FileStorage : IFileStorage, IDisposable
         }
 
         _client = new AmazonS3Client(credentials, config);
-        _logger.LogInformation("File storage: S3 bucket \"{Bucket}\".", _bucket);
+        _logger.LogInformation("File storage: S3 bucket \"{Bucket}\", payload signing {Signing}.",
+            _bucket, _disablePayloadSigning ? "disabled (R2)" : "enabled");
+    }
+
+    /// <summary>
+    /// Decides whether uploads skip the chunked payload signature.
+    /// <para>
+    /// Cloudflare R2 rejects that signature and needs it skipped; Supabase, Backblaze B2,
+    /// MinIO and AWS all expect the normal signed request. Guessing from the host keeps both
+    /// working out of the box, and <see cref="StorageOptions.DisablePayloadSigning"/> overrides
+    /// the guess if a provider disagrees.
+    /// </para>
+    /// It is never skipped over plain HTTP: the SDK refuses that combination outright
+    /// ("When DisablePayloadSigning is true, the request must be sent over HTTPS").
+    /// </summary>
+    public static bool ResolvePayloadSigning(StorageOptions settings)
+    {
+        var url = (settings.ServiceUrl ?? string.Empty).Trim();
+        var isHttps = url.StartsWith("https://", StringComparison.OrdinalIgnoreCase);
+        if (!isHttps)
+            return false;
+
+        if (settings.DisablePayloadSigning is { } explicitChoice)
+            return explicitChoice;
+
+        // Auto: only Cloudflare R2 needs it.
+        return Uri.TryCreate(url, UriKind.Absolute, out var uri)
+               && uri.Host.EndsWith("r2.cloudflarestorage.com", StringComparison.OrdinalIgnoreCase);
     }
 
     /// <inheritdoc />

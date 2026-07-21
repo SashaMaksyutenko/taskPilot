@@ -29,6 +29,17 @@ public class StorageOptions
     /// <summary>AWS region; ignored when <see cref="ServiceUrl"/> is set. R2 uses "auto".</summary>
     public string Region { get; set; } = "auto";
 
+    /// <summary>
+    /// Whether uploads skip the SDK's chunked payload signature.
+    /// <para>
+    /// Leave unset (the default) to decide automatically: Cloudflare R2 rejects chunked
+    /// signatures and needs this ON, while every other S3-compatible provider (Supabase,
+    /// Backblaze B2, MinIO, AWS itself) expects the normal signed request and needs it OFF.
+    /// </para>
+    /// Set it explicitly only if a provider disagrees with that guess.
+    /// </summary>
+    public bool? DisablePayloadSigning { get; set; }
+
     /// <summary>True once a bucket and both keys are configured; otherwise the disk is used.</summary>
     public bool S3Configured =>
         !string.IsNullOrWhiteSpace(Bucket)

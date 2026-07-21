@@ -20,6 +20,9 @@ public class S3FileStorage : IFileStorage, IDisposable
 {
     private readonly IAmazonS3 _client;
     private readonly string _bucket;
+
+    /// <summary>True when uploads may skip payload signing (HTTPS custom endpoints, i.e. R2).</summary>
+    private readonly bool _disablePayloadSigning;
     private readonly ILogger<S3FileStorage> _logger;
 
     public S3FileStorage(IOptions<StorageOptions> options, ILogger<S3FileStorage> logger)
@@ -40,6 +43,14 @@ public class S3FileStorage : IFileStorage, IDisposable
             config.ServiceURL = settings.ServiceUrl;
             // R2 and friends ignore the region but the SDK still wants one set.
             config.AuthenticationRegion = string.IsNullOrWhiteSpace(settings.Region) ? "auto" : settings.Region;
+
+            // Cloudflare R2 rejects the SDK's default chunked payload signature, so uploads
+            // must go up unsigned. The SDK only permits that over HTTPS — which R2 always is.
+            // A plain-HTTP endpoint (a local MinIO, say) keeps normal signing instead, so
+            // both work rather than failing with "must be sent over HTTPS".
+            _disablePayloadSigning = settings.ServiceUrl
+                .TrimStart()
+                .StartsWith("https://", StringComparison.OrdinalIgnoreCase);
         }
         else
         {
@@ -62,9 +73,9 @@ public class S3FileStorage : IFileStorage, IDisposable
             Key = storedName,
             InputStream = content,
             ContentType = contentType,
-            // The object is only ever served through our own authenticated endpoints,
-            // so the bucket itself stays private.
-            DisablePayloadSigning = true,
+            // See the constructor: unsigned payloads are an R2 requirement and are only
+            // legal over HTTPS, so this is off for a plain-HTTP endpoint.
+            DisablePayloadSigning = _disablePayloadSigning,
         }, cancellationToken);
     }
 

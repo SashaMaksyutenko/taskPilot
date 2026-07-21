@@ -109,6 +109,9 @@ builder.Services.AddValidatorsFromAssemblyContaining<RegisterValidator>();
 // Bind JWT settings from the "Jwt" config section (populated from .env: Jwt__*).
 builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("Jwt"));
 
+// What a new account starts with (Onboarding__CreateSampleProject=false to disable).
+builder.Services.Configure<OnboardingOptions>(builder.Configuration.GetSection("Onboarding"));
+
 // Google OAuth credentials (populated from .env: GoogleOAuth__*).
 builder.Services.Configure<GoogleOAuthOptions>(builder.Configuration.GetSection("GoogleOAuth"));
 builder.Services.AddHttpClient<IGoogleAuthClient, GoogleAuthClient>();
@@ -307,6 +310,7 @@ builder.Services.AddScoped<IVisitorService, VisitorService>();
 
 // Register application services. Scoped = one instance per HTTP request.
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IOnboardingService, OnboardingService>();
 builder.Services.AddScoped<IPasswordResetService, PasswordResetService>();
 builder.Services.AddScoped<IChatService, ChatService>();
 // File storage: an S3-compatible bucket when configured, the local disk otherwise.

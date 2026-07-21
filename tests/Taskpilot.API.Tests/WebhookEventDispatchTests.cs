@@ -32,6 +32,7 @@ public class WebhookEventDispatchTests
             new Mock<IGitHubAuthClient>().Object,
             new Mock<ILinkedInAuthClient>().Object,
             webhooks.Object,
+            new Mock<IOnboardingService>().Object,
             Options.Create(new JwtSettings { RefreshTokenDays = 7 }),
             NullLogger<AuthService>.Instance);
 

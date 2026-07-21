@@ -21,6 +21,7 @@ public class AuthService : IAuthService
     private readonly IGitHubAuthClient _gitHubClient;
     private readonly ILinkedInAuthClient _linkedInClient;
     private readonly IWebhookService _webhooks;
+    private readonly IOnboardingService _onboarding;
     private readonly JwtSettings _jwtSettings;
     private readonly ILogger<AuthService> _logger;
 
@@ -38,6 +39,7 @@ public class AuthService : IAuthService
         IGitHubAuthClient gitHubClient,
         ILinkedInAuthClient linkedInClient,
         IWebhookService webhooks,
+        IOnboardingService onboarding,
         IOptions<JwtSettings> jwtOptions,
         ILogger<AuthService> logger)
     {
@@ -47,6 +49,7 @@ public class AuthService : IAuthService
         _gitHubClient = gitHubClient;
         _linkedInClient = linkedInClient;
         _webhooks = webhooks;
+        _onboarding = onboarding;
         _jwtSettings = jwtOptions.Value;
         _logger = logger;
     }
@@ -133,6 +136,10 @@ public class AuthService : IAuthService
                 email = user.Email,
                 joinedAt = user.CreatedAt,
             });
+
+            // Give the new account a starter project so the first screen is a working board
+            // rather than an empty dashboard. Best-effort — it swallows its own failures.
+            await _onboarding.CreateStarterProjectAsync(user.Id);
 
             _logger.LogInformation("User registered successfully. UserId: {UserId}, Email: {Email}", user.Id, email);
             return Result<Guid>.Ok(user.Id);

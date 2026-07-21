@@ -206,6 +206,28 @@ export const taskService = {
     return api.get<TaskHistoryEntry[]>(`/api/tasks/${taskId}/history`).then((r) => r.data)
   },
 
+  /** Files attached to the task, newest first. */
+  getAttachments(taskId: string): Promise<TaskAttachment[]> {
+    return api.get<TaskAttachment[]>(`/api/tasks/${taskId}/attachments`).then((r) => r.data)
+  },
+
+  /** Uploads a file and attaches it to the task (write access required). */
+  attachFile(taskId: string, file: File): Promise<TaskAttachment> {
+    const form = new FormData()
+    form.append('file', file)
+    // Undo the default JSON content-type so the browser sets the multipart boundary.
+    return api
+      .post<TaskAttachment>(`/api/tasks/${taskId}/attachments`, form, {
+        headers: { 'Content-Type': undefined },
+      })
+      .then((r) => r.data)
+  },
+
+  /** Removes an attachment and the file behind it (uploader only). */
+  detachFile(attachmentId: string): Promise<void> {
+    return api.delete(`/api/task-attachments/${attachmentId}`).then(() => undefined)
+  },
+
   /**
    * The project team's availability: each participant with the tasks assigned to them
    * that fall due in [from, to] (defaults to the next month on the server).
@@ -243,6 +265,21 @@ export interface TaskHistoryEntry {
   actorName: string | null
   /** Server-rendered description of the change, e.g. "Status: Backlog → Done". */
   details: string | null
+  createdAt: string
+}
+
+/** A file attached to a task (mirrors the backend TaskAttachmentDto). */
+export interface TaskAttachment {
+  /** The link's id — what detaching takes, not the file's id. */
+  id: string
+  /** The file itself; download it through /api/files/{fileId}. */
+  fileId: string
+  fileName: string
+  contentType: string
+  sizeBytes: number
+  uploadedById: string
+  /** Null when the uploader's account no longer exists. */
+  uploadedByName: string | null
   createdAt: string
 }
 

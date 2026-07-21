@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import Avatar from '../Avatar'
 import MentionText from '../MentionText'
 import MentionField, { type MentionCandidate } from '../MentionField'
+import TaskAttachments from '../TaskAttachments'
 import TaskHistory from '../TaskHistory'
 import { apiErrorMessage } from '../../lib/apiError'
 import { createTaskConnection } from '../../lib/taskHub'
@@ -432,6 +433,9 @@ export default function TaskDetailModal({
           </div>
           {extError && <p className="text-xs text-red-600">{extError}</p>}
         </div>
+
+        {/* Attached files */}
+        <TaskAttachments taskId={task.id} />
 
         {/* Task history (audit trail); loads only when expanded */}
         <TaskHistory taskId={task.id} defaultOpen={showHistory} />

@@ -46,6 +46,16 @@
     "shareLink": "Share link",
     "linkCopied": "Copied!"
   },
+  "attachments": {
+    "title": "Attachments",
+    "attach": "Attach file",
+    "uploading": "Uploading…",
+    "loading": "Loading…",
+    "empty": "No files attached.",
+    "failed": "Could not load the attachments.",
+    "remove": "Remove file",
+    "unknownUser": "Deleted user"
+  },
   "search": {
     "title": "Search",
     "placeholder": "Search projects, tasks, topics, people…",

@@ -23,6 +23,7 @@ public class TaskService : ITaskService
     private readonly INotificationService _notifications;
     private readonly IReputationService _reputation;
     private readonly IAuditService _audit;
+    private readonly ITaskAttachmentService _attachments;
     private readonly ILogger<TaskService> _logger;
 
     public TaskService(
@@ -31,6 +32,7 @@ public class TaskService : ITaskService
         INotificationService notifications,
         IReputationService reputation,
         IAuditService audit,
+        ITaskAttachmentService attachments,
         ILogger<TaskService> logger)
     {
         _context = context;
@@ -38,6 +40,7 @@ public class TaskService : ITaskService
         _notifications = notifications;
         _reputation = reputation;
         _audit = audit;
+        _attachments = attachments;
         _logger = logger;
     }
 
@@ -614,6 +617,10 @@ public class TaskService : ITaskService
 
         // Keep the title: after the row is gone the history is all that is left of it.
         var title = task.Title;
+
+        // Remove attached files first. The link rows would cascade with the task, but the
+        // files themselves would be left orphaned in storage forever.
+        await _attachments.DeleteAllForTaskAsync(taskId);
 
         _context.ProjectTasks.Remove(task);
         await _context.SaveChangesAsync();

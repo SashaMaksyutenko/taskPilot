@@ -24,6 +24,7 @@ public class TaskAuditTests
             new Mock<INotificationService>().Object,
             new Mock<IReputationService>().Object,
             new AuditService(ctx, NullLogger<AuditService>.Instance),
+            new Mock<ITaskAttachmentService>().Object,
             NullLogger<TaskService>.Instance);
 
     /// <summary>Seeds an owner with a project and one task, and returns the service under test.</summary>

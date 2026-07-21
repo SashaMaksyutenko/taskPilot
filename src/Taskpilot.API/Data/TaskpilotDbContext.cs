@@ -135,6 +135,9 @@ public class TaskpilotDbContext : DbContext
     /// <summary>Organization-wide settings (a single seeded row).</summary>
     public DbSet<OrganizationSettings> OrganizationSettings => Set<OrganizationSettings>();
 
+    /// <summary>Files attached to project tasks.</summary>
+    public DbSet<TaskAttachment> TaskAttachments => Set<TaskAttachment>();
+
     /// <summary>
     /// Налаштування моделі (Fluent API): обмеження, індекси, перетворення типів.
     /// Викликається EF Core під час побудови моделі та генерації міграцій.
@@ -307,6 +310,29 @@ public class TaskpilotDbContext : DbContext
                   .WithMany()
                   .HasForeignKey(m => m.FileAttachmentId)
                   .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        // TaskAttachment entity configuration
+        modelBuilder.Entity<TaskAttachment>(entity =>
+        {
+            entity.HasKey(a => a.Id);
+
+            // Removing a task removes its attachment links; the file rows themselves are
+            // deleted explicitly by the service first, so no bytes are left orphaned.
+            entity.HasOne(a => a.Task)
+                  .WithMany()
+                  .HasForeignKey(a => a.TaskId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            // Restrict: a file must be detached (and deleted) deliberately, never silently
+            // dropped from under a task that still references it.
+            entity.HasOne(a => a.FileAttachment)
+                  .WithMany()
+                  .HasForeignKey(a => a.FileAttachmentId)
+                  .OnDelete(DeleteBehavior.Restrict);
+
+            // One row per (task, file) — attaching the same file twice is meaningless.
+            entity.HasIndex(a => new { a.TaskId, a.FileAttachmentId }).IsUnique();
         });
 
         // FileAttachment entity configuration

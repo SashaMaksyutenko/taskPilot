@@ -19,6 +19,7 @@ public class TeamWorkloadTests
             new Mock<INotificationService>().Object,
             new Mock<IReputationService>().Object,
             new Mock<IAuditService>().Object,
+            new Mock<ITaskAttachmentService>().Object,
             NullLogger<TaskService>.Instance);
 
     private static readonly DateTime From = new(2026, 7, 1, 0, 0, 0, DateTimeKind.Utc);

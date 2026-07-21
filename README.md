@@ -14,6 +14,36 @@ The full feature specification (30 modules) lives in [docs/requirements.md](docs
 
 ---
 
+## Live demo
+
+**→ [task-pilot-bice.vercel.app](https://task-pilot-bice.vercel.app)**
+
+Sign up with any email — no confirmation required — and the app is yours to explore:
+create a project, drag tasks across the board, chat, post to the forum.
+
+> **First load can take up to a minute.** The API runs on a free instance that sleeps when
+> idle; the first request wakes it. Everything is instant after that.
+
+Hosting: frontend on Vercel, API on Render, PostgreSQL on Neon — all free tier.
+
+---
+
+## Screenshots
+
+| Dashboard | Kanban board |
+| --- | --- |
+| ![Dashboard](docs/dashboard-live.png) | ![Kanban board](docs/kanban-preview.png) |
+
+| Calendar | Marketplace |
+| --- | --- |
+| ![Calendar](docs/calendar-preview.png) | ![Task marketplace](docs/marketplace.png) |
+
+| Admin panel | Dark theme |
+| --- | --- |
+| ![Admin panel](docs/admin.png) | ![Dark theme](docs/dashboard-dark.png) |
+
+---
+
 ## Quick start with Docker
 
 The fastest way to run the whole stack (API + frontend + PostgreSQL + Redis + RabbitMQ):

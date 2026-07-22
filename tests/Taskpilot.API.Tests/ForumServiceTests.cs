@@ -16,7 +16,8 @@ public class ForumServiceTests
     private static (ForumService svc, Mock<INotificationService> notifications) CreateWithMock(TaskpilotDbContext ctx)
     {
         var notifications = new Mock<INotificationService>();
-        return (new ForumService(ctx, notifications.Object, new Mock<IReputationService>().Object, NullLogger<ForumService>.Instance), notifications);
+        return (new ForumService(ctx, notifications.Object, new Mock<IReputationService>().Object,
+            new Mock<IForumAttachmentService>().Object, NullLogger<ForumService>.Instance), notifications);
     }
 
     private static async Task<(Guid topicId, Guid replyId)> SeedTopicWithReplyAsync(

@@ -18,17 +18,20 @@ public class ForumService : IForumService
     private readonly TaskpilotDbContext _context;
     private readonly INotificationService _notifications;
     private readonly IReputationService _reputation;
+    private readonly IForumAttachmentService _attachments;
     private readonly ILogger<ForumService> _logger;
 
     public ForumService(
         TaskpilotDbContext context,
         INotificationService notifications,
         IReputationService reputation,
+        IForumAttachmentService attachments,
         ILogger<ForumService> logger)
     {
         _context = context;
         _notifications = notifications;
         _reputation = reputation;
+        _attachments = attachments;
         _logger = logger;
     }
 
@@ -314,6 +317,10 @@ public class ForumService : IForumService
         // Only the author or an admin may delete a topic.
         if (topic.AuthorId != userId && !isAdmin)
             return Result.Fail("You can only delete your own topics.");
+
+        // Remove attached files first. The link rows would cascade with the topic, but the
+        // files themselves would be left orphaned in storage forever.
+        await _attachments.DeleteAllForTopicAsync(topicId);
 
         // Removing the topic cascades to its replies and their votes (FK Cascade).
         _context.ForumTopics.Remove(topic);

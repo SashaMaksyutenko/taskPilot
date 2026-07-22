@@ -324,6 +324,7 @@ else
 
 builder.Services.AddScoped<IFileService, FileService>();
 builder.Services.AddScoped<IForumService, ForumService>();
+builder.Services.AddScoped<IForumAttachmentService, ForumAttachmentService>();
 builder.Services.AddScoped<IMarketplaceService, MarketplaceService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<INotificationDeliveryService, NotificationDeliveryService>();

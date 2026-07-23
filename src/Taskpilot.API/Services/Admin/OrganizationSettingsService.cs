@@ -47,6 +47,46 @@ public class OrganizationSettingsService : IOrganizationSettingsService
     }
 
     /// <inheritdoc />
+    public async Task<OrganizationBrandingDto> GetBrandingAsync()
+    {
+        var settings = await LoadOrDefaultAsync();
+        return new OrganizationBrandingDto { Name = settings.Name };
+    }
+
+    /// <inheritdoc />
+    public async Task<Result<OrganizationSettingsDto>> UpdateGeneralAsync(
+        UpdateGeneralDto dto, Guid adminId, string? adminEmail, string? ip)
+    {
+        var name = dto.Name?.Trim() ?? string.Empty;
+        _logger.LogInformation("UpdateGeneral by {AdminId}. Name: {Name}", adminId, name);
+
+        // A blank name would erase the brand everywhere it is shown; refuse it.
+        if (name.Length == 0)
+            return Result<OrganizationSettingsDto>.Fail("Organization name is required.");
+        // Matches the column length so the update fails cleanly rather than at the database.
+        if (name.Length > 100)
+            return Result<OrganizationSettingsDto>.Fail("Organization name is too long (max 100 characters).");
+
+        var settings = await GetOrCreateAsync();
+        // Touches ONLY the name — storage, features and registration are left as they were.
+        settings.Name = name;
+        settings.UpdatedAt = DateTime.UtcNow;
+        await _context.SaveChangesAsync();
+
+        await _audit.LogAsync(
+            action: "admin.settings.general.updated",
+            actorId: adminId,
+            actorEmail: adminEmail,
+            entityType: nameof(OrganizationSettings),
+            entityId: settings.Id.ToString(),
+            details: $"Name={name}",
+            ipAddress: ip);
+
+        _logger.LogInformation("General settings updated by {AdminId}.", adminId);
+        return Result<OrganizationSettingsDto>.Ok(await BuildDtoAsync(settings));
+    }
+
+    /// <inheritdoc />
     public async Task<Result<OrganizationSettingsDto>> UpdateStorageAsync(
         UpdateStorageDto dto, Guid adminId, string? adminEmail, string? ip)
     {
@@ -154,6 +194,7 @@ public class OrganizationSettingsService : IOrganizationSettingsService
         var activeMembers = await _context.Users.CountAsync(u => u.IsActive);
         return new OrganizationSettingsDto
         {
+            Name = settings.Name,
             MaxUploadBytes = settings.MaxUploadBytes,
             StorageQuotaBytes = settings.StorageQuotaBytes,
             StorageUsedBytes = usedBytes,

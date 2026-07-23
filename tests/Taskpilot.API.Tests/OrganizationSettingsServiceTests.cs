@@ -250,4 +250,76 @@ public class OrganizationSettingsServiceTests
         Assert.True(flags.MarketplaceEnabled);
         Assert.True(flags.ForumEnabled);
     }
+
+    [Fact]
+    public async Task UpdateGeneral_PersistsTheName_AndLeavesOtherFieldsUntouched()
+    {
+        await using var ctx = TestDb.CreateContext();
+        ctx.OrganizationSettings.Add(new OrganizationSettings
+        {
+            Id = OrganizationSettings.SingletonId,
+            MaxUploadBytes = 7_000_000,       // non-default fields that must survive
+            MarketplaceEnabled = false,
+        });
+        await ctx.SaveChangesAsync();
+        var svc = Create(ctx);
+        var adminId = Guid.NewGuid();
+
+        var result = await svc.UpdateGeneralAsync(
+            new UpdateGeneralDto { Name = "  Acme Corp  " },
+            adminId, "admin@test.local", "127.0.0.1");
+
+        Assert.True(result.Succeeded);
+        Assert.Equal("Acme Corp", result.Value!.Name);   // trimmed
+        var saved = await ctx.OrganizationSettings.SingleAsync();
+        Assert.Equal("Acme Corp", saved.Name);
+        // A general-only update must not disturb the other groups.
+        Assert.Equal(7_000_000, saved.MaxUploadBytes);
+        Assert.False(saved.MarketplaceEnabled);
+        _audit.Verify(a => a.LogAsync(
+            "admin.settings.general.updated", adminId, "admin@test.local",
+            nameof(OrganizationSettings), It.IsAny<string>(), It.IsAny<string>(), "127.0.0.1"), Times.Once);
+    }
+
+    [Fact]
+    public async Task UpdateGeneral_RejectsABlankName()
+    {
+        await using var ctx = TestDb.CreateContext();
+        ctx.OrganizationSettings.Add(new OrganizationSettings { Id = OrganizationSettings.SingletonId, Name = "Acme" });
+        await ctx.SaveChangesAsync();
+        var svc = Create(ctx);
+
+        var result = await svc.UpdateGeneralAsync(
+            new UpdateGeneralDto { Name = "   " }, Guid.NewGuid(), "admin@test.local", null);
+
+        Assert.False(result.Succeeded);
+        Assert.Equal("Organization name is required.", result.Error);
+        // The blank update must not have overwritten the stored name.
+        Assert.Equal("Acme", (await ctx.OrganizationSettings.SingleAsync()).Name);
+    }
+
+    [Fact]
+    public async Task GetBranding_ReturnsTheStoredName()
+    {
+        await using var ctx = TestDb.CreateContext();
+        ctx.OrganizationSettings.Add(new OrganizationSettings { Id = OrganizationSettings.SingletonId, Name = "Acme Corp" });
+        await ctx.SaveChangesAsync();
+        var svc = Create(ctx);
+
+        var branding = await svc.GetBrandingAsync();
+
+        Assert.Equal("Acme Corp", branding.Name);
+    }
+
+    [Fact]
+    public async Task GetBranding_WithoutARow_FallsBackToTheDefaultName()
+    {
+        await using var ctx = TestDb.CreateContext();
+        var svc = Create(ctx);
+
+        var branding = await svc.GetBrandingAsync();
+
+        // A database predating the seed still shows a brand, not a blank.
+        Assert.Equal(OrganizationSettings.DefaultName, branding.Name);
+    }
 }

@@ -82,6 +82,17 @@ public class AdminController : BaseApiController
         return Ok(result);
     }
 
+    /// <summary>Updates the organization's general details — its name (leaves the other groups untouched).</summary>
+    [HttpPut("settings/general")]
+    public async Task<IActionResult> UpdateGeneral([FromBody] UpdateGeneralDto dto)
+    {
+        var adminId = CurrentUserId();
+        if (adminId is null) return Unauthorized();
+
+        var result = await _settings.UpdateGeneralAsync(dto, adminId.Value, CurrentUserEmail(), ClientIp());
+        return result.Succeeded ? Ok(result.Value) : BadRequest(new { error = result.Error });
+    }
+
     /// <summary>Updates the organization's storage limits (leaves feature flags untouched).</summary>
     [HttpPut("settings/storage")]
     public async Task<IActionResult> UpdateStorage([FromBody] UpdateStorageDto dto)

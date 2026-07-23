@@ -3,6 +3,9 @@ namespace Taskpilot.API.DTOs.Admin;
 /// <summary>Read model for the organization's settings, shown on the admin settings page.</summary>
 public class OrganizationSettingsDto
 {
+    /// <summary>Organization name shown across the app.</summary>
+    public string Name { get; set; } = string.Empty;
+
     /// <summary>Largest size, in bytes, a single uploaded file may be.</summary>
     public long MaxUploadBytes { get; set; }
 
@@ -46,6 +49,22 @@ public class UpdateStorageDto
 
     /// <summary>New organization-wide storage quota, in bytes.</summary>
     public long StorageQuotaBytes { get; set; }
+}
+
+/// <summary>General organization details an admin may change (independent of the other groups).</summary>
+public class UpdateGeneralDto
+{
+    /// <summary>New organization name. Required; trimmed before storage.</summary>
+    public string Name { get; set; } = string.Empty;
+}
+
+/// <summary>
+/// The organization's public branding — the name shown before sign-in (login/landing).
+/// Deliberately tiny: it is served to anonymous callers, so it exposes nothing sensitive.
+/// </summary>
+public class OrganizationBrandingDto
+{
+    public string Name { get; set; } = string.Empty;
 }
 
 /// <summary>Feature flags an admin may change (independent of the storage limits).</summary>

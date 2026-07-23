@@ -26,6 +26,18 @@ public interface IOrganizationSettingsService
     Task<Result<OrganizationSettingsDto>> UpdateFeaturesAsync(UpdateFeaturesDto dto, Guid adminId, string? adminEmail, string? ip);
 
     /// <summary>
+    /// Updates only the general details (the organization name), leaving every other group
+    /// untouched. The name must not be blank.
+    /// </summary>
+    Task<Result<OrganizationSettingsDto>> UpdateGeneralAsync(UpdateGeneralDto dto, Guid adminId, string? adminEmail, string? ip);
+
+    /// <summary>
+    /// Returns the public branding (organization name) for pages shown before sign-in.
+    /// Readable anonymously, so it must expose nothing beyond the name.
+    /// </summary>
+    Task<OrganizationBrandingDto> GetBrandingAsync();
+
+    /// <summary>
     /// Updates only the registration controls — the email-domain allowlist — leaving the
     /// storage limits and feature flags untouched. The value is normalized before storage.
     /// </summary>

@@ -18,6 +18,9 @@ public class OrganizationSettings
     /// </summary>
     public static readonly Guid SingletonId = new("00000000-0000-0000-0000-0000000005e7");
 
+    /// <summary>Default organization name shown across the app when none is configured.</summary>
+    public const string DefaultName = "TaskPilot";
+
     /// <summary>Default largest allowed upload: 10 MB (the product spec's per-file cap).</summary>
     public const long DefaultMaxUploadBytes = 10L * 1024 * 1024;
 
@@ -26,6 +29,12 @@ public class OrganizationSettings
 
     /// <summary>Primary key; always <see cref="SingletonId"/>.</summary>
     public Guid Id { get; set; } = SingletonId;
+
+    /// <summary>
+    /// Organization name. Shown in the app shell (sidebar/top bar), on the sign-in and
+    /// landing pages, and in notification email subjects/footers in place of "TaskPilot".
+    /// </summary>
+    public string Name { get; set; } = DefaultName;
 
     /// <summary>Largest size, in bytes, a single uploaded file may be.</summary>
     public long MaxUploadBytes { get; set; } = DefaultMaxUploadBytes;

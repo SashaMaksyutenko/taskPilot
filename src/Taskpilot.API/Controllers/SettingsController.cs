@@ -28,4 +28,16 @@ public class SettingsController : BaseApiController
         var flags = await _settings.GetFeatureFlagsAsync();
         return Ok(flags);
     }
+
+    /// <summary>
+    /// Returns the organization's public branding (its name). Open to anonymous callers so
+    /// the sign-in and landing pages can show the org name before a user is authenticated.
+    /// </summary>
+    [AllowAnonymous]
+    [HttpGet("branding")]
+    public async Task<IActionResult> GetBranding()
+    {
+        var branding = await _settings.GetBrandingAsync();
+        return Ok(branding);
+    }
 }

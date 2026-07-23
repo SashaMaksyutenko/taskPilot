@@ -166,9 +166,18 @@ public class TaskpilotDbContext : DbContext
         modelBuilder.Entity<OrganizationSettings>(entity =>
         {
             entity.HasKey(s => s.Id);
+
+            // Organization name: required, defaults to "TaskPilot" so an un-set row still
+            // renders a sensible brand everywhere it is shown.
+            entity.Property(s => s.Name)
+                  .IsRequired()
+                  .HasMaxLength(100)
+                  .HasDefaultValue(Models.OrganizationSettings.DefaultName);
+
             entity.HasData(new OrganizationSettings
             {
                 Id = Models.OrganizationSettings.SingletonId,
+                Name = Models.OrganizationSettings.DefaultName,
                 MaxUploadBytes = Models.OrganizationSettings.DefaultMaxUploadBytes,
                 StorageQuotaBytes = Models.OrganizationSettings.DefaultStorageQuotaBytes,
                 MarketplaceEnabled = true,

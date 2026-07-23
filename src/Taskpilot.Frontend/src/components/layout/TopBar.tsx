@@ -15,6 +15,7 @@ import Avatar from '../Avatar'
 import Tooltip from '../ui/Tooltip'
 import { SidebarNav } from './Sidebar'
 import { cn } from '../../lib/cn'
+import { useBranding } from '../../hooks/useBranding'
 import { useNotifications } from '../../hooks/useNotifications'
 import { logout } from '../../store/authSlice'
 import { useAppDispatch, useAppSelector } from '../../store/hooks'
@@ -33,6 +34,7 @@ export default function TopBar({
   const navigate = useNavigate()
   const { t, i18n } = useTranslation()
   const user = useAppSelector((s) => s.auth.user)
+  const { name: orgName } = useBranding()
   const [dark, setDark] = useState(() => document.documentElement.classList.contains('dark'))
   const [mobileOpen, setMobileOpen] = useState(false)
 
@@ -67,7 +69,7 @@ export default function TopBar({
 
         <NavLink to="/" className="flex items-center gap-2 font-bold text-foreground lg:hidden">
           <img src="/logo-mark.svg" alt="" className="h-7 w-7" />
-          TaskPilot
+          {orgName}
         </NavLink>
 
         {/* Command-palette launcher — invites the click and advertises the ⌘K/Ctrl+K shortcut. */}
@@ -226,7 +228,7 @@ export default function TopBar({
               <div className="flex h-16 items-center justify-between border-b border-border px-4">
                 <div className="flex items-center gap-2">
                   <img src="/logo-mark.svg" alt="" className="h-8 w-8" />
-                  <span className="font-bold">TaskPilot</span>
+                  <span className="font-bold">{orgName}</span>
                 </div>
                 <button type="button" onClick={() => setMobileOpen(false)} className="rounded-lg p-2 hover:bg-canvas">
                   <X className="h-5 w-5" />

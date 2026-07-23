@@ -16,6 +16,7 @@ import { useTranslation } from 'react-i18next'
 import { NavLink } from 'react-router-dom'
 import { cn } from '../../lib/cn'
 import { useAppSelector } from '../../store/hooks'
+import { useBranding } from '../../hooks/useBranding'
 import { useFeatures } from '../../hooks/useFeatures'
 
 const LINKS = [
@@ -91,11 +92,12 @@ export function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
  * Primary navigation sidebar for authenticated users (desktop).
  */
 export default function Sidebar() {
+  const { name } = useBranding()
   return (
     <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col border-r border-border bg-surface lg:flex">
       <div className="flex h-16 items-center gap-2.5 border-b border-border px-5">
         <img src="/logo-mark.svg" alt="" className="h-8 w-8" />
-        <span className="text-lg font-bold tracking-tight text-foreground">TaskPilot</span>
+        <span className="text-lg font-bold tracking-tight text-foreground">{name}</span>
       </div>
 
       <div className="flex-1 overflow-y-auto p-3">

@@ -7,6 +7,7 @@ import StatusChart from '../components/charts/StatusChart'
 import SignupsChart from '../components/charts/SignupsChart'
 import ActivityChart from '../components/charts/ActivityChart'
 import StatsPanel from '../components/charts/StatsPanel'
+import GeneralSettings from '../components/GeneralSettings'
 import StorageSettings from '../components/StorageSettings'
 import FeatureSettings from '../components/FeatureSettings'
 import RegistrationSettings from '../components/RegistrationSettings'
@@ -227,7 +228,8 @@ export default function AdminPage() {
           </div>
         </div>
 
-        {/* Organization storage limits and feature toggles (separate concerns, separate cards) */}
+        {/* Organization settings — each concern is its own card and its own endpoint */}
+        <GeneralSettings />
         <StorageSettings />
         <FeatureSettings />
         <RegistrationSettings />

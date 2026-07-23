@@ -852,6 +852,15 @@
     "marketplace": "Marketplace enabled",
     "forum": "Forum enabled"
   },
+  "general": {
+    "title": "General",
+    "subtitle": "The organization name shown in the sidebar, the top bar and on the sign-in page.",
+    "name": "Organization name",
+    "namePlaceholder": "Acme Corp",
+    "save": "Save",
+    "saved": "Organization name saved.",
+    "loadFailed": "Could not load organization settings."
+  },
   "registration": {
     "title": "Registration",
     "openNow": "Anyone can sign up — registration is open to any email domain.",

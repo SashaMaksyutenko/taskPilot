@@ -18,6 +18,7 @@ vi.mock('../services/settingsService', () => ({
 }))
 
 const org = (over: Partial<OrganizationSettings> = {}): OrganizationSettings => ({
+  name: 'TaskPilot',
   maxUploadBytes: 10 * 1024 * 1024,
   storageQuotaBytes: 1024 * 1024 * 1024,
   storageUsedBytes: 0,

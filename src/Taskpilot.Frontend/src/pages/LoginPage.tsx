@@ -2,6 +2,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
+import { useBranding } from '../hooks/useBranding'
 import { Link, useNavigate } from 'react-router-dom'
 import { z } from 'zod'
 import LangSwitch from '../components/LangSwitch'
@@ -24,6 +25,7 @@ export default function LoginPage() {
   const dispatch = useAppDispatch()
   const navigate = useNavigate()
   const { t } = useTranslation()
+  const { name: orgName } = useBranding()
   const { error: serverError, status } = useAppSelector((s) => s.auth)
 
   const {
@@ -58,10 +60,10 @@ export default function LoginPage() {
       <div className="hidden w-[45%] flex-col justify-between gradient-hero p-12 lg:flex">
         <div>
           <img src="/logo-mark.svg" alt="" className="h-10 w-10" />
-          <h1 className="mt-8 text-3xl font-extrabold tracking-tight">TaskPilot</h1>
+          <h1 className="mt-8 text-3xl font-extrabold tracking-tight">{orgName}</h1>
           <p className="mt-3 max-w-sm text-muted">{t('landing.subtitle')}</p>
         </div>
-        <p className="text-sm text-muted">© {new Date().getFullYear()} TaskPilot</p>
+        <p className="text-sm text-muted">© {new Date().getFullYear()} {orgName}</p>
       </div>
 
       <div className="flex flex-1 flex-col items-center justify-center px-4 py-10">

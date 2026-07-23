@@ -2,6 +2,7 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { ToastContainer } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
 import AppShell from './components/layout/AppShell'
+import { BrandingProvider } from './components/BrandingProvider'
 import AdminRoute from './components/routing/AdminRoute'
 import FeatureRoute from './components/routing/FeatureRoute'
 import GuestRoute from './components/routing/GuestRoute'
@@ -41,6 +42,9 @@ function App() {
     <BrowserRouter>
       {/* Global toast notifications (top-right, auto-dismiss). */}
       <ToastContainer position="top-right" autoClose={3000} theme="colored" newestOnTop />
+      {/* Organization name shared with every page — the endpoint is public, so this wraps
+          the guest pages too. */}
+      <BrandingProvider>
       <Routes>
         {/* Guest-only pages */}
         <Route element={<GuestRoute />}>
@@ -93,6 +97,7 @@ function App() {
         {/* Unknown routes go home (which itself redirects to login if needed). */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+      </BrandingProvider>
     </BrowserRouter>
   )
 }

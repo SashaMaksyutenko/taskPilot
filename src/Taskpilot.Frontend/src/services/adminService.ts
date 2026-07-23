@@ -101,6 +101,11 @@ export const adminService = {
     return api.get<OrganizationSettings>('/api/admin/settings').then((r) => r.data)
   },
 
+  /** Updates only the organization name (every other settings group is left untouched). */
+  updateGeneral(name: string): Promise<OrganizationSettings> {
+    return api.put<OrganizationSettings>('/api/admin/settings/general', { name }).then((r) => r.data)
+  },
+
   /** Updates only the storage limits (the feature flags are left untouched). */
   updateStorage(maxUploadBytes: number, storageQuotaBytes: number): Promise<OrganizationSettings> {
     return api
@@ -130,6 +135,8 @@ export const adminService = {
 
 /** Organization-wide settings (mirrors the backend OrganizationSettingsDto). */
 export interface OrganizationSettings {
+  /** Organization name shown across the app. */
+  name: string
   maxUploadBytes: number
   storageQuotaBytes: number
   /** Bytes currently used by all stored files. */

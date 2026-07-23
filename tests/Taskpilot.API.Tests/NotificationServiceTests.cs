@@ -133,7 +133,7 @@ public class NotificationServiceTests
 
         // In-app still stored inline; side channels handed to the queue, not delivered inline.
         Assert.Equal(1, await ctx.Notifications.CountAsync());
-        queue.Verify(q => q.PublishAsync(It.Is<Taskpilot.API.Messages.NotificationDeliveryMessage>(
+        queue.Verify(q => q.PublishAsync(It.Is<NotificationDeliveryMessage>(
             m => m.RecipientId == userId && m.Type == NotificationType.Task)), Times.Once);
         delivery.Verify(d => d.DeliverAsync(It.IsAny<Guid>(), It.IsAny<NotificationType>(), It.IsAny<string>(), It.IsAny<string?>()), Times.Never);
     }

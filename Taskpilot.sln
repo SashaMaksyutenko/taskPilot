@@ -11,6 +11,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{AAAEBC07
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Taskpilot.API.Tests", "tests\Taskpilot.API.Tests\Taskpilot.API.Tests.csproj", "{2691210B-6A46-42E0-86DD-2770EB5806DE}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Taskpilot.Contracts", "src\Taskpilot.Contracts\Taskpilot.Contracts.csproj", "{A69B7946-680E-4A44-9926-11A40C2313DB}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -28,9 +30,14 @@ Global
 		{2691210B-6A46-42E0-86DD-2770EB5806DE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2691210B-6A46-42E0-86DD-2770EB5806DE}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2691210B-6A46-42E0-86DD-2770EB5806DE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A69B7946-680E-4A44-9926-11A40C2313DB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A69B7946-680E-4A44-9926-11A40C2313DB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A69B7946-680E-4A44-9926-11A40C2313DB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A69B7946-680E-4A44-9926-11A40C2313DB}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{5B422EF1-B546-4271-95F5-3DA3847D6BAF} = {3BB04799-7A68-4717-804E-66936B3CBE61}
 		{2691210B-6A46-42E0-86DD-2770EB5806DE} = {AAAEBC07-644A-4402-A9EA-A561AD7190F8}
+		{A69B7946-680E-4A44-9926-11A40C2313DB} = {3BB04799-7A68-4717-804E-66936B3CBE61}
 	EndGlobalSection
 EndGlobal

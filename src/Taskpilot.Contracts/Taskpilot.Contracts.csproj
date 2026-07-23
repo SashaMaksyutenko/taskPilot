@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Shared messaging contracts exchanged between the API (publisher) and the
+    Taskpilot.NotificationService (consumer). Deliberately dependency-free: it holds only
+    plain records and enums, so both services agree on the wire shape without either one
+    pulling in the other's implementation.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+</Project>

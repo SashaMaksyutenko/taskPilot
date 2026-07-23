@@ -6,7 +6,6 @@ using Taskpilot.API.Configuration;
 using Taskpilot.API.Data;
 using Taskpilot.API.DTOs.Notifications;
 using Taskpilot.API.Hubs;
-using Taskpilot.API.Messages;
 using Taskpilot.API.Models;
 
 namespace Taskpilot.API.Services;

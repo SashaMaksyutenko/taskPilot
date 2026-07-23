@@ -1,5 +1,4 @@
 using MassTransit;
-using Taskpilot.API.Messages;
 using Taskpilot.API.Services;
 
 namespace Taskpilot.API.Consumers;

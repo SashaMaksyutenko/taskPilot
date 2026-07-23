@@ -40,4 +40,21 @@ public class SettingsController : BaseApiController
         var branding = await _settings.GetBrandingAsync();
         return Ok(branding);
     }
+
+    /// <summary>
+    /// Streams the organization's custom logo image, or 404 when none is set. Open to
+    /// anonymous callers so the sign-in and landing pages can show it before a user is
+    /// authenticated (the general file endpoint requires auth).
+    /// </summary>
+    [AllowAnonymous]
+    [HttpGet("logo")]
+    public async Task<IActionResult> GetLogo()
+    {
+        var result = await _settings.GetLogoAsync();
+        if (!result.Succeeded)
+            return NotFound();
+
+        var file = result.Value!;
+        return File(file.Content, file.ContentType);
+    }
 }

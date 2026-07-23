@@ -93,6 +93,28 @@ public class AdminController : BaseApiController
         return result.Succeeded ? Ok(result.Value) : BadRequest(new { error = result.Error });
     }
 
+    /// <summary>Sets the organization logo from an uploaded image (replaces any previous one).</summary>
+    [HttpPost("settings/logo")]
+    public async Task<IActionResult> UpdateLogo(IFormFile file)
+    {
+        var adminId = CurrentUserId();
+        if (adminId is null) return Unauthorized();
+
+        var result = await _settings.UpdateLogoAsync(file, adminId.Value, CurrentUserEmail(), ClientIp());
+        return result.Succeeded ? Ok(result.Value) : BadRequest(new { error = result.Error });
+    }
+
+    /// <summary>Clears the custom logo, reverting to the built-in one.</summary>
+    [HttpDelete("settings/logo")]
+    public async Task<IActionResult> RemoveLogo()
+    {
+        var adminId = CurrentUserId();
+        if (adminId is null) return Unauthorized();
+
+        var result = await _settings.RemoveLogoAsync(adminId.Value, CurrentUserEmail(), ClientIp());
+        return result.Succeeded ? Ok(result.Value) : BadRequest(new { error = result.Error });
+    }
+
     /// <summary>Updates the organization's storage limits (leaves feature flags untouched).</summary>
     [HttpPut("settings/storage")]
     public async Task<IActionResult> UpdateStorage([FromBody] UpdateStorageDto dto)

@@ -6,6 +6,9 @@ public class OrganizationSettingsDto
     /// <summary>Organization name shown across the app.</summary>
     public string Name { get; set; } = string.Empty;
 
+    /// <summary>URL of the custom logo, or null when the built-in logo is used.</summary>
+    public string? LogoUrl { get; set; }
+
     /// <summary>Largest size, in bytes, a single uploaded file may be.</summary>
     public long MaxUploadBytes { get; set; }
 
@@ -65,6 +68,9 @@ public class UpdateGeneralDto
 public class OrganizationBrandingDto
 {
     public string Name { get; set; } = string.Empty;
+
+    /// <summary>URL of the custom logo, or null when the built-in logo should be shown.</summary>
+    public string? LogoUrl { get; set; }
 }
 
 /// <summary>Feature flags an admin may change (independent of the storage limits).</summary>

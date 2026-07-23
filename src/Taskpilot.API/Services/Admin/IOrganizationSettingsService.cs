@@ -1,5 +1,6 @@
 using Taskpilot.API.Common;
 using Taskpilot.API.DTOs.Admin;
+using Taskpilot.API.Models;
 
 namespace Taskpilot.API.Services;
 
@@ -32,10 +33,25 @@ public interface IOrganizationSettingsService
     Task<Result<OrganizationSettingsDto>> UpdateGeneralAsync(UpdateGeneralDto dto, Guid adminId, string? adminEmail, string? ip);
 
     /// <summary>
-    /// Returns the public branding (organization name) for pages shown before sign-in.
-    /// Readable anonymously, so it must expose nothing beyond the name.
+    /// Returns the public branding (organization name and logo URL) for pages shown before
+    /// sign-in. Readable anonymously, so it must expose nothing beyond name + logo.
     /// </summary>
     Task<OrganizationBrandingDto> GetBrandingAsync();
+
+    /// <summary>
+    /// Sets the organization logo from an uploaded image, replacing (and deleting) any
+    /// previous one. The file must be an image.
+    /// </summary>
+    Task<Result<OrganizationSettingsDto>> UpdateLogoAsync(IFormFile file, Guid adminId, string? adminEmail, string? ip);
+
+    /// <summary>Clears the custom logo (reverting to the built-in one) and deletes the image.</summary>
+    Task<Result<OrganizationSettingsDto>> RemoveLogoAsync(Guid adminId, string? adminEmail, string? ip);
+
+    /// <summary>
+    /// Resolves the current logo image for download, or a failure when no custom logo is set.
+    /// Served by a public endpoint so the sign-in and landing pages can show it.
+    /// </summary>
+    Task<Result<FileDownload>> GetLogoAsync();
 
     /// <summary>
     /// Updates only the registration controls — the email-domain allowlist — leaving the

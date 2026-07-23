@@ -36,6 +36,13 @@ public class OrganizationSettings
     /// </summary>
     public string Name { get; set; } = DefaultName;
 
+    /// <summary>
+    /// Custom organization logo image, stored as a <see cref="FileAttachment"/>; null uses
+    /// the built-in logo. A bare id with no foreign key (like <c>User.AvatarFileId</c>), so
+    /// the old image is cleaned up by hand when the logo is replaced or removed.
+    /// </summary>
+    public Guid? LogoFileId { get; set; }
+
     /// <summary>Largest size, in bytes, a single uploaded file may be.</summary>
     public long MaxUploadBytes { get; set; } = DefaultMaxUploadBytes;
 

@@ -15,15 +15,21 @@ public class OrganizationSettingsService : IOrganizationSettingsService
 {
     private readonly TaskpilotDbContext _context;
     private readonly IAuditService _audit;
+    private readonly IFileService _files;
     private readonly ILogger<OrganizationSettingsService> _logger;
+
+    /// <summary>Largest logo image accepted: 2 MB (a logo needs no more).</summary>
+    private const long MaxLogoBytes = 2L * 1024 * 1024;
 
     public OrganizationSettingsService(
         TaskpilotDbContext context,
         IAuditService audit,
+        IFileService files,
         ILogger<OrganizationSettingsService> logger)
     {
         _context = context;
         _audit = audit;
+        _files = files;
         _logger = logger;
     }
 
@@ -50,7 +56,89 @@ public class OrganizationSettingsService : IOrganizationSettingsService
     public async Task<OrganizationBrandingDto> GetBrandingAsync()
     {
         var settings = await LoadOrDefaultAsync();
-        return new OrganizationBrandingDto { Name = settings.Name };
+        return new OrganizationBrandingDto { Name = settings.Name, LogoUrl = LogoUrl(settings.LogoFileId) };
+    }
+
+    /// <inheritdoc />
+    public async Task<Result<OrganizationSettingsDto>> UpdateLogoAsync(
+        IFormFile file, Guid adminId, string? adminEmail, string? ip)
+    {
+        _logger.LogInformation("UpdateLogo by {AdminId}. Size: {Size}", adminId, file?.Length ?? 0);
+
+        if (file is null || file.Length == 0)
+            return Result<OrganizationSettingsDto>.Fail("No file was provided.");
+        if (file.Length > MaxLogoBytes)
+            return Result<OrganizationSettingsDto>.Fail("Logo exceeds the 2 MB limit.");
+        // Only images make sense as a logo.
+        if (string.IsNullOrWhiteSpace(file.ContentType) ||
+            !file.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
+            return Result<OrganizationSettingsDto>.Fail("Logo must be an image.");
+
+        // Persist the image bytes + metadata through the shared file storage.
+        var saved = await _files.SaveAsync(file, adminId);
+        if (!saved.Succeeded)
+            return Result<OrganizationSettingsDto>.Fail(saved.Error!);
+
+        var settings = await GetOrCreateAsync();
+        // Remember the outgoing logo: nothing else references it, so once the pointer moves
+        // it would be orphaned (row + bytes) forever — the same trap as replaced avatars.
+        var previousLogoId = settings.LogoFileId;
+        settings.LogoFileId = saved.Value!.Id;
+        settings.UpdatedAt = DateTime.UtcNow;
+        await _context.SaveChangesAsync();
+
+        await DeleteReplacedLogoAsync(previousLogoId);
+
+        await _audit.LogAsync(
+            action: "admin.settings.logo.updated",
+            actorId: adminId,
+            actorEmail: adminEmail,
+            entityType: nameof(OrganizationSettings),
+            entityId: settings.Id.ToString(),
+            details: $"LogoFileId={saved.Value.Id}",
+            ipAddress: ip);
+
+        _logger.LogInformation("Logo updated by {AdminId}. FileId: {FileId}", adminId, saved.Value.Id);
+        return Result<OrganizationSettingsDto>.Ok(await BuildDtoAsync(settings));
+    }
+
+    /// <inheritdoc />
+    public async Task<Result<OrganizationSettingsDto>> RemoveLogoAsync(Guid adminId, string? adminEmail, string? ip)
+    {
+        var settings = await GetOrCreateAsync();
+        var previousLogoId = settings.LogoFileId;
+        if (previousLogoId is null)
+            // Nothing to remove; report the current state rather than an error.
+            return Result<OrganizationSettingsDto>.Ok(await BuildDtoAsync(settings));
+
+        settings.LogoFileId = null;
+        settings.UpdatedAt = DateTime.UtcNow;
+        await _context.SaveChangesAsync();
+
+        await DeleteReplacedLogoAsync(previousLogoId);
+
+        await _audit.LogAsync(
+            action: "admin.settings.logo.removed",
+            actorId: adminId,
+            actorEmail: adminEmail,
+            entityType: nameof(OrganizationSettings),
+            entityId: settings.Id.ToString(),
+            details: "Logo cleared",
+            ipAddress: ip);
+
+        _logger.LogInformation("Logo removed by {AdminId}.", adminId);
+        return Result<OrganizationSettingsDto>.Ok(await BuildDtoAsync(settings));
+    }
+
+    /// <inheritdoc />
+    public async Task<Result<FileDownload>> GetLogoAsync()
+    {
+        var logoId = await _context.OrganizationSettings.AsNoTracking()
+            .Select(s => s.LogoFileId).FirstOrDefaultAsync();
+        if (logoId is null)
+            return Result<FileDownload>.Fail("No logo is set.");
+
+        return await _files.GetForDownloadAsync(logoId.Value);
     }
 
     /// <inheritdoc />
@@ -195,6 +283,7 @@ public class OrganizationSettingsService : IOrganizationSettingsService
         return new OrganizationSettingsDto
         {
             Name = settings.Name,
+            LogoUrl = LogoUrl(settings.LogoFileId),
             MaxUploadBytes = settings.MaxUploadBytes,
             StorageQuotaBytes = settings.StorageQuotaBytes,
             StorageUsedBytes = usedBytes,
@@ -206,6 +295,34 @@ public class OrganizationSettingsService : IOrganizationSettingsService
             ActiveMembers = activeMembers,
             UpdatedAt = settings.UpdatedAt,
         };
+    }
+
+    /// <summary>
+    /// Builds the public URL for the current logo, or null when none is set. The logo id is
+    /// used as a cache-busting token, so replacing the logo (new id) makes browsers refetch
+    /// even though the endpoint path is constant.
+    /// </summary>
+    private static string? LogoUrl(Guid? logoFileId) =>
+        logoFileId is { } id ? $"/api/settings/logo?v={id}" : null;
+
+    /// <summary>
+    /// Deletes a logo image the organization no longer points at, so replacing or removing
+    /// the logo does not leak a file row and its bytes. Best-effort: the settings change is
+    /// already saved, so a cleanup failure must not fail the request. Deletes as the image's
+    /// own uploader, since a later admin may be replacing a logo an earlier admin uploaded.
+    /// </summary>
+    private async Task DeleteReplacedLogoAsync(Guid? previousLogoId)
+    {
+        if (previousLogoId is not { } fileId)
+            return;
+
+        var uploaderId = await _context.FileAttachments.AsNoTracking()
+            .Where(f => f.Id == fileId).Select(f => f.UploaderId).FirstOrDefaultAsync();
+
+        var deleted = await _files.DeleteAsync(fileId, uploaderId);
+        if (!deleted.Succeeded)
+            _logger.LogWarning("Could not delete the replaced logo. FileId: {FileId}, Reason: {Reason}",
+                fileId, deleted.Error);
     }
 
     /// <summary>

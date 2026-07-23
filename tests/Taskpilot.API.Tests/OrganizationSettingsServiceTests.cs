@@ -16,9 +16,48 @@ namespace Taskpilot.API.Tests;
 public class OrganizationSettingsServiceTests
 {
     private readonly Mock<IAuditService> _audit = new();
+    private readonly FakeStorage _storage = new();
 
     private OrganizationSettingsService Create(TaskpilotDbContext ctx) =>
-        new(ctx, _audit.Object, NullLogger<OrganizationSettingsService>.Instance);
+        new(ctx, _audit.Object,
+            new FileService(ctx, _storage, NullLogger<FileService>.Instance),
+            NullLogger<OrganizationSettingsService>.Instance);
+
+    /// <summary>An in-memory storage backend so logo tests never touch the disk.</summary>
+    private sealed class FakeStorage : IFileStorage
+    {
+        private readonly Dictionary<string, byte[]> _objects = new();
+
+        public string Name => "fake";
+        public int Count => _objects.Count;
+
+        public async Task SaveAsync(string storedName, Stream content, string contentType, CancellationToken cancellationToken = default)
+        {
+            using var buffer = new MemoryStream();
+            await content.CopyToAsync(buffer, cancellationToken);
+            _objects[storedName] = buffer.ToArray();
+        }
+
+        public Task<Stream?> OpenReadAsync(string storedName, CancellationToken cancellationToken = default) =>
+            Task.FromResult<Stream?>(_objects.TryGetValue(storedName, out var bytes) ? new MemoryStream(bytes) : null);
+
+        public Task DeleteAsync(string storedName, CancellationToken cancellationToken = default)
+        {
+            _objects.Remove(storedName);
+            return Task.CompletedTask;
+        }
+    }
+
+    /// <summary>Builds an uploaded image of the given content type.</summary>
+    private static Microsoft.AspNetCore.Http.IFormFile ImageOf(string name = "logo.png", string contentType = "image/png")
+    {
+        var bytes = System.Text.Encoding.UTF8.GetBytes("fake-image-bytes");
+        return new Microsoft.AspNetCore.Http.FormFile(new MemoryStream(bytes), 0, bytes.Length, "file", name)
+        {
+            Headers = new Microsoft.AspNetCore.Http.HeaderDictionary(),
+            ContentType = contentType,
+        };
+    }
 
     /// <summary>Seeds the singleton settings row (the migration does this in production).</summary>
     private static async Task SeedSettingsAsync(TaskpilotDbContext ctx, long maxUpload, long quota)
@@ -321,5 +360,118 @@ public class OrganizationSettingsServiceTests
 
         // A database predating the seed still shows a brand, not a blank.
         Assert.Equal(OrganizationSettings.DefaultName, branding.Name);
+        Assert.Null(branding.LogoUrl);   // no custom logo -> the built-in one
+    }
+
+    [Fact]
+    public async Task UpdateLogo_StoresTheImage_AndExposesItsUrl()
+    {
+        await using var ctx = TestDb.CreateContext();
+        ctx.OrganizationSettings.Add(new OrganizationSettings { Id = OrganizationSettings.SingletonId });
+        await ctx.SaveChangesAsync();
+        var admin = await TestDb.AddUserAsync(ctx, "Admin");
+        var svc = Create(ctx);
+
+        var result = await svc.UpdateLogoAsync(ImageOf(), admin, "admin@test.local", "127.0.0.1");
+
+        Assert.True(result.Succeeded);
+        var saved = await ctx.OrganizationSettings.SingleAsync();
+        Assert.NotNull(saved.LogoFileId);
+        Assert.Equal(1, _storage.Count);   // the bytes really went to storage
+        // The URL points at the public logo endpoint and cache-busts on the file id.
+        Assert.Equal($"/api/settings/logo?v={saved.LogoFileId}", result.Value!.LogoUrl);
+        _audit.Verify(a => a.LogAsync(
+            "admin.settings.logo.updated", admin, "admin@test.local",
+            nameof(OrganizationSettings), It.IsAny<string>(), It.IsAny<string>(), "127.0.0.1"), Times.Once);
+    }
+
+    [Fact]
+    public async Task UpdateLogo_RejectsANonImage()
+    {
+        await using var ctx = TestDb.CreateContext();
+        ctx.OrganizationSettings.Add(new OrganizationSettings { Id = OrganizationSettings.SingletonId });
+        await ctx.SaveChangesAsync();
+        var admin = await TestDb.AddUserAsync(ctx, "Admin");
+        var svc = Create(ctx);
+
+        var result = await svc.UpdateLogoAsync(
+            ImageOf("notes.txt", "text/plain"), admin, "admin@test.local", null);
+
+        Assert.False(result.Succeeded);
+        Assert.Equal("Logo must be an image.", result.Error);
+        Assert.Equal(0, _storage.Count);   // nothing stored
+    }
+
+    [Fact]
+    public async Task UpdateLogo_ReplacingAnExistingLogo_DeletesTheOldImage()
+    {
+        await using var ctx = TestDb.CreateContext();
+        ctx.OrganizationSettings.Add(new OrganizationSettings { Id = OrganizationSettings.SingletonId });
+        await ctx.SaveChangesAsync();
+        var admin = await TestDb.AddUserAsync(ctx, "Admin");
+        var svc = Create(ctx);
+        var first = (await svc.UpdateLogoAsync(ImageOf("a.png"), admin, "admin@test.local", null)).Value!;
+        var firstId = (await ctx.OrganizationSettings.SingleAsync()).LogoFileId;
+
+        var result = await svc.UpdateLogoAsync(ImageOf("b.png"), admin, "admin@test.local", null);
+
+        Assert.True(result.Succeeded);
+        // The old logo must not linger — exactly one image remains in storage and the DB.
+        Assert.Equal(1, _storage.Count);
+        Assert.False(await ctx.FileAttachments.AnyAsync(f => f.Id == firstId));
+        Assert.Single(await ctx.FileAttachments.ToListAsync());
+        _ = first;
+    }
+
+    [Fact]
+    public async Task RemoveLogo_ClearsThePointer_AndDeletesTheImage()
+    {
+        await using var ctx = TestDb.CreateContext();
+        ctx.OrganizationSettings.Add(new OrganizationSettings { Id = OrganizationSettings.SingletonId });
+        await ctx.SaveChangesAsync();
+        var admin = await TestDb.AddUserAsync(ctx, "Admin");
+        var svc = Create(ctx);
+        await svc.UpdateLogoAsync(ImageOf(), admin, "admin@test.local", null);
+
+        var result = await svc.RemoveLogoAsync(admin, "admin@test.local", "127.0.0.1");
+
+        Assert.True(result.Succeeded);
+        Assert.Null((await ctx.OrganizationSettings.SingleAsync()).LogoFileId);
+        Assert.Null(result.Value!.LogoUrl);
+        Assert.Equal(0, _storage.Count);           // no orphaned bytes
+        Assert.Equal(0, await ctx.FileAttachments.CountAsync());
+    }
+
+    [Fact]
+    public async Task RemoveLogo_WhenNoneIsSet_IsANoOp()
+    {
+        await using var ctx = TestDb.CreateContext();
+        ctx.OrganizationSettings.Add(new OrganizationSettings { Id = OrganizationSettings.SingletonId });
+        await ctx.SaveChangesAsync();
+        var svc = Create(ctx);
+
+        var result = await svc.RemoveLogoAsync(Guid.NewGuid(), "admin@test.local", null);
+
+        Assert.True(result.Succeeded);
+        Assert.Null(result.Value!.LogoUrl);
+    }
+
+    [Fact]
+    public async Task GetLogo_ReturnsTheImageBytes_WhenSet_And404sOtherwise()
+    {
+        await using var ctx = TestDb.CreateContext();
+        ctx.OrganizationSettings.Add(new OrganizationSettings { Id = OrganizationSettings.SingletonId });
+        await ctx.SaveChangesAsync();
+        var admin = await TestDb.AddUserAsync(ctx, "Admin");
+        var svc = Create(ctx);
+
+        // No logo yet.
+        Assert.False((await svc.GetLogoAsync()).Succeeded);
+
+        await svc.UpdateLogoAsync(ImageOf(), admin, "admin@test.local", null);
+        var download = await svc.GetLogoAsync();
+
+        Assert.True(download.Succeeded);
+        Assert.Equal("image/png", download.Value!.ContentType);
     }
 }

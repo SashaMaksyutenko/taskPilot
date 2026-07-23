@@ -21,6 +21,23 @@ public interface IFileService
     /// <summary>Saves an uploaded file to disk and records its metadata.</summary>
     Task<Result<FileAttachmentDto>> SaveAsync(IFormFile file, Guid uploaderId);
 
+    /// <summary>
+    /// Saves an uploaded file as the next version of an existing one: same size/quota rules,
+    /// but the new row carries the next version number and points back at <paramref name="previousFileId"/>.
+    /// The caller repoints its attachment at the returned file; the old version is kept as history.
+    /// </summary>
+    Task<Result<FileAttachmentDto>> SaveVersionAsync(IFormFile file, Guid uploaderId, Guid previousFileId);
+
+    /// <summary>Lists a file's version history (newest first), walking back from the current version.</summary>
+    Task<Result<List<FileVersionDto>>> GetVersionsAsync(Guid currentFileId);
+
+    /// <summary>
+    /// Permanently removes a file and every earlier version it supersedes — rows and bytes —
+    /// so nothing is left behind in storage. Only the uploader may do this. Used when an
+    /// attachment is detached or its owning task is deleted.
+    /// </summary>
+    Task<Result> DeleteWithVersionsAsync(Guid currentFileId, Guid userId);
+
     /// <summary>Resolves a stored file by id for download.</summary>
     Task<Result<FileDownload>> GetForDownloadAsync(Guid id);
 

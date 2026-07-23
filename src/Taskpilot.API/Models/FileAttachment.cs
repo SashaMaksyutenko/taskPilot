@@ -30,6 +30,24 @@ public class FileAttachment
     /// <summary>UTC time the file was uploaded.</summary>
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
+    // --- Version history ---
+
+    /// <summary>
+    /// Version number, starting at 1. Re-uploading a task attachment stores the new bytes
+    /// as a fresh row with the next number and repoints the attachment at it; the old row
+    /// is kept as history.
+    /// </summary>
+    public int Version { get; set; } = 1;
+
+    /// <summary>
+    /// The version this one replaced, or null for the first version. Forms a backward chain
+    /// (newest → oldest) that <c>GetVersionsAsync</c> walks to list a file's history.
+    /// </summary>
+    public Guid? PreviousVersionId { get; set; }
+
+    /// <summary>Navigation to the previous version, if any.</summary>
+    public FileAttachment? PreviousVersion { get; set; }
+
     // --- Public share link (opt-in) ---
 
     /// <summary>

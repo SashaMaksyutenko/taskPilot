@@ -1,4 +1,5 @@
 using Taskpilot.API.Common;
+using Taskpilot.API.DTOs.Files;
 using Taskpilot.API.DTOs.Projects;
 
 namespace Taskpilot.API.Services;
@@ -15,6 +16,16 @@ public interface ITaskAttachmentService
 
     /// <summary>Lists a task's attachments, newest first.</summary>
     Task<Result<List<TaskAttachmentDto>>> GetForTaskAsync(Guid userId, Guid taskId);
+
+    /// <summary>
+    /// Uploads a new version of an existing attachment: the new bytes become the current
+    /// version and the previous one is kept as history. Only the person who created the
+    /// attachment may replace it, matching detach being uploader-only.
+    /// </summary>
+    Task<Result<TaskAttachmentDto>> UploadVersionAsync(Guid userId, Guid attachmentId, IFormFile file);
+
+    /// <summary>Lists an attachment's version history (newest first).</summary>
+    Task<Result<List<FileVersionDto>>> GetVersionsAsync(Guid userId, Guid attachmentId);
 
     /// <summary>
     /// Removes an attachment and deletes the underlying file, so detaching never leaves

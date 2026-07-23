@@ -53,4 +53,28 @@ public class TaskAttachmentsController : BaseApiController
         var result = await _attachments.DetachAsync(userId.Value, attachmentId);
         return result.Succeeded ? NoContent() : BadRequest(new { error = result.Error });
     }
+
+    /// <summary>Uploads a new version of an attachment, keeping the old one as history (uploader only).</summary>
+    [HttpPost("api/task-attachments/{attachmentId:guid}/versions")]
+    public async Task<IActionResult> UploadVersion(Guid attachmentId, IFormFile file)
+    {
+        var userId = CurrentUserId();
+        if (userId is null) return Unauthorized();
+
+        var result = await _attachments.UploadVersionAsync(userId.Value, attachmentId, file);
+        return result.Succeeded
+            ? StatusCode(StatusCodes.Status201Created, result.Value)
+            : BadRequest(new { error = result.Error });
+    }
+
+    /// <summary>Lists an attachment's version history, newest first.</summary>
+    [HttpGet("api/task-attachments/{attachmentId:guid}/versions")]
+    public async Task<IActionResult> GetVersions(Guid attachmentId)
+    {
+        var userId = CurrentUserId();
+        if (userId is null) return Unauthorized();
+
+        var result = await _attachments.GetVersionsAsync(userId.Value, attachmentId);
+        return result.Succeeded ? Ok(result.Value) : NotFound(new { error = result.Error });
+    }
 }

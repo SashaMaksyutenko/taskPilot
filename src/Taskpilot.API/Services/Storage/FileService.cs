@@ -26,7 +26,27 @@ public class FileService : IFileService
     }
 
     /// <inheritdoc />
-    public async Task<Result<FileAttachmentDto>> SaveAsync(IFormFile file, Guid uploaderId)
+    public Task<Result<FileAttachmentDto>> SaveAsync(IFormFile file, Guid uploaderId) =>
+        StoreAsync(file, uploaderId, version: 1, previousVersionId: null);
+
+    /// <inheritdoc />
+    public async Task<Result<FileAttachmentDto>> SaveVersionAsync(IFormFile file, Guid uploaderId, Guid previousFileId)
+    {
+        var previous = await _context.FileAttachments.AsNoTracking()
+            .FirstOrDefaultAsync(f => f.Id == previousFileId);
+        if (previous is null)
+            return Result<FileAttachmentDto>.Fail("File not found.");
+
+        // The new bytes become the next version and point back at the one they replace.
+        return await StoreAsync(file, uploaderId, previous.Version + 1, previous.Id);
+    }
+
+    /// <summary>
+    /// Shared upload path for both a first upload and a new version: enforces the size and
+    /// organization-quota limits, writes the bytes and records the metadata row.
+    /// </summary>
+    private async Task<Result<FileAttachmentDto>> StoreAsync(
+        IFormFile file, Guid uploaderId, int version, Guid? previousVersionId)
     {
         if (file is null || file.Length == 0)
             return Result<FileAttachmentDto>.Fail("No file was provided.");
@@ -39,7 +59,8 @@ public class FileService : IFileService
             return Result<FileAttachmentDto>.Fail($"File exceeds the {FormatSize(maxUploadBytes)} limit.");
 
         // Enforce the whole-organization quota: reject if this upload would push total
-        // stored bytes over it. SumAsync over an empty table returns null, hence the cast.
+        // stored bytes over it. Old versions still occupy storage, so they count here too.
+        // SumAsync over an empty table returns null, hence the cast.
         var usedBytes = await _context.FileAttachments.SumAsync(f => (long?)f.SizeBytes) ?? 0;
         if (usedBytes + file.Length > storageQuotaBytes)
         {
@@ -48,8 +69,8 @@ public class FileService : IFileService
             return Result<FileAttachmentDto>.Fail("The organization's storage quota has been reached.");
         }
 
-        _logger.LogInformation("Saving file. Name: {Name}, Size: {Size}, UploaderId: {UploaderId}",
-            file.FileName, file.Length, uploaderId);
+        _logger.LogInformation("Saving file. Name: {Name}, Size: {Size}, Version: {Version}, UploaderId: {UploaderId}",
+            file.FileName, file.Length, version, uploaderId);
 
         try
         {
@@ -74,11 +95,13 @@ public class FileService : IFileService
                 SizeBytes = file.Length,
                 UploaderId = uploaderId,
                 CreatedAt = DateTime.UtcNow,
+                Version = version,
+                PreviousVersionId = previousVersionId,
             };
             _context.FileAttachments.Add(entity);
             await _context.SaveChangesAsync();
 
-            _logger.LogInformation("File saved. FileId: {FileId}", entity.Id);
+            _logger.LogInformation("File saved. FileId: {FileId}, Version: {Version}", entity.Id, entity.Version);
             return Result<FileAttachmentDto>.Ok(new FileAttachmentDto
             {
                 Id = entity.Id,
@@ -93,6 +116,94 @@ public class FileService : IFileService
             _logger.LogError(ex, "Error saving file. UploaderId: {UploaderId}", uploaderId);
             return Result<FileAttachmentDto>.Fail("An unexpected error occurred while saving the file.");
         }
+    }
+
+    /// <inheritdoc />
+    public async Task<Result<List<FileVersionDto>>> GetVersionsAsync(Guid currentFileId)
+    {
+        var chain = await LoadVersionChainAsync(currentFileId);
+        if (chain.Count == 0)
+            return Result<List<FileVersionDto>>.Fail("File not found.");
+
+        // Resolve uploader names in one query rather than per version.
+        var uploaderIds = chain.Select(f => f.UploaderId).Distinct().ToList();
+        var names = await _context.Users.AsNoTracking()
+            .Where(u => uploaderIds.Contains(u.Id))
+            .ToDictionaryAsync(u => u.Id, u => u.Name);
+
+        var versions = chain.Select(f => new FileVersionDto
+        {
+            FileId = f.Id,
+            Version = f.Version,
+            FileName = f.FileName,
+            SizeBytes = f.SizeBytes,
+            UploadedByName = names.GetValueOrDefault(f.UploaderId),
+            CreatedAt = f.CreatedAt,
+            IsCurrent = f.Id == currentFileId,
+        }).ToList();
+
+        return Result<List<FileVersionDto>>.Ok(versions);
+    }
+
+    /// <inheritdoc />
+    public async Task<Result> DeleteWithVersionsAsync(Guid currentFileId, Guid userId)
+    {
+        var chain = await LoadVersionChainAsync(currentFileId);
+        if (chain.Count == 0)
+            return Result.Fail("File not found.");
+
+        // Only the uploader may delete. New versions can only be added by the attachment's
+        // owner, so every version in the chain shares one uploader — checking the head is enough.
+        if (chain[0].UploaderId != userId)
+        {
+            _logger.LogWarning("Delete blocked: not the uploader. FileId: {FileId}, UserId: {UserId}", currentFileId, userId);
+            return Result.Fail("Only the uploader can delete this file.");
+        }
+
+        // Remove the rows newest → oldest so each PreviousVersion (a Restrict foreign key)
+        // is already free of references by the time it is deleted.
+        var storedNames = chain.Select(f => f.StoredName).ToList();
+        foreach (var file in chain)
+        {
+            _context.FileAttachments.Remove(file);
+            await _context.SaveChangesAsync();
+        }
+
+        // Bytes last, and never fatally: once the rows are gone the bytes are just garbage.
+        foreach (var storedName in storedNames)
+        {
+            try
+            {
+                await _storage.DeleteAsync(storedName);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "File row deleted but its bytes could not be removed. StoredName: {StoredName}", storedName);
+            }
+        }
+
+        _logger.LogInformation("File and {Count} version(s) deleted. FileId: {FileId}, By: {UserId}",
+            chain.Count, currentFileId, userId);
+        return Result.Ok();
+    }
+
+    /// <summary>
+    /// Loads a file and every earlier version it supersedes, newest first. Empty if the
+    /// starting file does not exist. A guard bounds the walk in case data is ever cyclic.
+    /// </summary>
+    private async Task<List<FileAttachment>> LoadVersionChainAsync(Guid currentFileId)
+    {
+        var chain = new List<FileAttachment>();
+        var current = await _context.FileAttachments.FirstOrDefaultAsync(f => f.Id == currentFileId);
+        var guard = 0;
+        while (current is not null && guard++ < 1000)
+        {
+            chain.Add(current);
+            current = current.PreviousVersionId is { } prevId
+                ? await _context.FileAttachments.FirstOrDefaultAsync(f => f.Id == prevId)
+                : null;
+        }
+        return chain;
     }
 
     /// <inheritdoc />

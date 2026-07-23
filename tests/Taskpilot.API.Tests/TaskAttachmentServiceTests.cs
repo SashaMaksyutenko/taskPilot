@@ -199,6 +199,99 @@ public class TaskAttachmentServiceTests
     }
 
     [Fact]
+    public async Task UploadVersion_ReplacesTheCurrentFile_AndKeepsTheOldAsHistory()
+    {
+        await using var ctx = TestDb.CreateContext();
+        var (owner, _, taskId) = await SetupAsync(ctx);
+        var svc = Create(ctx);
+        var v1 = (await svc.AttachAsync(owner, taskId, FileOf("plan.txt", "one"))).Value!;
+
+        var v2 = await svc.UploadVersionAsync(owner, v1.Id, FileOf("plan.txt", "two"));
+
+        Assert.True(v2.Succeeded);
+        Assert.Equal(2, v2.Value!.Version);
+        // The attachment link is the same row but now points at the new file.
+        Assert.Equal(v1.Id, v2.Value.Id);
+        Assert.NotEqual(v1.FileId, v2.Value.FileId);
+        var link = await ctx.TaskAttachments.AsNoTracking().FirstAsync(a => a.Id == v1.Id);
+        Assert.Equal(v2.Value.FileId, link.FileAttachmentId);
+        // The list shows one attachment at version 2, but both files still exist in storage.
+        var list = (await svc.GetForTaskAsync(owner, taskId)).Value!;
+        Assert.Single(list);
+        Assert.Equal(2, list[0].Version);
+        Assert.Equal(2, _storage.Count);
+    }
+
+    [Fact]
+    public async Task UploadVersion_ByAnEditorWhoDidNotAttach_IsRefused()
+    {
+        await using var ctx = TestDb.CreateContext();
+        var (owner, projectId, taskId) = await SetupAsync(ctx);
+        var editor = await TestDb.AddUserAsync(ctx, "Editor");
+        ctx.ProjectMembers.Add(new ProjectMember
+        {
+            Id = Guid.NewGuid(),
+            ProjectId = projectId,
+            UserId = editor,
+            Role = ProjectMemberRole.Editor,
+        });
+        await ctx.SaveChangesAsync();
+        var svc = Create(ctx);
+        var v1 = (await svc.AttachAsync(owner, taskId, FileOf("owned.txt"))).Value!;
+
+        // An Editor can write to the project but did not attach this file.
+        var result = await svc.UploadVersionAsync(editor, v1.Id, FileOf("hijack.txt"));
+
+        Assert.False(result.Succeeded);
+        Assert.Equal("Only the person who attached this file can upload a new version.", result.Error);
+        Assert.Equal(1, _storage.Count);   // nothing was stored
+    }
+
+    [Fact]
+    public async Task GetVersions_ListsEveryVersion_ForAnyProjectParticipant()
+    {
+        await using var ctx = TestDb.CreateContext();
+        var (owner, projectId, taskId) = await SetupAsync(ctx);
+        var viewer = await TestDb.AddUserAsync(ctx, "Viewer");
+        ctx.ProjectMembers.Add(new ProjectMember
+        {
+            Id = Guid.NewGuid(),
+            ProjectId = projectId,
+            UserId = viewer,
+            Role = ProjectMemberRole.Viewer,
+        });
+        await ctx.SaveChangesAsync();
+        var svc = Create(ctx);
+        var v1 = (await svc.AttachAsync(owner, taskId, FileOf("doc.txt", "a"))).Value!;
+        await svc.UploadVersionAsync(owner, v1.Id, FileOf("doc.txt", "bb"));
+
+        // A Viewer cannot upload a version but may see the history.
+        var result = await svc.GetVersionsAsync(viewer, v1.Id);
+
+        Assert.True(result.Succeeded);
+        Assert.Equal(new[] { 2, 1 }, result.Value!.Select(v => v.Version).ToArray());
+    }
+
+    [Fact]
+    public async Task Detach_AfterAVersion_RemovesBothVersions_LeavingNothing()
+    {
+        await using var ctx = TestDb.CreateContext();
+        var (owner, _, taskId) = await SetupAsync(ctx);
+        var svc = Create(ctx);
+        var v1 = (await svc.AttachAsync(owner, taskId, FileOf("r.txt", "a"))).Value!;
+        await svc.UploadVersionAsync(owner, v1.Id, FileOf("r.txt", "bb"));
+        Assert.Equal(2, _storage.Count);
+
+        var result = await svc.DetachAsync(owner, v1.Id);
+
+        Assert.True(result.Succeeded);
+        // Detaching must clean up the whole version chain, not just the current file.
+        Assert.Equal(0, await ctx.TaskAttachments.CountAsync());
+        Assert.Equal(0, await ctx.FileAttachments.CountAsync());
+        Assert.Equal(0, _storage.Count);
+    }
+
+    [Fact]
     public async Task DeleteAllForTask_RemovesEveryFile_SoDeletingATaskLeaksNothing()
     {
         await using var ctx = TestDb.CreateContext();

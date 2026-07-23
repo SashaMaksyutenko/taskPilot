@@ -18,6 +18,9 @@ public class TaskAttachmentDto
     /// <summary>File size in bytes.</summary>
     public long SizeBytes { get; set; }
 
+    /// <summary>Current version number (1 for a file that has never been replaced).</summary>
+    public int Version { get; set; }
+
     /// <summary>Who attached the file.</summary>
     public Guid UploadedById { get; set; }
 

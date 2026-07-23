@@ -376,6 +376,18 @@ public class TaskpilotDbContext : DbContext
                   .WithMany()
                   .HasForeignKey(f => f.UploaderId)
                   .OnDelete(DeleteBehavior.Restrict);
+
+            // Default 1 so files uploaded before versioning existed count as their own
+            // first version rather than version 0.
+            entity.Property(f => f.Version).HasDefaultValue(1);
+
+            // Version history: each row may point back at the one it replaced. Restrict so
+            // an older version can't be deleted while a newer one still references it — the
+            // chain is always torn down newest-first.
+            entity.HasOne(f => f.PreviousVersion)
+                  .WithMany()
+                  .HasForeignKey(f => f.PreviousVersionId)
+                  .OnDelete(DeleteBehavior.Restrict);
         });
 
         // ForumTopic entity configuration

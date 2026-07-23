@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Taskpilot.API.Common;
 using Taskpilot.API.Data;
+using Taskpilot.API.DTOs.Files;
 using Taskpilot.API.DTOs.Projects;
 using Taskpilot.API.Models;
 
@@ -66,10 +67,69 @@ public class TaskAttachmentService : ITaskAttachmentService
             FileName = saved.Value.FileName,
             ContentType = saved.Value.ContentType,
             SizeBytes = saved.Value.SizeBytes,
+            Version = 1,
             UploadedById = userId,
             UploadedByName = uploaderName,
             CreatedAt = link.CreatedAt,
         });
+    }
+
+    /// <inheritdoc />
+    public async Task<Result<TaskAttachmentDto>> UploadVersionAsync(Guid userId, Guid attachmentId, IFormFile file)
+    {
+        var link = await _context.TaskAttachments.FirstOrDefaultAsync(a => a.Id == attachmentId);
+        if (link is null)
+            return Result<TaskAttachmentDto>.Fail("Attachment not found.");
+        if (!await TaskExistsForAsync(link.TaskId, userId))
+            return Result<TaskAttachmentDto>.Fail("Attachment not found.");
+
+        // Replacing a file is uploader-only, like detaching it: a new version supersedes the
+        // old one for everyone, so only the person who attached it should get to decide.
+        if (link.UploadedById != userId)
+            return Result<TaskAttachmentDto>.Fail("Only the person who attached this file can upload a new version.");
+
+        var saved = await _files.SaveVersionAsync(file, userId, link.FileAttachmentId);
+        if (!saved.Succeeded)
+            return Result<TaskAttachmentDto>.Fail(saved.Error!);
+
+        // Point the attachment at the new head; the old version stays, chained behind it.
+        link.FileAttachmentId = saved.Value!.Id;
+        await _context.SaveChangesAsync();
+
+        _logger.LogInformation("New attachment version uploaded. AttachmentId: {AttachmentId}, FileId: {FileId}, By: {UserId}",
+            attachmentId, saved.Value.Id, userId);
+
+        var uploaderName = await _context.Users.AsNoTracking()
+            .Where(u => u.Id == userId).Select(u => u.Name).FirstOrDefaultAsync();
+        var newVersion = await _context.FileAttachments.AsNoTracking()
+            .Where(f => f.Id == saved.Value.Id).Select(f => f.Version).FirstAsync();
+
+        return Result<TaskAttachmentDto>.Ok(new TaskAttachmentDto
+        {
+            Id = link.Id,
+            FileId = saved.Value.Id,
+            FileName = saved.Value.FileName,
+            ContentType = saved.Value.ContentType,
+            SizeBytes = saved.Value.SizeBytes,
+            Version = newVersion,
+            UploadedById = userId,
+            UploadedByName = uploaderName,
+            CreatedAt = link.CreatedAt,
+        });
+    }
+
+    /// <inheritdoc />
+    public async Task<Result<List<FileVersionDto>>> GetVersionsAsync(Guid userId, Guid attachmentId)
+    {
+        var link = await _context.TaskAttachments.AsNoTracking().FirstOrDefaultAsync(a => a.Id == attachmentId);
+        if (link is null)
+            return Result<List<FileVersionDto>>.Fail("Attachment not found.");
+
+        // Reading the history only needs access to the task's project — Viewers included.
+        if (!await TaskExistsForAsync(link.TaskId, userId))
+            return Result<List<FileVersionDto>>.Fail("Attachment not found.");
+
+        return await _files.GetVersionsAsync(link.FileAttachmentId);
     }
 
     /// <inheritdoc />
@@ -98,6 +158,7 @@ public class TaskAttachmentService : ITaskAttachmentService
                             FileName = x.File.FileName,
                             ContentType = x.File.ContentType,
                             SizeBytes = x.File.SizeBytes,
+                            Version = x.File.Version,
                             UploadedById = x.Link.UploadedById,
                             UploadedByName = user != null ? user.Name : null,
                             CreatedAt = x.Link.CreatedAt,
@@ -129,8 +190,9 @@ public class TaskAttachmentService : ITaskAttachmentService
         _context.TaskAttachments.Remove(link);
         await _context.SaveChangesAsync();
 
-        // Now the file itself, so detaching never leaves orphaned rows or bytes in storage.
-        var deleted = await _files.DeleteAsync(fileId, userId);
+        // Now the file and every earlier version, so detaching never leaves orphaned rows
+        // or bytes in storage.
+        var deleted = await _files.DeleteWithVersionsAsync(fileId, userId);
         if (!deleted.Succeeded)
             _logger.LogWarning("Attachment unlinked but its file could not be deleted. FileId: {FileId}, Reason: {Reason}",
                 fileId, deleted.Error);
@@ -154,9 +216,9 @@ public class TaskAttachmentService : ITaskAttachmentService
 
         foreach (var fileId in fileIds)
         {
-            // Deleting is uploader-scoped, so each file is removed as the person who
-            // attached it — the task's own deletion was already authorised by the caller.
-            var deleted = await _files.DeleteAsync(fileId, uploaders[fileId]);
+            // Deleting is uploader-scoped, so each file (and its versions) is removed as the
+            // person who attached it — the task's own deletion was already authorised.
+            var deleted = await _files.DeleteWithVersionsAsync(fileId, uploaders[fileId]);
             if (!deleted.Succeeded)
                 _logger.LogWarning("Task deleted but an attached file could not be removed. FileId: {FileId}, Reason: {Reason}",
                     fileId, deleted.Error);

@@ -54,6 +54,8 @@
     "empty": "No files attached.",
     "failed": "Could not load the attachments.",
     "remove": "Remove file",
+    "newVersion": "Upload new version",
+    "current": "(current)",
     "unknownUser": "Deleted user"
   },
   "search": {

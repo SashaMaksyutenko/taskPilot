@@ -5,14 +5,20 @@ import Attachments from './Attachments'
 import { forumAttachments, taskAttachments } from '../services/attachmentSources'
 import { forumService } from '../services/forumService'
 import { taskService } from '../services/taskService'
-import type { Attachment } from '../types/attachment'
+import type { Attachment, FileVersion } from '../types/attachment'
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({ t: (k: string, fallback?: string) => fallback ?? k }),
 }))
 
 vi.mock('../services/taskService', () => ({
-  taskService: { getAttachments: vi.fn(), attachFile: vi.fn(), detachFile: vi.fn() },
+  taskService: {
+    getAttachments: vi.fn(),
+    attachFile: vi.fn(),
+    detachFile: vi.fn(),
+    uploadAttachmentVersion: vi.fn(),
+    getAttachmentVersions: vi.fn(),
+  },
 }))
 
 vi.mock('../services/forumService', () => ({
@@ -36,15 +42,29 @@ const attachment = (over: Partial<Attachment> = {}): Attachment => ({
   fileName: 'spec.pdf',
   contentType: 'application/pdf',
   sizeBytes: 2048,
+  version: 1,
   uploadedById: CURRENT_USER,
   uploadedByName: 'Alice',
   createdAt: '2026-07-21T10:00:00Z',
   ...over,
 })
 
+const version = (over: Partial<FileVersion> = {}): FileVersion => ({
+  fileId: 'f1',
+  version: 1,
+  fileName: 'spec.pdf',
+  sizeBytes: 2048,
+  uploadedByName: 'Alice',
+  createdAt: '2026-07-21T10:00:00Z',
+  isCurrent: false,
+  ...over,
+})
+
 const mockedGet = vi.mocked(taskService.getAttachments)
 const mockedAttach = vi.mocked(taskService.attachFile)
 const mockedDetach = vi.mocked(taskService.detachFile)
+const mockedUploadVersion = vi.mocked(taskService.uploadAttachmentVersion)
+const mockedGetVersions = vi.mocked(taskService.getAttachmentVersions)
 
 /** Picks a file in the hidden input, the way the browser would. */
 function pickFile(name = 'notes.txt') {
@@ -155,6 +175,57 @@ describe('Attachments', () => {
     await waitFor(() => expect(mockedGet).toHaveBeenCalledWith('t2'))
   })
 
+  describe('version history (task source only)', () => {
+    it('uploads a new version and updates the row in place', async () => {
+      mockedGet.mockResolvedValue([attachment({ version: 1 })])
+      mockedUploadVersion.mockResolvedValue(
+        attachment({ fileId: 'f2', version: 2, fileName: 'spec.pdf' }),
+      )
+      render(<Attachments source={taskAttachments} ownerId="t1" />)
+      await screen.findByText(/spec.pdf/)
+
+      // Click the action to arm the picker for this row, then drive the hidden picker
+      // (jsdom cannot open the real file dialog).
+      fireEvent.click(screen.getByLabelText('attachments.newVersion'))
+      fireEvent.change(screen.getByTestId('version-input'), {
+        target: { files: [new File(['v2'], 'spec.pdf')] },
+      })
+
+      // The row keeps its place but now advertises v2, which is only a toggle above v1.
+      expect(await screen.findByText(/v2/)).toBeTruthy()
+      expect(mockedUploadVersion).toHaveBeenCalledWith('a1', expect.any(File))
+    })
+
+    it('expands the version history and lists every version', async () => {
+      mockedGet.mockResolvedValue([attachment({ version: 2, fileName: 'plan.txt' })])
+      mockedGetVersions.mockResolvedValue([
+        version({ fileId: 'f2', version: 2, isCurrent: true }),
+        version({ fileId: 'f1', version: 1, isCurrent: false }),
+      ])
+      render(<Attachments source={taskAttachments} ownerId="t1" />)
+      await screen.findByText(/plan.txt/)
+
+      // v2 is a toggle because earlier versions exist.
+      fireEvent.click(screen.getByText(/v2/))
+
+      await waitFor(() => expect(mockedGetVersions).toHaveBeenCalledWith('a1'))
+      // The current version is flagged; both versions are listed.
+      expect(await screen.findByText('attachments.current')).toBeTruthy()
+      expect(screen.getByText('v1')).toBeTruthy()
+    })
+
+    it('shows no new-version button on someone else’s file', async () => {
+      // Replacing a file is uploader-only server-side; the UI must not offer it.
+      mockedGet.mockResolvedValue([attachment({ uploadedById: 'someone-else', version: 2 })])
+      render(<Attachments source={taskAttachments} ownerId="t1" />)
+      await screen.findByText(/spec.pdf/)
+
+      // The history is still viewable (v2 toggle) but replacing is not offered.
+      expect(screen.queryByLabelText('attachments.newVersion')).toBeNull()
+      expect(screen.getByText(/v2/)).toBeTruthy()
+    })
+  })
+
   describe('forum source', () => {
     it('reads through the forum service, not the task one', async () => {
       // Mixing the two up would silently hit the wrong endpoint, so assert the wiring.
@@ -188,6 +259,19 @@ describe('Attachments', () => {
       )
 
       await waitFor(() => expect(container.textContent).toBe(''))
+    })
+
+    it('never shows version UI — the forum source cannot version', async () => {
+      // The forum source has no `versions` capability, so even a (hypothetical) v2 file
+      // must not render a toggle, a version label or a new-version button.
+      vi.mocked(forumService.getAttachments).mockResolvedValue([attachment({ version: 2 })])
+
+      render(<Attachments source={forumAttachments} ownerId="topic-1" />)
+      await screen.findByText(/spec.pdf/)
+
+      expect(screen.queryByText(/v2/)).toBeNull()
+      expect(screen.queryByLabelText('attachments.newVersion')).toBeNull()
+      expect(screen.queryByTestId('version-input')).toBeNull()
     })
   })
 })

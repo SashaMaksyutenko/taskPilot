@@ -1,7 +1,7 @@
 import api from '../lib/api'
 import type { Task, TaskComment, TaskStatus } from '../types/project'
 import type { CalendarTask } from '../types/calendar'
-import type { Attachment } from '../types/attachment'
+import type { Attachment, FileVersion } from '../types/attachment'
 
 /** REST calls for project tasks. */
 export const taskService = {
@@ -227,6 +227,25 @@ export const taskService = {
   /** Removes an attachment and the file behind it (uploader only). */
   detachFile(attachmentId: string): Promise<void> {
     return api.delete(`/api/task-attachments/${attachmentId}`).then(() => undefined)
+  },
+
+  /** Uploads a new version of an attachment, keeping the old one as history (uploader only). */
+  uploadAttachmentVersion(attachmentId: string, file: File): Promise<Attachment> {
+    const form = new FormData()
+    form.append('file', file)
+    // Undo the default JSON content-type so the browser sets the multipart boundary.
+    return api
+      .post<Attachment>(`/api/task-attachments/${attachmentId}/versions`, form, {
+        headers: { 'Content-Type': undefined },
+      })
+      .then((r) => r.data)
+  },
+
+  /** An attachment's version history, newest first. */
+  getAttachmentVersions(attachmentId: string): Promise<FileVersion[]> {
+    return api
+      .get<FileVersion[]>(`/api/task-attachments/${attachmentId}/versions`)
+      .then((r) => r.data)
   },
 
   /**

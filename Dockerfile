@@ -5,11 +5,14 @@
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 
-# Restore dependencies first so this layer is cached unless the project file changes.
+# Restore dependencies first so this layer is cached unless a project file changes. The API
+# references Taskpilot.Contracts, so that project must be present before the restore too.
+COPY src/Taskpilot.Contracts/Taskpilot.Contracts.csproj src/Taskpilot.Contracts/
 COPY src/Taskpilot.API/Taskpilot.API.csproj src/Taskpilot.API/
 RUN dotnet restore src/Taskpilot.API/Taskpilot.API.csproj
 
-# Copy the remaining source and publish a Release build.
+# Copy the remaining source (both projects) and publish a Release build.
+COPY src/Taskpilot.Contracts/ src/Taskpilot.Contracts/
 COPY src/Taskpilot.API/ src/Taskpilot.API/
 RUN dotnet publish src/Taskpilot.API/Taskpilot.API.csproj -c Release -o /app/publish /p:UseAppHost=false
 

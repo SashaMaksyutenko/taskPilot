@@ -491,6 +491,25 @@
     "shared": "Shared",
     "members": "{{count}} collaborator(s)"
   },
+  "templates": {
+    "button": "Templates",
+    "title": "Project templates",
+    "saveAs": "Save as template",
+    "use": "Use",
+    "creating": "Creating…",
+    "delete": "Delete template",
+    "close": "Close",
+    "loading": "Loading…",
+    "empty": "No templates yet. Save a project as a template to reuse it.",
+    "noTasks": "This template has no tasks.",
+    "taskCount": "{{count}} task(s)",
+    "dueInDays": "day {{count}}",
+    "saved": "Saved \"{{name}}\" as a template.",
+    "saveFailed": "Could not save the template.",
+    "created": "Created a project from \"{{name}}\".",
+    "createFailed": "Could not create the project.",
+    "deleteFailed": "Could not delete the template."
+  },
   "board": {
     "backToProjects": "← Projects",
     "notFound": "This project no longer exists.",

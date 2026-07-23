@@ -13,6 +13,7 @@ export default function ProjectContextMenu({
   archived,
   onEdit,
   onDuplicate,
+  onSaveAsTemplate,
   onExport,
   onArchive,
   onRestore,
@@ -22,6 +23,7 @@ export default function ProjectContextMenu({
   archived: boolean
   onEdit: () => void
   onDuplicate: () => void
+  onSaveAsTemplate: () => void
   onExport: () => void
   onArchive: () => void
   onRestore: () => void
@@ -39,6 +41,9 @@ export default function ProjectContextMenu({
           </ContextMenu.Item>
           <ContextMenu.Item className={itemClass} onSelect={onDuplicate}>
             {t('projects.duplicate')}
+          </ContextMenu.Item>
+          <ContextMenu.Item className={itemClass} onSelect={onSaveAsTemplate}>
+            {t('templates.saveAs')}
           </ContextMenu.Item>
           <ContextMenu.Item className={itemClass} onSelect={onExport}>
             {t('board.exportCsv')}

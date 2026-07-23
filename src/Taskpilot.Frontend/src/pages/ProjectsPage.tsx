@@ -3,12 +3,14 @@ import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 import EmptyState from '../components/feedback/EmptyState'
 import ConfirmDialog from '../components/modals/ConfirmDialog'
+import TemplatesModal from '../components/modals/TemplatesModal'
 import ProjectContextMenu from '../components/menus/ProjectContextMenu'
 import Button from '../components/ui/Button'
 import Card from '../components/ui/Card'
 import Input from '../components/ui/Input'
 import { SkeletonCard } from '../components/ui/Skeleton'
 import { projectService } from '../services/projectService'
+import { projectTemplateService } from '../services/projectTemplateService'
 import { taskService } from '../services/taskService'
 import { notify } from '../lib/toast'
 import { useAppSelector } from '../store/hooks'
@@ -35,6 +37,8 @@ export default function ProjectsPage() {
   const [editing, setEditing] = useState<Project | null>(null)
   const [editName, setEditName] = useState('')
   const [editColor, setEditColor] = useState<string | null>(null)
+  // Whether the templates modal (create-from / manage templates) is open.
+  const [showTemplates, setShowTemplates] = useState(false)
 
   const load = () => {
     projectService.getProjects(showArchived).then(setProjects).catch(() => {})
@@ -72,6 +76,15 @@ export default function ProjectsPage() {
     await projectService.duplicate(project.id).catch(() => {})
     load()
     notify.success(t('toast.projectDuplicated'))
+  }
+
+  const saveAsTemplate = async (project: Project) => {
+    try {
+      await projectTemplateService.saveAsTemplate(project.id)
+      notify.success(t('templates.saved', { name: project.name }))
+    } catch {
+      notify.error(t('templates.saveFailed'))
+    }
   }
 
   const archive = async (project: Project) => {
@@ -135,6 +148,9 @@ export default function ProjectsPage() {
           <Button onClick={create} disabled={loading}>
             {t('projects.create')}
           </Button>
+          <Button variant="secondary" onClick={() => setShowTemplates(true)}>
+            {t('templates.button')}
+          </Button>
         </div>
 
         {loading && projects.length === 0 ? (
@@ -153,6 +169,7 @@ export default function ProjectsPage() {
                 archived={p.isArchived}
                 onEdit={() => openEdit(p)}
                 onDuplicate={() => duplicate(p)}
+                onSaveAsTemplate={() => saveAsTemplate(p)}
                 onExport={() => exportTasks(p)}
                 onArchive={() => archive(p)}
                 onRestore={() => restore(p)}
@@ -249,6 +266,13 @@ export default function ProjectsPage() {
             </div>
           </div>
         )}
+
+        {/* Templates: create a project from one, preview or delete them */}
+        <TemplatesModal
+          open={showTemplates}
+          onClose={() => setShowTemplates(false)}
+          onProjectCreated={load}
+        />
 
         {/* Delete confirmation */}
         <ConfirmDialog

@@ -1,4 +1,4 @@
-namespace Taskpilot.API.Configuration;
+namespace Taskpilot.Integrations;
 
 /// <summary>
 /// Email delivery settings (SendGrid), bound from configuration (section "Email").

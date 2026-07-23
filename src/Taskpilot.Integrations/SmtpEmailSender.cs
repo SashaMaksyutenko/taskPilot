@@ -1,9 +1,8 @@
 using System.Net;
 using System.Net.Mail;
 using Microsoft.Extensions.Options;
-using Taskpilot.API.Configuration;
 
-namespace Taskpilot.API.Services;
+namespace Taskpilot.Integrations;
 
 /// <summary>
 /// Sends email over SMTP (Gmail, Brevo, Mailtrap, …). Disabled and a safe no-op

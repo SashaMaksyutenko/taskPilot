@@ -1,4 +1,4 @@
-namespace Taskpilot.API.Services;
+namespace Taskpilot.Integrations;
 
 /// <summary>
 /// Sends messages through the Viber Bot API. A no-op when no auth token is

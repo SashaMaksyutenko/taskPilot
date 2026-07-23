@@ -1,4 +1,4 @@
-namespace Taskpilot.API.Configuration;
+namespace Taskpilot.Integrations;
 
 /// <summary>
 /// Telegram bot settings, bound from configuration (section "Telegram").

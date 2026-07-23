@@ -1,7 +1,6 @@
 using Microsoft.Extensions.Options;
-using Taskpilot.API.Configuration;
 
-namespace Taskpilot.API.Services;
+namespace Taskpilot.Integrations;
 
 /// <summary>
 /// Sends Telegram messages via the Bot API over HTTP. Disabled (no-op) when no bot

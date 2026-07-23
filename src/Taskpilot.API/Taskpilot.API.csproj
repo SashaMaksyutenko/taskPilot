@@ -34,6 +34,8 @@
   <ItemGroup>
     <!-- Messaging contracts shared with the notification service. -->
     <ProjectReference Include="..\Taskpilot.Contracts\Taskpilot.Contracts.csproj" />
+    <!-- External notification senders (email/telegram/viber), shared with the notification service. -->
+    <ProjectReference Include="..\Taskpilot.Integrations\Taskpilot.Integrations.csproj" />
   </ItemGroup>
 
 </Project>

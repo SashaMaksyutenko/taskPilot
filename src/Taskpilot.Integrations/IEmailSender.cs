@@ -1,4 +1,4 @@
-namespace Taskpilot.API.Services;
+namespace Taskpilot.Integrations;
 
 /// <summary>A file to attach to an outgoing email (e.g. a generated report).</summary>
 /// <param name="FileName">Name the recipient sees (e.g. "team-report.pdf").</param>

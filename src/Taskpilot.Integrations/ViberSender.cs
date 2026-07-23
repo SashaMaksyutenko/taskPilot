@@ -1,9 +1,8 @@
 using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.Options;
-using Taskpilot.API.Configuration;
 
-namespace Taskpilot.API.Services;
+namespace Taskpilot.Integrations;
 
 /// <summary>
 /// Sends Viber messages via the Bot API over HTTP. Disabled (no-op) when no auth

@@ -15,6 +15,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Taskpilot.Contracts", "src\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Taskpilot.NotificationService", "src\Taskpilot.NotificationService\Taskpilot.NotificationService.csproj", "{0427F39A-9E4F-4E25-8D4D-268C2A012BA3}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Taskpilot.Integrations", "src\Taskpilot.Integrations\Taskpilot.Integrations.csproj", "{851CCD8C-B7A4-4216-A6CB-E6D6C4150893}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -40,11 +42,16 @@ Global
 		{0427F39A-9E4F-4E25-8D4D-268C2A012BA3}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0427F39A-9E4F-4E25-8D4D-268C2A012BA3}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0427F39A-9E4F-4E25-8D4D-268C2A012BA3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{851CCD8C-B7A4-4216-A6CB-E6D6C4150893}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{851CCD8C-B7A4-4216-A6CB-E6D6C4150893}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{851CCD8C-B7A4-4216-A6CB-E6D6C4150893}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{851CCD8C-B7A4-4216-A6CB-E6D6C4150893}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{5B422EF1-B546-4271-95F5-3DA3847D6BAF} = {3BB04799-7A68-4717-804E-66936B3CBE61}
 		{2691210B-6A46-42E0-86DD-2770EB5806DE} = {AAAEBC07-644A-4402-A9EA-A561AD7190F8}
 		{A69B7946-680E-4A44-9926-11A40C2313DB} = {3BB04799-7A68-4717-804E-66936B3CBE61}
 		{0427F39A-9E4F-4E25-8D4D-268C2A012BA3} = {3BB04799-7A68-4717-804E-66936B3CBE61}
+		{851CCD8C-B7A4-4216-A6CB-E6D6C4150893} = {3BB04799-7A68-4717-804E-66936B3CBE61}
 	EndGlobalSection
 EndGlobal

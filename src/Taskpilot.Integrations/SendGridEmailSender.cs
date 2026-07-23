@@ -1,9 +1,8 @@
 using Microsoft.Extensions.Options;
 using SendGrid;
 using SendGrid.Helpers.Mail;
-using Taskpilot.API.Configuration;
 
-namespace Taskpilot.API.Services;
+namespace Taskpilot.Integrations;
 
 /// <summary>
 /// Sends email via SendGrid. When no API key is configured the sender is disabled

@@ -1,4 +1,4 @@
-namespace Taskpilot.API.Configuration;
+namespace Taskpilot.Integrations;
 
 /// <summary>
 /// Viber bot settings, bound from configuration (section "Viber"). The auth token

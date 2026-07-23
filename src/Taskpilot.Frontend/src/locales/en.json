@@ -859,6 +859,13 @@
     "namePlaceholder": "Acme Corp",
     "save": "Save",
     "saved": "Organization name saved.",
+    "logo": "Logo",
+    "logoUpload": "Upload logo",
+    "logoUploading": "Uploading…",
+    "logoRemove": "Remove",
+    "logoHint": "PNG, JPG or SVG up to 2 MB. Shown in the sidebar, top bar and on the sign-in page.",
+    "logoSaved": "Logo updated.",
+    "logoRemoved": "Logo removed.",
     "loadFailed": "Could not load organization settings."
   },
   "registration": {

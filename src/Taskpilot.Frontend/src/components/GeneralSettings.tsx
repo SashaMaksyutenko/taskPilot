@@ -16,9 +16,12 @@ export default function GeneralSettings() {
   const [name, setName] = useState('')
   // The name currently stored on the server, for the dirty check.
   const [savedName, setSavedName] = useState('')
+  const [logoUrl, setLogoUrl] = useState<string | null>(null)
+  const [logoBusy, setLogoBusy] = useState(false)
   const [ready, setReady] = useState(false)
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null)
+  const logoInputRef = useRef<HTMLInputElement>(null)
 
   // Load once. A ref (not state) so StrictMode's double effect does not fetch twice.
   const loaded = useRef(false)
@@ -30,6 +33,7 @@ export default function GeneralSettings() {
       .then((s) => {
         setName(s.name)
         setSavedName(s.name)
+        setLogoUrl(s.logoUrl)
         setReady(true)
       })
       .catch(() => setMessage({ ok: false, text: t('general.loadFailed') }))
@@ -43,12 +47,45 @@ export default function GeneralSettings() {
       setName(updated.name)
       setSavedName(updated.name)
       // Reflect the change in the shell straight away.
-      setBranding(updated.name)
+      setBranding({ name: updated.name })
       setMessage({ ok: true, text: t('general.saved') })
     } catch (e) {
       setMessage({ ok: false, text: apiErrorMessage(e) })
     } finally {
       setSaving(false)
+    }
+  }
+
+  const uploadLogo = async (file: File) => {
+    setLogoBusy(true)
+    setMessage(null)
+    try {
+      const updated = await adminService.updateLogo(file)
+      setLogoUrl(updated.logoUrl)
+      // Update the shell logo without a reload.
+      setBranding({ logoUrl: updated.logoUrl })
+      setMessage({ ok: true, text: t('general.logoSaved') })
+    } catch (e) {
+      // Size limit (2 MB) and the image-only rule are refused here.
+      setMessage({ ok: false, text: apiErrorMessage(e) })
+    } finally {
+      setLogoBusy(false)
+      if (logoInputRef.current) logoInputRef.current.value = ''
+    }
+  }
+
+  const removeLogo = async () => {
+    setLogoBusy(true)
+    setMessage(null)
+    try {
+      const updated = await adminService.removeLogo()
+      setLogoUrl(updated.logoUrl)
+      setBranding({ logoUrl: updated.logoUrl })
+      setMessage({ ok: true, text: t('general.logoRemoved') })
+    } catch (e) {
+      setMessage({ ok: false, text: apiErrorMessage(e) })
+    } finally {
+      setLogoBusy(false)
     }
   }
 
@@ -83,6 +120,48 @@ export default function GeneralSettings() {
           >
             {t('general.save')}
           </button>
+
+          {/* Logo: preview (custom or the built-in mark) + upload/remove */}
+          <div className="mt-5">
+            <span className="mb-1 block text-sm font-medium text-foreground">{t('general.logo')}</span>
+            <div className="flex items-center gap-3">
+              <img
+                src={logoUrl ?? '/logo-mark.svg'}
+                alt=""
+                className="h-12 w-12 rounded border border-border bg-canvas object-contain"
+              />
+              <button
+                type="button"
+                onClick={() => logoInputRef.current?.click()}
+                disabled={logoBusy}
+                className="rounded-lg border border-border px-3 py-1.5 text-sm font-medium text-foreground hover:bg-canvas disabled:opacity-50"
+              >
+                {logoBusy ? t('general.logoUploading') : t('general.logoUpload')}
+              </button>
+              {logoUrl && (
+                <button
+                  type="button"
+                  onClick={removeLogo}
+                  disabled={logoBusy}
+                  className="text-sm font-medium text-muted hover:text-red-600 disabled:opacity-50"
+                >
+                  {t('general.logoRemove')}
+                </button>
+              )}
+              <input
+                ref={logoInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                aria-label={t('general.logoUpload')}
+                onChange={(e) => {
+                  const file = e.target.files?.[0]
+                  if (file) uploadLogo(file)
+                }}
+              />
+            </div>
+            <span className="mt-1 block text-xs text-muted">{t('general.logoHint')}</span>
+          </div>
         </>
       )}
 

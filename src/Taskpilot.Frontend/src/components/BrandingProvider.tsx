@@ -27,18 +27,18 @@ export function BrandingProvider({ children }: { children: ReactNode }) {
     loaded.current = true
     settingsService
       .getBranding()
-      .then((b) => setState({ name: b.name }))
+      .then((b) => setState({ name: b.name, logoUrl: b.logoUrl }))
       // On failure keep the default brand rather than showing a blank.
       .catch(() => {})
   }, [])
 
-  // Lets the admin settings page push the new name straight into the shared state, so the
-  // shell updates the moment the change is saved — no page reload needed.
-  const setName = useCallback((name: string) => setState({ name }), [])
+  // Lets the admin settings page push a new name or logo straight into the shared state, so
+  // the shell updates the moment the change is saved — no page reload needed.
+  const update = useCallback((partial: Partial<BrandingState>) => setState((s) => ({ ...s, ...partial })), [])
 
   return (
     <BrandingContext.Provider value={state}>
-      <SetBrandingContext.Provider value={setName}>{children}</SetBrandingContext.Provider>
+      <SetBrandingContext.Provider value={update}>{children}</SetBrandingContext.Provider>
     </BrandingContext.Provider>
   )
 }

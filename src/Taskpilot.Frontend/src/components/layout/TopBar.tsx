@@ -15,6 +15,7 @@ import Avatar from '../Avatar'
 import Tooltip from '../ui/Tooltip'
 import { SidebarNav } from './Sidebar'
 import { cn } from '../../lib/cn'
+import BrandLogo from '../BrandLogo'
 import { useBranding } from '../../hooks/useBranding'
 import { useNotifications } from '../../hooks/useNotifications'
 import { logout } from '../../store/authSlice'
@@ -68,7 +69,7 @@ export default function TopBar({
         </button>
 
         <NavLink to="/" className="flex items-center gap-2 font-bold text-foreground lg:hidden">
-          <img src="/logo-mark.svg" alt="" className="h-7 w-7" />
+          <BrandLogo className="h-7 w-7 rounded" />
           {orgName}
         </NavLink>
 
@@ -227,7 +228,7 @@ export default function TopBar({
             >
               <div className="flex h-16 items-center justify-between border-b border-border px-4">
                 <div className="flex items-center gap-2">
-                  <img src="/logo-mark.svg" alt="" className="h-8 w-8" />
+                  <BrandLogo className="h-8 w-8 rounded" />
                   <span className="font-bold">{orgName}</span>
                 </div>
                 <button type="button" onClick={() => setMobileOpen(false)} className="rounded-lg p-2 hover:bg-canvas">

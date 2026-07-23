@@ -9,6 +9,8 @@ export interface FeatureFlags {
 /** The organization's public branding (mirrors the backend OrganizationBrandingDto). */
 export interface OrganizationBranding {
   name: string
+  /** URL of the custom logo, or null when the built-in mark should be shown. */
+  logoUrl: string | null
 }
 
 /** Read-only organization info. */

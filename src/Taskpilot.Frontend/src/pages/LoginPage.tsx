@@ -2,6 +2,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
+import BrandLogo from '../components/BrandLogo'
 import { useBranding } from '../hooks/useBranding'
 import { Link, useNavigate } from 'react-router-dom'
 import { z } from 'zod'
@@ -59,7 +60,7 @@ export default function LoginPage() {
       {/* Brand panel — hidden on small screens */}
       <div className="hidden w-[45%] flex-col justify-between gradient-hero p-12 lg:flex">
         <div>
-          <img src="/logo-mark.svg" alt="" className="h-10 w-10" />
+          <BrandLogo className="h-10 w-10 rounded" />
           <h1 className="mt-8 text-3xl font-extrabold tracking-tight">{orgName}</h1>
           <p className="mt-3 max-w-sm text-muted">{t('landing.subtitle')}</p>
         </div>
@@ -76,7 +77,7 @@ export default function LoginPage() {
             <LangSwitch />
           </div>
 
-          <img src="/logo.svg" alt="TaskPilot" className="mx-auto h-16 w-16 lg:hidden" />
+          <BrandLogo fallback="/logo.svg" className="mx-auto h-16 w-16 rounded-lg lg:hidden" />
           <h1 className="mt-4 text-center text-2xl font-bold">{t('auth.welcomeBack')}</h1>
 
           {serverError && (

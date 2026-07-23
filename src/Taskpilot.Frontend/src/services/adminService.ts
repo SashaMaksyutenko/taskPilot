@@ -106,6 +106,23 @@ export const adminService = {
     return api.put<OrganizationSettings>('/api/admin/settings/general', { name }).then((r) => r.data)
   },
 
+  /** Uploads a new organization logo image, replacing any previous one. */
+  updateLogo(file: File): Promise<OrganizationSettings> {
+    const form = new FormData()
+    form.append('file', file)
+    // Undo the default JSON content-type so the browser sets the multipart boundary.
+    return api
+      .post<OrganizationSettings>('/api/admin/settings/logo', form, {
+        headers: { 'Content-Type': undefined },
+      })
+      .then((r) => r.data)
+  },
+
+  /** Clears the custom logo, reverting to the built-in mark. */
+  removeLogo(): Promise<OrganizationSettings> {
+    return api.delete<OrganizationSettings>('/api/admin/settings/logo').then((r) => r.data)
+  },
+
   /** Updates only the storage limits (the feature flags are left untouched). */
   updateStorage(maxUploadBytes: number, storageQuotaBytes: number): Promise<OrganizationSettings> {
     return api
@@ -137,6 +154,8 @@ export const adminService = {
 export interface OrganizationSettings {
   /** Organization name shown across the app. */
   name: string
+  /** URL of the custom logo, or null when the built-in mark is used. */
+  logoUrl: string | null
   maxUploadBytes: number
   storageQuotaBytes: number
   /** Bytes currently used by all stored files. */

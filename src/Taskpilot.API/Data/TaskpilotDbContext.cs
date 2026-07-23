@@ -70,6 +70,10 @@ public class TaskpilotDbContext : DbContext
 
     /// <summary>Tasks within projects.</summary>
     public DbSet<ProjectTask> ProjectTasks => Set<ProjectTask>();
+
+    /// <summary>Reusable project blueprints and their tasks.</summary>
+    public DbSet<ProjectTemplate> ProjectTemplates => Set<ProjectTemplate>();
+    public DbSet<ProjectTemplateTask> ProjectTemplateTasks => Set<ProjectTemplateTask>();
     public DbSet<PushSubscription> PushSubscriptions => Set<PushSubscription>();
 
     /// <summary>Outgoing webhooks.</summary>
@@ -689,6 +693,50 @@ public class TaskpilotDbContext : DbContext
             entity.HasOne(t => t.ParentTask)
                   .WithMany()
                   .HasForeignKey(t => t.ParentTaskId)
+                  .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        // ProjectTemplate entity configuration
+        modelBuilder.Entity<ProjectTemplate>(entity =>
+        {
+            entity.HasKey(tpl => tpl.Id);
+
+            entity.Property(tpl => tpl.Name).IsRequired().HasMaxLength(200);
+            entity.Property(tpl => tpl.Description).HasMaxLength(10000);
+            entity.Property(tpl => tpl.Color).HasMaxLength(20);
+
+            // Deleting a user removes their templates.
+            entity.HasOne(tpl => tpl.Owner)
+                  .WithMany()
+                  .HasForeignKey(tpl => tpl.OwnerId)
+                  .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // ProjectTemplateTask entity configuration
+        modelBuilder.Entity<ProjectTemplateTask>(entity =>
+        {
+            entity.HasKey(t => t.Id);
+
+            entity.Property(t => t.Title).IsRequired().HasMaxLength(200);
+            entity.Property(t => t.Description).HasMaxLength(10000);
+            entity.Property(t => t.Priority)
+                  .HasConversion<string>().HasMaxLength(20).IsRequired();
+
+            // Tags are stored as a Postgres text[] and never null, as on ProjectTask.
+            entity.Property(t => t.Tags)
+                  .HasColumnType("text[]")
+                  .HasDefaultValueSql("'{}'::text[]");
+
+            // Deleting a template removes its tasks.
+            entity.HasOne(t => t.Template)
+                  .WithMany(tpl => tpl.Tasks)
+                  .HasForeignKey(t => t.TemplateId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            // Self-link restricted to avoid a cascade cycle, as on ProjectTask.
+            entity.HasOne(t => t.ParentTemplateTask)
+                  .WithMany()
+                  .HasForeignKey(t => t.ParentTemplateTaskId)
                   .OnDelete(DeleteBehavior.Restrict);
         });
 

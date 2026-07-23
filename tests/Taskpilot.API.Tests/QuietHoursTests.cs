@@ -101,7 +101,9 @@ public class QuietHoursTests
             .Returns(Task.CompletedTask);
 
         var options = Options.Create(new EmailOptions { FrontendBaseUrl = "https://app.test" });
-        var svc = new NotificationDeliveryService(ctx, email.Object, telegram.Object, viber.Object, push.Object, options);
+        // The email/Telegram/Viber fan-out now runs through the shared dispatcher.
+        var dispatcher = new NotificationDispatcher(email.Object, telegram.Object, viber.Object, options);
+        var svc = new NotificationDeliveryService(ctx, dispatcher, push.Object, options);
         return (svc, email, push);
     }
 

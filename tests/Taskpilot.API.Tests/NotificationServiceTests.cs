@@ -51,7 +51,9 @@ public class NotificationServiceTests
         viber.SetupGet(v => v.IsEnabled).Returns(false);
         var push = new Mock<IPushService>();
         push.SetupGet(p => p.IsEnabled).Returns(false);
-        var delivery = new NotificationDeliveryService(ctx, email, telegram.Object, viber.Object, push.Object, opts);
+        // The email/Telegram/Viber fan-out now runs through the shared dispatcher.
+        var dispatcher = new NotificationDispatcher(email, telegram.Object, viber.Object, opts);
+        var delivery = new NotificationDeliveryService(ctx, dispatcher, push.Object, opts);
         return new NotificationService(ctx, MockHub(), delivery, new DisabledNotificationQueue(), NullLogger<NotificationService>.Instance);
     }
 

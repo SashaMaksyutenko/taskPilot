@@ -327,6 +327,9 @@ builder.Services.AddScoped<IForumService, ForumService>();
 builder.Services.AddScoped<IForumAttachmentService, ForumAttachmentService>();
 builder.Services.AddScoped<IMarketplaceService, MarketplaceService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
+// Shared dispatcher (email/Telegram/Viber fan-out); used by the inline delivery path and,
+// later, by the standalone notification service.
+builder.Services.AddScoped<INotificationDispatcher, NotificationDispatcher>();
 builder.Services.AddScoped<INotificationDeliveryService, NotificationDeliveryService>();
 builder.Services.AddScoped<IApiKeyService, ApiKeyService>();
 builder.Services.AddScoped<IUserService, UserService>();

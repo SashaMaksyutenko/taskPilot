@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { apiErrorMessage } from '../lib/apiError'
+import { type AttachmentSource } from '../services/attachmentSources'
 import { fileService } from '../services/fileService'
-import { taskService, type TaskAttachment } from '../services/taskService'
 import { useAppSelector } from '../store/hooks'
+import type { Attachment } from '../types/attachment'
 
 /** Formats a byte count for display, e.g. "1.4 MB". */
 function formatSize(bytes: number): string {
@@ -14,48 +15,64 @@ function formatSize(bytes: number): string {
 }
 
 /**
- * Files attached to a task: the list, an upload button and a remove action.
+ * Files attached to a task or a forum topic: the list, an upload button and a remove
+ * action.
  *
- * Unlike TaskHistory this loads as soon as the task is opened — attachments are part
- * of the task's content, so hiding them behind an expander would mean nobody knows
- * they are there. The bytes are served by the shared /api/files/{id} endpoint.
+ * The list loads as soon as the task or topic is opened — attachments are part of the
+ * content, so hiding them behind an expander (the way TaskHistory does) would mean
+ * nobody knows they are there. The bytes are served by the shared /api/files/{id}
+ * endpoint, which any signed-in user may read.
  */
-export default function TaskAttachments({ taskId }: { taskId: string }) {
+export default function Attachments({
+  source,
+  ownerId,
+  canAttach = true,
+}: {
+  source: AttachmentSource
+  /** Id of the task or topic the files hang off. */
+  ownerId: string
+  /**
+   * Whether the current user may add files. The server decides for real; this only
+   * avoids offering a button that is certain to fail (e.g. a forum topic you did not
+   * write, or one that is locked).
+   */
+  canAttach?: boolean
+}) {
   const { t } = useTranslation()
   const currentUserId = useAppSelector((s) => s.auth.user?.id)
-  const [items, setItems] = useState<TaskAttachment[] | null>(null)
+  const [items, setItems] = useState<Attachment[] | null>(null)
   const [failed, setFailed] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
 
-  // Which task has been requested. A ref, not state: StrictMode double-invokes
+  // Which owner has been requested. A ref, not state: StrictMode double-invokes
   // effects in dev and the second pass would still read the stale state value.
   const loadedFor = useRef<string | null>(null)
 
   useEffect(() => {
-    if (loadedFor.current === taskId) return
-    loadedFor.current = taskId
+    if (loadedFor.current === ownerId) return
+    loadedFor.current = ownerId
 
     setItems(null)
     setFailed(false)
-    taskService
-      .getAttachments(taskId)
+    source
+      .list(ownerId)
       .then((list) => {
         // Comparing the ref (rather than a cleanup flag) discards a stale response
         // without throwing away the only in-flight one under StrictMode.
-        if (loadedFor.current === taskId) setItems(list)
+        if (loadedFor.current === ownerId) setItems(list)
       })
       .catch(() => {
-        if (loadedFor.current === taskId) setFailed(true)
+        if (loadedFor.current === ownerId) setFailed(true)
       })
-  }, [taskId])
+  }, [ownerId, source])
 
   const upload = async (file: File) => {
     setUploading(true)
     setError('')
     try {
-      const added = await taskService.attachFile(taskId, file)
+      const added = await source.upload(ownerId, file)
       setItems((prev) => [added, ...(prev ?? [])])
     } catch (e) {
       // Size limits and the organization storage quota are refused here.
@@ -67,19 +84,19 @@ export default function TaskAttachments({ taskId }: { taskId: string }) {
     }
   }
 
-  const remove = async (attachment: TaskAttachment) => {
+  const remove = async (attachment: Attachment) => {
     setError('')
     // Optimistic: the row disappears at once and comes back if the server refuses.
     setItems((prev) => prev?.filter((a) => a.id !== attachment.id) ?? null)
     try {
-      await taskService.detachFile(attachment.id)
+      await source.remove(attachment.id)
     } catch (e) {
       setError(apiErrorMessage(e))
       setItems((prev) => (prev ? [attachment, ...prev] : prev))
     }
   }
 
-  const download = async (attachment: TaskAttachment) => {
+  const download = async (attachment: Attachment) => {
     const blob = await fileService.download(attachment.fileId).catch(() => null)
     if (!blob) return
     const url = URL.createObjectURL(blob)
@@ -90,28 +107,35 @@ export default function TaskAttachments({ taskId }: { taskId: string }) {
     URL.revokeObjectURL(url)
   }
 
+  // Nothing to show and nothing to add: stay out of the way entirely.
+  if (!canAttach && (failed || items?.length === 0)) return null
+
   return (
     <div className="mb-4">
       <div className="mb-1 flex items-center justify-between">
         <label className="text-sm font-medium text-foreground">{t('attachments.title')}</label>
-        <button
-          type="button"
-          onClick={() => inputRef.current?.click()}
-          disabled={uploading}
-          className="text-sm font-medium text-primary hover:underline disabled:opacity-50"
-        >
-          {uploading ? t('attachments.uploading') : `+ ${t('attachments.attach')}`}
-        </button>
-        <input
-          ref={inputRef}
-          type="file"
-          className="hidden"
-          aria-label={t('attachments.attach')}
-          onChange={(e) => {
-            const file = e.target.files?.[0]
-            if (file) upload(file)
-          }}
-        />
+        {canAttach && (
+          <>
+            <button
+              type="button"
+              onClick={() => inputRef.current?.click()}
+              disabled={uploading}
+              className="text-sm font-medium text-primary hover:underline disabled:opacity-50"
+            >
+              {uploading ? t('attachments.uploading') : `+ ${t('attachments.attach')}`}
+            </button>
+            <input
+              ref={inputRef}
+              type="file"
+              className="hidden"
+              aria-label={t('attachments.attach')}
+              onChange={(e) => {
+                const file = e.target.files?.[0]
+                if (file) upload(file)
+              }}
+            />
+          </>
+        )}
       </div>
 
       {error && <p className="mb-1 text-xs text-red-600">{error}</p>}

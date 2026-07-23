@@ -1,6 +1,7 @@
 import api from '../lib/api'
 import type { PagedResult } from '../types/common'
 import type { ForumReport, Reply, ReplyReaction, TopicDetail, TopicListItem, VoteResult } from '../types/forum'
+import type { Attachment } from '../types/attachment'
 
 /** REST calls for the forum. */
 export const forumService = {
@@ -38,6 +39,28 @@ export const forumService = {
 
   deleteTopic(id: string): Promise<void> {
     return api.delete(`/api/forum/topics/${id}`).then(() => undefined)
+  },
+
+  /** Files attached to the topic, newest first. Readable by anyone signed in. */
+  getAttachments(topicId: string): Promise<Attachment[]> {
+    return api.get<Attachment[]>(`/api/forum/topics/${topicId}/attachments`).then((r) => r.data)
+  },
+
+  /** Uploads a file and attaches it to the topic (topic author only). */
+  attachFile(topicId: string, file: File): Promise<Attachment> {
+    const form = new FormData()
+    form.append('file', file)
+    // Undo the default JSON content-type so the browser sets the multipart boundary.
+    return api
+      .post<Attachment>(`/api/forum/topics/${topicId}/attachments`, form, {
+        headers: { 'Content-Type': undefined },
+      })
+      .then((r) => r.data)
+  },
+
+  /** Removes an attachment and the file behind it (uploader only). */
+  detachFile(attachmentId: string): Promise<void> {
+    return api.delete(`/api/forum/attachments/${attachmentId}`).then(() => undefined)
   },
 
   /** Soft-deletes a reply (author or admin only). */

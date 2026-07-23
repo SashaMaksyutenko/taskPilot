@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, useParams } from 'react-router-dom'
 import Avatar from '../components/Avatar'
+import Attachments from '../components/Attachments'
+import { forumAttachments } from '../services/attachmentSources'
 import Markdown from '../components/Markdown'
 import MarkdownEditor from '../components/MarkdownEditor'
 import ConfirmDialog from '../components/modals/ConfirmDialog'
@@ -347,6 +349,16 @@ export default function TopicPage() {
               </div>
             </>
           )}
+
+          {/* Attached files. Only the author may add them, and a locked topic takes
+              none — but everyone sees and can download whatever is already there. */}
+          <div className="mt-4">
+            <Attachments
+              source={forumAttachments}
+              ownerId={topic.id}
+              canAttach={!!isAuthor && !topic.isLocked}
+            />
+          </div>
         </div>
 
         {/* Replies */}

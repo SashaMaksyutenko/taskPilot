@@ -1,6 +1,7 @@
 import api from '../lib/api'
 import type { Task, TaskComment, TaskStatus } from '../types/project'
 import type { CalendarTask } from '../types/calendar'
+import type { Attachment } from '../types/attachment'
 
 /** REST calls for project tasks. */
 export const taskService = {
@@ -207,17 +208,17 @@ export const taskService = {
   },
 
   /** Files attached to the task, newest first. */
-  getAttachments(taskId: string): Promise<TaskAttachment[]> {
-    return api.get<TaskAttachment[]>(`/api/tasks/${taskId}/attachments`).then((r) => r.data)
+  getAttachments(taskId: string): Promise<Attachment[]> {
+    return api.get<Attachment[]>(`/api/tasks/${taskId}/attachments`).then((r) => r.data)
   },
 
   /** Uploads a file and attaches it to the task (write access required). */
-  attachFile(taskId: string, file: File): Promise<TaskAttachment> {
+  attachFile(taskId: string, file: File): Promise<Attachment> {
     const form = new FormData()
     form.append('file', file)
     // Undo the default JSON content-type so the browser sets the multipart boundary.
     return api
-      .post<TaskAttachment>(`/api/tasks/${taskId}/attachments`, form, {
+      .post<Attachment>(`/api/tasks/${taskId}/attachments`, form, {
         headers: { 'Content-Type': undefined },
       })
       .then((r) => r.data)
@@ -265,21 +266,6 @@ export interface TaskHistoryEntry {
   actorName: string | null
   /** Server-rendered description of the change, e.g. "Status: Backlog → Done". */
   details: string | null
-  createdAt: string
-}
-
-/** A file attached to a task (mirrors the backend TaskAttachmentDto). */
-export interface TaskAttachment {
-  /** The link's id — what detaching takes, not the file's id. */
-  id: string
-  /** The file itself; download it through /api/files/{fileId}. */
-  fileId: string
-  fileName: string
-  contentType: string
-  sizeBytes: number
-  uploadedById: string
-  /** Null when the uploader's account no longer exists. */
-  uploadedByName: string | null
   createdAt: string
 }
 

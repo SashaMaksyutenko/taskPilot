@@ -58,8 +58,48 @@ public class NotificationRecipientResolverTests
 
         var r = await resolver.ResolveAsync(Guid.NewGuid(), NotificationType.Task);
 
-        Assert.Null(r.Email);
+        Assert.NotNull(r);
+        Assert.Null(r!.Email);
         Assert.Null(r.TelegramChatId);
         Assert.False(r.EmailMuted);
+    }
+
+    [Fact]
+    public async Task Resolve_InsideQuietHours_ReturnsNull()
+    {
+        await using var ctx = TestDb.CreateContext();
+        var id = Guid.NewGuid();
+        var hourNow = DateTime.UtcNow.Hour;
+        ctx.Users.Add(new User
+        {
+            Id = id, Name = "Sleeper", Email = "s@example.com", Role = Role.Developer, IsActive = true,
+            // A one-hour window (UTC) that covers the current hour.
+            QuietHoursEnabled = true, QuietHoursStart = hourNow, QuietHoursEnd = (hourNow + 1) % 24, TimeZoneId = null,
+        });
+        await ctx.SaveChangesAsync();
+        var resolver = new NotificationRecipientResolver(ctx);
+
+        // Null tells the caller to hold back every out-of-band channel.
+        Assert.Null(await resolver.ResolveAsync(id, NotificationType.Task));
+    }
+
+    [Fact]
+    public async Task Resolve_WithQuietHoursDisabled_ReturnsTheSnapshot()
+    {
+        await using var ctx = TestDb.CreateContext();
+        var id = Guid.NewGuid();
+        var hourNow = DateTime.UtcNow.Hour;
+        ctx.Users.Add(new User
+        {
+            Id = id, Name = "Awake", Email = "a@example.com", Role = Role.Developer, IsActive = true,
+            // The window would cover now, but the feature is off.
+            QuietHoursEnabled = false, QuietHoursStart = hourNow, QuietHoursEnd = (hourNow + 1) % 24,
+        });
+        await ctx.SaveChangesAsync();
+        var resolver = new NotificationRecipientResolver(ctx);
+
+        var r = await resolver.ResolveAsync(id, NotificationType.Task);
+        Assert.NotNull(r);
+        Assert.Equal("a@example.com", r!.Email);
     }
 }

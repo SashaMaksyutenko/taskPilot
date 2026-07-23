@@ -331,7 +331,6 @@ builder.Services.AddScoped<INotificationService, NotificationService>();
 // the inline delivery path and to enrich queued messages for the notification service.
 builder.Services.AddScoped<INotificationDispatcher, NotificationDispatcher>();
 builder.Services.AddScoped<INotificationRecipientResolver, NotificationRecipientResolver>();
-builder.Services.AddScoped<INotificationDeliveryService, NotificationDeliveryService>();
 builder.Services.AddScoped<IApiKeyService, ApiKeyService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IAdminService, AdminService>();

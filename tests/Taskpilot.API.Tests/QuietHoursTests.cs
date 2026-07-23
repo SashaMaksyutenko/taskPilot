@@ -14,8 +14,10 @@ using Xunit;
 namespace Taskpilot.API.Tests;
 
 /// <summary>
-/// Tests the quiet-hours window itself (wrap-around, time zones) and that
-/// <see cref="NotificationDeliveryService"/> actually holds back out-of-band channels.
+/// Tests the quiet-hours window itself (wrap-around, time zones) and the settings CRUD.
+/// That quiet hours actually hold back delivery is covered where it now lives:
+/// <see cref="NotificationRecipientResolverTests"/> (resolver returns null) and
+/// <see cref="NotificationServiceTests"/> (nothing is sent).
 /// </summary>
 public class QuietHoursTests
 {
@@ -81,96 +83,8 @@ public class QuietHoursTests
         Assert.False(QuietHours.IsValidHour(24));
     }
 
-    /// <summary>Builds a delivery service whose channels are all mocked and observable.</summary>
-    private static (NotificationDeliveryService svc, Mock<IEmailSender> email, Mock<IPushService> push)
-        CreateDelivery(TaskpilotDbContext ctx)
-    {
-        var email = new Mock<IEmailSender>();
-        email.SetupGet(e => e.IsEnabled).Returns(true);
-        email.Setup(e => e.SendAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
-                It.IsAny<string>(), It.IsAny<EmailAttachment?>()))
-             .Returns(Task.CompletedTask);
-
-        var telegram = new Mock<ITelegramSender>();
-        telegram.SetupGet(t => t.IsEnabled).Returns(false);
-        var viber = new Mock<IViberSender>();
-        viber.SetupGet(v => v.IsEnabled).Returns(false);
-
-        var push = new Mock<IPushService>();
-        push.Setup(p => p.SendToUserAsync(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string?>()))
-            .Returns(Task.CompletedTask);
-
-        var options = Options.Create(new EmailOptions { FrontendBaseUrl = "https://app.test" });
-        // The email/Telegram/Viber fan-out runs through the shared dispatcher; the recipient
-        // snapshot is loaded by the real resolver over the same context.
-        var dispatcher = new NotificationDispatcher(email.Object, telegram.Object, viber.Object, options);
-        var resolver = new NotificationRecipientResolver(ctx);
-        var svc = new NotificationDeliveryService(ctx, resolver, dispatcher, push.Object, options);
-        return (svc, email, push);
-    }
-
-    /// <summary>Puts the user in (or out of) a quiet window that covers every hour but one.</summary>
-    private static async Task SetQuietHoursAsync(TaskpilotDbContext ctx, Guid userId, bool enabled, int start, int end)
-    {
-        var user = await ctx.Users.FindAsync(userId);
-        user!.QuietHoursEnabled = enabled;
-        user.QuietHoursStart = start;
-        user.QuietHoursEnd = end;
-        user.TimeZoneId = null; // UTC keeps the test independent of the machine's zone
-        await ctx.SaveChangesAsync();
-    }
-
-    [Fact]
-    public async Task Delivery_InsideQuietHours_SendsNothingOutOfBand()
-    {
-        await using var ctx = TestDb.CreateContext();
-        var user = await TestDb.AddUserAsync(ctx, "Sleeper");
-        // A window covering the whole day (00:00 → 23:00 plus the wrap) — always quiet now.
-        var hourNow = DateTime.UtcNow.Hour;
-        await SetQuietHoursAsync(ctx, user, enabled: true, start: hourNow, end: (hourNow + 1) % 24);
-        var (svc, email, push) = CreateDelivery(ctx);
-
-        await svc.DeliverAsync(user, NotificationType.Task, "Task overdue", "/projects/1");
-
-        email.Verify(e => e.SendAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
-            It.IsAny<string>(), It.IsAny<EmailAttachment?>()), Times.Never);
-        push.Verify(p => p.SendToUserAsync(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string?>()), Times.Never);
-    }
-
-    [Fact]
-    public async Task Delivery_OutsideQuietHours_StillSends()
-    {
-        await using var ctx = TestDb.CreateContext();
-        var user = await TestDb.AddUserAsync(ctx, "Awake");
-        // A one-hour window that does NOT contain the current hour.
-        var hourNow = DateTime.UtcNow.Hour;
-        await SetQuietHoursAsync(ctx, user, enabled: true, start: (hourNow + 2) % 24, end: (hourNow + 3) % 24);
-        var (svc, email, push) = CreateDelivery(ctx);
-
-        await svc.DeliverAsync(user, NotificationType.Task, "Task overdue", "/projects/1");
-
-        email.Verify(e => e.SendAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
-            It.IsAny<string>(), It.IsAny<EmailAttachment?>()), Times.Once);
-        push.Verify(p => p.SendToUserAsync(user, It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string?>()), Times.Once);
-    }
-
-    [Fact]
-    public async Task Delivery_QuietHoursDisabled_StillSends()
-    {
-        await using var ctx = TestDb.CreateContext();
-        var user = await TestDb.AddUserAsync(ctx, "NoQuiet");
-        var hourNow = DateTime.UtcNow.Hour;
-        // The window would cover right now — but the feature is off.
-        await SetQuietHoursAsync(ctx, user, enabled: false, start: hourNow, end: (hourNow + 1) % 24);
-        var (svc, email, _) = CreateDelivery(ctx);
-
-        await svc.DeliverAsync(user, NotificationType.Task, "Task overdue", "/projects/1");
-
-        email.Verify(e => e.SendAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
-            It.IsAny<string>(), It.IsAny<EmailAttachment?>()), Times.Once);
-    }
-
-    /// <summary>Builds a NotificationService (hub, delivery and queue all inert).</summary>
+    /// <summary>Builds a NotificationService with inert out-of-band channels (this file only
+    /// exercises its quiet-hours settings CRUD).</summary>
     private static NotificationService CreateNotifications(TaskpilotDbContext ctx)
     {
         var proxy = new Mock<IClientProxy>();
@@ -181,13 +95,11 @@ public class QuietHoursTests
         var hub = new Mock<IHubContext<NotificationHub>>();
         hub.Setup(h => h.Clients).Returns(clients.Object);
 
-        var delivery = new Mock<INotificationDeliveryService>();
-        delivery.Setup(d => d.DeliverAsync(It.IsAny<Guid>(), It.IsAny<NotificationType>(),
-                It.IsAny<string>(), It.IsAny<string?>()))
-                .Returns(Task.CompletedTask);
-
-        return new NotificationService(ctx, hub.Object, delivery.Object, new NotificationRecipientResolver(ctx),
-            new DisabledNotificationQueue(), NullLogger<NotificationService>.Instance);
+        var opts = Options.Create(new EmailOptions());
+        var dispatcher = new NotificationDispatcher(Mock.Of<IEmailSender>(), Mock.Of<ITelegramSender>(), Mock.Of<IViberSender>(), opts);
+        return new NotificationService(ctx, hub.Object, new NotificationRecipientResolver(ctx),
+            dispatcher, Mock.Of<IPushService>(), new DisabledNotificationQueue(), opts,
+            NullLogger<NotificationService>.Instance);
     }
 
     [Fact]

@@ -51,12 +51,12 @@ public class NotificationServiceTests
         viber.SetupGet(v => v.IsEnabled).Returns(false);
         var push = new Mock<IPushService>();
         push.SetupGet(p => p.IsEnabled).Returns(false);
-        // The email/Telegram/Viber fan-out now runs through the shared dispatcher; the recipient
-        // snapshot is loaded by the real resolver over the same context.
+        // The email/Telegram/Viber fan-out runs through the shared dispatcher; the recipient
+        // snapshot (and quiet-hours check) come from the real resolver over the same context.
         var dispatcher = new NotificationDispatcher(email, telegram.Object, viber.Object, opts);
         var resolver = new NotificationRecipientResolver(ctx);
-        var delivery = new NotificationDeliveryService(ctx, resolver, dispatcher, push.Object, opts);
-        return new NotificationService(ctx, MockHub(), delivery, resolver, new DisabledNotificationQueue(), NullLogger<NotificationService>.Instance);
+        return new NotificationService(ctx, MockHub(), resolver, dispatcher, push.Object,
+            new DisabledNotificationQueue(), opts, NullLogger<NotificationService>.Instance);
     }
 
     [Fact]
@@ -128,21 +128,57 @@ public class NotificationServiceTests
         ctx.Users.Add(new User { Id = userId, Name = "Dana", Email = "dana@example.com", Role = Role.Developer, IsActive = true });
         await ctx.SaveChangesAsync();
 
-        var delivery = new Mock<INotificationDeliveryService>();
+        var opts = Options.Create(new EmailOptions { FrontendBaseUrl = "http://localhost:5173" });
+        var email = new Mock<IEmailSender>();
+        email.SetupGet(e => e.IsEnabled).Returns(true);
+        var dispatcher = new NotificationDispatcher(email.Object, Mock.Of<ITelegramSender>(), Mock.Of<IViberSender>(), opts);
+        var push = new Mock<IPushService>();
         var queue = new Mock<INotificationQueue>();
         queue.SetupGet(q => q.IsEnabled).Returns(true);
         var resolver = new NotificationRecipientResolver(ctx);
-        var svc = new NotificationService(ctx, MockHub(), delivery.Object, resolver, queue.Object, NullLogger<NotificationService>.Instance);
+        var svc = new NotificationService(ctx, MockHub(), resolver, dispatcher, push.Object, queue.Object, opts,
+            NullLogger<NotificationService>.Instance);
 
         await svc.CreateAsync(userId, NotificationType.Task, "You were assigned a task.", "/projects/1");
 
-        // In-app still stored inline; side channels handed to the queue, not delivered inline.
+        // In-app still stored inline; email/Telegram/Viber handed to the queue with the
+        // recipient snapshot, NOT dispatched inline. Web push is sent from the publisher.
         Assert.Equal(1, await ctx.Notifications.CountAsync());
-        // The published message carries the recipient snapshot, resolved from the database, so
-        // the consumer can deliver without any data access.
         queue.Verify(q => q.PublishAsync(It.Is<NotificationDeliveryMessage>(
             m => m.RecipientId == userId && m.Type == NotificationType.Task
                  && m.Recipient != null && m.Recipient.Email == "dana@example.com")), Times.Once);
-        delivery.Verify(d => d.DeliverAsync(It.IsAny<Guid>(), It.IsAny<NotificationType>(), It.IsAny<string>(), It.IsAny<string?>()), Times.Never);
+        push.Verify(p => p.SendToUserAsync(userId, It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string?>()), Times.Once);
+        // The email sender is NOT called inline — that happens in the consumer.
+        email.Verify(e => e.SendAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<EmailAttachment?>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task CreateAsync_InsideQuietHours_StoresInAppButSendsNothingOutOfBand()
+    {
+        await using var ctx = CreateContext();
+        var userId = Guid.NewGuid();
+        var hourNow = DateTime.UtcNow.Hour;
+        ctx.Users.Add(new User
+        {
+            Id = userId, Name = "Dana", Email = "dana@example.com", Role = Role.Developer, IsActive = true,
+            // A one-hour UTC window covering right now.
+            QuietHoursEnabled = true, QuietHoursStart = hourNow, QuietHoursEnd = (hourNow + 1) % 24, TimeZoneId = null,
+        });
+        await ctx.SaveChangesAsync();
+
+        var opts = Options.Create(new EmailOptions { FrontendBaseUrl = "http://localhost:5173" });
+        var email = new Mock<IEmailSender>();
+        email.SetupGet(e => e.IsEnabled).Returns(true);
+        var dispatcher = new NotificationDispatcher(email.Object, Mock.Of<ITelegramSender>(), Mock.Of<IViberSender>(), opts);
+        var push = new Mock<IPushService>();
+        var svc = new NotificationService(ctx, MockHub(), new NotificationRecipientResolver(ctx), dispatcher,
+            push.Object, new DisabledNotificationQueue(), opts, NullLogger<NotificationService>.Instance);
+
+        await svc.CreateAsync(userId, NotificationType.Task, "You were assigned a task.", "/projects/1");
+
+        // The in-app bell still fires; every out-of-band channel is held back.
+        Assert.Equal(1, await ctx.Notifications.CountAsync());
+        email.Verify(e => e.SendAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<EmailAttachment?>()), Times.Never);
+        push.Verify(p => p.SendToUserAsync(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string?>()), Times.Never);
     }
 }

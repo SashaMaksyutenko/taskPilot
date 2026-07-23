@@ -18,24 +18,30 @@ public class NotificationService : INotificationService
 {
     private readonly TaskpilotDbContext _context;
     private readonly IHubContext<NotificationHub> _hub;
-    private readonly INotificationDeliveryService _delivery;
     private readonly INotificationRecipientResolver _resolver;
+    private readonly INotificationDispatcher _dispatcher;
+    private readonly IPushService _push;
     private readonly INotificationQueue _queue;
+    private readonly EmailOptions _emailOptions;
     private readonly ILogger<NotificationService> _logger;
 
     public NotificationService(
         TaskpilotDbContext context,
         IHubContext<NotificationHub> hub,
-        INotificationDeliveryService delivery,
         INotificationRecipientResolver resolver,
+        INotificationDispatcher dispatcher,
+        IPushService push,
         INotificationQueue queue,
+        IOptions<EmailOptions> emailOptions,
         ILogger<NotificationService> logger)
     {
         _context = context;
         _hub = hub;
-        _delivery = delivery;
         _resolver = resolver;
+        _dispatcher = dispatcher;
+        _push = push;
         _queue = queue;
+        _emailOptions = emailOptions.Value;
         _logger = logger;
     }
 
@@ -75,20 +81,27 @@ public class NotificationService : INotificationService
             });
         }
 
-        // Out-of-band channels (email, Telegram, Viber, push): offload to the queue when
-        // RabbitMQ is enabled, otherwise deliver inline (unchanged behaviour). When queuing,
-        // the recipient's contact snapshot is resolved here and travels with the message so the
-        // consumer can send without touching the database.
+        // Out-of-band channels. Resolve the recipient once (null => quiet hours, suppress all
+        // out-of-band). Web push is always sent from here since it reads its subscriptions
+        // from the database; email/Telegram/Viber are queued for the notification service when
+        // a broker is configured, or sent inline through the same dispatcher otherwise.
+        var recipient = await _resolver.ResolveAsync(recipientId, type);
+        if (recipient is null)
+            return;
+
+        await _push.SendToUserAsync(recipientId, "TaskPilot", message, AbsoluteUrl(link));
+
         if (_queue.IsEnabled)
-        {
-            var recipient = await _resolver.ResolveAsync(recipientId, type);
             await _queue.PublishAsync(new NotificationDeliveryMessage(recipientId, type, message, link, recipient));
-        }
         else
-        {
-            await _delivery.DeliverAsync(recipientId, type, message, link);
-        }
+            await _dispatcher.DispatchAsync(recipient, message, link);
     }
+
+    // Turns a relative link (e.g. "/projects/{id}") into a clickable absolute URL (for push).
+    private string AbsoluteUrl(string? link) =>
+        string.IsNullOrEmpty(link)
+            ? _emailOptions.FrontendBaseUrl
+            : _emailOptions.FrontendBaseUrl.TrimEnd('/') + "/" + link.TrimStart('/');
 
     /// <inheritdoc />
     public async Task<Result<List<NotificationDto>>> GetForUserAsync(Guid userId, bool unreadOnly)

@@ -7,6 +7,10 @@ namespace Taskpilot.API.Services;
 /// </summary>
 public interface INotificationRecipientResolver
 {
-    /// <summary>Loads the recipient's contact snapshot for a notification of the given type.</summary>
-    Task<NotificationRecipient> ResolveAsync(Guid recipientId, NotificationType type);
+    /// <summary>
+    /// Loads the recipient's contact snapshot for a notification of the given type, or
+    /// <c>null</c> when the recipient is inside their quiet hours and every out-of-band
+    /// channel should be held back.
+    /// </summary>
+    Task<NotificationRecipient?> ResolveAsync(Guid recipientId, NotificationType type);
 }

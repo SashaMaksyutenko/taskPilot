@@ -2,3 +2,5 @@
 // Microsoft.Extensions.Logging the way the ASP.NET Web SDK did in the API. The senders use
 // ILogger<T>, so bring the namespace in globally.
 global using Microsoft.Extensions.Logging;
+// NotificationRecipient (the dispatcher's input) is a shared contract.
+global using Taskpilot.Contracts;

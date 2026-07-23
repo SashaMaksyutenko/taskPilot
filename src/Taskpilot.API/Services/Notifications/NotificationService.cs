@@ -19,6 +19,7 @@ public class NotificationService : INotificationService
     private readonly TaskpilotDbContext _context;
     private readonly IHubContext<NotificationHub> _hub;
     private readonly INotificationDeliveryService _delivery;
+    private readonly INotificationRecipientResolver _resolver;
     private readonly INotificationQueue _queue;
     private readonly ILogger<NotificationService> _logger;
 
@@ -26,12 +27,14 @@ public class NotificationService : INotificationService
         TaskpilotDbContext context,
         IHubContext<NotificationHub> hub,
         INotificationDeliveryService delivery,
+        INotificationRecipientResolver resolver,
         INotificationQueue queue,
         ILogger<NotificationService> logger)
     {
         _context = context;
         _hub = hub;
         _delivery = delivery;
+        _resolver = resolver;
         _queue = queue;
         _logger = logger;
     }
@@ -72,12 +75,19 @@ public class NotificationService : INotificationService
             });
         }
 
-        // Out-of-band channels (email, Telegram, Viber, push): offload to the queue
-        // when RabbitMQ is enabled, otherwise deliver inline (unchanged behaviour).
+        // Out-of-band channels (email, Telegram, Viber, push): offload to the queue when
+        // RabbitMQ is enabled, otherwise deliver inline (unchanged behaviour). When queuing,
+        // the recipient's contact snapshot is resolved here and travels with the message so the
+        // consumer can send without touching the database.
         if (_queue.IsEnabled)
-            await _queue.PublishAsync(new NotificationDeliveryMessage(recipientId, type, message, link));
+        {
+            var recipient = await _resolver.ResolveAsync(recipientId, type);
+            await _queue.PublishAsync(new NotificationDeliveryMessage(recipientId, type, message, link, recipient));
+        }
         else
+        {
             await _delivery.DeliverAsync(recipientId, type, message, link);
+        }
     }
 
     /// <inheritdoc />

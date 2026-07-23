@@ -16,17 +16,20 @@ namespace Taskpilot.API.Services;
 public class NotificationDeliveryService : INotificationDeliveryService
 {
     private readonly TaskpilotDbContext _context;
+    private readonly INotificationRecipientResolver _resolver;
     private readonly INotificationDispatcher _dispatcher;
     private readonly IPushService _push;
     private readonly EmailOptions _emailOptions;
 
     public NotificationDeliveryService(
         TaskpilotDbContext context,
+        INotificationRecipientResolver resolver,
         INotificationDispatcher dispatcher,
         IPushService push,
         IOptions<EmailOptions> emailOptions)
     {
         _context = context;
+        _resolver = resolver;
         _dispatcher = dispatcher;
         _push = push;
         _emailOptions = emailOptions.Value;
@@ -40,34 +43,15 @@ public class NotificationDeliveryService : INotificationDeliveryService
         if (await IsInQuietHoursAsync(recipientId))
             return;
 
-        // Resolve everything the dispatcher needs in one round-trip, then hand off the
-        // email/Telegram/Viber fan-out to the shared dispatcher.
-        var recipient = await ResolveRecipientAsync(recipientId, type);
+        // Resolve everything the dispatcher needs, then hand off the email/Telegram/Viber
+        // fan-out to the shared dispatcher (the same resolver runs when enriching a queued
+        // message, so inline and queued delivery agree on the recipient snapshot).
+        var recipient = await _resolver.ResolveAsync(recipientId, type);
         await _dispatcher.DispatchAsync(recipient, message, link);
 
         // Push stays here: it looks up the recipient's subscriptions in the database.
         var pushUrl = AbsoluteUrl(link);
         await _push.SendToUserAsync(recipientId, "TaskPilot", message, pushUrl);
-    }
-
-    /// <summary>
-    /// Loads the recipient's contact details plus whether email is muted for this type, as a
-    /// database-free snapshot the dispatcher can act on.
-    /// </summary>
-    private async Task<NotificationRecipient> ResolveRecipientAsync(Guid recipientId, NotificationType type)
-    {
-        // Email is opted out independently per (type, Email channel).
-        var emailMuted = await _context.NotificationPreferences
-            .AnyAsync(p => p.UserId == recipientId && p.Type == type && p.Channel == NotificationChannel.Email);
-
-        var user = await _context.Users
-            .Where(u => u.Id == recipientId)
-            .Select(u => new { u.Email, u.Name, u.TelegramChatId, u.ViberId })
-            .AsNoTracking()
-            .FirstOrDefaultAsync();
-
-        return new NotificationRecipient(
-            user?.Email, user?.Name, user?.TelegramChatId, user?.ViberId, emailMuted);
     }
 
     /// <summary>True when the recipient has quiet hours on and is inside their window.</summary>

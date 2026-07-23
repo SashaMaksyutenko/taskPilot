@@ -51,10 +51,12 @@ public class NotificationServiceTests
         viber.SetupGet(v => v.IsEnabled).Returns(false);
         var push = new Mock<IPushService>();
         push.SetupGet(p => p.IsEnabled).Returns(false);
-        // The email/Telegram/Viber fan-out now runs through the shared dispatcher.
+        // The email/Telegram/Viber fan-out now runs through the shared dispatcher; the recipient
+        // snapshot is loaded by the real resolver over the same context.
         var dispatcher = new NotificationDispatcher(email, telegram.Object, viber.Object, opts);
-        var delivery = new NotificationDeliveryService(ctx, dispatcher, push.Object, opts);
-        return new NotificationService(ctx, MockHub(), delivery, new DisabledNotificationQueue(), NullLogger<NotificationService>.Instance);
+        var resolver = new NotificationRecipientResolver(ctx);
+        var delivery = new NotificationDeliveryService(ctx, resolver, dispatcher, push.Object, opts);
+        return new NotificationService(ctx, MockHub(), delivery, resolver, new DisabledNotificationQueue(), NullLogger<NotificationService>.Instance);
     }
 
     [Fact]
@@ -129,14 +131,18 @@ public class NotificationServiceTests
         var delivery = new Mock<INotificationDeliveryService>();
         var queue = new Mock<INotificationQueue>();
         queue.SetupGet(q => q.IsEnabled).Returns(true);
-        var svc = new NotificationService(ctx, MockHub(), delivery.Object, queue.Object, NullLogger<NotificationService>.Instance);
+        var resolver = new NotificationRecipientResolver(ctx);
+        var svc = new NotificationService(ctx, MockHub(), delivery.Object, resolver, queue.Object, NullLogger<NotificationService>.Instance);
 
         await svc.CreateAsync(userId, NotificationType.Task, "You were assigned a task.", "/projects/1");
 
         // In-app still stored inline; side channels handed to the queue, not delivered inline.
         Assert.Equal(1, await ctx.Notifications.CountAsync());
+        // The published message carries the recipient snapshot, resolved from the database, so
+        // the consumer can deliver without any data access.
         queue.Verify(q => q.PublishAsync(It.Is<NotificationDeliveryMessage>(
-            m => m.RecipientId == userId && m.Type == NotificationType.Task)), Times.Once);
+            m => m.RecipientId == userId && m.Type == NotificationType.Task
+                 && m.Recipient != null && m.Recipient.Email == "dana@example.com")), Times.Once);
         delivery.Verify(d => d.DeliverAsync(It.IsAny<Guid>(), It.IsAny<NotificationType>(), It.IsAny<string>(), It.IsAny<string?>()), Times.Never);
     }
 }

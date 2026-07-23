@@ -101,9 +101,11 @@ public class QuietHoursTests
             .Returns(Task.CompletedTask);
 
         var options = Options.Create(new EmailOptions { FrontendBaseUrl = "https://app.test" });
-        // The email/Telegram/Viber fan-out now runs through the shared dispatcher.
+        // The email/Telegram/Viber fan-out runs through the shared dispatcher; the recipient
+        // snapshot is loaded by the real resolver over the same context.
         var dispatcher = new NotificationDispatcher(email.Object, telegram.Object, viber.Object, options);
-        var svc = new NotificationDeliveryService(ctx, dispatcher, push.Object, options);
+        var resolver = new NotificationRecipientResolver(ctx);
+        var svc = new NotificationDeliveryService(ctx, resolver, dispatcher, push.Object, options);
         return (svc, email, push);
     }
 
@@ -184,8 +186,8 @@ public class QuietHoursTests
                 It.IsAny<string>(), It.IsAny<string?>()))
                 .Returns(Task.CompletedTask);
 
-        return new NotificationService(ctx, hub.Object, delivery.Object, new DisabledNotificationQueue(),
-            NullLogger<NotificationService>.Instance);
+        return new NotificationService(ctx, hub.Object, delivery.Object, new NotificationRecipientResolver(ctx),
+            new DisabledNotificationQueue(), NullLogger<NotificationService>.Instance);
     }
 
     [Fact]

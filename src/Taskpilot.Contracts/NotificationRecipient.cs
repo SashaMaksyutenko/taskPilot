@@ -1,4 +1,4 @@
-namespace Taskpilot.Integrations;
+namespace Taskpilot.Contracts;
 
 /// <summary>
 /// A resolved snapshot of everything the dispatcher needs to reach one recipient over the

@@ -18,4 +18,9 @@
     <PackageReference Include="SendGrid" Version="9.29.3" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- NotificationRecipient (the dispatcher's input) lives in the shared contracts. -->
+    <ProjectReference Include="..\Taskpilot.Contracts\Taskpilot.Contracts.csproj" />
+  </ItemGroup>
+
 </Project>

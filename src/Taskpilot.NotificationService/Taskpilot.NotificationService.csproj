@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk.Worker">
+
+  <!--
+    Standalone worker that consumes queued notification deliveries from RabbitMQ, off the
+    API's request path. Shares only the wire contract (Taskpilot.Contracts); it does NOT
+    reference the API. This is the notification microservice from the architecture: the API
+    publishes NotificationDeliveryMessage, this service consumes it.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>Taskpilot.NotificationService</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MassTransit.RabbitMQ" Version="8.3.0" />
+    <!-- Provides Host.CreateApplicationBuilder (the Worker SDK ships only the abstractions). -->
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Shared messaging contract with the API (the publisher). -->
+    <ProjectReference Include="..\Taskpilot.Contracts\Taskpilot.Contracts.csproj" />
+  </ItemGroup>
+
+</Project>

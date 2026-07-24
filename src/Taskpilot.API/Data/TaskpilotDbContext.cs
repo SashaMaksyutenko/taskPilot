@@ -85,6 +85,7 @@ public class TaskpilotDbContext : DbContext
     /// <summary>Two-way reviews for completed marketplace tasks.</summary>
     public DbSet<Review> Reviews => Set<Review>();
     public DbSet<SkillEndorsement> SkillEndorsements => Set<SkillEndorsement>();
+    public DbSet<UserBlock> UserBlocks => Set<UserBlock>();
 
     /// <summary>Personal notes.</summary>
     public DbSet<Note> Notes => Set<Note>();
@@ -825,6 +826,18 @@ public class TaskpilotDbContext : DbContext
             // Quick lookup of a user's received endorsements (for their profile).
             entity.HasIndex(e => e.UserId);
             // Endorsed user and endorser are plain ids (no FK), like Review's rater/ratee.
+        });
+
+        // UserBlock entity configuration
+        modelBuilder.Entity<UserBlock>(entity =>
+        {
+            entity.HasKey(b => b.Id);
+
+            // At most one block row per (blocker, blocked) pair.
+            entity.HasIndex(b => new { b.BlockerId, b.BlockedId }).IsUnique();
+            // Quick lookup of who blocked a given user (for the reverse-direction check).
+            entity.HasIndex(b => b.BlockedId);
+            // Blocker and blocked are plain ids (no FK), like Review's rater/ratee.
         });
 
         // Note entity configuration

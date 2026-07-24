@@ -506,6 +506,9 @@ public class UserService : IUserService
         // Endorsements this user received (their skills are scrubbed) and ones they gave others.
         _context.SkillEndorsements.RemoveRange(
             _context.SkillEndorsements.Where(e => e.UserId == userId || e.EndorserId == userId));
+        // Direct-message blocks the user created or is the target of.
+        _context.UserBlocks.RemoveRange(
+            _context.UserBlocks.Where(b => b.BlockerId == userId || b.BlockedId == userId));
 
         await _context.SaveChangesAsync();
 

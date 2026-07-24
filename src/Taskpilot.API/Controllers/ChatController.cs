@@ -110,6 +110,39 @@ public class ChatController : BaseApiController
         return result.Succeeded ? Ok(new { muted = result.Value }) : BadRequest(new { error = result.Error });
     }
 
+    /// <summary>Lists the users the current user has blocked from direct messaging.</summary>
+    [HttpGet("blocks")]
+    public async Task<IActionResult> GetBlocks()
+    {
+        var userId = CurrentUserId();
+        if (userId is null) return Unauthorized();
+
+        var result = await _chatService.GetBlockedUsersAsync(userId.Value);
+        return Ok(result.Value);
+    }
+
+    /// <summary>Blocks a user from direct messaging with the current user.</summary>
+    [HttpPost("blocks/{blockedId:guid}")]
+    public async Task<IActionResult> BlockUser(Guid blockedId)
+    {
+        var userId = CurrentUserId();
+        if (userId is null) return Unauthorized();
+
+        var result = await _chatService.BlockUserAsync(userId.Value, blockedId);
+        return result.Succeeded ? Ok(new { message = "User blocked." }) : BadRequest(new { error = result.Error });
+    }
+
+    /// <summary>Removes the current user's block on a user.</summary>
+    [HttpDelete("blocks/{blockedId:guid}")]
+    public async Task<IActionResult> UnblockUser(Guid blockedId)
+    {
+        var userId = CurrentUserId();
+        if (userId is null) return Unauthorized();
+
+        var result = await _chatService.UnblockUserAsync(userId.Value, blockedId);
+        return result.Succeeded ? Ok(new { message = "User unblocked." }) : BadRequest(new { error = result.Error });
+    }
+
     /// <summary>Returns the messages of a conversation the current user belongs to.</summary>
     [HttpGet("conversations/{conversationId:guid}/messages")]
     public async Task<IActionResult> GetMessages(Guid conversationId)

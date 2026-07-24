@@ -47,6 +47,9 @@ public class ChatService : IChatService
         if (!otherExists)
             return Result<ConversationDto>.Fail("The other user does not exist.");
 
+        if (await IsBlockedBetweenAsync(userId, otherUserId))
+            return Result<ConversationDto>.Fail("You cannot start a conversation with this user.");
+
         try
         {
             // Look for an existing direct conversation that contains both users.
@@ -155,11 +158,23 @@ public class ChatService : IChatService
                 .ToListAsync())
             .ToHashSet();
 
+        // Users this user has blocked, to flag direct conversations they can no longer message.
+        var blockedUserIds = (await _context.UserBlocks
+                .Where(b => b.BlockerId == userId)
+                .Select(b => b.BlockedId)
+                .ToListAsync())
+            .ToHashSet();
+
         var dtos = conversations.Select(MapConversation).ToList();
         foreach (var d in dtos)
         {
             d.UnreadCount = unreadMap.GetValueOrDefault(d.Id);
             d.Muted = mutedIds.Contains(d.Id);
+            if (d.Type == nameof(ConversationType.Direct))
+            {
+                var other = d.Participants.FirstOrDefault(p => p.UserId != userId);
+                d.Blocked = other is not null && blockedUserIds.Contains(other.UserId);
+            }
         }
 
         return Result<List<ConversationDto>>.Ok(dtos);
@@ -180,6 +195,77 @@ public class ChatService : IChatService
         await _context.SaveChangesAsync();
         return Result<bool>.Ok(muted);
     }
+
+    /// <inheritdoc />
+    public async Task<Result> BlockUserAsync(Guid blockerId, Guid blockedId)
+    {
+        if (blockerId == blockedId)
+            return Result.Fail("You cannot block yourself.");
+
+        if (!await _context.Users.AnyAsync(u => u.Id == blockedId))
+            return Result.Fail("The other user does not exist.");
+
+        // Idempotent: blocking an already-blocked user is a no-op success.
+        var already = await _context.UserBlocks
+            .AnyAsync(b => b.BlockerId == blockerId && b.BlockedId == blockedId);
+        if (!already)
+        {
+            _context.UserBlocks.Add(new UserBlock
+            {
+                Id = Guid.NewGuid(),
+                BlockerId = blockerId,
+                BlockedId = blockedId,
+            });
+            await _context.SaveChangesAsync();
+            _logger.LogInformation("User blocked. BlockerId: {BlockerId}, BlockedId: {BlockedId}", blockerId, blockedId);
+        }
+        return Result.Ok();
+    }
+
+    /// <inheritdoc />
+    public async Task<Result> UnblockUserAsync(Guid blockerId, Guid blockedId)
+    {
+        var block = await _context.UserBlocks
+            .FirstOrDefaultAsync(b => b.BlockerId == blockerId && b.BlockedId == blockedId);
+        if (block is not null)
+        {
+            _context.UserBlocks.Remove(block);
+            await _context.SaveChangesAsync();
+            _logger.LogInformation("User unblocked. BlockerId: {BlockerId}, BlockedId: {BlockedId}", blockerId, blockedId);
+        }
+        return Result.Ok();
+    }
+
+    /// <inheritdoc />
+    public async Task<Result<List<BlockedUserDto>>> GetBlockedUsersAsync(Guid userId)
+    {
+        // Fetch the raw columns in SQL, then build the avatar URL in memory (that helper
+        // is a plain C# method EF cannot translate).
+        var rows = await _context.UserBlocks
+            .Where(b => b.BlockerId == userId)
+            .OrderByDescending(b => b.CreatedAt)
+            .Join(_context.Users, b => b.BlockedId, u => u.Id,
+                (b, u) => new { u.Id, u.Name, u.AvatarFileId, b.CreatedAt })
+            .AsNoTracking()
+            .ToListAsync();
+
+        var blocked = rows
+            .Select(r => new BlockedUserDto
+            {
+                UserId = r.Id,
+                Name = r.Name,
+                AvatarUrl = UserMapper.AvatarUrl(r.Id, r.AvatarFileId),
+                BlockedAt = r.CreatedAt,
+            })
+            .ToList();
+
+        return Result<List<BlockedUserDto>>.Ok(blocked);
+    }
+
+    /// <summary>True when either user has blocked the other (blocking is symmetric in effect).</summary>
+    private Task<bool> IsBlockedBetweenAsync(Guid a, Guid b) =>
+        _context.UserBlocks.AnyAsync(x =>
+            (x.BlockerId == a && x.BlockedId == b) || (x.BlockerId == b && x.BlockedId == a));
 
     /// <inheritdoc />
     public async Task<Result<DateTime>> MarkConversationReadAsync(Guid userId, Guid conversationId)
@@ -232,6 +318,16 @@ public class ChatService : IChatService
 
         if (await MuteGuard.CheckAsync(_context, senderId) is { } muted)
             return Result<MessageDto>.Fail(muted);
+
+        // Blocking applies only to direct (1:1) chats: if either side blocked the other,
+        // the direct message is refused.
+        var directConv = await _context.Conversations
+            .Where(c => c.Id == dto.ConversationId && c.Type == ConversationType.Direct)
+            .Select(c => new { OtherId = c.Participants.Where(p => p.UserId != senderId).Select(p => p.UserId).FirstOrDefault() })
+            .FirstOrDefaultAsync();
+        if (directConv is not null && directConv.OtherId != Guid.Empty
+            && await IsBlockedBetweenAsync(senderId, directConv.OtherId))
+            return Result<MessageDto>.Fail("You can no longer message this user.");
 
         // If a file is attached, make sure it exists before linking it.
         FileAttachment? attachment = null;

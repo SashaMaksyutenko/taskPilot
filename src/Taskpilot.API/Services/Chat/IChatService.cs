@@ -26,6 +26,15 @@ public interface IChatService
     /// <summary>Mutes or unmutes a conversation for the user; returns the new muted state.</summary>
     Task<Result<bool>> SetConversationMutedAsync(Guid userId, Guid conversationId, bool muted);
 
+    /// <summary>Blocks a user from direct messaging with the caller (idempotent).</summary>
+    Task<Result> BlockUserAsync(Guid blockerId, Guid blockedId);
+
+    /// <summary>Removes the caller's block on a user (idempotent).</summary>
+    Task<Result> UnblockUserAsync(Guid blockerId, Guid blockedId);
+
+    /// <summary>Lists the users the caller has blocked.</summary>
+    Task<Result<List<BlockedUserDto>>> GetBlockedUsersAsync(Guid userId);
+
     /// <summary>Returns the ids of every conversation the user takes part in.</summary>
     Task<List<Guid>> GetConversationIdsAsync(Guid userId);
 

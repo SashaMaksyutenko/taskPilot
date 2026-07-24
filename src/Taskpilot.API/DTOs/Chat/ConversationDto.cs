@@ -16,6 +16,12 @@ public class ConversationDto
 
     /// <summary>Whether the current user has muted notifications from this conversation.</summary>
     public bool Muted { get; set; }
+
+    /// <summary>
+    /// For a direct conversation, whether the current user has blocked the other participant.
+    /// Always false for group conversations.
+    /// </summary>
+    public bool Blocked { get; set; }
 }
 
 /// <summary>Input for muting or unmuting a conversation.</summary>

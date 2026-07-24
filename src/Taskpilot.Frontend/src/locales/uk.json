@@ -441,6 +441,7 @@
     "name": "Ім'я",
     "jobTitle": "Посада",
     "location": "Місто",
+    "skills": "Навички",
     "phone": "Телефон",
     "website": "Вебсайт",
     "linkedin": "LinkedIn",

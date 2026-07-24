@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import { AxiosError } from 'axios'
 import QRCode from 'qrcode'
 import Avatar from '../components/Avatar'
+import TagInput from '../components/TagInput'
 import { notify } from '../lib/toast'
 import { apiErrorMessage } from '../lib/apiError'
 import { enablePush, disablePush, getPushEnabled, pushSupported } from '../lib/push'
@@ -45,6 +46,7 @@ const emptyForm: UpdateProfileData = {
   title: '',
   bio: '',
   location: '',
+  skills: [],
   website: '',
   linkedIn: '',
   github: '',
@@ -420,6 +422,7 @@ export default function SettingsPage() {
         title: user.title ?? '',
         bio: user.bio ?? '',
         location: user.location ?? '',
+        skills: user.skills ?? [],
         website: user.website ?? '',
         linkedIn: user.linkedIn ?? '',
         github: user.github ?? '',
@@ -597,6 +600,16 @@ export default function SettingsPage() {
             onChange={(e) => set('bio', e.target.value)}
             rows={3}
             className="w-full rounded-lg border border-border bg-canvas px-3 py-2 outline-none focus:border-primary"
+          />
+
+          {/* Skill tags — shown as chips on the public profile. Limits mirror the server
+              (max 30 tags, 40 chars each). */}
+          <label className="mb-1 mt-4 block text-sm font-medium text-foreground">{t('settings.skills')}</label>
+          <TagInput
+            tags={form.skills ?? []}
+            onChange={(skills) => setForm((f) => ({ ...f, skills }))}
+            max={30}
+            maxLength={40}
           />
 
           <label className="mt-4 flex items-center gap-2 text-sm">

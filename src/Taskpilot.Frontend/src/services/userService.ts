@@ -7,6 +7,8 @@ export interface UpdateProfileData {
   title?: string
   bio?: string
   location?: string
+  /** Skill tags; the server normalizes and de-duplicates them. */
+  skills?: string[]
   website?: string
   linkedIn?: string
   github?: string
@@ -31,6 +33,8 @@ export interface PublicProfile {
   title?: string | null
   bio?: string | null
   location?: string | null
+  /** Skill tags shown on the profile. */
+  skills: string[]
   email?: string | null
   website?: string | null
   linkedIn?: string | null

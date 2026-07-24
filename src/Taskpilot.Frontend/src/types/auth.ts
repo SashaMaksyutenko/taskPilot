@@ -51,6 +51,7 @@ export interface User {
   title: string | null
   bio: string | null
   location: string | null
+  skills: string[]
   website: string | null
   linkedIn: string | null
   github: string | null

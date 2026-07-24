@@ -441,6 +441,7 @@
     "name": "Name",
     "jobTitle": "Title",
     "location": "Location",
+    "skills": "Skills",
     "phone": "Phone",
     "website": "Website",
     "linkedin": "LinkedIn",

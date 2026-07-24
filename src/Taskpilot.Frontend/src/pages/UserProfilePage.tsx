@@ -117,6 +117,23 @@ export default function UserProfilePage() {
               </div>
             )}
 
+            {/* Skills */}
+            {profile.skills.length > 0 && (
+              <div className="mt-6 rounded-xl border border-border bg-surface p-6">
+                <h2 className="mb-3 font-bold">{t('settings.skills')}</h2>
+                <div className="flex flex-wrap gap-2">
+                  {profile.skills.map((skill) => (
+                    <span
+                      key={skill}
+                      className="rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary"
+                    >
+                      {skill}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Contacts */}
             {(profile.email || profile.website || profile.linkedIn || profile.github || profile.phone) && (
               <div className="mt-6 rounded-xl border border-border bg-surface p-6">

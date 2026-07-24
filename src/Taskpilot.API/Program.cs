@@ -15,7 +15,6 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Taskpilot.API.Common;
 using Taskpilot.API.Configuration;
-using Taskpilot.API.Consumers;
 using Taskpilot.API.Data;
 using Taskpilot.API.Hubs;
 using Taskpilot.API.Middleware;
@@ -188,9 +187,10 @@ builder.Services.Configure<ViberOptions>(builder.Configuration.GetSection("Viber
 builder.Services.AddHttpClient<IViberSender, ViberSender>();
 builder.Services.AddScoped<IViberLinkService, ViberLinkService>();
 
-// RabbitMQ (populated from .env: RabbitMq__Connection). When set, notification
-// side-channel delivery is offloaded to a MassTransit consumer; otherwise it runs
-// inline and the app behaves exactly as without a broker.
+// RabbitMQ (populated from .env: RabbitMq__Connection). When set, out-of-band notification
+// delivery is PUBLISHED to the queue for the standalone Taskpilot.NotificationService to
+// consume; otherwise it runs inline and the app behaves exactly as without a broker. The API
+// never consumes the queue itself — that is the notification service's job.
 var rabbitOptions = new RabbitMqOptions();
 builder.Configuration.GetSection("RabbitMq").Bind(rabbitOptions);
 builder.Services.Configure<RabbitMqOptions>(builder.Configuration.GetSection("RabbitMq"));
@@ -198,7 +198,7 @@ if (rabbitOptions.IsConfigured)
 {
     builder.Services.AddMassTransit(x =>
     {
-        x.AddConsumer<NotificationDeliveryConsumer>();
+        // No consumers here: the API is a publisher only.
         x.UsingRabbitMq((context, cfg) =>
         {
             cfg.Host(new Uri(rabbitOptions.Connection));

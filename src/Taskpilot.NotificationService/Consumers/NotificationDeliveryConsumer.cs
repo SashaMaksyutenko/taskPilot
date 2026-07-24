@@ -1,37 +1,38 @@
 using MassTransit;
 using Taskpilot.Contracts;
+using Taskpilot.Integrations;
 
 namespace Taskpilot.NotificationService.Consumers;
 
 /// <summary>
-/// Consumes queued <see cref="NotificationDeliveryMessage"/>s published by the API and
-/// performs the out-of-band delivery (email, Telegram, Viber, web push).
+/// Consumes queued <see cref="NotificationDeliveryMessage"/>s published by the API and delivers
+/// them over email/Telegram/Viber via the shared <see cref="INotificationDispatcher"/>. The
+/// message already carries the recipient's contact snapshot, so this runs with no database
+/// access — web push and quiet hours were handled by the publisher before the message was queued.
 /// </summary>
-/// <remarks>
-/// Scaffold stage: this currently only logs receipt, to prove the API → RabbitMQ → service
-/// topology end-to-end. The actual delivery logic (today in the API's
-/// <c>NotificationDeliveryService</c>) moves here in a follow-up session, once its data
-/// dependencies are shared or the message is enriched with the recipient's contact details.
-/// </remarks>
 public class NotificationDeliveryConsumer : IConsumer<NotificationDeliveryMessage>
 {
+    private readonly INotificationDispatcher _dispatcher;
     private readonly ILogger<NotificationDeliveryConsumer> _logger;
 
-    public NotificationDeliveryConsumer(ILogger<NotificationDeliveryConsumer> logger)
+    public NotificationDeliveryConsumer(INotificationDispatcher dispatcher, ILogger<NotificationDeliveryConsumer> logger)
     {
+        _dispatcher = dispatcher;
         _logger = logger;
     }
 
-    /// <summary>Handles one queued delivery request.</summary>
-    /// <param name="context">The message envelope from MassTransit.</param>
-    public Task Consume(ConsumeContext<NotificationDeliveryMessage> context)
+    public async Task Consume(ConsumeContext<NotificationDeliveryMessage> context)
     {
         var m = context.Message;
-        _logger.LogInformation(
-            "Received notification delivery. RecipientId: {RecipientId}, Type: {Type}, Link: {Link}",
-            m.RecipientId, m.Type, m.Link);
+        if (m.Recipient is null)
+        {
+            // Enrichment is always done at publish time; a null snapshot means a malformed or
+            // legacy message, which we cannot deliver without re-reading the database.
+            _logger.LogWarning("Skipping delivery: message has no recipient snapshot. RecipientId: {RecipientId}", m.RecipientId);
+            return;
+        }
 
-        // TODO (next session): perform the real delivery here instead of just logging.
-        return Task.CompletedTask;
+        _logger.LogInformation("Delivering notification. RecipientId: {RecipientId}, Type: {Type}", m.RecipientId, m.Type);
+        await _dispatcher.DispatchAsync(m.Recipient, m.Message, m.Link);
     }
 }

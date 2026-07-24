@@ -17,11 +17,16 @@
     <PackageReference Include="MassTransit.RabbitMQ" Version="8.3.0" />
     <!-- Provides Host.CreateApplicationBuilder (the Worker SDK ships only the abstractions). -->
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.1" />
+    <!-- AddHttpClient (typed clients for the Telegram/Viber senders). -->
+    <PackageReference Include="Microsoft.Extensions.Http" Version="8.0.1" />
+    <!-- Configure&lt;TOptions&gt;(IConfigurationSection) to bind the Email/Telegram/Viber sections. -->
+    <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="8.0.0" />
   </ItemGroup>
 
   <ItemGroup>
-    <!-- Shared messaging contract with the API (the publisher). -->
+    <!-- Shared messaging contract (the publisher) + the notification senders/dispatcher. -->
     <ProjectReference Include="..\Taskpilot.Contracts\Taskpilot.Contracts.csproj" />
+    <ProjectReference Include="..\Taskpilot.Integrations\Taskpilot.Integrations.csproj" />
   </ItemGroup>
 
 </Project>

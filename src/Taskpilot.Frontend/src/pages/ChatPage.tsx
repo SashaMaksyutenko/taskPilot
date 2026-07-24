@@ -1,5 +1,5 @@
 import { Fragment, useEffect, useRef, useState } from 'react'
-import { Paperclip, Send, Smile, MessageSquare } from 'lucide-react'
+import { Bell, BellOff, Paperclip, Send, Smile, MessageSquare } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import type { HubConnection } from '@microsoft/signalr'
@@ -174,6 +174,19 @@ export default function ChatPage() {
     // Opening a conversation clears its unread badge.
     chatService.markRead(id).catch(() => {})
     setConversations((prev) => prev.map((c) => (c.id === id ? { ...c, unreadCount: 0 } : c)))
+  }
+
+  // Mute or unmute the given conversation's notifications (optimistic, rolls back on failure).
+  const toggleMute = async (conv: Conversation) => {
+    const next = !conv.muted
+    setConversations((prev) => prev.map((c) => (c.id === conv.id ? { ...c, muted: next } : c)))
+    try {
+      await chatService.setMuted(conv.id, next)
+      notify.success(next ? t('chat.muted') : t('chat.unmuted'))
+    } catch {
+      setConversations((prev) => prev.map((c) => (c.id === conv.id ? { ...c, muted: conv.muted } : c)))
+      notify.error(t('chat.muteFailed'))
+    }
   }
 
   const copyMessageLink = (message: Message) => {
@@ -425,8 +438,11 @@ export default function ChatPage() {
   const otherUser = (conv: Conversation) =>
     conv.type === 'Group' ? null : conv.participants.find((p) => p.userId !== currentUser?.id) ?? null
 
+  // The currently open conversation (for the header + mute toggle).
+  const selectedConv = conversations.find((c) => c.id === selectedId) ?? null
+
   // @mention candidates: the current conversation's other participants.
-  const mentionCandidates = (conversations.find((c) => c.id === selectedId)?.participants ?? [])
+  const mentionCandidates = (selectedConv?.participants ?? [])
     .filter((p) => p.userId !== currentUser?.id)
     .map((p) => ({ id: p.userId, name: p.name, avatarUrl: p.avatarUrl }))
 
@@ -531,6 +547,9 @@ export default function ChatPage() {
                   <span className={cn('min-w-0 flex-1 truncate', conv.unreadCount > 0 && selectedId !== conv.id && 'font-semibold')}>
                     {conversationTitle(conv)}
                   </span>
+                  {conv.muted && (
+                    <BellOff className="h-3.5 w-3.5 flex-none text-muted" aria-label={t('chat.mutedLabel')} />
+                  )}
                   {conv.unreadCount > 0 && selectedId !== conv.id ? (
                     <span className="flex-none rounded-full bg-accent px-1.5 py-0.5 text-xs font-semibold leading-none text-white">
                       {conv.unreadCount > 99 ? '99+' : conv.unreadCount}
@@ -561,6 +580,29 @@ export default function ChatPage() {
         <main className="flex min-h-0 flex-1 flex-col bg-canvas/30">
           {selectedId ? (
             <>
+              {selectedConv && (
+                <div className="flex items-center gap-2 border-b border-border px-4 py-2.5">
+                  <Avatar name={conversationTitle(selectedConv)} src={conversationAvatar(selectedConv)} size={32} />
+                  <span className="min-w-0 flex-1 truncate font-semibold text-foreground">
+                    {conversationTitle(selectedConv)}
+                  </span>
+                  <Tooltip label={selectedConv.muted ? t('chat.unmute') : t('chat.mute')} side="top">
+                    <button
+                      type="button"
+                      onClick={() => toggleMute(selectedConv)}
+                      aria-label={selectedConv.muted ? t('chat.unmute') : t('chat.mute')}
+                      className="rounded-lg p-2 text-muted transition hover:bg-canvas hover:text-foreground"
+                    >
+                      {selectedConv.muted ? (
+                        <BellOff className="h-5 w-5 text-accent" />
+                      ) : (
+                        <Bell className="h-5 w-5" />
+                      )}
+                    </button>
+                  </Tooltip>
+                </div>
+              )}
+
               {messages.some((m) => m.isPinned && !m.isDeleted) && (
                 <div className="border-b border-border bg-amber-50 px-4 py-2 dark:bg-amber-950/20">
                   {messages

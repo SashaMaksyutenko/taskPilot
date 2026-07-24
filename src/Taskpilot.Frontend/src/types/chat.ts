@@ -20,6 +20,8 @@ export interface Conversation {
   createdAt: string
   participants: Participant[]
   unreadCount: number
+  /** Whether the current user has muted this conversation's notifications. */
+  muted: boolean
 }
 
 export interface Message {

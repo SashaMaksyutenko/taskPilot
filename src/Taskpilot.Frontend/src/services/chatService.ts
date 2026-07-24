@@ -22,6 +22,13 @@ export const chatService = {
     return api.post(`/api/chat/conversations/${conversationId}/read`).then(() => undefined)
   },
 
+  /** POST /api/chat/conversations/{id}/mute — mute or unmute a conversation; returns the new state. */
+  setMuted(conversationId: string, muted: boolean): Promise<boolean> {
+    return api
+      .post<{ muted: boolean }>(`/api/chat/conversations/${conversationId}/mute`, { muted })
+      .then((r) => r.data.muted)
+  },
+
   /** GET /api/chat/conversations/{id}/messages — message history. */
   getMessages(conversationId: string): Promise<Message[]> {
     return api

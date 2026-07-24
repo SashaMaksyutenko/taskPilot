@@ -26,4 +26,10 @@ public class ConversationParticipant
 
     /// <summary>UTC time the user last read this conversation; null if never. Used for unread counts.</summary>
     public DateTime? LastReadAt { get; set; }
+
+    /// <summary>
+    /// When true, this user has muted the conversation: they still see its messages, but get
+    /// no notifications about new messages or mentions in it (spec module 6).
+    /// </summary>
+    public bool Muted { get; set; }
 }

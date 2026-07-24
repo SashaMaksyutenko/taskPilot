@@ -148,11 +148,37 @@ public class ChatService : IChatService
             .ToListAsync();
         var unreadMap = unread.ToDictionary(x => x.ConversationId, x => x.Count);
 
+        // Which of these conversations this user has muted (one round-trip for all of them).
+        var mutedIds = (await _context.ConversationParticipants
+                .Where(p => p.UserId == userId && p.Muted && convIds.Contains(p.ConversationId))
+                .Select(p => p.ConversationId)
+                .ToListAsync())
+            .ToHashSet();
+
         var dtos = conversations.Select(MapConversation).ToList();
         foreach (var d in dtos)
+        {
             d.UnreadCount = unreadMap.GetValueOrDefault(d.Id);
+            d.Muted = mutedIds.Contains(d.Id);
+        }
 
         return Result<List<ConversationDto>>.Ok(dtos);
+    }
+
+    /// <inheritdoc />
+    public async Task<Result<bool>> SetConversationMutedAsync(Guid userId, Guid conversationId, bool muted)
+    {
+        _logger.LogInformation("SetConversationMuted. UserId: {UserId}, ConversationId: {ConversationId}, Muted: {Muted}",
+            userId, conversationId, muted);
+
+        var participant = await _context.ConversationParticipants
+            .FirstOrDefaultAsync(p => p.ConversationId == conversationId && p.UserId == userId);
+        if (participant is null)
+            return Result<bool>.Fail("You are not a participant of this conversation.");
+
+        participant.Muted = muted;
+        await _context.SaveChangesAsync();
+        return Result<bool>.Ok(muted);
     }
 
     /// <inheritdoc />
@@ -237,10 +263,10 @@ public class ChatService : IChatService
                 .FirstAsync();
             var senderName = sender.Name;
 
-            // Other participants (with names, to resolve @mentions).
+            // Other participants (with names, to resolve @mentions; and their mute flag).
             var others = await _context.ConversationParticipants
                 .Where(p => p.ConversationId == dto.ConversationId && p.UserId != senderId)
-                .Select(p => new { p.UserId, p.User.Name })
+                .Select(p => new { p.UserId, p.User.Name, p.Muted })
                 .ToListAsync();
 
             var mentioned = MentionParser.Extract(message.Content ?? string.Empty,
@@ -248,6 +274,10 @@ public class ChatService : IChatService
 
             foreach (var p in others)
             {
+                // Muting a conversation silences every notification from it (mentions included).
+                if (p.Muted)
+                    continue;
+
                 // A mention always notifies (even if online); otherwise only offline users,
                 // since online users already receive the message over the hub.
                 if (mentioned.Contains(p.UserId))

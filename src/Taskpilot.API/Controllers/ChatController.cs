@@ -99,6 +99,17 @@ public class ChatController : BaseApiController
         return Ok(new { message = "Conversation marked as read." });
     }
 
+    /// <summary>Mutes or unmutes notifications from a conversation for the current user.</summary>
+    [HttpPost("conversations/{conversationId:guid}/mute")]
+    public async Task<IActionResult> SetMuted(Guid conversationId, [FromBody] SetMutedDto dto)
+    {
+        var userId = CurrentUserId();
+        if (userId is null) return Unauthorized();
+
+        var result = await _chatService.SetConversationMutedAsync(userId.Value, conversationId, dto.Muted);
+        return result.Succeeded ? Ok(new { muted = result.Value }) : BadRequest(new { error = result.Error });
+    }
+
     /// <summary>Returns the messages of a conversation the current user belongs to.</summary>
     [HttpGet("conversations/{conversationId:guid}/messages")]
     public async Task<IActionResult> GetMessages(Guid conversationId)

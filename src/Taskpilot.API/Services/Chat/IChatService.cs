@@ -23,6 +23,9 @@ public interface IChatService
     /// <summary>Marks a conversation as read up to now for the given user; returns the read timestamp.</summary>
     Task<Result<DateTime>> MarkConversationReadAsync(Guid userId, Guid conversationId);
 
+    /// <summary>Mutes or unmutes a conversation for the user; returns the new muted state.</summary>
+    Task<Result<bool>> SetConversationMutedAsync(Guid userId, Guid conversationId, bool muted);
+
     /// <summary>Returns the ids of every conversation the user takes part in.</summary>
     Task<List<Guid>> GetConversationIdsAsync(Guid userId);
 

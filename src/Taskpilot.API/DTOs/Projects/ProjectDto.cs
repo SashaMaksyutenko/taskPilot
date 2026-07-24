@@ -18,6 +18,10 @@ public class ProjectDto
     public int MemberCount { get; set; }
 
     public bool IsArchived { get; set; }
+
+    /// <summary>Whether the current user (if a member) has muted this project's notifications.</summary>
+    public bool Muted { get; set; }
+
     public DateTime CreatedAt { get; set; }
     public DateTime? ArchivedAt { get; set; }
 }

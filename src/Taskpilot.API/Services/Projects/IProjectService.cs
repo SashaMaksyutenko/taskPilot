@@ -16,6 +16,9 @@ public interface IProjectService
 
     Task<Result<ProjectDto>> GetProjectAsync(Guid projectId, Guid userId);
 
+    /// <summary>Mutes or unmutes a project's notifications for the given member; returns the new state.</summary>
+    Task<Result<bool>> SetProjectMutedAsync(Guid userId, Guid projectId, bool muted);
+
     Task<Result<ProjectDto>> UpdateProjectAsync(Guid ownerId, Guid projectId, SaveProjectDto dto);
 
     /// <summary>Creates a copy of a project the user owns, cloning its tasks (statuses reset to Backlog).</summary>

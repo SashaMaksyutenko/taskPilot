@@ -48,6 +48,12 @@ public class NotificationService : INotificationService
     /// <inheritdoc />
     public async Task CreateAsync(Guid recipientId, NotificationType type, string message, string? link = null)
     {
+        // A project the recipient has muted silences every one of its notifications on all
+        // channels (in-app, push, email/Telegram/Viber). All project notifications carry a
+        // "/projects/{id}" link, so the project id is read from there.
+        if (await IsMutedProjectAsync(recipientId, link))
+            return;
+
         // In-app is opted out independently per (type, InApp channel).
         // (Email muting is applied by the delivery service, inline or queued.)
         var inAppMuted = await _context.NotificationPreferences
@@ -95,6 +101,30 @@ public class NotificationService : INotificationService
             await _queue.PublishAsync(new NotificationDeliveryMessage(recipientId, type, message, link, recipient));
         else
             await _dispatcher.DispatchAsync(recipient, message, link);
+    }
+
+    // True when the link points at a project the recipient has muted (a per-member flag).
+    // Only runs a query for links that actually name a project, so other notifications are unaffected.
+    private async Task<bool> IsMutedProjectAsync(Guid recipientId, string? link)
+    {
+        if (!TryParseProjectId(link, out var projectId))
+            return false;
+        return await _context.ProjectMembers
+            .AnyAsync(m => m.ProjectId == projectId && m.UserId == recipientId && m.Muted);
+    }
+
+    // Extracts the {id} from a "/projects/{id}" link, ignoring any trailing path or query
+    // (e.g. "/projects/{id}?task=..."). Returns false for any other link shape.
+    private static bool TryParseProjectId(string? link, out Guid projectId)
+    {
+        projectId = Guid.Empty;
+        const string prefix = "/projects/";
+        if (string.IsNullOrEmpty(link) || !link.StartsWith(prefix, StringComparison.Ordinal))
+            return false;
+        var rest = link[prefix.Length..];
+        var end = rest.IndexOfAny(['/', '?', '#']);
+        if (end >= 0) rest = rest[..end];
+        return Guid.TryParse(rest, out projectId);
     }
 
     // Turns a relative link (e.g. "/projects/{id}") into a clickable absolute URL (for push).

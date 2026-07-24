@@ -48,6 +48,17 @@ public class ProjectsController : BaseApiController
             : NotFound(new { error = result.Error });
     }
 
+    /// <summary>Mutes or unmutes a project's notifications for the current member.</summary>
+    [HttpPost("{projectId:guid}/mute")]
+    public async Task<IActionResult> SetMuted(Guid projectId, [FromBody] SetProjectMutedDto dto)
+    {
+        var userId = CurrentUserId();
+        if (userId is null) return Unauthorized();
+
+        var result = await _projects.SetProjectMutedAsync(userId.Value, projectId, dto.Muted);
+        return result.Succeeded ? Ok(new { muted = result.Value }) : BadRequest(new { error = result.Error });
+    }
+
     /// <summary>Creates a new project.</summary>
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] SaveProjectDto dto)

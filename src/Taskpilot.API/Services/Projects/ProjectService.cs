@@ -86,6 +86,16 @@ public class ProjectService : IProjectService
             .AsNoTracking()
             .ToListAsync();
 
+        // Flag which of these the user has muted (mute is a per-member flag; one query).
+        var projectIds = projects.Select(p => p.Id).ToList();
+        var mutedIds = (await _context.ProjectMembers
+                .Where(m => m.UserId == ownerId && m.Muted && projectIds.Contains(m.ProjectId))
+                .Select(m => m.ProjectId)
+                .ToListAsync())
+            .ToHashSet();
+        foreach (var p in projects)
+            p.Muted = mutedIds.Contains(p.Id);
+
         return Result<List<ProjectDto>>.Ok(projects);
     }
 
@@ -98,9 +108,29 @@ public class ProjectService : IProjectService
             .AsNoTracking()
             .FirstOrDefaultAsync();
 
-        return dto is null
-            ? Result<ProjectDto>.Fail("Project not found.")
-            : Result<ProjectDto>.Ok(dto);
+        if (dto is null)
+            return Result<ProjectDto>.Fail("Project not found.");
+
+        dto.Muted = await _context.ProjectMembers
+            .AnyAsync(m => m.ProjectId == projectId && m.UserId == userId && m.Muted);
+        return Result<ProjectDto>.Ok(dto);
+    }
+
+    /// <inheritdoc />
+    public async Task<Result<bool>> SetProjectMutedAsync(Guid userId, Guid projectId, bool muted)
+    {
+        // Mute is a per-member flag; the owner is not a member and has no membership row to mute.
+        var membership = await _context.ProjectMembers
+            .FirstOrDefaultAsync(m => m.ProjectId == projectId && m.UserId == userId);
+        if (membership is null)
+            return Result<bool>.Fail("You are not a member of this project.");
+
+        membership.Muted = muted;
+        await _context.SaveChangesAsync();
+
+        _logger.LogInformation("Project mute {State}. ProjectId: {ProjectId}, UserId: {UserId}",
+            muted ? "set" : "cleared", projectId, userId);
+        return Result<bool>.Ok(muted);
     }
 
     /// <inheritdoc />

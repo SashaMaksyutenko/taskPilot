@@ -121,6 +121,48 @@ public class NotificationServiceTests
     }
 
     [Fact]
+    public async Task CreateAsync_ToAMemberWhoMutedTheProject_SuppressesEverything()
+    {
+        await using var ctx = CreateContext();
+        var userId = Guid.NewGuid();
+        var projectId = Guid.NewGuid();
+        ctx.Users.Add(new User { Id = userId, Name = "Dana", Email = "dana@example.com", Role = Role.Developer, IsActive = true });
+        ctx.ProjectMembers.Add(new ProjectMember { Id = Guid.NewGuid(), ProjectId = projectId, UserId = userId, Muted = true });
+        await ctx.SaveChangesAsync();
+
+        var email = new Mock<IEmailSender>();
+        email.SetupGet(e => e.IsEnabled).Returns(true);
+        var svc = CreateService(ctx, email.Object);
+
+        await svc.CreateAsync(userId, NotificationType.Task, "You were assigned a task.", $"/projects/{projectId}");
+
+        // A muted project stores no in-app notification and sends no email.
+        Assert.Equal(0, await ctx.Notifications.CountAsync());
+        email.Verify(e => e.SendAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<EmailAttachment?>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task CreateAsync_ToAMemberWhoDidNotMuteTheProject_StillNotifies()
+    {
+        await using var ctx = CreateContext();
+        var userId = Guid.NewGuid();
+        var projectId = Guid.NewGuid();
+        ctx.Users.Add(new User { Id = userId, Name = "Dana", Email = "dana@example.com", Role = Role.Developer, IsActive = true });
+        ctx.ProjectMembers.Add(new ProjectMember { Id = Guid.NewGuid(), ProjectId = projectId, UserId = userId, Muted = false });
+        await ctx.SaveChangesAsync();
+
+        var email = new Mock<IEmailSender>();
+        email.SetupGet(e => e.IsEnabled).Returns(true);
+        var svc = CreateService(ctx, email.Object);
+
+        await svc.CreateAsync(userId, NotificationType.Task, "You were assigned a task.", $"/projects/{projectId}");
+
+        // An unmuted project behaves normally: in-app stored and email sent.
+        Assert.Equal(1, await ctx.Notifications.CountAsync());
+        email.Verify(e => e.SendAsync("dana@example.com", "Dana", It.IsAny<string>(), It.IsAny<string>(), It.IsAny<EmailAttachment?>()), Times.Once);
+    }
+
+    [Fact]
     public async Task CreateAsync_QueueEnabled_PublishesInsteadOfDeliveringInline()
     {
         await using var ctx = CreateContext();

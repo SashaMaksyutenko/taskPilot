@@ -24,6 +24,13 @@ public class ProjectMember
     /// <summary>Permission level (Editor by default).</summary>
     public ProjectMemberRole Role { get; set; } = ProjectMemberRole.Editor;
 
+    /// <summary>
+    /// Whether this member has muted the project: when true, none of the project's
+    /// notifications (task assigned/moved/completed, comments, extensions, overdue
+    /// reminders) reach them on any channel.
+    /// </summary>
+    public bool Muted { get; set; }
+
     /// <summary>UTC time the user was added to the project.</summary>
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 }

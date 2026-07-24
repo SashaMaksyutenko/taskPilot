@@ -4,11 +4,13 @@ import ChatPage from './ChatPage'
 import type { Conversation } from '../types/chat'
 
 // Isolate the page from routing, the SignalR hub, the store, i18n and the network.
-const { getConversations, getMessages, markRead, setMuted } = vi.hoisted(() => ({
+const { getConversations, getMessages, markRead, setMuted, blockUser, unblockUser } = vi.hoisted(() => ({
   getConversations: vi.fn(),
   getMessages: vi.fn(),
   markRead: vi.fn(),
   setMuted: vi.fn(),
+  blockUser: vi.fn(),
+  unblockUser: vi.fn(),
 }))
 
 vi.mock('react-router-dom', () => ({
@@ -24,7 +26,10 @@ vi.mock('../lib/chatHub', () => ({
   }),
 }))
 vi.mock('../services/chatService', () => ({
-  chatService: { getConversations, getMessages, markRead, setMuted, startDirect: vi.fn() },
+  chatService: {
+    getConversations, getMessages, markRead, setMuted, blockUser, unblockUser,
+    startDirect: vi.fn(), getBlocks: vi.fn(() => Promise.resolve([])),
+  },
 }))
 vi.mock('../services/gifService', () => ({
   gifService: { search: vi.fn(() => Promise.resolve({ enabled: false, gifs: [] })) },
@@ -61,6 +66,7 @@ const conv = (over: Partial<Conversation>): Conversation => ({
   ],
   unreadCount: 0,
   muted: false,
+  blocked: false,
   ...over,
 })
 
@@ -111,5 +117,36 @@ describe('ChatPage mute', () => {
     fireEvent.click(unmuteBtn)
 
     await waitFor(() => expect(setMuted).toHaveBeenCalledWith('c2', false))
+  })
+})
+
+describe('ChatPage block', () => {
+  beforeEach(() => {
+    getMessages.mockReset().mockResolvedValue([])
+    markRead.mockReset().mockResolvedValue(undefined)
+    blockUser.mockReset().mockResolvedValue(undefined)
+    unblockUser.mockReset().mockResolvedValue(undefined)
+  })
+
+  it('replaces the composer with a blocked notice and unblocking calls the API', async () => {
+    getConversations.mockReset().mockResolvedValue([conv({ id: 'c1', blocked: true })])
+    render(<ChatPage />)
+    fireEvent.click(await screen.findByText('Bob'))
+
+    // The message composer is replaced by the blocked notice (no input).
+    expect(await screen.findByText('chat.blockedNotice')).toBeTruthy()
+    expect(screen.queryByLabelText('composer')).toBeNull()
+
+    fireEvent.click(screen.getByText('chat.unblock'))
+    await waitFor(() => expect(unblockUser).toHaveBeenCalledWith('u2'))
+  })
+
+  it('shows the normal composer for a conversation that is not blocked', async () => {
+    getConversations.mockReset().mockResolvedValue([conv({ id: 'c1', blocked: false })])
+    render(<ChatPage />)
+    fireEvent.click(await screen.findByText('Bob'))
+
+    expect(await screen.findByLabelText('composer')).toBeTruthy()
+    expect(screen.queryByText('chat.blockedNotice')).toBeNull()
   })
 })

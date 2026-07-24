@@ -22,6 +22,16 @@ export interface Conversation {
   unreadCount: number
   /** Whether the current user has muted this conversation's notifications. */
   muted: boolean
+  /** For a direct conversation, whether the current user has blocked the other participant. */
+  blocked: boolean
+}
+
+/** A user the current user has blocked from direct messaging. */
+export interface BlockedUser {
+  userId: string
+  name: string
+  avatarUrl: string | null
+  blockedAt: string
 }
 
 export interface Message {

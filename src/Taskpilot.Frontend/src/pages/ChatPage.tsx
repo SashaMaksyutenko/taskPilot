@@ -1,5 +1,5 @@
 import { Fragment, useEffect, useRef, useState } from 'react'
-import { Bell, BellOff, Paperclip, Send, Smile, MessageSquare } from 'lucide-react'
+import { Ban, Bell, BellOff, Paperclip, Send, Smile, MessageSquare } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import type { HubConnection } from '@microsoft/signalr'
@@ -186,6 +186,22 @@ export default function ChatPage() {
     } catch {
       setConversations((prev) => prev.map((c) => (c.id === conv.id ? { ...c, muted: conv.muted } : c)))
       notify.error(t('chat.muteFailed'))
+    }
+  }
+
+  // Block or unblock the other participant of a direct conversation (optimistic, rolls back on failure).
+  const toggleBlock = async (conv: Conversation) => {
+    const other = conv.type === 'Group' ? null : conv.participants.find((p) => p.userId !== currentUser?.id)
+    if (!other) return
+    const next = !conv.blocked
+    setConversations((prev) => prev.map((c) => (c.id === conv.id ? { ...c, blocked: next } : c)))
+    try {
+      if (next) await chatService.blockUser(other.userId)
+      else await chatService.unblockUser(other.userId)
+      notify.success(next ? t('chat.blocked') : t('chat.unblocked'))
+    } catch {
+      setConversations((prev) => prev.map((c) => (c.id === conv.id ? { ...c, blocked: conv.blocked } : c)))
+      notify.error(t('chat.blockFailed'))
     }
   }
 
@@ -565,6 +581,10 @@ export default function ChatPage() {
                   actions={[
                     { label: t('menu.viewProfile'), onSelect: () => navigate(`/users/${other.userId}`) },
                     { label: t('menu.copyName'), onSelect: () => navigator.clipboard?.writeText(other.name).catch(() => {}) },
+                    'separator',
+                    conv.blocked
+                      ? { label: t('chat.unblock'), onSelect: () => toggleBlock(conv) }
+                      : { label: t('chat.block'), onSelect: () => toggleBlock(conv), danger: true },
                   ]}
                 >
                   {row}
@@ -843,6 +863,17 @@ export default function ChatPage() {
                 </div>
               )}
 
+              {selectedConv?.blocked ? (
+                <div className="flex items-center justify-between gap-3 border-t border-border bg-surface px-4 py-4 text-sm text-muted">
+                  <span className="flex min-w-0 items-center gap-2">
+                    <Ban className="h-4 w-4 flex-none" />
+                    <span className="truncate">{t('chat.blockedNotice')}</span>
+                  </span>
+                  <Button variant="secondary" onClick={() => toggleBlock(selectedConv)} className="shrink-0">
+                    {t('chat.unblock')}
+                  </Button>
+                </div>
+              ) : (
               <div className="flex items-center gap-2 border-t border-border bg-surface p-4">
                 <input
                   ref={fileInputRef}
@@ -950,6 +981,7 @@ export default function ChatPage() {
                   {t('chat.send')}
                 </Button>
               </div>
+              )}
             </>
           ) : (
             <div className="flex flex-1 flex-col items-center justify-center gap-2 text-muted">

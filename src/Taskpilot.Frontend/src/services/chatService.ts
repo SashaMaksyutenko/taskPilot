@@ -1,5 +1,5 @@
 import api from '../lib/api'
-import type { Conversation, Message, ReactionUpdate } from '../types/chat'
+import type { BlockedUser, Conversation, Message, ReactionUpdate } from '../types/chat'
 
 /**
  * Wrapper around the backend chat REST endpoints.
@@ -27,6 +27,21 @@ export const chatService = {
     return api
       .post<{ muted: boolean }>(`/api/chat/conversations/${conversationId}/mute`, { muted })
       .then((r) => r.data.muted)
+  },
+
+  /** GET /api/chat/blocks — the users the current user has blocked. */
+  getBlocks(): Promise<BlockedUser[]> {
+    return api.get<BlockedUser[]>('/api/chat/blocks').then((r) => r.data)
+  },
+
+  /** POST /api/chat/blocks/{userId} — block a user from direct messaging. */
+  blockUser(userId: string): Promise<void> {
+    return api.post(`/api/chat/blocks/${userId}`).then(() => undefined)
+  },
+
+  /** DELETE /api/chat/blocks/{userId} — remove a block on a user. */
+  unblockUser(userId: string): Promise<void> {
+    return api.delete(`/api/chat/blocks/${userId}`).then(() => undefined)
   },
 
   /** GET /api/chat/conversations/{id}/messages — message history. */

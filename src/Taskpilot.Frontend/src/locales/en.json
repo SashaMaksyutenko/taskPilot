@@ -776,6 +776,12 @@
     "unmuted": "Conversation unmuted",
     "mutedLabel": "Muted",
     "muteFailed": "Could not update mute setting.",
+    "block": "Block user",
+    "unblock": "Unblock user",
+    "blocked": "User blocked",
+    "unblocked": "User unblocked",
+    "blockFailed": "Could not update block setting.",
+    "blockedNotice": "You blocked this user. Unblock to message them.",
     "type": {
       "Group": "Group",
       "Direct": "Direct"

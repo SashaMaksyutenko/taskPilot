@@ -8,6 +8,9 @@ public class UpdateProfileDto
     public string? Bio { get; set; }
     public string? Location { get; set; }
 
+    /// <summary>Skill tags (e.g. ["C#", "React"]); normalized and de-duplicated on save.</summary>
+    public List<string> Skills { get; set; } = new();
+
     // Contact / social links
     public string? Website { get; set; }
     public string? LinkedIn { get; set; }

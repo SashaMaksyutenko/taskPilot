@@ -209,6 +209,11 @@ public class TaskpilotDbContext : DbContext
             entity.HasIndex(u => u.Email)
                   .IsUnique();
 
+            // Skills are stored as a Postgres text[] and never null (as with task tags).
+            entity.Property(u => u.Skills)
+                  .HasColumnType("text[]")
+                  .HasDefaultValueSql("'{}'::text[]");
+
             // Хеш пароля: довжина BCrypt-хешу фіксована (~60 символів), беремо із запасом
             entity.Property(u => u.PasswordHash)
                   .HasMaxLength(255);

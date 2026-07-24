@@ -40,6 +40,7 @@ public class UserService : IUserService
         user.Title = dto.Title?.Trim();
         user.Bio = dto.Bio?.Trim();
         user.Location = dto.Location?.Trim();
+        user.Skills = NormalizeSkills(dto.Skills);
         user.Website = dto.Website?.Trim();
         user.LinkedIn = dto.LinkedIn?.Trim();
         user.GitHub = dto.GitHub?.Trim();
@@ -50,6 +51,33 @@ public class UserService : IUserService
         await _context.SaveChangesAsync();
         _logger.LogInformation("Profile updated. UserId: {UserId}", userId);
         return Result<UserDto>.Ok(UserMapper.ToDto(user));
+    }
+
+    /// <summary>
+    /// Cleans a submitted skills list: trims each entry, drops blanks, caps each at 40
+    /// characters, removes case-insensitive duplicates (keeping the first spelling) and caps
+    /// the whole list at 30 — so a profile can't be spammed with junk tags.
+    /// </summary>
+    private static List<string> NormalizeSkills(IEnumerable<string>? skills)
+    {
+        if (skills is null)
+            return [];
+
+        // A case-insensitive set drops duplicates like "React"/"react".
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var result = new List<string>();
+        foreach (var raw in skills)
+        {
+            var skill = raw?.Trim();
+            if (string.IsNullOrEmpty(skill))
+                continue;
+            if (skill.Length > 40)
+                skill = skill[..40];
+            // Add only new tags, and stop once the cap is reached.
+            if (seen.Add(skill) && result.Count < 30)
+                result.Add(skill);
+        }
+        return result;
     }
 
     /// <inheritdoc />
@@ -98,6 +126,7 @@ public class UserService : IUserService
                 Title = u.Title,
                 Bio = u.Bio,
                 Location = u.Location,
+                Skills = u.Skills,
                 ShowEmail = u.ShowEmail,
                 Email = u.Email, // gated by ShowEmail inside the mapper
                 Website = u.Website,
@@ -357,6 +386,7 @@ public class UserService : IUserService
         user.Title = null;
         user.Bio = null;
         user.Location = null;
+        user.Skills = [];
         user.Website = null;
         user.LinkedIn = null;
         user.GitHub = null;

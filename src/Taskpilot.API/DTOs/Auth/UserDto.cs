@@ -36,6 +36,9 @@ public class UserDto
     /// <summary>Location.</summary>
     public string? Location { get; set; }
 
+    /// <summary>Skill tags shown on the profile.</summary>
+    public List<string> Skills { get; set; } = new();
+
     /// <summary>Personal website URL.</summary>
     public string? Website { get; set; }
 

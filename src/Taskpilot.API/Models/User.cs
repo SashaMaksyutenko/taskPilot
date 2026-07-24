@@ -96,6 +96,12 @@ public class User
     /// <summary>Location (city/country).</summary>
     public string? Location { get; set; }
 
+    /// <summary>
+    /// Free-form skill tags shown on the profile (e.g. "C#", "React"). Stored as a Postgres
+    /// text[] and never null.
+    /// </summary>
+    public List<string> Skills { get; set; } = new();
+
     // --- Contact / social links (optional) ---
 
     /// <summary>Personal website URL.</summary>

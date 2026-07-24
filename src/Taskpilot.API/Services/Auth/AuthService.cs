@@ -546,6 +546,7 @@ public class AuthService : IAuthService
                     Title = u.Title,
                     Bio = u.Bio,
                     Location = u.Location,
+                    Skills = u.Skills,
                     Website = u.Website,
                     LinkedIn = u.LinkedIn,
                     GitHub = u.GitHub,

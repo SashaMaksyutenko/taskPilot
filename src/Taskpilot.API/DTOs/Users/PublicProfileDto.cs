@@ -17,6 +17,9 @@ public class PublicProfileDto
     public string? Bio { get; set; }
     public string? Location { get; set; }
 
+    /// <summary>Skill tags shown on the profile.</summary>
+    public List<string> Skills { get; set; } = new();
+
     /// <summary>Email — only present when the user opted to show it; otherwise null.</summary>
     public string? Email { get; set; }
 

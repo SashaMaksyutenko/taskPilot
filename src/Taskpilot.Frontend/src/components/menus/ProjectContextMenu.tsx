@@ -11,6 +11,9 @@ import { menuContentClass as contentClass, menuItemClass as itemClass, menuSepar
 export default function ProjectContextMenu({
   children,
   archived,
+  canMute = false,
+  muted = false,
+  onToggleMute,
   onEdit,
   onDuplicate,
   onSaveAsTemplate,
@@ -21,6 +24,10 @@ export default function ProjectContextMenu({
 }: {
   children: ReactNode
   archived: boolean
+  /** True for projects the user is a member of (not the owner) — only these can be muted. */
+  canMute?: boolean
+  muted?: boolean
+  onToggleMute?: () => void
   onEdit: () => void
   onDuplicate: () => void
   onSaveAsTemplate: () => void
@@ -55,6 +62,11 @@ export default function ProjectContextMenu({
           ) : (
             <ContextMenu.Item className={itemClass} onSelect={onArchive}>
               {t('projects.archive')}
+            </ContextMenu.Item>
+          )}
+          {canMute && (
+            <ContextMenu.Item className={itemClass} onSelect={onToggleMute}>
+              {muted ? t('projects.unmute') : t('projects.mute')}
             </ContextMenu.Item>
           )}
           <ContextMenu.Separator className={separatorClass} />

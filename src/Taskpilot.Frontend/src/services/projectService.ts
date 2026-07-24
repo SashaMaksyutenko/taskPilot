@@ -34,6 +34,13 @@ export const projectService = {
     return api.delete(`/api/projects/${id}`).then(() => undefined)
   },
 
+  /** Mutes or unmutes a project's notifications for the current member; returns the new state. */
+  setMuted(id: string, muted: boolean): Promise<boolean> {
+    return api
+      .post<{ muted: boolean }>(`/api/projects/${id}/mute`, { muted })
+      .then((r) => r.data.muted)
+  },
+
   archive(id: string): Promise<void> {
     return api.post(`/api/projects/${id}/archive`).then(() => undefined)
   },

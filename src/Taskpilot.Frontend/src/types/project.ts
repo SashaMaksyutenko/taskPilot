@@ -11,6 +11,8 @@ export interface Project {
   completedTaskCount: number
   memberCount: number
   isArchived: boolean
+  /** Whether the current user (a member) has muted this project's notifications. */
+  muted: boolean
   createdAt: string
   archivedAt: string | null
 }

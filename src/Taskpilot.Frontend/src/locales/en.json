@@ -490,7 +490,13 @@
     "deleteTitle": "Delete project",
     "deleteConfirm": "Delete \"{{name}}\" and all its tasks? This cannot be undone.",
     "shared": "Shared",
-    "members": "{{count}} collaborator(s)"
+    "members": "{{count}} collaborator(s)",
+    "mute": "Mute notifications",
+    "unmute": "Unmute notifications",
+    "muted": "Project muted",
+    "unmuted": "Project unmuted",
+    "mutedLabel": "Muted",
+    "muteFailed": "Could not update mute setting."
   },
   "templates": {
     "button": "Templates",

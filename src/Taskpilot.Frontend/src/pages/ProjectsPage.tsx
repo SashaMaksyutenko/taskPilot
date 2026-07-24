@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { BellOff } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 import EmptyState from '../components/feedback/EmptyState'
@@ -97,6 +98,19 @@ export default function ProjectsPage() {
     load()
   }
 
+  // Mute or unmute a project's notifications (members only; optimistic with rollback).
+  const toggleMute = async (project: Project) => {
+    const next = !project.muted
+    setProjects((prev) => prev.map((p) => (p.id === project.id ? { ...p, muted: next } : p)))
+    try {
+      await projectService.setMuted(project.id, next)
+      notify.success(next ? t('projects.muted') : t('projects.unmuted'))
+    } catch {
+      setProjects((prev) => prev.map((p) => (p.id === project.id ? { ...p, muted: project.muted } : p)))
+      notify.error(t('projects.muteFailed'))
+    }
+  }
+
   const confirmDelete = async () => {
     if (!deleting) return
     await projectService.remove(deleting.id).catch(() => {})
@@ -167,6 +181,9 @@ export default function ProjectsPage() {
               <ProjectContextMenu
                 key={p.id}
                 archived={p.isArchived}
+                canMute={!!currentUserId && p.ownerId !== currentUserId}
+                muted={p.muted}
+                onToggleMute={() => toggleMute(p)}
                 onEdit={() => openEdit(p)}
                 onDuplicate={() => duplicate(p)}
                 onSaveAsTemplate={() => saveAsTemplate(p)}
@@ -192,6 +209,9 @@ export default function ProjectsPage() {
                     <span className="rounded-full bg-sky-100 px-2 py-0.5 text-[11px] font-semibold text-sky-700 dark:bg-sky-900/40 dark:text-sky-300">
                       {t('projects.shared')}
                     </span>
+                  )}
+                  {p.muted && (
+                    <BellOff className="h-3.5 w-3.5 flex-none text-muted" aria-label={t('projects.mutedLabel')} />
                   )}
                   {p.memberCount > 0 && (
                     <span className="ml-auto text-xs text-muted" title={t('projects.members', { count: p.memberCount })}>

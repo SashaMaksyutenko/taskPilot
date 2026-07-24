@@ -39,6 +39,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      rabbitmq:
+        condition: service_started
     ports:
       - "8080:8080"
     environment:
@@ -50,6 +52,44 @@ services:
       Admin__Email: "${ADMIN_EMAIL:-admin@taskpilot.local}"
       Admin__Password: "${ADMIN_PASSWORD}"
       Admin__Name: "Administrator"
+      # With a broker set the API PUBLISHES out-of-band delivery to the queue for the
+      # notification-service to consume (host = the "rabbitmq" service on the docker network).
+      RabbitMq__Connection: "amqp://guest:guest@rabbitmq:5672"
+      # Email goes to the MailHog fake SMTP so it is visible at http://localhost:8025.
+      Email__SmtpHost: "mailhog"
+      Email__SmtpPort: "1025"
+      Email__SmtpUseSsl: "false"
+      Email__FromEmail: "no-reply@taskpilot.local"
+      Email__FromName: "TaskPilot"
+
+  # ---- Notification microservice (background worker) ----
+  # Consumes queued notification deliveries from RabbitMQ and sends them over email/Telegram/
+  # Viber, off the API's request path. Shares only the wire contract + senders with the API.
+  notification-service:
+    build:
+      context: .
+      dockerfile: src/Taskpilot.NotificationService/Dockerfile
+    container_name: taskpilot-notification-service
+    depends_on:
+      - rabbitmq
+      - mailhog
+    environment:
+      RabbitMq__Connection: "amqp://guest:guest@rabbitmq:5672"
+      Email__SmtpHost: "mailhog"
+      Email__SmtpPort: "1025"
+      Email__SmtpUseSsl: "false"
+      Email__FromEmail: "no-reply@taskpilot.local"
+      Email__FromName: "TaskPilot"
+
+  # ---- MailHog: a fake SMTP server for the demo ----
+  # Catches every outgoing email so the notification flow is visible in a browser
+  # (web UI + API at http://localhost:8025); SMTP itself listens on 1025.
+  mailhog:
+    image: mailhog/mailhog
+    container_name: taskpilot-mailhog
+    ports:
+      - "1025:1025"
+      - "8025:8025"
 
   # ---- Frontend (React SPA за nginx) ----
   # nginx віддає статичний build і проксить /api та /hubs на сервіс api, тож

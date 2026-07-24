@@ -48,6 +48,10 @@ public class UserService : IUserService
         user.ShowEmail = dto.ShowEmail;
         user.UpdatedAt = DateTime.UtcNow;
 
+        // Drop endorsements for any skill the user no longer lists, so removing then re-adding
+        // a skill does not silently resurrect old endorsements.
+        await PruneStaleEndorsementsAsync(userId, user.Skills);
+
         await _context.SaveChangesAsync();
         _logger.LogInformation("Profile updated. UserId: {UserId}", userId);
         return Result<UserDto>.Ok(UserMapper.ToDto(user));
@@ -80,6 +84,18 @@ public class UserService : IUserService
         return result;
     }
 
+    /// <summary>Removes endorsements for skills the user no longer lists (case-insensitive).</summary>
+    private async Task PruneStaleEndorsementsAsync(Guid userId, List<string> currentSkills)
+    {
+        var kept = new HashSet<string>(currentSkills, StringComparer.OrdinalIgnoreCase);
+        var endorsements = await _context.SkillEndorsements
+            .Where(e => e.UserId == userId)
+            .ToListAsync();
+        var stale = endorsements.Where(e => !kept.Contains(e.Skill)).ToList();
+        if (stale.Count > 0)
+            _context.SkillEndorsements.RemoveRange(stale);
+    }
+
     /// <inheritdoc />
     public async Task<Result> ChangePasswordAsync(Guid userId, ChangePasswordDto dto)
     {
@@ -110,7 +126,7 @@ public class UserService : IUserService
     }
 
     /// <inheritdoc />
-    public async Task<Result<PublicProfileDto>> GetPublicProfileAsync(Guid userId)
+    public async Task<Result<PublicProfileDto>> GetPublicProfileAsync(Guid userId, Guid? viewerId = null)
     {
         // Read-only lookup, projected to just the columns PublicProfileDto needs — this is a
         // public endpoint, so the password hash and 2FA secret have no business being loaded.
@@ -151,8 +167,89 @@ public class UserService : IUserService
         dto.AverageRating = stars.Count > 0 ? Math.Round(stars.Average(), 1) : null;
 
         await ApplyReputationAsync(dto, userId, stars);
+        await ApplySkillEndorsementsAsync(dto, userId, viewerId);
 
         return Result<PublicProfileDto>.Ok(dto);
+    }
+
+    /// <summary>
+    /// Fills the per-skill endorsement counts (and whether the viewer endorsed each). Matching
+    /// is case-insensitive, so a skill re-cased on the profile still lines up with older
+    /// endorsements. Skills with no endorsements are still listed, with a count of zero.
+    /// </summary>
+    private async Task ApplySkillEndorsementsAsync(PublicProfileDto dto, Guid userId, Guid? viewerId)
+    {
+        if (dto.Skills.Count == 0)
+            return;
+
+        var endorsements = await _context.SkillEndorsements
+            .Where(e => e.UserId == userId)
+            .Select(e => new { e.Skill, e.EndorserId })
+            .ToListAsync();
+
+        dto.SkillEndorsements = dto.Skills
+            .Select(skill => new SkillEndorsementDto
+            {
+                Skill = skill,
+                Count = endorsements.Count(e => string.Equals(e.Skill, skill, StringComparison.OrdinalIgnoreCase)),
+                EndorsedByViewer = viewerId is { } vid &&
+                    endorsements.Any(e => e.EndorserId == vid && string.Equals(e.Skill, skill, StringComparison.OrdinalIgnoreCase)),
+            })
+            .ToList();
+    }
+
+    /// <inheritdoc />
+    public async Task<Result<SkillEndorsementResultDto>> ToggleSkillEndorsementAsync(Guid endorserId, Guid userId, string skill)
+    {
+        if (endorserId == userId)
+            return Result<SkillEndorsementResultDto>.Fail("You cannot endorse your own skills.");
+
+        // The skill must be one the target user currently lists; store the canonical spelling.
+        var skills = await _context.Users
+            .Where(u => u.Id == userId)
+            .Select(u => u.Skills)
+            .FirstOrDefaultAsync();
+        if (skills is null)
+            return Result<SkillEndorsementResultDto>.Fail("User not found.");
+
+        var canonical = skills.FirstOrDefault(s => string.Equals(s, skill?.Trim(), StringComparison.OrdinalIgnoreCase));
+        if (canonical is null)
+            return Result<SkillEndorsementResultDto>.Fail("This user does not list that skill.");
+
+        var existing = await _context.SkillEndorsements
+            .FirstOrDefaultAsync(e => e.UserId == userId && e.EndorserId == endorserId &&
+                                      e.Skill.ToLower() == canonical.ToLower());
+
+        bool endorsed;
+        if (existing is not null)
+        {
+            _context.SkillEndorsements.Remove(existing);
+            endorsed = false;
+        }
+        else
+        {
+            _context.SkillEndorsements.Add(new SkillEndorsement
+            {
+                Id = Guid.NewGuid(),
+                UserId = userId,
+                EndorserId = endorserId,
+                Skill = canonical,
+            });
+            endorsed = true;
+        }
+        await _context.SaveChangesAsync();
+
+        var count = await _context.SkillEndorsements
+            .CountAsync(e => e.UserId == userId && e.Skill.ToLower() == canonical.ToLower());
+
+        _logger.LogInformation("Skill endorsement {State}. UserId: {UserId}, EndorserId: {EndorserId}, Skill: {Skill}",
+            endorsed ? "added" : "removed", userId, endorserId, canonical);
+        return Result<SkillEndorsementResultDto>.Ok(new SkillEndorsementResultDto
+        {
+            Skill = canonical,
+            Endorsed = endorsed,
+            Count = count,
+        });
     }
 
     /// <summary>
@@ -406,6 +503,9 @@ public class UserService : IUserService
         _context.ProjectMembers.RemoveRange(_context.ProjectMembers.Where(m => m.UserId == userId));
         _context.UserWarnings.RemoveRange(_context.UserWarnings.Where(w => w.UserId == userId));
         _context.Appeals.RemoveRange(_context.Appeals.Where(a => a.UserId == userId));
+        // Endorsements this user received (their skills are scrubbed) and ones they gave others.
+        _context.SkillEndorsements.RemoveRange(
+            _context.SkillEndorsements.Where(e => e.UserId == userId || e.EndorserId == userId));
 
         await _context.SaveChangesAsync();
 

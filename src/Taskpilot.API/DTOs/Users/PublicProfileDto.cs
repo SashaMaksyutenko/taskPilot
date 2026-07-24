@@ -20,6 +20,9 @@ public class PublicProfileDto
     /// <summary>Skill tags shown on the profile.</summary>
     public List<string> Skills { get; set; } = new();
 
+    /// <summary>Per-skill endorsement counts (and whether the viewer endorsed each).</summary>
+    public List<SkillEndorsementDto> SkillEndorsements { get; set; } = new();
+
     /// <summary>Email — only present when the user opted to show it; otherwise null.</summary>
     public string? Email { get; set; }
 

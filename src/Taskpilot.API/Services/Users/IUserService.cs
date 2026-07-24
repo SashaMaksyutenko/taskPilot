@@ -15,8 +15,14 @@ public interface IUserService
     /// <summary>Changes the user's password after verifying the current one.</summary>
     Task<Result> ChangePasswordAsync(Guid userId, ChangePasswordDto dto);
 
-    /// <summary>Returns the public profile of any user by id.</summary>
-    Task<Result<PublicProfileDto>> GetPublicProfileAsync(Guid userId);
+    /// <summary>
+    /// Returns the public profile of any user by id. Pass the viewer's id to mark which
+    /// skills they have already endorsed.
+    /// </summary>
+    Task<Result<PublicProfileDto>> GetPublicProfileAsync(Guid userId, Guid? viewerId = null);
+
+    /// <summary>Toggles the caller's endorsement of one of a user's listed skills.</summary>
+    Task<Result<SkillEndorsementResultDto>> ToggleSkillEndorsementAsync(Guid endorserId, Guid userId, string skill);
 
     /// <summary>Searches active users by name or email, excluding the caller.</summary>
     Task<Result<List<UserSearchResultDto>>> SearchUsersAsync(Guid currentUserId, string query);

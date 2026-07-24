@@ -22,7 +22,7 @@ public class AssistantPeopleToolboxTests
         var jane = await TestDb.AddUserAsync(ctx, "Jane Doe");
 
         var users = new Mock<IUserService>();
-        users.Setup(u => u.GetPublicProfileAsync(jane))
+        users.Setup(u => u.GetPublicProfileAsync(jane, It.IsAny<Guid?>()))
             .ReturnsAsync(Result<PublicProfileDto>.Ok(new PublicProfileDto
             {
                 Id = jane, Name = "Jane Doe", Role = "Developer", Title = "Backend engineer",
@@ -37,7 +37,7 @@ public class AssistantPeopleToolboxTests
         Assert.Equal("Backend engineer", doc.RootElement.GetProperty("title").GetString());
         Assert.Equal(42, doc.RootElement.GetProperty("reputationPoints").GetInt32());
         Assert.Equal(JsonValueKind.Null, doc.RootElement.GetProperty("email").ValueKind); // private unless opted in
-        users.Verify(u => u.GetPublicProfileAsync(jane), Times.Once);
+        users.Verify(u => u.GetPublicProfileAsync(jane, It.IsAny<Guid?>()), Times.Once);
     }
 
     [Fact]
@@ -51,6 +51,6 @@ public class AssistantPeopleToolboxTests
         var json = await box.ExecuteAsync(Guid.NewGuid(), "get_user_profile", "{\"name\":\"nobody\"}");
 
         Assert.True(JsonDocument.Parse(json).RootElement.TryGetProperty("error", out _));
-        users.Verify(u => u.GetPublicProfileAsync(It.IsAny<Guid>()), Times.Never);
+        users.Verify(u => u.GetPublicProfileAsync(It.IsAny<Guid>(), It.IsAny<Guid?>()), Times.Never);
     }
 }

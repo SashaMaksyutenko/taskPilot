@@ -62,10 +62,21 @@ public class UsersController : BaseApiController
     [HttpGet("{userId:guid}")]
     public async Task<IActionResult> GetPublicProfile(Guid userId)
     {
-        var result = await _userService.GetPublicProfileAsync(userId);
+        var result = await _userService.GetPublicProfileAsync(userId, CurrentUserId());
         return result.Succeeded
             ? Ok(result.Value)
             : NotFound(new { error = result.Error });
+    }
+
+    /// <summary>Endorses (or removes an endorsement of) one of a user's skills.</summary>
+    [HttpPost("{userId:guid}/skills/endorse")]
+    public async Task<IActionResult> EndorseSkill(Guid userId, [FromBody] EndorseSkillDto dto)
+    {
+        var endorserId = CurrentUserId();
+        if (endorserId is null) return Unauthorized();
+
+        var result = await _userService.ToggleSkillEndorsementAsync(endorserId.Value, userId, dto.Skill);
+        return result.Succeeded ? Ok(result.Value) : BadRequest(new { error = result.Error });
     }
 
     /// <summary>Returns a user's reputation history (ledger entries + running total).</summary>

@@ -84,6 +84,7 @@ public class TaskpilotDbContext : DbContext
 
     /// <summary>Two-way reviews for completed marketplace tasks.</summary>
     public DbSet<Review> Reviews => Set<Review>();
+    public DbSet<SkillEndorsement> SkillEndorsements => Set<SkillEndorsement>();
 
     /// <summary>Personal notes.</summary>
     public DbSet<Note> Notes => Set<Note>();
@@ -810,6 +811,20 @@ public class TaskpilotDbContext : DbContext
                   .WithMany()
                   .HasForeignKey(r => r.MarketplaceTaskId)
                   .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // SkillEndorsement entity configuration
+        modelBuilder.Entity<SkillEndorsement>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+
+            entity.Property(e => e.Skill).IsRequired().HasMaxLength(40);
+
+            // At most one endorsement per endorser, per skill, per endorsed user.
+            entity.HasIndex(e => new { e.UserId, e.Skill, e.EndorserId }).IsUnique();
+            // Quick lookup of a user's received endorsements (for their profile).
+            entity.HasIndex(e => e.UserId);
+            // Endorsed user and endorser are plain ids (no FK), like Review's rater/ratee.
         });
 
         // Note entity configuration

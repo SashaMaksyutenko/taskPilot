@@ -907,6 +907,11 @@
     "topics": "Forum topics",
     "noTopics": "No topics yet."
   },
+  "endorse": {
+    "add": "Endorse {{skill}}",
+    "remove": "Remove your endorsement of {{skill}}",
+    "count": "{{count}} endorsement(s)"
+  },
   "audit": {
     "title": "Admin · Audit log",
     "events": "({{count}} events)",

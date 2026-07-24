@@ -1,12 +1,15 @@
 import { useEffect, useState } from 'react'
+import { ThumbsUp } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Link, useParams } from 'react-router-dom'
 import Avatar from '../components/Avatar'
 import StarRating from '../components/StarRating'
 import ResultState from '../components/feedback/ResultState'
 import { SkeletonDetail } from '../components/ui/Skeleton'
+import { cn } from '../lib/cn'
 import { forumService } from '../services/forumService'
 import { userService, type PublicProfile, type ReputationEntry } from '../services/userService'
+import { useAppSelector } from '../store/hooks'
 import type { TopicListItem } from '../types/forum'
 
 /** Emoji per reputation badge key (labels come from i18n). */
@@ -41,10 +44,32 @@ function Contact({ label, value, href }: { label: string; value?: string | null;
 export default function UserProfilePage() {
   const { t } = useTranslation()
   const { userId = '' } = useParams()
+  const currentUserId = useAppSelector((s) => s.auth.user?.id)
   const [profile, setProfile] = useState<PublicProfile | null>(null)
   const [topics, setTopics] = useState<TopicListItem[]>([])
   const [reputation, setReputation] = useState<ReputationEntry[]>([])
   const [notFound, setNotFound] = useState(false)
+
+  // You cannot endorse your own skills, so the buttons are hidden on your own profile.
+  const isOwnProfile = !!currentUserId && profile?.id === currentUserId
+
+  // Toggle an endorsement of one of this user's skills and apply the server's new count/state.
+  const endorse = async (skill: string) => {
+    const result = await userService.endorseSkill(userId, skill).catch(() => null)
+    if (!result) return
+    setProfile((prev) =>
+      prev
+        ? {
+            ...prev,
+            skillEndorsements: prev.skillEndorsements.map((s) =>
+              s.skill === result.skill
+                ? { ...s, count: result.count, endorsedByViewer: result.endorsed }
+                : s,
+            ),
+          }
+        : prev,
+    )
+  }
 
   useEffect(() => {
     if (!userId) return
@@ -117,19 +142,48 @@ export default function UserProfilePage() {
               </div>
             )}
 
-            {/* Skills */}
+            {/* Skills (with peer endorsements) */}
             {profile.skills.length > 0 && (
               <div className="mt-6 rounded-xl border border-border bg-surface p-6">
                 <h2 className="mb-3 font-bold">{t('settings.skills')}</h2>
                 <div className="flex flex-wrap gap-2">
-                  {profile.skills.map((skill) => (
-                    <span
-                      key={skill}
-                      className="rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary"
-                    >
-                      {skill}
-                    </span>
-                  ))}
+                  {profile.skills.map((skill) => {
+                    const endorsement = profile.skillEndorsements.find((s) => s.skill === skill)
+                    const count = endorsement?.count ?? 0
+                    const mine = endorsement?.endorsedByViewer ?? false
+                    return (
+                      <span
+                        key={skill}
+                        className="flex items-center gap-1.5 rounded-full bg-primary/10 py-1 pl-3 pr-1.5 text-sm font-medium text-primary"
+                      >
+                        {skill}
+                        {count > 0 && (
+                          <span className="text-xs font-semibold text-primary/70 tabular-nums" title={t('endorse.count', { count })}>
+                            {count}
+                          </span>
+                        )}
+                        {isOwnProfile
+                          ? count > 0 && <ThumbsUp className="h-3.5 w-3.5 text-primary/60" aria-hidden />
+                          : (
+                            <button
+                              type="button"
+                              onClick={() => endorse(skill)}
+                              aria-pressed={mine}
+                              aria-label={mine ? t('endorse.remove', { skill }) : t('endorse.add', { skill })}
+                              title={mine ? t('endorse.remove', { skill }) : t('endorse.add', { skill })}
+                              className={cn(
+                                'flex h-6 w-6 items-center justify-center rounded-full transition',
+                                mine
+                                  ? 'bg-primary text-white'
+                                  : 'text-primary hover:bg-primary/20',
+                              )}
+                            >
+                              <ThumbsUp className="h-3.5 w-3.5" />
+                            </button>
+                          )}
+                      </span>
+                    )
+                  })}
                 </div>
               </div>
             )}

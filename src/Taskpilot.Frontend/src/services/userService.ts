@@ -35,6 +35,8 @@ export interface PublicProfile {
   location?: string | null
   /** Skill tags shown on the profile. */
   skills: string[]
+  /** Per-skill endorsement counts (and whether the viewer endorsed each). */
+  skillEndorsements: SkillEndorsement[]
   email?: string | null
   website?: string | null
   linkedIn?: string | null
@@ -45,6 +47,20 @@ export interface PublicProfile {
   reviewCount: number
   reputationPoints: number
   badges: string[]
+}
+
+/** One of a profile's skills with its endorsement count and the viewer's own state. */
+export interface SkillEndorsement {
+  skill: string
+  count: number
+  endorsedByViewer: boolean
+}
+
+/** Result of toggling an endorsement on a skill. */
+export interface SkillEndorsementResult {
+  skill: string
+  endorsed: boolean
+  count: number
 }
 
 /** One line in the reputation history. */
@@ -76,6 +92,13 @@ export const userService = {
 
   getPublicProfile(userId: string): Promise<PublicProfile> {
     return api.get<PublicProfile>(`/api/users/${userId}`).then((r) => r.data)
+  },
+
+  /** Endorses (or removes an endorsement of) one of a user's skills; returns the new state. */
+  endorseSkill(userId: string, skill: string): Promise<SkillEndorsementResult> {
+    return api
+      .post<SkillEndorsementResult>(`/api/users/${userId}/skills/endorse`, { skill })
+      .then((r) => r.data)
   },
 
   /** The user's reputation history (ledger entries + running total). */

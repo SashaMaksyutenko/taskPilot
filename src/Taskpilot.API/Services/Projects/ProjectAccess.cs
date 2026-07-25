@@ -29,4 +29,20 @@ public static class ProjectAccess
     public static Task<bool> CanWriteTaskAsync(TaskpilotDbContext db, Guid taskId, Guid userId) =>
         db.ProjectTasks.AnyAsync(t => t.Id == taskId &&
             (t.Project.OwnerId == userId || t.Project.Members.Any(m => m.UserId == userId && m.Role == ProjectMemberRole.Editor)));
+
+    /// <summary>True if the user owns the project the given task belongs to.</summary>
+    public static Task<bool> IsTaskProjectOwnerAsync(TaskpilotDbContext db, Guid taskId, Guid userId) =>
+        db.ProjectTasks.AnyAsync(t => t.Id == taskId && t.Project.OwnerId == userId);
+
+    /// <summary>
+    /// True if the user may MODIFY the given task: the project owner may modify any task,
+    /// while an Editor member may modify only a task assigned to them. Viewers never.
+    /// (Owner-only exceptions — moving to Review/Done, changing the deadline — are enforced
+    /// at the call site on top of this.)
+    /// </summary>
+    public static Task<bool> CanModifyTaskAsync(TaskpilotDbContext db, Guid taskId, Guid userId) =>
+        db.ProjectTasks.AnyAsync(t => t.Id == taskId &&
+            (t.Project.OwnerId == userId ||
+             (t.AssigneeId == userId &&
+              t.Project.Members.Any(m => m.UserId == userId && m.Role == ProjectMemberRole.Editor))));
 }

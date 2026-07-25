@@ -258,8 +258,13 @@ public class TaskService : ITaskService
         var task = await LoadAccessibleAsync(taskId, userId);
         if (task is null)
             return Result<TaskDto>.Fail("Task not found.");
-        if (!await ProjectAccess.CanWriteTaskAsync(_context, taskId, userId))
-            return Result<TaskDto>.Fail("You have read-only access to this project.");
+        if (!await ProjectAccess.CanModifyTaskAsync(_context, taskId, userId))
+            return Result<TaskDto>.Fail("You can only change tasks assigned to you.");
+
+        // Only the project owner may change a task's deadline (Editors cannot, even on their own task).
+        if (dto.Deadline != task.Deadline &&
+            !await ProjectAccess.IsTaskProjectOwnerAsync(_context, taskId, userId))
+            return Result<TaskDto>.Fail("Only the project owner can change the deadline.");
 
         var priority = task.Priority;
         if (!string.IsNullOrWhiteSpace(dto.Priority) &&
@@ -339,8 +344,12 @@ public class TaskService : ITaskService
         var task = await LoadAccessibleAsync(taskId, userId);
         if (task is null)
             return Result<TaskDto>.Fail("Task not found.");
-        if (!await ProjectAccess.CanWriteTaskAsync(_context, taskId, userId))
-            return Result<TaskDto>.Fail("You have read-only access to this project.");
+        if (!await ProjectAccess.CanModifyTaskAsync(_context, taskId, userId))
+            return Result<TaskDto>.Fail("You can only change tasks assigned to you.");
+        // The assignee may submit their task to Review; only the owner approves it into Done.
+        if (parsed is ProjectTaskStatus.Done &&
+            !await ProjectAccess.IsTaskProjectOwnerAsync(_context, taskId, userId))
+            return Result<TaskDto>.Fail("Only the project owner can move a task to Done.");
 
         // Remember where the task came from so the history can show the transition.
         var previousStatus = task.Status;
@@ -401,8 +410,9 @@ public class TaskService : ITaskService
         var task = await LoadAccessibleAsync(taskId, userId);
         if (task is null)
             return Result<TaskDto>.Fail("Task not found.");
-        if (!await ProjectAccess.CanWriteTaskAsync(_context, taskId, userId))
-            return Result<TaskDto>.Fail("You have read-only access to this project.");
+        // Rescheduling only changes the deadline, which is owner-only.
+        if (!await ProjectAccess.IsTaskProjectOwnerAsync(_context, taskId, userId))
+            return Result<TaskDto>.Fail("Only the project owner can change the deadline.");
 
         var previousDeadline = task.Deadline;
 
@@ -520,8 +530,8 @@ public class TaskService : ITaskService
         var task = await LoadAccessibleAsync(taskId, userId);
         if (task is null)
             return Result<TaskDto>.Fail("Task not found.");
-        if (!await ProjectAccess.CanWriteTaskAsync(_context, taskId, userId))
-            return Result<TaskDto>.Fail("You have read-only access to this project.");
+        if (!await ProjectAccess.CanModifyTaskAsync(_context, taskId, userId))
+            return Result<TaskDto>.Fail("You can only change tasks assigned to you.");
 
         if (task.ProjectId == targetProjectId)
             return Result<TaskDto>.Ok(await LoadDtoAsync(task.Id)); // already there
@@ -570,8 +580,8 @@ public class TaskService : ITaskService
         var task = await LoadAccessibleAsync(taskId, userId);
         if (task is null)
             return Result<TaskDto>.Fail("Task not found.");
-        if (!await ProjectAccess.CanWriteTaskAsync(_context, taskId, userId))
-            return Result<TaskDto>.Fail("You have read-only access to this project.");
+        if (!await ProjectAccess.CanModifyTaskAsync(_context, taskId, userId))
+            return Result<TaskDto>.Fail("You can only change tasks assigned to you.");
 
         // Idempotent: starting an already-running timer changes nothing.
         if (task.TimerStartedAt is null)
@@ -590,8 +600,8 @@ public class TaskService : ITaskService
         var task = await LoadAccessibleAsync(taskId, userId);
         if (task is null)
             return Result<TaskDto>.Fail("Task not found.");
-        if (!await ProjectAccess.CanWriteTaskAsync(_context, taskId, userId))
-            return Result<TaskDto>.Fail("You have read-only access to this project.");
+        if (!await ProjectAccess.CanModifyTaskAsync(_context, taskId, userId))
+            return Result<TaskDto>.Fail("You can only change tasks assigned to you.");
 
         // Accumulate the elapsed run, then clear the running marker.
         if (task.TimerStartedAt is { } startedAt)
@@ -612,8 +622,8 @@ public class TaskService : ITaskService
         var task = await LoadAccessibleAsync(taskId, userId);
         if (task is null)
             return Result.Fail("Task not found.");
-        if (!await ProjectAccess.CanWriteTaskAsync(_context, taskId, userId))
-            return Result.Fail("You have read-only access to this project.");
+        if (!await ProjectAccess.CanModifyTaskAsync(_context, taskId, userId))
+            return Result.Fail("You can only change tasks assigned to you.");
 
         // Keep the title: after the row is gone the history is all that is left of it.
         var title = task.Title;

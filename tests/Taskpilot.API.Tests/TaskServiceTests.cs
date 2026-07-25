@@ -260,17 +260,25 @@ public class TaskServiceTests
     {
         using var ctx = TestDb.CreateContext();
         var owner = await TestDb.AddUserAsync(ctx, "Owner");
-        var assignee = await TestDb.AddUserAsync(ctx, "Assignee");
+        var member = await TestDb.AddUserAsync(ctx, "Member");
         var projectId = await TestDb.AddProjectAsync(ctx, owner);
+        // The member is an Editor, so they can create tasks in the project.
+        ctx.ProjectMembers.Add(new ProjectMember
+        {
+            Id = Guid.NewGuid(), ProjectId = projectId, UserId = member, Role = ProjectMemberRole.Editor,
+        });
+        await ctx.SaveChangesAsync();
         var (svc, notifications) = CreateWithMock(ctx);
-        // Assigning grants the assignee Editor access, so they can move the task.
-        var task = await svc.CreateTaskAsync(owner, projectId, new CreateTaskDto { Title = "Task", AssigneeId = assignee });
-        notifications.Invocations.Clear(); // ignore the "assigned" notification from creation
+        // The member creates the task, so they are its creator.
+        var task = await svc.CreateTaskAsync(member, projectId, new CreateTaskDto { Title = "Task" });
+        notifications.Invocations.Clear();
 
-        await svc.ChangeStatusAsync(assignee, task.Value!.Id, "Done");
+        // Only the owner may move a task to Done; doing so completes the member's task.
+        var result = await svc.ChangeStatusAsync(owner, task.Value!.Id, "Done");
 
-        // The creator (owner) is told it's done; the assignee (actor) is not self-notified.
-        notifications.Verify(n => n.CreateAsync(owner, It.IsAny<NotificationType>(), It.IsAny<string>(), It.IsAny<string>()), Times.Once);
-        notifications.Verify(n => n.CreateAsync(assignee, It.IsAny<NotificationType>(), It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+        Assert.True(result.Succeeded);
+        // The creator (member) is told it's done; the owner (actor) is not self-notified.
+        notifications.Verify(n => n.CreateAsync(member, It.IsAny<NotificationType>(), It.IsAny<string>(), It.IsAny<string>()), Times.Once);
+        notifications.Verify(n => n.CreateAsync(owner, It.IsAny<NotificationType>(), It.IsAny<string>(), It.IsAny<string>()), Times.Never);
     }
 }

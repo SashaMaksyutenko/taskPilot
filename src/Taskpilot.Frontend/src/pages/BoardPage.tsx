@@ -28,6 +28,12 @@ const priorityClasses: Record<string, string> = {
   Low: 'bg-border text-muted',
 }
 
+// How tasks are ordered inside each board column (labels come from i18n).
+const TASK_SORT_KEYS = ['manual', 'priority', 'deadline', 'title'] as const
+type TaskSortKey = (typeof TASK_SORT_KEYS)[number]
+// High first, then Medium, then Low.
+const priorityRank: Record<string, number> = { High: 0, Medium: 1, Low: 2 }
+
 const columnAccent: Record<string, string> = {
   Backlog: 'border-t-slate-400',
   InProgress: 'border-t-primary',
@@ -289,6 +295,30 @@ export default function BoardPage() {
     activeTags.length === 0
       ? topLevelTasks
       : topLevelTasks.filter((t) => t.tags.some((tag) => activeTags.includes(tag)))
+
+  // How to order tasks within each column ('manual' keeps board/creation order).
+  const [taskSort, setTaskSort] = useState<TaskSortKey>('manual')
+
+  // Order within each column. 'manual' keeps the natural (creation) order; tasks with no
+  // deadline sort last when ordering by deadline.
+  const sortedVisibleTasks =
+    taskSort === 'manual'
+      ? visibleTasks
+      : visibleTasks.slice().sort((a, b) => {
+          switch (taskSort) {
+            case 'priority':
+              return (priorityRank[a.priority] ?? 9) - (priorityRank[b.priority] ?? 9)
+            case 'deadline':
+              return (
+                (a.deadline ? new Date(a.deadline).getTime() : Infinity) -
+                (b.deadline ? new Date(b.deadline).getTime() : Infinity)
+              )
+            case 'title':
+              return a.title.localeCompare(b.title)
+            default:
+              return 0
+          }
+        })
 
   const download = (blob: Blob, ext: string, prefix = project?.name ?? 'tasks') => {
     const url = URL.createObjectURL(blob)
@@ -605,9 +635,27 @@ export default function BoardPage() {
 
         {/* Columns */}
         {view === 'board' && (
+        <>
+        {tasks.length > 1 && (
+          <div className="mb-4 flex items-center gap-2">
+            <span className="text-xs font-semibold text-muted">{t('board.sortTasks')}</span>
+            <select
+              value={taskSort}
+              onChange={(e) => setTaskSort(e.target.value as TaskSortKey)}
+              aria-label={t('board.sortTasks')}
+              className="rounded-lg border border-border bg-surface px-2.5 py-1.5 text-sm text-foreground outline-none focus:border-primary"
+            >
+              {TASK_SORT_KEYS.map((k) => (
+                <option key={k} value={k}>
+                  {t(`board.taskSort.${k}`)}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
         <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
           {STATUS_COLUMNS.map((col) => {
-            const colTasks = visibleTasks.filter((t) => t.status === col.key)
+            const colTasks = sortedVisibleTasks.filter((t) => t.status === col.key)
             return (
               <div
                 key={col.key}
@@ -717,6 +765,7 @@ export default function BoardPage() {
             )
           })}
         </div>
+        </>
         )}
 
       {selectedTask && (

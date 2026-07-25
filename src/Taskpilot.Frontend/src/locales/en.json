@@ -532,6 +532,13 @@
     "notFound": "This project no longer exists.",
     "readOnly": "You have read-only access to this project.",
     "onlyOwnerDone": "Only the project owner can move a task to Done.",
+    "sortTasks": "Sort tasks:",
+    "taskSort": {
+      "manual": "Manual",
+      "priority": "Priority",
+      "deadline": "Deadline",
+      "title": "Title (A–Z)"
+    },
     "title": "Board",
     "filterByTag": "Filter:",
     "clearFilter": "Clear",

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import Avatar from '../components/Avatar'
 import Attachments from '../components/Attachments'
 import { forumAttachments } from '../services/attachmentSources'
@@ -28,6 +28,7 @@ const REPLIES_PER_PAGE = 10
  */
 export default function TopicPage() {
   const { t } = useTranslation()
+  const navigate = useNavigate()
   const { topicId = '' } = useParams()
   const currentUser = useAppSelector((s) => s.auth.user)
   const currentUserId = currentUser?.id
@@ -49,6 +50,8 @@ export default function TopicPage() {
   const [reactionPickerFor, setReactionPickerFor] = useState<string | null>(null)
   // Topic (original post) inline edit state.
   const [editingTopic, setEditingTopic] = useState(false)
+  // Whether the topic is awaiting delete confirmation.
+  const [deletingTopic, setDeletingTopic] = useState(false)
   const [editTitle, setEditTitle] = useState('')
   const [editTopicBody, setEditTopicBody] = useState('')
   const [editTags, setEditTags] = useState<string[]>([])
@@ -180,6 +183,35 @@ export default function TopicPage() {
     const header = `> **${reply.authorName} ${t('topic.wrote')}**`
     setBody((prev) => `${header}\n${quoted}\n\n${prev}`)
     focusEditor()
+  }
+
+  // Reply to the topic itself (a top-level reply, no parent).
+  const replyToTopic = () => {
+    setReplyingTo(null)
+    focusEditor()
+  }
+
+  // Quote the original post: prefill the editor with its body as a Markdown blockquote
+  // attributed to the topic's author, as a new top-level reply.
+  const quoteTopic = () => {
+    if (!topic) return
+    setReplyingTo(null)
+    const quoted = topic.body
+      .split('\n')
+      .map((line) => `> ${line}`)
+      .join('\n')
+    const header = `> **${topic.authorName} ${t('topic.wrote')}**`
+    setBody((prev) => `${header}\n${quoted}\n\n${prev}`)
+    focusEditor()
+  }
+
+  // Delete the whole topic (author or admin) and return to the forum list.
+  const removeTopic = async () => {
+    if (!topic) return
+    setDeletingTopic(false)
+    await forumService.deleteTopic(topic.id).catch(() => {})
+    notify.success(t('topic.topicDeleted'))
+    navigate('/forum')
   }
 
   const submitReply = async () => {
@@ -359,6 +391,28 @@ export default function TopicPage() {
               canAttach={!!isAuthor && !topic.isLocked}
             />
           </div>
+
+          {/* Actions on the original post. Reply/quote are hidden while editing or when
+              locked; delete stays available to the author/admin regardless. */}
+          {!editingTopic && (
+            <div className="mt-3 flex items-center gap-4 border-t border-border/60 pt-3 text-xs">
+              {!topic.isLocked && (
+                <>
+                  <button onClick={replyToTopic} className="font-semibold text-primary hover:underline">
+                    {t('topic.replyTo')}
+                  </button>
+                  <button onClick={quoteTopic} className="font-semibold text-primary hover:underline">
+                    {t('topic.quote')}
+                  </button>
+                </>
+              )}
+              {canEditTopic && (
+                <button onClick={() => setDeletingTopic(true)} className="font-semibold text-red-600 hover:underline">
+                  {t('topic.delete')}
+                </button>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Replies */}
@@ -605,6 +659,15 @@ export default function TopicPage() {
             setDeletingReply(null)
           }}
           onCancel={() => setDeletingReply(null)}
+        />
+
+        {/* Topic delete confirmation */}
+        <ConfirmDialog
+          open={deletingTopic}
+          title={t('topic.deleteTopicTitle')}
+          message={t('topic.deleteTopicConfirm')}
+          onConfirm={removeTopic}
+          onCancel={() => setDeletingTopic(false)}
         />
 
         {/* Report a reply */}

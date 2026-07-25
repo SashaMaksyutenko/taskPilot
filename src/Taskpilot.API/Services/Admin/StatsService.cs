@@ -6,6 +6,7 @@ using Taskpilot.API.Data;
 using Taskpilot.API.DTOs.Admin;
 using Taskpilot.API.DTOs.Stats;
 using Taskpilot.API.Hubs;
+using Taskpilot.API.Models;
 
 namespace Taskpilot.API.Services;
 
@@ -56,6 +57,13 @@ public class StatsService : IStatsService
             // Anonymous-visitor analytics are admin-only.
             AnonymousVisitorsToday = await _visitors.UniqueVisitorsTodayAsync(),
             AnonymousVisitsTotal = await _visitors.TotalVisitsAsync(),
+            // Content metrics.
+            TotalProjects = agg.TotalProjects,
+            TotalTasks = agg.TotalTasks,
+            TasksByStatus = agg.TasksByStatus,
+            TotalMarketplaceTasks = agg.TotalMarketplaceTasks,
+            TotalFiles = agg.TotalFiles,
+            StorageUsedBytes = agg.StorageUsedBytes,
         });
     }
 
@@ -144,10 +152,26 @@ public class StatsService : IStatsService
             ["Banned"] = bannedCount,
         };
 
+        // Content metrics for the analytics tab.
+        var totalProjects = await _context.Projects.CountAsync();
+        var totalTasks = await _context.ProjectTasks.CountAsync();
+        var byTaskStatus = await _context.ProjectTasks
+            .GroupBy(t => t.Status)
+            .Select(g => new { g.Key, Count = g.Count() })
+            .ToListAsync();
+        // Every Kanban column appears, even at zero, so the chart is stable.
+        var rawTaskStatus = byTaskStatus.ToDictionary(x => x.Key.ToString(), x => x.Count);
+        var tasksByStatus = Enum.GetValues<ProjectTaskStatus>()
+            .ToDictionary(s => s.ToString(), s => rawTaskStatus.GetValueOrDefault(s.ToString()));
+        var totalMarketplaceTasks = await _context.MarketplaceTasks.CountAsync();
+        var totalFiles = await _context.FileAttachments.CountAsync();
+        var storageUsedBytes = await _context.FileAttachments.SumAsync(f => (long?)f.SizeBytes) ?? 0;
+
         var agg = new StatsAggregates(
             byRole.ToDictionary(x => x.Role.ToString(), x => x.Count),
             common.TotalUsers, common.ActiveUsers, common.NewestUserName, common.TotalTopics, common.TotalForumPosts,
-            byStatus);
+            byStatus,
+            totalProjects, totalTasks, tasksByStatus, totalMarketplaceTasks, totalFiles, storageUsedBytes);
 
         await _cache.SetStringAsync(FullStatsCacheKey, JsonSerializer.Serialize(agg),
             new DistributedCacheEntryOptions { AbsoluteExpirationRelativeToNow = FullStatsTtl });
@@ -194,5 +218,7 @@ public class StatsService : IStatsService
     private sealed record StatsAggregates(
         Dictionary<string, int> UsersByRole, int TotalUsers, int ActiveUsers,
         string? NewestUserName, int TotalTopics, int TotalForumPosts,
-        Dictionary<string, int> UsersByStatus);
+        Dictionary<string, int> UsersByStatus,
+        int TotalProjects, int TotalTasks, Dictionary<string, int> TasksByStatus,
+        int TotalMarketplaceTasks, int TotalFiles, long StorageUsedBytes);
 }

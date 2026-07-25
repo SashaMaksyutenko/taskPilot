@@ -84,4 +84,36 @@ public class StatsServiceTests
         Assert.Equal(2, s.AnonymousVisitorsToday); // two distinct IPs
         Assert.Equal(3, s.AnonymousVisitsTotal);   // three requests
     }
+
+    [Fact]
+    public async Task GetFullStats_IncludesContentMetrics()
+    {
+        using var ctx = TestDb.CreateContext();
+        var owner = AddUser(ctx, "Owner", DateTime.UtcNow);
+        var projectId = Guid.NewGuid();
+        ctx.Projects.Add(new Project { Id = projectId, Name = "P", OwnerId = owner });
+        // 2 Backlog, 1 Done.
+        foreach (var st in new[] { ProjectTaskStatus.Backlog, ProjectTaskStatus.Backlog, ProjectTaskStatus.Done })
+            ctx.ProjectTasks.Add(new ProjectTask
+            {
+                Id = Guid.NewGuid(), ProjectId = projectId, CreatorId = owner, Title = "t", Status = st,
+            });
+        ctx.FileAttachments.Add(new FileAttachment
+        {
+            Id = Guid.NewGuid(), FileName = "f", StoredName = "s", ContentType = "text/plain",
+            SizeBytes = 1000, UploaderId = owner,
+        });
+        await ctx.SaveChangesAsync();
+
+        var svc = new StatsService(ctx, new PresenceTracker(), new VisitorService(ctx), NewCache());
+        var s = (await svc.GetFullStatsAsync()).Value!;
+
+        Assert.Equal(1, s.TotalProjects);
+        Assert.Equal(3, s.TotalTasks);
+        Assert.Equal(2, s.TasksByStatus["Backlog"]);
+        Assert.Equal(1, s.TasksByStatus["Done"]);
+        Assert.Equal(0, s.TasksByStatus["Review"]); // every column present, even at zero
+        Assert.Equal(1, s.TotalFiles);
+        Assert.Equal(1000, s.StorageUsedBytes);
+    }
 }

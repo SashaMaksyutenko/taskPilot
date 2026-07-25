@@ -35,6 +35,26 @@ public class AdminStatsDto
 
     /// <summary>Users per moderation status (Active/Banned/Muted), for the status chart.</summary>
     public Dictionary<string, int> UsersByStatus { get; set; } = new();
+
+    // --- Content metrics (for the analytics tab) ---
+
+    /// <summary>Total projects across the platform.</summary>
+    public int TotalProjects { get; set; }
+
+    /// <summary>Total project tasks across the platform.</summary>
+    public int TotalTasks { get; set; }
+
+    /// <summary>Tasks per Kanban status (Backlog/InProgress/Review/Done), for a breakdown chart.</summary>
+    public Dictionary<string, int> TasksByStatus { get; set; } = new();
+
+    /// <summary>Total marketplace tasks posted.</summary>
+    public int TotalMarketplaceTasks { get; set; }
+
+    /// <summary>Total uploaded files.</summary>
+    public int TotalFiles { get; set; }
+
+    /// <summary>Total bytes stored across all uploaded files.</summary>
+    public long StorageUsedBytes { get; set; }
 }
 
 /// <summary>Per-day activity counts for the admin trend charts.</summary>

@@ -831,6 +831,18 @@
   },
   "admin": {
     "usersTitle": "Адмін · Користувачі ({{count}})",
+    "title": "Адмінка",
+    "tab": {
+      "users": "Користувачі",
+      "analytics": "Аналітика",
+      "settings": "Налаштування"
+    },
+    "tasksByStatus": "Задачі за статусом",
+    "totalProjects": "Проєкти",
+    "totalTasks": "Задачі",
+    "totalMarketTasks": "Завдання маркету",
+    "totalFiles": "Файли",
+    "storageUsed": "Сховище",
     "searchPlaceholder": "Пошук за іменем або email…",
     "allRoles": "Усі ролі",
     "allStatuses": "Усі статуси",

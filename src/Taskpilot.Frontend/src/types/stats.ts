@@ -23,4 +23,11 @@ export interface AdminStats extends PublicStats {
   anonymousVisitsTotal: number
   usersByRole: Record<string, number>
   usersByStatus: Record<string, number>
+  // Content metrics
+  totalProjects: number
+  totalTasks: number
+  tasksByStatus: Record<string, number>
+  totalMarketplaceTasks: number
+  totalFiles: number
+  storageUsedBytes: number
 }

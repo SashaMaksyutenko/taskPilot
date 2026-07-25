@@ -831,6 +831,18 @@
   },
   "admin": {
     "usersTitle": "Admin · Users ({{count}})",
+    "title": "Admin",
+    "tab": {
+      "users": "Users",
+      "analytics": "Analytics",
+      "settings": "Settings"
+    },
+    "tasksByStatus": "Tasks by status",
+    "totalProjects": "Projects",
+    "totalTasks": "Tasks",
+    "totalMarketTasks": "Market tasks",
+    "totalFiles": "Files",
+    "storageUsed": "Storage",
     "searchPlaceholder": "Search by name or email…",
     "allRoles": "All roles",
     "allStatuses": "All statuses",

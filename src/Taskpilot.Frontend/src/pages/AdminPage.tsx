@@ -6,6 +6,7 @@ import RoleChart from '../components/charts/RoleChart'
 import StatusChart from '../components/charts/StatusChart'
 import SignupsChart from '../components/charts/SignupsChart'
 import ActivityChart from '../components/charts/ActivityChart'
+import TasksStatusChart from '../components/charts/TasksStatusChart'
 import StatsPanel from '../components/charts/StatsPanel'
 import GeneralSettings from '../components/GeneralSettings'
 import StorageSettings from '../components/StorageSettings'
@@ -13,6 +14,7 @@ import FeatureSettings from '../components/FeatureSettings'
 import RegistrationSettings from '../components/RegistrationSettings'
 import UserContextMenu from '../components/menus/UserContextMenu'
 import WarnUserModal from '../components/modals/WarnUserModal'
+import { cn } from '../lib/cn'
 import { adminService } from '../services/adminService'
 import { forumService } from '../services/forumService'
 import { statsService } from '../services/statsService'
@@ -29,6 +31,7 @@ export default function AdminPage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const currentUserId = useAppSelector((s) => s.auth.user?.id)
+  const [tab, setTab] = useState<'users' | 'analytics' | 'settings'>('users')
   const PAGE_SIZE = 20
   const [users, setUsers] = useState<AdminUser[]>([])
   const [page, setPage] = useState(1)
@@ -174,7 +177,7 @@ export default function AdminPage() {
     <>
     <div className="mx-auto max-w-5xl px-6 py-8">
         <div className="mb-6 flex flex-wrap items-center gap-3">
-          <h1 className="text-2xl font-bold">{t('admin.usersTitle', { count: total })}</h1>
+          <h1 className="text-2xl font-bold">{t('admin.title')}</h1>
           <button
             onClick={() => downloadMarketplaceReport('pdf')}
             className="ml-auto rounded-lg border border-border px-3 py-1.5 text-sm font-semibold hover:bg-canvas"
@@ -201,11 +204,48 @@ export default function AdminPage() {
           </div>
         )}
 
+        {/* Tabs */}
+        <div className="mb-6 flex gap-1 border-b border-border">
+          {(['users', 'analytics', 'settings'] as const).map((tb) => (
+            <button
+              key={tb}
+              onClick={() => setTab(tb)}
+              className={cn(
+                '-mb-px border-b-2 px-4 py-2 text-sm font-semibold transition',
+                tab === tb ? 'border-primary text-primary' : 'border-transparent text-muted hover:text-foreground',
+              )}
+            >
+              {t(`admin.tab.${tb}`)}
+            </button>
+          ))}
+        </div>
+
+        {tab === 'analytics' && (
+        <>
         <div className="mb-6 grid gap-4 lg:grid-cols-2">
           <StatsPanel stats={stats} />
           {stats && <RoleChart usersByRole={stats.usersByRole} />}
           {stats && <StatusChart usersByStatus={stats.usersByStatus} />}
+          {stats && <TasksStatusChart tasksByStatus={stats.tasksByStatus} />}
         </div>
+
+        {/* Content totals */}
+        {stats && (
+          <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
+            {[
+              { label: t('admin.totalProjects'), value: stats.totalProjects },
+              { label: t('admin.totalTasks'), value: stats.totalTasks },
+              { label: t('admin.totalMarketTasks'), value: stats.totalMarketplaceTasks },
+              { label: t('admin.totalFiles'), value: stats.totalFiles },
+              { label: t('admin.storageUsed'), value: `${(stats.storageUsedBytes / 1024 / 1024).toFixed(1)} MB` },
+            ].map((c) => (
+              <div key={c.label} className="rounded-xl border border-border bg-surface p-4">
+                <div className="text-2xl font-bold tabular-nums text-foreground">{c.value}</div>
+                <div className="text-xs font-medium uppercase tracking-wide text-muted">{c.label}</div>
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* Trend charts with a shared period selector */}
         <div className="mb-6">
@@ -227,13 +267,21 @@ export default function AdminPage() {
             <ActivityChart activity={activity} />
           </div>
         </div>
+        </>
+        )}
 
+        {tab === 'settings' && (
+        <>
         {/* Organization settings — each concern is its own card and its own endpoint */}
         <GeneralSettings />
         <StorageSettings />
         <FeatureSettings />
         <RegistrationSettings />
+        </>
+        )}
 
+        {tab === 'users' && (
+        <>
         {/* Pending appeals queue */}
         {appeals.length > 0 && (
           <section className="mb-6 rounded-xl border border-amber-300 bg-amber-50 p-5 dark:border-amber-700 dark:bg-amber-950/30">
@@ -466,6 +514,8 @@ export default function AdminPage() {
               {t('audit.next')}
             </button>
           </div>
+        )}
+        </>
         )}
       </div>
 

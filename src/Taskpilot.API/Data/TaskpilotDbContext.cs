@@ -43,6 +43,7 @@ public class TaskpilotDbContext : DbContext
 
     /// <summary>Forum replies.</summary>
     public DbSet<ForumReply> ForumReplies => Set<ForumReply>();
+    public DbSet<ForumTopicView> ForumTopicViews => Set<ForumTopicView>();
 
     /// <summary>Votes on forum replies.</summary>
     public DbSet<ForumVote> ForumVotes => Set<ForumVote>();
@@ -524,6 +525,22 @@ public class TaskpilotDbContext : DbContext
                   .WithMany()
                   .HasForeignKey(s => s.UserId)
                   .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        // ForumTopicView entity configuration
+        modelBuilder.Entity<ForumTopicView>(entity =>
+        {
+            entity.HasKey(v => v.Id);
+
+            // One view per user per topic per time bucket — collapses a rapid double-open
+            // into one view, while a later open (a new bucket) counts again.
+            entity.HasIndex(v => new { v.TopicId, v.UserId, v.TimeBucket }).IsUnique();
+
+            // Deleting a topic removes its view records. UserId is a plain id (no FK).
+            entity.HasOne(v => v.Topic)
+                  .WithMany()
+                  .HasForeignKey(v => v.TopicId)
+                  .OnDelete(DeleteBehavior.Cascade);
         });
 
         // ForumReport entity configuration

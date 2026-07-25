@@ -28,8 +28,8 @@ public interface IForumService
     /// </summary>
     Task<Result<TopicDetailDto>> GetTopicAsync(Guid topicId, Guid currentUserId);
 
-    /// <summary>Increments a topic's view count. Called once per page open (not on re-fetch).</summary>
-    Task<Result> IncrementViewAsync(Guid topicId);
+    /// <summary>Records a view of a topic by the user; counts once per user (distinct viewers).</summary>
+    Task<Result> IncrementViewAsync(Guid topicId, Guid userId);
 
     /// <summary>Adds a reply to a topic (unless it is locked).</summary>
     Task<Result<ReplyDto>> AddReplyAsync(Guid authorId, CreateReplyDto dto);

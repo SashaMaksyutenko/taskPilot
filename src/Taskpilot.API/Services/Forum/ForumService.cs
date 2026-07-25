@@ -203,15 +203,42 @@ public class ForumService : IForumService
         return Result<TopicDetailDto>.Ok(dto);
     }
 
+    // Views by the same user within this many seconds are treated as one open, so an
+    // accidental double request never adds two — but a genuine later re-open counts again.
+    private const int ViewDedupWindowSeconds = 5;
+
     /// <inheritdoc />
-    public async Task<Result> IncrementViewAsync(Guid topicId)
+    public async Task<Result> IncrementViewAsync(Guid topicId, Guid userId)
     {
         var topic = await _context.ForumTopics.FirstOrDefaultAsync(t => t.Id == topicId);
         if (topic is null)
             return Result.Fail("Topic not found.");
 
+        // Each open counts one view; a rapid duplicate request lands in the same time bucket
+        // and is collapsed. The unique index on (TopicId, UserId, TimeBucket) makes two truly
+        // concurrent requests race safely — only one insert wins, so only one view is counted.
+        var bucket = DateTime.UtcNow.Ticks / TimeSpan.FromSeconds(ViewDedupWindowSeconds).Ticks;
+        var alreadyCounted = await _context.ForumTopicViews
+            .AnyAsync(v => v.TopicId == topicId && v.UserId == userId && v.TimeBucket == bucket);
+        if (alreadyCounted)
+            return Result.Ok();
+
+        _context.ForumTopicViews.Add(new ForumTopicView
+        {
+            Id = Guid.NewGuid(),
+            TopicId = topicId,
+            UserId = userId,
+            TimeBucket = bucket,
+        });
         topic.ViewCount++;
-        await _context.SaveChangesAsync();
+        try
+        {
+            await _context.SaveChangesAsync();
+        }
+        catch (DbUpdateException)
+        {
+            // A concurrent request already counted this open (unique-index violation).
+        }
         return Result.Ok();
     }
 

@@ -421,4 +421,51 @@ public class ForumServiceTests
         notifications.Verify(n => n.CreateAsync(
             follower, It.IsAny<NotificationType>(), It.IsAny<string>(), It.IsAny<string>()), Times.Once);
     }
+
+    private static async Task<int> ViewCountAsync(TaskpilotDbContext ctx, Guid topicId) =>
+        (await ctx.ForumTopics.AsNoTracking().FirstAsync(t => t.Id == topicId)).ViewCount;
+
+    [Fact]
+    public async Task IncrementView_CollapsesARapidDouble_ButADifferentUserStillCounts()
+    {
+        await using var ctx = TestDb.CreateContext();
+        var author = await TestDb.AddUserAsync(ctx, "Author");
+        var viewer = await TestDb.AddUserAsync(ctx, "Viewer");
+        var other = await TestDb.AddUserAsync(ctx, "Other");
+        var svc = Create(ctx);
+        var topic = (await svc.CreateTopicAsync(author,
+            new Taskpilot.API.DTOs.Forum.CreateTopicDto { Title = "T", Body = "B" })).Value!;
+
+        // A single open that fires twice in quick succession (same time bucket) counts once...
+        await svc.IncrementViewAsync(topic.Id, viewer);
+        await svc.IncrementViewAsync(topic.Id, viewer);
+        Assert.Equal(1, await ViewCountAsync(ctx, topic.Id));
+
+        // ...while a different user's open adds exactly one more.
+        await svc.IncrementViewAsync(topic.Id, other);
+        Assert.Equal(2, await ViewCountAsync(ctx, topic.Id));
+    }
+
+    [Fact]
+    public async Task IncrementView_CountsAgain_WhenTheSameUserReopensLater()
+    {
+        await using var ctx = TestDb.CreateContext();
+        var author = await TestDb.AddUserAsync(ctx, "Author");
+        var viewer = await TestDb.AddUserAsync(ctx, "Viewer");
+        var svc = Create(ctx);
+        var topic = (await svc.CreateTopicAsync(author,
+            new Taskpilot.API.DTOs.Forum.CreateTopicDto { Title = "T", Body = "B" })).Value!;
+
+        await svc.IncrementViewAsync(topic.Id, viewer);
+        Assert.Equal(1, await ViewCountAsync(ctx, topic.Id));
+
+        // Move the recorded view into a past time bucket to simulate time passing, so the
+        // next open falls in a new bucket and counts again.
+        var view = await ctx.ForumTopicViews.FirstAsync(v => v.UserId == viewer);
+        view.TimeBucket -= 1000;
+        await ctx.SaveChangesAsync();
+
+        await svc.IncrementViewAsync(topic.Id, viewer);
+        Assert.Equal(2, await ViewCountAsync(ctx, topic.Id));
+    }
 }

@@ -53,7 +53,7 @@ public class ForumController : BaseApiController
         return Ok(result.Value);
     }
 
-    /// <summary>Returns a topic with its replies (and counts the view).</summary>
+    /// <summary>Returns a topic with its replies. Views are counted separately via the /view endpoint.</summary>
     [HttpGet("topics/{topicId:guid}")]
     public async Task<IActionResult> GetTopic(Guid topicId)
     {
@@ -66,11 +66,14 @@ public class ForumController : BaseApiController
             : NotFound(new { error = result.Error });
     }
 
-    /// <summary>Counts one view of a topic. Called once when the topic page opens.</summary>
+    /// <summary>Records the current user's view of a topic (counts once per user).</summary>
     [HttpPost("topics/{topicId:guid}/view")]
     public async Task<IActionResult> IncrementView(Guid topicId)
     {
-        var result = await _forumService.IncrementViewAsync(topicId);
+        var userId = CurrentUserId();
+        if (userId is null) return Unauthorized();
+
+        var result = await _forumService.IncrementViewAsync(topicId, userId.Value);
         return result.Succeeded ? Ok() : NotFound(new { error = result.Error });
     }
 

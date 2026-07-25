@@ -317,10 +317,21 @@ builder.Services.AddScoped<IChatService, ChatService>();
 // This is what makes the app deployable — hosting platforms wipe the disk on restart.
 builder.Services.Configure<StorageOptions>(builder.Configuration.GetSection("Storage"));
 var storageOptions = builder.Configuration.GetSection("Storage").Get<StorageOptions>() ?? new StorageOptions();
+// Register the physical backend as its concrete type...
 if (storageOptions.S3Configured)
-    builder.Services.AddSingleton<IFileStorage, S3FileStorage>();
+    builder.Services.AddSingleton<S3FileStorage>();
 else
-    builder.Services.AddSingleton<IFileStorage, LocalFileStorage>();
+    builder.Services.AddSingleton<LocalFileStorage>();
+// ...then expose IFileStorage, wrapping it in transparent AES-256-GCM encryption when a key is set.
+builder.Services.AddSingleton<IFileStorage>(sp =>
+{
+    IFileStorage inner = storageOptions.S3Configured
+        ? sp.GetRequiredService<S3FileStorage>()
+        : sp.GetRequiredService<LocalFileStorage>();
+    return storageOptions.EncryptionEnabled
+        ? new EncryptingFileStorage(inner, storageOptions, sp.GetRequiredService<ILogger<EncryptingFileStorage>>())
+        : inner;
+});
 
 builder.Services.AddScoped<IFileService, FileService>();
 builder.Services.AddScoped<IForumService, ForumService>();

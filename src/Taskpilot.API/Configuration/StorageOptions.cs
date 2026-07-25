@@ -45,4 +45,17 @@ public class StorageOptions
         !string.IsNullOrWhiteSpace(Bucket)
         && !string.IsNullOrWhiteSpace(AccessKey)
         && !string.IsNullOrWhiteSpace(SecretKey);
+
+    /// <summary>
+    /// Base64-encoded 32-byte (AES-256) key for encrypting uploaded file bytes at rest.
+    /// Leave empty to store files unencrypted (the default). When set, every new upload is
+    /// encrypted before it reaches the disk or bucket, and decrypted on the way out; files
+    /// written before it was set stay readable (they are detected as plaintext).
+    /// Keep this key: once files are encrypted with it, they cannot be read without it.
+    /// Generate one with: <c>openssl rand -base64 32</c>. Store it in env / User Secrets.
+    /// </summary>
+    public string EncryptionKey { get; set; } = string.Empty;
+
+    /// <summary>True when a file-encryption key is configured.</summary>
+    public bool EncryptionEnabled => !string.IsNullOrWhiteSpace(EncryptionKey);
 }

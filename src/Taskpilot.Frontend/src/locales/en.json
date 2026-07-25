@@ -496,7 +496,17 @@
     "muted": "Project muted",
     "unmuted": "Project unmuted",
     "mutedLabel": "Muted",
-    "muteFailed": "Could not update mute setting."
+    "muteFailed": "Could not update mute setting.",
+    "searchPlaceholder": "Search projects…",
+    "noMatches": "No projects match your search.",
+    "sortBy": "Sort by",
+    "sort": {
+      "newest": "Newest first",
+      "oldest": "Oldest first",
+      "name": "Name (A–Z)",
+      "tasks": "Most tasks",
+      "progress": "Most complete"
+    }
   },
   "templates": {
     "button": "Templates",

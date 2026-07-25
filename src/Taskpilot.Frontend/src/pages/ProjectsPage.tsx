@@ -20,6 +20,13 @@ import type { Project } from '../types/project'
 // Palette for colour-tagging projects.
 const COLORS = ['#4F46E5', '#2563EB', '#0891B2', '#059669', '#D97706', '#DC2626', '#7C3AED', '#94A3B8']
 
+// How the project list can be sorted (labels come from i18n).
+const SORT_KEYS = ['newest', 'oldest', 'name', 'tasks', 'progress'] as const
+type SortKey = (typeof SORT_KEYS)[number]
+
+/** Share of a project's tasks that are done (0 when it has none). */
+const progressOf = (p: Project) => (p.taskCount > 0 ? p.completedTaskCount / p.taskCount : 0)
+
 /**
  * Lists the current user's projects and lets them create a new one.
  * Each project links to its Kanban board.
@@ -40,6 +47,9 @@ export default function ProjectsPage() {
   const [editColor, setEditColor] = useState<string | null>(null)
   // Whether the templates modal (create-from / manage templates) is open.
   const [showTemplates, setShowTemplates] = useState(false)
+  // Client-side search + sort over the loaded projects.
+  const [search, setSearch] = useState('')
+  const [sort, setSort] = useState<SortKey>('newest')
 
   const load = () => {
     projectService.getProjects(showArchived).then(setProjects).catch(() => {})
@@ -136,6 +146,27 @@ export default function ProjectsPage() {
     load()
   }
 
+  // Filter by name/description, then sort — all client-side over the loaded list.
+  const q = search.trim().toLowerCase()
+  const visibleProjects = projects
+    .filter((p) => !q || p.name.toLowerCase().includes(q) || (p.description ?? '').toLowerCase().includes(q))
+    .slice()
+    .sort((a, b) => {
+      switch (sort) {
+        case 'oldest':
+          return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+        case 'name':
+          return a.name.localeCompare(b.name)
+        case 'tasks':
+          return b.taskCount - a.taskCount
+        case 'progress':
+          return progressOf(b) - progressOf(a)
+        case 'newest':
+        default:
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      }
+    })
+
   return (
     <div className="mx-auto max-w-5xl">
         <div className="mb-6 flex items-center justify-between">
@@ -167,6 +198,30 @@ export default function ProjectsPage() {
           </Button>
         </div>
 
+        {/* Search + sort (shown once there is more than one project to organize) */}
+        {projects.length > 1 && (
+          <div className="mb-6 flex flex-col gap-2 sm:flex-row">
+            <Input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder={t('projects.searchPlaceholder')}
+              className="flex-1"
+            />
+            <select
+              value={sort}
+              onChange={(e) => setSort(e.target.value as SortKey)}
+              aria-label={t('projects.sortBy')}
+              className="rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
+            >
+              {SORT_KEYS.map((k) => (
+                <option key={k} value={k}>
+                  {t(`projects.sort.${k}`)}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
         {loading && projects.length === 0 ? (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {Array.from({ length: 6 }).map((_, i) => (
@@ -175,9 +230,11 @@ export default function ProjectsPage() {
           </div>
         ) : projects.length === 0 ? (
           <EmptyState message={t('projects.empty')} />
+        ) : visibleProjects.length === 0 ? (
+          <EmptyState message={t('projects.noMatches')} />
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {projects.map((p) => (
+            {visibleProjects.map((p) => (
               <ProjectContextMenu
                 key={p.id}
                 archived={p.isArchived}

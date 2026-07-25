@@ -29,8 +29,8 @@ vi.mock('../store/hooks', () => ({
 }))
 vi.mock('../components/modals/TemplatesModal', () => ({ default: () => null }))
 vi.mock('../components/modals/ConfirmDialog', () => ({ default: () => null }))
-// EmptyState pulls in lottie-web, which needs a real canvas — stub it out.
-vi.mock('../components/feedback/EmptyState', () => ({ default: () => null }))
+// EmptyState pulls in lottie-web, which needs a real canvas — stub it to just its message.
+vi.mock('../components/feedback/EmptyState', () => ({ default: ({ message }: { message: string }) => <div>{message}</div> }))
 // Expose the mute affordance as a plain button so we don't have to drive Radix's context menu.
 vi.mock('../components/menus/ProjectContextMenu', () => ({
   default: ({ children, canMute, muted, onToggleMute }: {
@@ -101,5 +101,53 @@ describe('ProjectsPage mute', () => {
     fireEvent.click(screen.getByLabelText('ctx-unmute'))
 
     await waitFor(() => expect(setMuted).toHaveBeenCalledWith('mem', false))
+  })
+})
+
+describe('ProjectsPage search & sort', () => {
+  beforeEach(() => {
+    getProjects.mockReset().mockResolvedValue([
+      project({ id: 'g', name: 'Gamma', createdAt: '2026-03-01T00:00:00Z', taskCount: 1 }),
+      project({ id: 'a', name: 'Alpha', createdAt: '2026-01-01T00:00:00Z', taskCount: 9 }),
+      project({ id: 'b', name: 'Beta', createdAt: '2026-02-01T00:00:00Z', taskCount: 5 }),
+    ])
+  })
+
+  // Project names as they currently appear in the grid, in DOM order.
+  const renderedNames = () =>
+    screen.getAllByText(/^(Alpha|Beta|Gamma)$/).map((el) => el.textContent)
+
+  it('filters the projects by the search box', async () => {
+    render(<ProjectsPage />)
+    await screen.findByText('Beta')
+
+    fireEvent.change(screen.getByPlaceholderText('projects.searchPlaceholder'), { target: { value: 'bet' } })
+
+    expect(screen.getByText('Beta')).toBeTruthy()
+    expect(screen.queryByText('Alpha')).toBeNull()
+    expect(screen.queryByText('Gamma')).toBeNull()
+  })
+
+  it('defaults to newest-first and re-sorts by name on demand', async () => {
+    render(<ProjectsPage />)
+    await screen.findByText('Beta')
+
+    // Newest first: Gamma (Mar) → Beta (Feb) → Alpha (Jan).
+    expect(renderedNames()).toEqual(['Gamma', 'Beta', 'Alpha'])
+
+    fireEvent.change(screen.getByLabelText('projects.sortBy'), { target: { value: 'name' } })
+    expect(renderedNames()).toEqual(['Alpha', 'Beta', 'Gamma'])
+
+    fireEvent.change(screen.getByLabelText('projects.sortBy'), { target: { value: 'tasks' } })
+    expect(renderedNames()).toEqual(['Alpha', 'Beta', 'Gamma']) // 9, 5, 1
+  })
+
+  it('shows a no-matches state when the search excludes everything', async () => {
+    render(<ProjectsPage />)
+    await screen.findByText('Beta')
+
+    fireEvent.change(screen.getByPlaceholderText('projects.searchPlaceholder'), { target: { value: 'zzz' } })
+
+    expect(screen.getByText('projects.noMatches')).toBeTruthy()
   })
 })

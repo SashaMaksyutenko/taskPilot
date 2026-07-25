@@ -1,5 +1,6 @@
 using Taskpilot.API.Common;
 using Taskpilot.API.DTOs.Auth;
+using Taskpilot.API.DTOs.Common;
 using Taskpilot.API.DTOs.Users;
 
 namespace Taskpilot.API.Services;
@@ -26,6 +27,9 @@ public interface IUserService
 
     /// <summary>Searches active users by name or email, excluding the caller.</summary>
     Task<Result<List<UserSearchResultDto>>> SearchUsersAsync(Guid currentUserId, string query);
+
+    /// <summary>Returns a page of the active-users directory, optionally filtered by name.</summary>
+    Task<Result<PagedResult<UserDirectoryItemDto>>> GetUsersDirectoryAsync(int page, int pageSize, string? search);
 
     /// <summary>Sets the user's avatar from an uploaded image and returns the updated profile.</summary>
     Task<Result<UserDto>> SetAvatarAsync(Guid userId, IFormFile file);

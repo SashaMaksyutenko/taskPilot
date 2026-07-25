@@ -58,6 +58,14 @@ public class UsersController : BaseApiController
         return Ok(result.Value);
     }
 
+    /// <summary>Browsable directory of active users (paged, optional name filter).</summary>
+    [HttpGet]
+    public async Task<IActionResult> GetDirectory([FromQuery] int page = 1, [FromQuery] int pageSize = 20, [FromQuery] string? search = null)
+    {
+        var result = await _userService.GetUsersDirectoryAsync(page, pageSize, search);
+        return Ok(result.Value);
+    }
+
     /// <summary>Returns the public profile of a user by id.</summary>
     [HttpGet("{userId:guid}")]
     public async Task<IActionResult> GetPublicProfile(Guid userId)

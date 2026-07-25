@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Taskpilot.API.Common;
 using Taskpilot.API.Data;
 using Taskpilot.API.DTOs.Auth;
+using Taskpilot.API.DTOs.Common;
 using Taskpilot.API.DTOs.Users;
 using Taskpilot.API.Mappers;
 using Taskpilot.API.Models;
@@ -386,6 +387,53 @@ public class UserService : IUserService
             .ToList();
 
         return Result<List<UserSearchResultDto>>.Ok(users);
+    }
+
+    /// <inheritdoc />
+    public async Task<Result<PagedResult<UserDirectoryItemDto>>> GetUsersDirectoryAsync(int page, int pageSize, string? search)
+    {
+        page = Math.Max(1, page);
+        pageSize = Math.Clamp(pageSize <= 0 ? 20 : pageSize, 1, 50);
+
+        // Only active accounts appear (banned/anonymized users are hidden).
+        var query = _context.Users.Where(u => u.IsActive);
+        var term = search?.Trim();
+        if (!string.IsNullOrEmpty(term))
+        {
+            var pattern = $"%{term}%";
+            query = query.Where(u => EF.Functions.ILike(u.Name, pattern));
+        }
+
+        var total = await query.CountAsync();
+        var rows = await query
+            .OrderBy(u => u.Name)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Select(u => new { u.Id, u.Name, u.Role, u.Title, u.Location, u.AvatarFileId, u.CreatedAt })
+            .AsNoTracking()
+            .ToListAsync();
+
+        // Build the DTOs in memory so the avatar URL can be composed (not translatable in SQL).
+        var items = rows
+            .Select(u => new UserDirectoryItemDto
+            {
+                Id = u.Id,
+                Name = u.Name,
+                Role = u.Role.ToString(),
+                Title = u.Title,
+                Location = u.Location,
+                AvatarUrl = UserMapper.AvatarUrl(u.Id, u.AvatarFileId),
+                MemberSince = u.CreatedAt,
+            })
+            .ToList();
+
+        return Result<PagedResult<UserDirectoryItemDto>>.Ok(new PagedResult<UserDirectoryItemDto>
+        {
+            Items = items,
+            Total = total,
+            Page = page,
+            PageSize = pageSize,
+        });
     }
 
     /// <inheritdoc />

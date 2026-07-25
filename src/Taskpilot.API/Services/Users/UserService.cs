@@ -437,6 +437,28 @@ public class UserService : IUserService
     }
 
     /// <inheritdoc />
+    public async Task<Result<List<SharedProjectDto>>> GetSharedProjectsAsync(Guid profileUserId, Guid viewerId)
+    {
+        // Active projects both users participate in (own or are a member of). When the viewer
+        // looks at their own profile, both conditions coincide → all of their projects.
+        var projects = await _context.Projects
+            .Where(p => p.ArchivedAt == null
+                        && (p.OwnerId == profileUserId || p.Members.Any(m => m.UserId == profileUserId))
+                        && (p.OwnerId == viewerId || p.Members.Any(m => m.UserId == viewerId)))
+            .OrderBy(p => p.Name)
+            .Select(p => new SharedProjectDto
+            {
+                Id = p.Id,
+                Name = p.Name,
+                Color = p.Color,
+            })
+            .AsNoTracking()
+            .ToListAsync();
+
+        return Result<List<SharedProjectDto>>.Ok(projects);
+    }
+
+    /// <inheritdoc />
     public async Task<Result<UserDto>> SetAvatarAsync(Guid userId, IFormFile file)
     {
         if (file is null || file.Length == 0)

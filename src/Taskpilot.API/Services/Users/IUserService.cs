@@ -31,6 +31,13 @@ public interface IUserService
     /// <summary>Returns a page of the active-users directory, optionally filtered by name.</summary>
     Task<Result<PagedResult<UserDirectoryItemDto>>> GetUsersDirectoryAsync(int page, int pageSize, string? search);
 
+    /// <summary>
+    /// Projects that both the profile user and the viewer take part in (shared participation).
+    /// On your own profile this is all your active projects. Private projects the viewer has
+    /// no access to are never listed.
+    /// </summary>
+    Task<Result<List<SharedProjectDto>>> GetSharedProjectsAsync(Guid profileUserId, Guid viewerId);
+
     /// <summary>Sets the user's avatar from an uploaded image and returns the updated profile.</summary>
     Task<Result<UserDto>> SetAvatarAsync(Guid userId, IFormFile file);
 

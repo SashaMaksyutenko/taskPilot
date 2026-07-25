@@ -76,6 +76,17 @@ public class UsersController : BaseApiController
             : NotFound(new { error = result.Error });
     }
 
+    /// <summary>Projects the current user shares with the given user (for their profile).</summary>
+    [HttpGet("{userId:guid}/shared-projects")]
+    public async Task<IActionResult> GetSharedProjects(Guid userId)
+    {
+        var viewerId = CurrentUserId();
+        if (viewerId is null) return Unauthorized();
+
+        var result = await _userService.GetSharedProjectsAsync(userId, viewerId.Value);
+        return Ok(result.Value);
+    }
+
     /// <summary>Endorses (or removes an endorsement of) one of a user's skills.</summary>
     [HttpPost("{userId:guid}/skills/endorse")]
     public async Task<IActionResult> EndorseSkill(Guid userId, [FromBody] EndorseSkillDto dto)

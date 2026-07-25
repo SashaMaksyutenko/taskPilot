@@ -3,6 +3,7 @@ import { Outlet, useLocation } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import Sidebar from './Sidebar'
 import TopBar from './TopBar'
+import StatsFooter from './StatsFooter'
 import ShortcutsHelp from '../modals/ShortcutsHelp'
 import CommandPalette from '../CommandPalette'
 import AssistantFab from '../AssistantFab'
@@ -43,6 +44,8 @@ export default function AppShell({ children }: { children?: ReactNode }) {
             </motion.div>
           </AnimatePresence>
         </main>
+
+        <StatsFooter />
       </div>
 
       {/* Floating shortcut to the AI assistant */}

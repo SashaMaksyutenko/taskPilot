@@ -83,6 +83,8 @@ export default function BoardPage() {
   const [showConfetti, setShowConfetti] = useState(false)
 
   const isOwner = !!project && project.ownerId === currentUserId
+  // A member may move only tasks assigned to them; the owner may move any.
+  const canMoveTask = (task: Task) => isOwner || task.assigneeId === currentUserId
 
   useEffect(() => {
     if (!projectId) return
@@ -131,6 +133,13 @@ export default function BoardPage() {
   const onDrop = async (status: string, taskId: string) => {
     const task = tasks.find((t) => t.id === taskId)
     if (!task || task.status === status) return
+    // You may only move tasks assigned to you (the owner may move any).
+    if (!canMoveTask(task)) return
+    // Only the owner approves a task into Done.
+    if (status === 'Done' && !isOwner) {
+      notify.error(t('board.onlyOwnerDone'))
+      return
+    }
     setTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, status: status as TaskStatus } : t)))
     // Celebrate finishing a task.
     if (status === 'Done') setShowConfetti(true)
@@ -635,15 +644,15 @@ export default function BoardPage() {
                       onBookmark={() => toggleBookmark(task)}
                     >
                       <div
-                        {...dnd.draggableProps(task.id)}
+                        {...(canMoveTask(task) ? dnd.draggableProps(task.id) : {})}
                         onClick={() => {
                           // Ignore the click that fires right after a drag.
                           if (dnd.justDragged()) return
                           openTask(task)
                         }}
                         className={`group relative rounded-lg border border-border bg-surface p-3 shadow-soft transition hover:border-primary/30 hover:shadow-card ${
-                          dnd.draggingId === task.id ? 'opacity-40' : ''
-                        }`}
+                          canMoveTask(task) ? 'cursor-grab' : ''
+                        } ${dnd.draggingId === task.id ? 'opacity-40' : ''}`}
                       >
                         {/* Hover three-dot menu (same actions as right-click) */}
                         <div className="absolute right-1 top-1 opacity-0 transition group-hover:opacity-100">
@@ -714,6 +723,7 @@ export default function BoardPage() {
         <TaskDetailModal
           task={selectedTask}
           showHistory={openOnHistory}
+          isOwner={isOwner}
           onClose={() => setSelectedTask(null)}
           onSaved={(updated) => setTasks((prev) => prev.map((t) => (t.id === updated.id ? updated : t)))}
           onDeleted={(taskId) => setTasks((prev) => prev.filter((t) => t.id !== taskId))}

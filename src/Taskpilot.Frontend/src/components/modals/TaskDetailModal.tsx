@@ -38,6 +38,7 @@ export default function TaskDetailModal({
   onSaved,
   onDeleted,
   showHistory = false,
+  isOwner = false,
 }: {
   task: Task
   onClose: () => void
@@ -45,6 +46,8 @@ export default function TaskDetailModal({
   onDeleted: (taskId: string) => void
   /** Opens the history section straight away (the "View history" menu action). */
   showHistory?: boolean
+  /** Whether the current user owns the project — only the owner may change the deadline. */
+  isOwner?: boolean
 }) {
   const { t } = useTranslation()
   const [title, setTitle] = useState(task.title)
@@ -365,8 +368,13 @@ export default function TaskDetailModal({
               type="date"
               value={deadline}
               onChange={(e) => setDeadline(e.target.value)}
-              className="w-full rounded-lg border border-border bg-canvas px-2 py-2 text-sm text-foreground outline-none"
+              disabled={!isOwner}
+              title={!isOwner ? t('taskModal.deadlineOwnerOnly') : undefined}
+              className="w-full rounded-lg border border-border bg-canvas px-2 py-2 text-sm text-foreground outline-none disabled:cursor-not-allowed disabled:opacity-60"
             />
+            {!isOwner && (
+              <p className="mt-1 text-xs text-muted">{t('taskModal.deadlineOwnerOnly')}</p>
+            )}
           </div>
         </div>
 

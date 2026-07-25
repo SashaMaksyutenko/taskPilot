@@ -24,6 +24,7 @@ import RootPage from './pages/RootPage'
 import SettingsPage from './pages/SettingsPage'
 import TopicPage from './pages/TopicPage'
 import UserProfilePage from './pages/UserProfilePage'
+import UsersPage from './pages/UsersPage'
 import RegisterPage from './pages/RegisterPage'
 import LoginPage from './pages/LoginPage'
 import ForgotPasswordPage from './pages/ForgotPasswordPage'
@@ -86,6 +87,7 @@ function App() {
             <Route path="/notes" element={<NotesPage />} />
             <Route path="/bookmarks" element={<BookmarksPage />} />
             <Route path="/search" element={<SearchPage />} />
+            <Route path="/users" element={<UsersPage />} />
             <Route path="/users/:userId" element={<UserProfilePage />} />
             <Route element={<AdminRoute />}>
               <Route path="/admin" element={<AdminPage />} />

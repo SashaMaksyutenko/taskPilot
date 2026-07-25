@@ -23,6 +23,7 @@
     "forum": "Forum",
     "market": "Market",
     "chat": "Chat",
+    "users": "Users",
     "assistant": "Assistant",
     "notes": "Notes",
     "bookmarks": "Bookmarks",
@@ -30,6 +31,11 @@
     "admin": "Admin",
     "settings": "Settings",
     "logout": "Log out"
+  },
+  "users": {
+    "title": "Users",
+    "searchPlaceholder": "Search people by name…",
+    "empty": "No users found."
   },
   "assistant": {
     "title": "AI Assistant",

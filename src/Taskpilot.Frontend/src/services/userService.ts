@@ -1,6 +1,18 @@
 import api from '../lib/api'
 import type { User } from '../types/auth'
 import type { Appeal, Warning } from '../types/admin'
+import type { PagedResult } from '../types/common'
+
+/** A user as shown in the public members directory (mirrors UserDirectoryItemDto). */
+export interface UserDirectoryItem {
+  id: string
+  name: string
+  role: string
+  title?: string | null
+  location?: string | null
+  avatarUrl?: string | null
+  memberSince: string
+}
 
 export interface UpdateProfileData {
   name: string
@@ -92,6 +104,11 @@ export const userService = {
 
   getPublicProfile(userId: string): Promise<PublicProfile> {
     return api.get<PublicProfile>(`/api/users/${userId}`).then((r) => r.data)
+  },
+
+  /** A page of the public users directory (optionally filtered by name). */
+  getDirectory(params: { page?: number; pageSize?: number; search?: string }): Promise<PagedResult<UserDirectoryItem>> {
+    return api.get<PagedResult<UserDirectoryItem>>('/api/users', { params }).then((r) => r.data)
   },
 
   /** Endorses (or removes an endorsement of) one of a user's skills; returns the new state. */

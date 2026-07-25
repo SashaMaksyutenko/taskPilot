@@ -938,6 +938,8 @@
     "notFound": "User not found.",
     "memberSince": "Member since {{date}}",
     "contacts": "Contacts",
+    "myProjects": "Projects",
+    "sharedProjects": "Projects you share",
     "topics": "Forum topics",
     "noTopics": "No topics yet."
   },

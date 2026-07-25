@@ -8,7 +8,7 @@ import ResultState from '../components/feedback/ResultState'
 import { SkeletonDetail } from '../components/ui/Skeleton'
 import { cn } from '../lib/cn'
 import { forumService } from '../services/forumService'
-import { userService, type PublicProfile, type ReputationEntry } from '../services/userService'
+import { userService, type PublicProfile, type ReputationEntry, type SharedProject } from '../services/userService'
 import { useAppSelector } from '../store/hooks'
 import type { TopicListItem } from '../types/forum'
 
@@ -48,6 +48,7 @@ export default function UserProfilePage() {
   const [profile, setProfile] = useState<PublicProfile | null>(null)
   const [topics, setTopics] = useState<TopicListItem[]>([])
   const [reputation, setReputation] = useState<ReputationEntry[]>([])
+  const [sharedProjects, setSharedProjects] = useState<SharedProject[]>([])
   const [notFound, setNotFound] = useState(false)
 
   // You cannot endorse your own skills, so the buttons are hidden on your own profile.
@@ -79,6 +80,7 @@ export default function UserProfilePage() {
       .catch(() => setNotFound(true))
     forumService.getTopics({ authorId: userId }).then((r) => setTopics(r.items)).catch(() => {})
     userService.getReputationHistory(userId).then((r) => setReputation(r.entries)).catch(() => {})
+    userService.getSharedProjects(userId).then(setSharedProjects).catch(() => {})
   }, [userId])
 
   return (
@@ -184,6 +186,27 @@ export default function UserProfilePage() {
                       </span>
                     )
                   })}
+                </div>
+              </div>
+            )}
+
+            {/* Shared projects (only those the viewer also takes part in) */}
+            {sharedProjects.length > 0 && (
+              <div className="mt-6 rounded-xl border border-border bg-surface p-6">
+                <h2 className="mb-3 font-bold">
+                  {isOwnProfile ? t('profile.myProjects') : t('profile.sharedProjects')}
+                </h2>
+                <div className="flex flex-wrap gap-2">
+                  {sharedProjects.map((p) => (
+                    <Link
+                      key={p.id}
+                      to={`/projects/${p.id}`}
+                      className="flex items-center gap-2 rounded-full border border-border px-3 py-1 text-sm font-medium hover:border-primary hover:bg-canvas"
+                    >
+                      <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ background: p.color ?? '#94a3b8' }} />
+                      {p.name}
+                    </Link>
+                  ))}
                 </div>
               </div>
             )}

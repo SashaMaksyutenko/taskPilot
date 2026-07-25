@@ -3,6 +3,13 @@ import type { User } from '../types/auth'
 import type { Appeal, Warning } from '../types/admin'
 import type { PagedResult } from '../types/common'
 
+/** A project shown on a profile as shared participation (mirrors SharedProjectDto). */
+export interface SharedProject {
+  id: string
+  name: string
+  color?: string | null
+}
+
 /** A user as shown in the public members directory (mirrors UserDirectoryItemDto). */
 export interface UserDirectoryItem {
   id: string
@@ -109,6 +116,11 @@ export const userService = {
   /** A page of the public users directory (optionally filtered by name). */
   getDirectory(params: { page?: number; pageSize?: number; search?: string }): Promise<PagedResult<UserDirectoryItem>> {
     return api.get<PagedResult<UserDirectoryItem>>('/api/users', { params }).then((r) => r.data)
+  },
+
+  /** Projects the current user shares with the given user (for their profile). */
+  getSharedProjects(userId: string): Promise<SharedProject[]> {
+    return api.get<SharedProject[]>(`/api/users/${userId}/shared-projects`).then((r) => r.data)
   },
 
   /** Endorses (or removes an endorsement of) one of a user's skills; returns the new state. */

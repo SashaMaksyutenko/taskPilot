@@ -938,6 +938,8 @@
     "notFound": "Користувача не знайдено.",
     "memberSince": "З нами з {{date}}",
     "contacts": "Контакти",
+    "myProjects": "Проєкти",
+    "sharedProjects": "Спільні проєкти",
     "topics": "Теми на форумі",
     "noTopics": "Тем ще немає."
   },

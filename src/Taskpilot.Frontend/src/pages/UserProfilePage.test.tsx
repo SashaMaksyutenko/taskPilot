@@ -3,11 +3,12 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import UserProfilePage from './UserProfilePage'
 import type { PublicProfile } from '../services/userService'
 
-const { getPublicProfile, endorseSkill, getReputationHistory, getTopics, state } = vi.hoisted(() => ({
+const { getPublicProfile, endorseSkill, getReputationHistory, getTopics, getSharedProjects, state } = vi.hoisted(() => ({
   getPublicProfile: vi.fn(),
   endorseSkill: vi.fn(),
   getReputationHistory: vi.fn(),
   getTopics: vi.fn(),
+  getSharedProjects: vi.fn(),
   state: { currentUserId: 'me' as string | undefined },
 }))
 
@@ -16,7 +17,7 @@ vi.mock('react-router-dom', () => ({
   Link: ({ children }: { children: React.ReactNode }) => <a>{children}</a>,
 }))
 vi.mock('../services/userService', () => ({
-  userService: { getPublicProfile, endorseSkill, getReputationHistory },
+  userService: { getPublicProfile, endorseSkill, getReputationHistory, getSharedProjects },
 }))
 vi.mock('../services/forumService', () => ({ forumService: { getTopics } }))
 vi.mock('../store/hooks', () => ({
@@ -64,6 +65,7 @@ describe('UserProfilePage skill endorsements', () => {
     getTopics.mockReset().mockResolvedValue({ items: [] })
     endorseSkill.mockReset().mockResolvedValue({ skill: 'React', endorsed: true, count: 3 })
     getPublicProfile.mockReset().mockResolvedValue(profile())
+    getSharedProjects.mockReset().mockResolvedValue([])
   })
 
   it('endorsing a skill on someone else\'s profile calls the API and updates the count', async () => {
@@ -100,5 +102,16 @@ describe('UserProfilePage skill endorsements', () => {
 
     const btn = await screen.findByLabelText('endorse.remove:React')
     expect(btn.getAttribute('aria-pressed')).toBe('true')
+  })
+
+  it('renders the shared projects section when the viewer shares projects', async () => {
+    getSharedProjects.mockResolvedValue([
+      { id: 'p1', name: 'Nebula', color: '#4F46E5' },
+      { id: 'p2', name: 'Orion', color: null },
+    ])
+    render(<UserProfilePage />)
+
+    expect(await screen.findByText('Nebula')).toBeTruthy()
+    expect(screen.getByText('Orion')).toBeTruthy()
   })
 })

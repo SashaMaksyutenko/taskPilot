@@ -140,7 +140,8 @@ builder.Services.AddScoped<ITaskAiService, TaskAiService>();
 builder.Services.AddHttpClient<Taskpilot.API.Services.Assistant.IAssistantChatClient,
     Taskpilot.API.Services.Assistant.OpenAiAssistantClient>();
 builder.Services.AddScoped<Taskpilot.API.Services.Assistant.AssistantToolbox>();          // read-only tools
-builder.Services.AddScoped<Taskpilot.API.Services.Assistant.AssistantActionsToolbox>();    // write/action tools
+builder.Services.AddScoped<Taskpilot.API.Services.Assistant.AssistantActionsToolbox>();    // core write/action tools
+builder.Services.AddScoped<Taskpilot.API.Services.Assistant.AssistantWorkflowToolbox>();   // whole-app write tools
 builder.Services.AddScoped<Taskpilot.API.Services.Assistant.AssistantPeopleToolbox>();     // public profile lookup
 builder.Services.AddScoped<Taskpilot.API.Services.Assistant.IAssistantToolbox,
     Taskpilot.API.Services.Assistant.CompositeAssistantToolbox>();                          // agent sees all

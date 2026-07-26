@@ -186,12 +186,16 @@ public class CompositeAssistantToolboxTests
         var read = new AssistantToolbox(ctx);
         var actions = new AssistantActionsToolbox(ctx, new Mock<ITaskService>().Object, new Mock<IMarketplaceService>().Object,
             new Mock<IForumService>().Object, new Mock<IProjectService>().Object);
+        var workflow = new AssistantWorkflowToolbox(ctx, new Mock<ITaskService>().Object, new Mock<ITaskCommentService>().Object,
+            new Mock<IForumService>().Object, new Mock<IChatService>().Object, new Mock<INotificationService>().Object,
+            new Mock<INoteService>().Object, new Mock<IMarketplaceService>().Object, new Mock<IProjectService>().Object);
         var people = new AssistantPeopleToolbox(ctx, new Mock<IUserService>().Object);
-        var composite = new CompositeAssistantToolbox(read, actions, people);
+        var composite = new CompositeAssistantToolbox(read, actions, workflow, people);
 
         var names = composite.Definitions.Select(d => d.Name).ToList();
         Assert.Contains("list_my_projects", names); // read tool
-        Assert.Contains("create_task", names);      // write tool
+        Assert.Contains("create_task", names);      // core write tool
+        Assert.Contains("update_task", names);      // workflow write tool
         Assert.Contains("get_user_profile", names); // people tool
 
         // A read tool routes to the read toolbox and returns real data.

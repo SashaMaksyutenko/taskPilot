@@ -20,8 +20,10 @@ namespace Taskpilot.API.Tests;
 public class AssistantProfileToolboxTests
 {
     private static AssistantProfileToolbox Make(
-        TaskpilotDbContext ctx, Mock<IUserService>? users = null, Mock<IBookmarkService>? bookmarks = null)
-        => new(ctx, (users ?? new Mock<IUserService>()).Object, (bookmarks ?? new Mock<IBookmarkService>()).Object);
+        TaskpilotDbContext ctx, Mock<IUserService>? users = null, Mock<IBookmarkService>? bookmarks = null,
+        Mock<ISavedSearchService>? savedSearches = null, Mock<INotificationService>? notifications = null)
+        => new(ctx, (users ?? new Mock<IUserService>()).Object, (bookmarks ?? new Mock<IBookmarkService>()).Object,
+            (savedSearches ?? new Mock<ISavedSearchService>()).Object, (notifications ?? new Mock<INotificationService>()).Object);
 
     [Fact]
     public async Task UpdateProfile_AddSkill_AppendsAndPreservesOtherFields()
@@ -121,5 +123,70 @@ public class AssistantProfileToolboxTests
 
         Assert.True(JsonDocument.Parse(json).RootElement.TryGetProperty("error", out _));
         bookmarks.Verify(b => b.ToggleAsync(It.IsAny<Guid>(), It.IsAny<ToggleBookmarkDto>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task SaveSearch_Delegates()
+    {
+        await using var ctx = TestDb.CreateContext();
+        var me = await TestDb.AddUserAsync(ctx, "Me");
+        var searches = new Mock<ISavedSearchService>();
+        searches.Setup(s => s.CreateAsync(me, It.IsAny<Taskpilot.API.DTOs.Search.CreateSavedSearchDto>()))
+            .ReturnsAsync(Result<Taskpilot.API.DTOs.Search.SavedSearchDto>.Ok(
+                new Taskpilot.API.DTOs.Search.SavedSearchDto { Id = Guid.NewGuid(), Name = "Overdue" }));
+
+        var box = Make(ctx, savedSearches: searches);
+        var json = await box.ExecuteAsync(me, "save_search", "{\"name\":\"Overdue\",\"query\":\"status:overdue\"}");
+
+        Assert.True(JsonDocument.Parse(json).RootElement.GetProperty("saved").GetBoolean());
+        searches.Verify(s => s.CreateAsync(me, It.Is<Taskpilot.API.DTOs.Search.CreateSavedSearchDto>(
+            d => d.Name == "Overdue" && d.Query == "status:overdue")), Times.Once);
+    }
+
+    [Fact]
+    public async Task SetNotificationDigest_Delegates()
+    {
+        await using var ctx = TestDb.CreateContext();
+        var me = await TestDb.AddUserAsync(ctx, "Me");
+        var notifications = new Mock<INotificationService>();
+        notifications.Setup(n => n.SetDigestFrequencyAsync(me, "Daily")).ReturnsAsync(Result<string>.Ok("Daily"));
+
+        var box = Make(ctx, notifications: notifications);
+        var json = await box.ExecuteAsync(me, "set_notification_digest", "{\"frequency\":\"Daily\"}");
+
+        Assert.True(JsonDocument.Parse(json).RootElement.GetProperty("updated").GetBoolean());
+        notifications.Verify(n => n.SetDigestFrequencyAsync(me, "Daily"), Times.Once);
+    }
+
+    [Fact]
+    public async Task SetQuietHours_ParsesHours_AndDelegates()
+    {
+        await using var ctx = TestDb.CreateContext();
+        var me = await TestDb.AddUserAsync(ctx, "Me");
+        var notifications = new Mock<INotificationService>();
+        notifications.Setup(n => n.SetQuietHoursAsync(me, It.IsAny<Taskpilot.API.DTOs.Notifications.QuietHoursDto>()))
+            .ReturnsAsync((Guid _, Taskpilot.API.DTOs.Notifications.QuietHoursDto d) =>
+                Result<Taskpilot.API.DTOs.Notifications.QuietHoursDto>.Ok(d));
+
+        var box = Make(ctx, notifications: notifications);
+        var json = await box.ExecuteAsync(me, "set_quiet_hours", "{\"enabled\":true,\"start\":23,\"end\":7}");
+
+        Assert.True(JsonDocument.Parse(json).RootElement.GetProperty("updated").GetBoolean());
+        notifications.Verify(n => n.SetQuietHoursAsync(me, It.Is<Taskpilot.API.DTOs.Notifications.QuietHoursDto>(
+            d => d.Enabled && d.Start == 23 && d.End == 7)), Times.Once);
+    }
+
+    [Fact]
+    public async Task SetQuietHours_RejectsOutOfRangeHour()
+    {
+        await using var ctx = TestDb.CreateContext();
+        var me = await TestDb.AddUserAsync(ctx, "Me");
+        var notifications = new Mock<INotificationService>();
+
+        var box = Make(ctx, notifications: notifications);
+        var json = await box.ExecuteAsync(me, "set_quiet_hours", "{\"enabled\":true,\"start\":30,\"end\":7}");
+
+        Assert.True(JsonDocument.Parse(json).RootElement.TryGetProperty("error", out _));
+        notifications.Verify(n => n.SetQuietHoursAsync(It.IsAny<Guid>(), It.IsAny<Taskpilot.API.DTOs.Notifications.QuietHoursDto>()), Times.Never);
     }
 }

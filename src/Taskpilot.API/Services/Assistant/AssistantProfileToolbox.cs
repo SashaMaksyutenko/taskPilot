@@ -7,21 +7,28 @@ namespace Taskpilot.API.Services.Assistant;
 
 /// <summary>
 /// Write tools for the user's own account and personal collections — editing their profile
-/// (bio, title, skills, links) and bookmarking tasks or forum topics. Like the other write
-/// toolboxes, everything goes through the normal services, so their validation applies and the
-/// tools only ever touch the calling user's own data.
+/// (bio, title, skills, links), bookmarking tasks or forum topics, saving searches, and tuning
+/// their notification preferences (digest cadence, quiet hours). Like the other write toolboxes,
+/// everything goes through the normal services, so their validation applies and the tools only
+/// ever touch the calling user's own data.
 /// </summary>
 public class AssistantProfileToolbox : IAssistantToolbox
 {
     private readonly TaskpilotDbContext _context;
     private readonly IUserService _users;
     private readonly IBookmarkService _bookmarks;
+    private readonly ISavedSearchService _savedSearches;
+    private readonly INotificationService _notifications;
 
-    public AssistantProfileToolbox(TaskpilotDbContext context, IUserService users, IBookmarkService bookmarks)
+    public AssistantProfileToolbox(
+        TaskpilotDbContext context, IUserService users, IBookmarkService bookmarks,
+        ISavedSearchService savedSearches, INotificationService notifications)
     {
         _context = context;
         _users = users;
         _bookmarks = bookmarks;
+        _savedSearches = savedSearches;
+        _notifications = notifications;
     }
 
     /// <inheritdoc />
@@ -63,6 +70,45 @@ public class AssistantProfileToolbox : IAssistantToolbox
                 },
                 required = Array.Empty<string>(),
             }),
+        new("save_search",
+            "Saves a named search query for the user to reuse later. Only call this when the user asks to save a search.",
+            new
+            {
+                type = "object",
+                properties = new
+                {
+                    name = new { type = "string", description = "A label for the saved search." },
+                    query = new { type = "string", description = "The search text to save." },
+                },
+                required = new[] { "name", "query" },
+            }),
+        new("set_notification_digest",
+            "Sets how often the user receives their notification digest email. Only call this when the user asks to "
+            + "change their digest/email frequency.",
+            new
+            {
+                type = "object",
+                properties = new
+                {
+                    frequency = new { type = "string", description = "Digest cadence.", @enum = new[] { "Off", "Daily", "Weekly" } },
+                },
+                required = new[] { "frequency" },
+            }),
+        new("set_quiet_hours",
+            "Configures the user's notification quiet hours (a nightly window during which push/email is held). "
+            + "Only call this when the user asks to set/turn off quiet hours.",
+            new
+            {
+                type = "object",
+                properties = new
+                {
+                    enabled = new { type = "boolean", description = "Whether quiet hours are on." },
+                    start = new { type = "integer", description = "Start hour, 0-23 (e.g. 22 for 10pm)." },
+                    end = new { type = "integer", description = "End hour, 0-23 (e.g. 8 for 8am)." },
+                    timeZoneId = new { type = "string", description = "Optional IANA time zone id." },
+                },
+                required = new[] { "enabled" },
+            }),
     };
 
     /// <inheritdoc />
@@ -70,6 +116,9 @@ public class AssistantProfileToolbox : IAssistantToolbox
     {
         "update_profile" => UpdateProfileAsync(userId, argumentsJson),
         "bookmark_item" => BookmarkItemAsync(userId, argumentsJson),
+        "save_search" => SaveSearchAsync(userId, argumentsJson),
+        "set_notification_digest" => SetNotificationDigestAsync(userId, argumentsJson),
+        "set_quiet_hours" => SetQuietHoursAsync(userId, argumentsJson),
         _ => Task.FromResult(Json(new { error = $"Unknown tool: {toolName}" })),
     };
 
@@ -162,6 +211,61 @@ public class AssistantProfileToolbox : IAssistantToolbox
         var result = await _bookmarks.ToggleAsync(userId, dto);
         return result.Succeeded
             ? Json(new { bookmarked = result.Value, item = label })
+            : Json(new { error = result.Error });
+    }
+
+    private async Task<string> SaveSearchAsync(Guid userId, string argsJson)
+    {
+        var args = Parse(argsJson);
+        var name = Str(args, "name");
+        var query = Str(args, "query");
+        if (string.IsNullOrWhiteSpace(name) || string.IsNullOrWhiteSpace(query))
+            return Json(new { error = "Both 'name' and 'query' are required." });
+
+        var result = await _savedSearches.CreateAsync(userId, new DTOs.Search.CreateSavedSearchDto
+        {
+            Name = name.Trim(),
+            Query = query.Trim(),
+        });
+        return result.Succeeded
+            ? Json(new { saved = true, search = new { id = result.Value!.Id, name = result.Value!.Name } })
+            : Json(new { error = result.Error });
+    }
+
+    private async Task<string> SetNotificationDigestAsync(Guid userId, string argsJson)
+    {
+        var args = Parse(argsJson);
+        var frequency = Str(args, "frequency")?.Trim();
+        if (string.IsNullOrWhiteSpace(frequency)) return Json(new { error = "'frequency' is required (Off, Daily or Weekly)." });
+
+        // The service validates the value against the DigestFrequency enum.
+        var result = await _notifications.SetDigestFrequencyAsync(userId, frequency);
+        return result.Succeeded
+            ? Json(new { updated = true, frequency = result.Value })
+            : Json(new { error = result.Error });
+    }
+
+    private async Task<string> SetQuietHoursAsync(Guid userId, string argsJson)
+    {
+        var args = Parse(argsJson);
+        var enabled = Bool(args, "enabled");
+        if (enabled is null) return Json(new { error = "'enabled' (true/false) is required." });
+
+        var start = Int(args, "start");
+        var end = Int(args, "end");
+        if (start is < 0 or > 23 || end is < 0 or > 23)
+            return Json(new { error = "'start' and 'end' must be hours between 0 and 23." });
+
+        var dto = new DTOs.Notifications.QuietHoursDto
+        {
+            Enabled = enabled.Value,
+            Start = start ?? 22,
+            End = end ?? 8,
+            TimeZoneId = Str(args, "timeZoneId"),
+        };
+        var result = await _notifications.SetQuietHoursAsync(userId, dto);
+        return result.Succeeded
+            ? Json(new { updated = true, quietHours = new { enabled = dto.Enabled, start = dto.Start, end = dto.End } })
             : Json(new { error = result.Error });
     }
 }

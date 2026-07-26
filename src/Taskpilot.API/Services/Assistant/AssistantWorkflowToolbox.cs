@@ -8,8 +8,8 @@ namespace Taskpilot.API.Services.Assistant;
 /// <summary>
 /// The broad set of write tools that let the assistant operate the rest of the app on the
 /// user's behalf — editing and deleting tasks, commenting, replying on and following forum
-/// topics, marking solutions, reacting to and voting on replies, messaging people, clearing
-/// notifications, taking notes, managing project members, and running the marketplace lifecycle
+/// topics, marking solutions, reacting to and voting on replies, messaging people (and editing or
+/// deleting their last message), clearing notifications, taking notes, managing project members, and running the marketplace lifecycle
 /// (posting, submitting, approving, deciding applications and reviewing). Like <see cref="AssistantActionsToolbox"/>, every
 /// action goes through the normal service, so the same permission and validation rules the UI
 /// enforces apply here too.
@@ -273,6 +273,31 @@ public class AssistantWorkflowToolbox : IAssistantToolbox
                 },
                 required = new[] { "topic", "reply", "direction" },
             }),
+        new("edit_last_message",
+            "Edits the text of the last direct message the user sent to someone. Only call this when the user asks to "
+            + "edit/change/fix their last message to a person.",
+            new
+            {
+                type = "object",
+                properties = new
+                {
+                    recipient = new { type = "string", description = "Name of the person the message was sent to." },
+                    message = new { type = "string", description = "The new message text." },
+                },
+                required = new[] { "recipient", "message" },
+            }),
+        new("delete_last_message",
+            "Deletes the last direct message the user sent to someone. Only call this when the user asks to delete/unsend "
+            + "their last message to a person.",
+            new
+            {
+                type = "object",
+                properties = new
+                {
+                    recipient = new { type = "string", description = "Name of the person the message was sent to." },
+                },
+                required = new[] { "recipient" },
+            }),
     };
 
     /// <inheritdoc />
@@ -296,6 +321,8 @@ public class AssistantWorkflowToolbox : IAssistantToolbox
         "mark_forum_solution" => MarkForumSolutionAsync(userId, argumentsJson),
         "react_to_forum_reply" => ReactToForumReplyAsync(userId, argumentsJson),
         "vote_forum_reply" => VoteForumReplyAsync(userId, argumentsJson),
+        "edit_last_message" => EditLastMessageAsync(userId, argumentsJson),
+        "delete_last_message" => DeleteLastMessageAsync(userId, argumentsJson),
         _ => Task.FromResult(Json(new { error = $"Unknown tool: {toolName}" })),
     };
 
@@ -665,9 +692,67 @@ public class AssistantWorkflowToolbox : IAssistantToolbox
             : Json(new { error = result.Error });
     }
 
+    private async Task<string> EditLastMessageAsync(Guid userId, string argsJson)
+    {
+        var args = Parse(argsJson);
+        var newText = Str(args, "message");
+        if (string.IsNullOrWhiteSpace(newText)) return Json(new { error = "'message' (the new text) is required." });
+        var found = await ResolveLastMessageAsync(userId, Str(args, "recipient"));
+        if (found is null) return Json(new { error = $"No message from you to '{Str(args, "recipient")}' was found." });
+
+        var result = await _chat.EditMessageAsync(found.Value.MessageId, userId, newText.Trim());
+        return result.Succeeded
+            ? Json(new { edited = true, recipient = found.Value.Recipient })
+            : Json(new { error = result.Error });
+    }
+
+    private async Task<string> DeleteLastMessageAsync(Guid userId, string argsJson)
+    {
+        var args = Parse(argsJson);
+        var found = await ResolveLastMessageAsync(userId, Str(args, "recipient"));
+        if (found is null) return Json(new { error = $"No message from you to '{Str(args, "recipient")}' was found." });
+
+        var result = await _chat.DeleteMessageAsync(found.Value.MessageId, userId);
+        return result.Succeeded
+            ? Json(new { deleted = true, recipient = found.Value.Recipient })
+            : Json(new { error = result.Error });
+    }
+
     // --- resolution helpers ---
 
     private record ResolvedReply(Guid Id, string Topic);
+
+    /// <summary>
+    /// Finds the user's most recent non-deleted message in the direct conversation with a named
+    /// recipient (both must be participants of a Direct conversation).
+    /// </summary>
+    private async Task<(Guid MessageId, string Recipient)?> ResolveLastMessageAsync(Guid userId, string? recipientName)
+    {
+        if (string.IsNullOrWhiteSpace(recipientName)) return null;
+        var rn = recipientName.Trim().ToLower();
+        var recipient = await _context.Users
+            .Where(u => u.IsActive && u.Id != userId && u.Name.ToLower().Contains(rn))
+            .OrderBy(u => u.Name.Length)
+            .Select(u => new { u.Id, u.Name })
+            .FirstOrDefaultAsync();
+        if (recipient is null) return null;
+
+        // The one Direct conversation both users belong to.
+        var conversationId = await _context.Conversations
+            .Where(c => c.Type == Models.ConversationType.Direct
+                        && c.Participants.Any(p => p.UserId == userId)
+                        && c.Participants.Any(p => p.UserId == recipient.Id))
+            .Select(c => (Guid?)c.Id)
+            .FirstOrDefaultAsync();
+        if (conversationId is null) return null;
+
+        var messageId = await _context.Messages
+            .Where(m => m.ConversationId == conversationId && m.SenderId == userId && !m.IsDeleted)
+            .OrderByDescending(m => m.CreatedAt)
+            .Select(m => (Guid?)m.Id)
+            .FirstOrDefaultAsync();
+        return messageId is null ? null : (messageId.Value, recipient.Name);
+    }
 
     /// <summary>Finds a non-deleted reply by a snippet of its body within a topic matched by title.</summary>
     private async Task<ResolvedReply?> ResolveReplyAsync(string? topicTitle, string? snippet)

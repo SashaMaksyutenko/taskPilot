@@ -494,4 +494,69 @@ public class AssistantWorkflowToolboxTests
         Assert.True(JsonDocument.Parse(json).RootElement.GetProperty("voted").GetBoolean());
         forum.Verify(f => f.VoteReplyAsync(me, replyId, 1), Times.Once);
     }
+
+    /// <summary>Seeds a Direct conversation between two users with one message sent by <paramref name="sender"/>.</summary>
+    private static async Task<Guid> SeedDirectMessageAsync(TaskpilotDbContext ctx, Guid sender, Guid other, string body)
+    {
+        var convoId = Guid.NewGuid();
+        ctx.Conversations.Add(new Conversation { Id = convoId, Type = ConversationType.Direct });
+        ctx.ConversationParticipants.Add(new ConversationParticipant { Id = Guid.NewGuid(), ConversationId = convoId, UserId = sender });
+        ctx.ConversationParticipants.Add(new ConversationParticipant { Id = Guid.NewGuid(), ConversationId = convoId, UserId = other });
+        var msgId = Guid.NewGuid();
+        ctx.Messages.Add(new Message { Id = msgId, ConversationId = convoId, SenderId = sender, Content = body, CreatedAt = DateTime.UtcNow });
+        await ctx.SaveChangesAsync();
+        return msgId;
+    }
+
+    [Fact]
+    public async Task EditLastMessage_ResolvesConversation_AndDelegates()
+    {
+        await using var ctx = TestDb.CreateContext();
+        var me = await TestDb.AddUserAsync(ctx, "Me");
+        var bob = await TestDb.AddUserAsync(ctx, "Bob");
+        var msgId = await SeedDirectMessageAsync(ctx, me, bob, "helo");
+
+        var chat = new Mock<IChatService>();
+        chat.Setup(c => c.EditMessageAsync(msgId, me, "hello"))
+            .ReturnsAsync(Result<MessageDto>.Ok(new MessageDto { Id = msgId, Content = "hello" }));
+
+        var box = Make(ctx, chat: chat);
+        var json = await box.ExecuteAsync(me, "edit_last_message", "{\"recipient\":\"Bob\",\"message\":\"hello\"}");
+
+        Assert.True(JsonDocument.Parse(json).RootElement.GetProperty("edited").GetBoolean());
+        chat.Verify(c => c.EditMessageAsync(msgId, me, "hello"), Times.Once);
+    }
+
+    [Fact]
+    public async Task DeleteLastMessage_ResolvesConversation_AndDelegates()
+    {
+        await using var ctx = TestDb.CreateContext();
+        var me = await TestDb.AddUserAsync(ctx, "Me");
+        var bob = await TestDb.AddUserAsync(ctx, "Bob");
+        var msgId = await SeedDirectMessageAsync(ctx, me, bob, "oops");
+
+        var chat = new Mock<IChatService>();
+        chat.Setup(c => c.DeleteMessageAsync(msgId, me)).ReturnsAsync(Result.Ok());
+
+        var box = Make(ctx, chat: chat);
+        var json = await box.ExecuteAsync(me, "delete_last_message", "{\"recipient\":\"Bob\"}");
+
+        Assert.True(JsonDocument.Parse(json).RootElement.GetProperty("deleted").GetBoolean());
+        chat.Verify(c => c.DeleteMessageAsync(msgId, me), Times.Once);
+    }
+
+    [Fact]
+    public async Task DeleteLastMessage_NoConversation_ReturnsErrorWithoutDeleting()
+    {
+        await using var ctx = TestDb.CreateContext();
+        var me = await TestDb.AddUserAsync(ctx, "Me");
+        await TestDb.AddUserAsync(ctx, "Bob");
+        var chat = new Mock<IChatService>();
+
+        var box = Make(ctx, chat: chat);
+        var json = await box.ExecuteAsync(me, "delete_last_message", "{\"recipient\":\"Bob\"}");
+
+        Assert.True(JsonDocument.Parse(json).RootElement.TryGetProperty("error", out _));
+        chat.Verify(c => c.DeleteMessageAsync(It.IsAny<Guid>(), It.IsAny<Guid>()), Times.Never);
+    }
 }

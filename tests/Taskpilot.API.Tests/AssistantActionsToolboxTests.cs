@@ -189,7 +189,8 @@ public class CompositeAssistantToolboxTests
         var workflow = new AssistantWorkflowToolbox(ctx, new Mock<ITaskService>().Object, new Mock<ITaskCommentService>().Object,
             new Mock<IForumService>().Object, new Mock<IChatService>().Object, new Mock<INotificationService>().Object,
             new Mock<INoteService>().Object, new Mock<IMarketplaceService>().Object, new Mock<IProjectService>().Object);
-        var profile = new AssistantProfileToolbox(ctx, new Mock<IUserService>().Object, new Mock<IBookmarkService>().Object);
+        var profile = new AssistantProfileToolbox(ctx, new Mock<IUserService>().Object, new Mock<IBookmarkService>().Object,
+            new Mock<ISavedSearchService>().Object, new Mock<INotificationService>().Object);
         var people = new AssistantPeopleToolbox(ctx, new Mock<IUserService>().Object);
         var composite = new CompositeAssistantToolbox(read, actions, workflow, profile, people);
 

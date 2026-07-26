@@ -194,10 +194,12 @@ public class AssistantWorkflowToolboxTests
     }
 
     [Fact]
-    public async Task PostMarketplaceTask_Delegates()
+    public async Task PostMarketplaceTask_AsManager_Delegates()
     {
         await using var ctx = TestDb.CreateContext();
         var me = await TestDb.AddUserAsync(ctx, "Me");
+        (await ctx.Users.FindAsync(me))!.Role = Role.Manager; // posting gigs is Manager/Admin-only
+        await ctx.SaveChangesAsync();
         var market = new Mock<IMarketplaceService>();
         market.Setup(m => m.CreateTaskAsync(me, It.IsAny<Taskpilot.API.DTOs.Marketplace.CreateTaskDto>()))
             .ReturnsAsync(Result<Taskpilot.API.DTOs.Marketplace.TaskDetailDto>.Ok(
@@ -210,6 +212,22 @@ public class AssistantWorkflowToolboxTests
         Assert.True(JsonDocument.Parse(json).RootElement.GetProperty("posted").GetBoolean());
         market.Verify(m => m.CreateTaskAsync(me, It.Is<Taskpilot.API.DTOs.Marketplace.CreateTaskDto>(
             d => d.Title == "Landing page" && d.Budget == 300m)), Times.Once);
+    }
+
+    [Fact]
+    public async Task PostMarketplaceTask_AsDeveloper_IsBlocked()
+    {
+        await using var ctx = TestDb.CreateContext();
+        var me = await TestDb.AddUserAsync(ctx, "Me"); // default role is Developer
+        var market = new Mock<IMarketplaceService>();
+
+        var box = Make(ctx, market: market);
+        var json = await box.ExecuteAsync(me, "post_marketplace_task",
+            "{\"title\":\"Landing page\",\"description\":\"A one-pager\",\"budget\":300}");
+
+        // A Developer cannot post gigs (Manager/Admin-only), so the service is never called.
+        Assert.True(JsonDocument.Parse(json).RootElement.TryGetProperty("error", out _));
+        market.Verify(m => m.CreateTaskAsync(It.IsAny<Guid>(), It.IsAny<Taskpilot.API.DTOs.Marketplace.CreateTaskDto>()), Times.Never);
     }
 
     [Fact]
@@ -246,5 +264,191 @@ public class AssistantWorkflowToolboxTests
 
         Assert.True(JsonDocument.Parse(json).RootElement.GetProperty("archived").GetBoolean());
         projects.Verify(p => p.SetArchivedAsync(me, project, true), Times.Once);
+    }
+
+    [Fact]
+    public async Task SubmitMarketplaceTask_ResolvesAssignedInProgressGig_AndDelegates()
+    {
+        await using var ctx = TestDb.CreateContext();
+        var me = await TestDb.AddUserAsync(ctx, "Me");
+        var poster = await TestDb.AddUserAsync(ctx, "Poster");
+        var gigId = Guid.NewGuid();
+        ctx.MarketplaceTasks.Add(new MarketplaceTask
+        {
+            Id = gigId, Title = "Build a landing page", Description = "d", Budget = 500m,
+            PosterId = poster, AssigneeId = me, Status = MarketplaceTaskStatus.InProgress,
+        });
+        await ctx.SaveChangesAsync();
+
+        var market = new Mock<IMarketplaceService>();
+        market.Setup(m => m.SubmitTaskAsync(me, gigId)).ReturnsAsync(Result.Ok());
+
+        var box = Make(ctx, market: market);
+        var json = await box.ExecuteAsync(me, "submit_marketplace_task", "{\"task\":\"landing\"}");
+
+        Assert.True(JsonDocument.Parse(json).RootElement.GetProperty("submitted").GetBoolean());
+        market.Verify(m => m.SubmitTaskAsync(me, gigId), Times.Once);
+    }
+
+    [Fact]
+    public async Task ApproveMarketplaceTask_ResolvesPostedGig_AndDelegates()
+    {
+        await using var ctx = TestDb.CreateContext();
+        var me = await TestDb.AddUserAsync(ctx, "Me");
+        var gigId = Guid.NewGuid();
+        ctx.MarketplaceTasks.Add(new MarketplaceTask
+        {
+            Id = gigId, Title = "Build a landing page", Description = "d", Budget = 500m,
+            PosterId = me, Status = MarketplaceTaskStatus.InProgress,
+        });
+        await ctx.SaveChangesAsync();
+
+        var market = new Mock<IMarketplaceService>();
+        market.Setup(m => m.ApproveTaskAsync(me, gigId)).ReturnsAsync(Result.Ok());
+
+        var box = Make(ctx, market: market);
+        var json = await box.ExecuteAsync(me, "approve_marketplace_task", "{\"task\":\"landing\"}");
+
+        Assert.True(JsonDocument.Parse(json).RootElement.GetProperty("approved").GetBoolean());
+        market.Verify(m => m.ApproveTaskAsync(me, gigId), Times.Once);
+    }
+
+    [Fact]
+    public async Task DecideMarketplaceApplication_ResolvesPendingApplication_AndDelegates()
+    {
+        await using var ctx = TestDb.CreateContext();
+        var me = await TestDb.AddUserAsync(ctx, "Me");
+        var applicant = await TestDb.AddUserAsync(ctx, "Bob");
+        var gigId = Guid.NewGuid();
+        ctx.MarketplaceTasks.Add(new MarketplaceTask
+        {
+            Id = gigId, Title = "Build a landing page", Description = "d", Budget = 500m,
+            PosterId = me, Status = MarketplaceTaskStatus.Open,
+        });
+        var appId = Guid.NewGuid();
+        ctx.TaskApplications.Add(new TaskApplication
+        {
+            Id = appId, TaskId = gigId, ApplicantId = applicant, CoverLetter = "hi", ProposedRate = 400m,
+            Status = ApplicationStatus.Pending,
+        });
+        await ctx.SaveChangesAsync();
+
+        var market = new Mock<IMarketplaceService>();
+        market.Setup(m => m.DecideApplicationAsync(me, appId, true)).ReturnsAsync(Result.Ok());
+
+        var box = Make(ctx, market: market);
+        var json = await box.ExecuteAsync(me, "decide_marketplace_application",
+            "{\"gig\":\"landing\",\"applicant\":\"Bob\",\"accept\":true}");
+
+        var root = JsonDocument.Parse(json).RootElement;
+        Assert.True(root.GetProperty("decided").GetBoolean());
+        Assert.True(root.GetProperty("accepted").GetBoolean());
+        market.Verify(m => m.DecideApplicationAsync(me, appId, true), Times.Once);
+    }
+
+    [Fact]
+    public async Task ReviewMarketplaceTask_RejectsOutOfRangeStars_WithoutRating()
+    {
+        await using var ctx = TestDb.CreateContext();
+        var me = await TestDb.AddUserAsync(ctx, "Me");
+        var gigId = Guid.NewGuid();
+        ctx.MarketplaceTasks.Add(new MarketplaceTask
+        {
+            Id = gigId, Title = "Build a landing page", Description = "d", Budget = 500m,
+            PosterId = me, Status = MarketplaceTaskStatus.Completed,
+        });
+        await ctx.SaveChangesAsync();
+        var market = new Mock<IMarketplaceService>();
+
+        var box = Make(ctx, market: market);
+        var json = await box.ExecuteAsync(me, "review_marketplace_task", "{\"task\":\"landing\",\"stars\":9}");
+
+        Assert.True(JsonDocument.Parse(json).RootElement.TryGetProperty("error", out _));
+        market.Verify(m => m.RateAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<int>(), It.IsAny<string?>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task ReviewMarketplaceTask_ValidStars_Delegates()
+    {
+        await using var ctx = TestDb.CreateContext();
+        var me = await TestDb.AddUserAsync(ctx, "Me");
+        var gigId = Guid.NewGuid();
+        ctx.MarketplaceTasks.Add(new MarketplaceTask
+        {
+            Id = gigId, Title = "Build a landing page", Description = "d", Budget = 500m,
+            PosterId = me, Status = MarketplaceTaskStatus.Completed,
+        });
+        await ctx.SaveChangesAsync();
+        var market = new Mock<IMarketplaceService>();
+        market.Setup(m => m.RateAsync(me, gigId, 5, "great")).ReturnsAsync(Result.Ok());
+
+        var box = Make(ctx, market: market);
+        var json = await box.ExecuteAsync(me, "review_marketplace_task", "{\"task\":\"landing\",\"stars\":5,\"comment\":\"great\"}");
+
+        Assert.True(JsonDocument.Parse(json).RootElement.GetProperty("reviewed").GetBoolean());
+        market.Verify(m => m.RateAsync(me, gigId, 5, "great"), Times.Once);
+    }
+
+    [Fact]
+    public async Task SubscribeForumTopic_WhenNotSubscribed_TogglesOn()
+    {
+        await using var ctx = TestDb.CreateContext();
+        var me = await TestDb.AddUserAsync(ctx, "Me");
+        var topicId = Guid.NewGuid();
+        ctx.ForumTopics.Add(new ForumTopic { Id = topicId, Title = "Release notes", Body = "…", AuthorId = me });
+        await ctx.SaveChangesAsync();
+
+        var forum = new Mock<IForumService>();
+        forum.Setup(f => f.ToggleSubscriptionAsync(topicId, me)).ReturnsAsync(Result<bool>.Ok(true));
+
+        var box = Make(ctx, forum: forum);
+        var json = await box.ExecuteAsync(me, "subscribe_forum_topic", "{\"topic\":\"Release\"}");
+
+        var root = JsonDocument.Parse(json).RootElement;
+        Assert.True(root.GetProperty("subscribed").GetBoolean());
+        Assert.True(root.GetProperty("changed").GetBoolean());
+        forum.Verify(f => f.ToggleSubscriptionAsync(topicId, me), Times.Once);
+    }
+
+    [Fact]
+    public async Task SubscribeForumTopic_WhenAlreadySubscribed_IsIdempotent()
+    {
+        await using var ctx = TestDb.CreateContext();
+        var me = await TestDb.AddUserAsync(ctx, "Me");
+        var topicId = Guid.NewGuid();
+        ctx.ForumTopics.Add(new ForumTopic { Id = topicId, Title = "Release notes", Body = "…", AuthorId = me });
+        ctx.ForumTopicSubscriptions.Add(new ForumTopicSubscription { Id = Guid.NewGuid(), TopicId = topicId, UserId = me });
+        await ctx.SaveChangesAsync();
+
+        var forum = new Mock<IForumService>();
+        var box = Make(ctx, forum: forum);
+        var json = await box.ExecuteAsync(me, "subscribe_forum_topic", "{\"topic\":\"Release\",\"subscribe\":true}");
+
+        var root = JsonDocument.Parse(json).RootElement;
+        Assert.True(root.GetProperty("subscribed").GetBoolean());
+        Assert.False(root.GetProperty("changed").GetBoolean());
+        forum.Verify(f => f.ToggleSubscriptionAsync(It.IsAny<Guid>(), It.IsAny<Guid>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task MarkForumSolution_ResolvesReplyByTopicAndSnippet_AndDelegates()
+    {
+        await using var ctx = TestDb.CreateContext();
+        var me = await TestDb.AddUserAsync(ctx, "Me");
+        var answerer = await TestDb.AddUserAsync(ctx, "Bob");
+        var topicId = Guid.NewGuid();
+        ctx.ForumTopics.Add(new ForumTopic { Id = topicId, Title = "How to seed EF", Body = "…", AuthorId = me });
+        var replyId = Guid.NewGuid();
+        ctx.ForumReplies.Add(new ForumReply { Id = replyId, TopicId = topicId, AuthorId = answerer, Body = "Use the InMemory provider" });
+        await ctx.SaveChangesAsync();
+
+        var forum = new Mock<IForumService>();
+        forum.Setup(f => f.MarkSolutionAsync(me, replyId)).ReturnsAsync(Result.Ok());
+
+        var box = Make(ctx, forum: forum);
+        var json = await box.ExecuteAsync(me, "mark_forum_solution", "{\"topic\":\"seed EF\",\"reply\":\"InMemory\"}");
+
+        Assert.True(JsonDocument.Parse(json).RootElement.GetProperty("markedSolution").GetBoolean());
+        forum.Verify(f => f.MarkSolutionAsync(me, replyId), Times.Once);
     }
 }

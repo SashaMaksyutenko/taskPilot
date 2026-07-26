@@ -6,11 +6,13 @@ using static Taskpilot.API.Services.Assistant.AssistantArgs;
 namespace Taskpilot.API.Services.Assistant;
 
 /// <summary>
-/// A second batch of write tools that let the assistant operate the rest of the app on the
-/// user's behalf — editing and deleting tasks, commenting, replying on the forum, messaging
-/// people, clearing notifications, taking notes, posting gigs and managing project members.
-/// Like <see cref="AssistantActionsToolbox"/>, every action goes through the normal service,
-/// so the same permission and validation rules the UI enforces apply here too.
+/// The broad set of write tools that let the assistant operate the rest of the app on the
+/// user's behalf — editing and deleting tasks, commenting, replying on and following forum
+/// topics, marking solutions, messaging people, clearing notifications, taking notes, managing
+/// project members, and running the marketplace lifecycle (posting, submitting, approving,
+/// deciding applications and reviewing). Like <see cref="AssistantActionsToolbox"/>, every
+/// action goes through the normal service, so the same permission and validation rules the UI
+/// enforces apply here too.
 /// </summary>
 public class AssistantWorkflowToolbox : IAssistantToolbox
 {
@@ -167,6 +169,84 @@ public class AssistantWorkflowToolbox : IAssistantToolbox
                 },
                 required = new[] { "project" },
             }),
+        new("submit_marketplace_task",
+            "Submits the user's finished work on a marketplace gig they are assigned to, sending it to the poster "
+            + "for approval. Only call this when the user says their work is done/ready.",
+            new
+            {
+                type = "object",
+                properties = new
+                {
+                    task = new { type = "string", description = "Title (or part of it) of the gig the user is working on." },
+                },
+                required = new[] { "task" },
+            }),
+        new("approve_marketplace_task",
+            "Approves the submitted work on a gig the user posted, marking it complete. Only call this when the user "
+            + "clearly asks to approve/accept the delivered work.",
+            new
+            {
+                type = "object",
+                properties = new
+                {
+                    task = new { type = "string", description = "Title (or part of it) of the gig the user posted." },
+                },
+                required = new[] { "task" },
+            }),
+        new("decide_marketplace_application",
+            "Accepts or rejects a pending application to a gig the user posted. Only call this when the user asks to "
+            + "accept/reject a specific applicant.",
+            new
+            {
+                type = "object",
+                properties = new
+                {
+                    gig = new { type = "string", description = "Title (or part of it) of the gig the user posted." },
+                    applicant = new { type = "string", description = "Name of the applicant to decide on." },
+                    accept = new { type = "boolean", description = "true to accept, false to reject." },
+                },
+                required = new[] { "gig", "applicant", "accept" },
+            }),
+        new("review_marketplace_task",
+            "Leaves a star rating (1-5) and optional comment for a completed gig the user took part in. Only call this "
+            + "when the user asks to review/rate a gig.",
+            new
+            {
+                type = "object",
+                properties = new
+                {
+                    task = new { type = "string", description = "Title (or part of it) of the completed gig." },
+                    stars = new { type = "integer", description = "Rating from 1 to 5." },
+                    comment = new { type = "string", description = "Optional written review." },
+                },
+                required = new[] { "task", "stars" },
+            }),
+        new("subscribe_forum_topic",
+            "Subscribes the user to (or unsubscribes them from) a forum topic so they get notified of new replies. "
+            + "Only call this when the user asks to follow/unfollow a topic.",
+            new
+            {
+                type = "object",
+                properties = new
+                {
+                    topic = new { type = "string", description = "Title (or part of it) of the topic." },
+                    subscribe = new { type = "boolean", description = "true to subscribe (default), false to unsubscribe." },
+                },
+                required = new[] { "topic" },
+            }),
+        new("mark_forum_solution",
+            "Marks a reply as the accepted solution on one of the user's own forum topics. Only call this when the "
+            + "user asks to mark/accept an answer as the solution.",
+            new
+            {
+                type = "object",
+                properties = new
+                {
+                    topic = new { type = "string", description = "Title (or part of it) of the user's topic." },
+                    reply = new { type = "string", description = "A distinctive snippet of the reply to mark as the solution." },
+                },
+                required = new[] { "topic", "reply" },
+            }),
     };
 
     /// <inheritdoc />
@@ -182,6 +262,12 @@ public class AssistantWorkflowToolbox : IAssistantToolbox
         "post_marketplace_task" => PostMarketplaceTaskAsync(userId, argumentsJson),
         "add_project_member" => AddProjectMemberAsync(userId, argumentsJson),
         "archive_project" => ArchiveProjectAsync(userId, argumentsJson),
+        "submit_marketplace_task" => SubmitMarketplaceTaskAsync(userId, argumentsJson),
+        "approve_marketplace_task" => ApproveMarketplaceTaskAsync(userId, argumentsJson),
+        "decide_marketplace_application" => DecideMarketplaceApplicationAsync(userId, argumentsJson),
+        "review_marketplace_task" => ReviewMarketplaceTaskAsync(userId, argumentsJson),
+        "subscribe_forum_topic" => SubscribeForumTopicAsync(userId, argumentsJson),
+        "mark_forum_solution" => MarkForumSolutionAsync(userId, argumentsJson),
         _ => Task.FromResult(Json(new { error = $"Unknown tool: {toolName}" })),
     };
 
@@ -338,6 +424,12 @@ public class AssistantWorkflowToolbox : IAssistantToolbox
         if (string.IsNullOrWhiteSpace(title) || string.IsNullOrWhiteSpace(description) || budget is null)
             return Json(new { error = "'title', 'description' and a numeric 'budget' are required." });
 
+        // Posting a gig is Manager/Admin-only (enforced on the controller via RBAC); the service itself
+        // does not re-check, so the assistant must apply the same gate rather than let it be bypassed.
+        var role = await _context.Users.Where(u => u.Id == userId).Select(u => u.Role).FirstOrDefaultAsync();
+        if (role is not (Models.Role.Manager or Models.Role.Admin))
+            return Json(new { error = "Only managers and admins can post marketplace gigs." });
+
         var result = await _marketplace.CreateTaskAsync(userId, new DTOs.Marketplace.CreateTaskDto
         {
             Title = title.Trim(),
@@ -384,6 +476,147 @@ public class AssistantWorkflowToolbox : IAssistantToolbox
         var result = await _projects.SetArchivedAsync(userId, project.Id, archived);
         return result.Succeeded
             ? Json(new { archived, project = project.Name })
+            : Json(new { error = result.Error });
+    }
+
+    private async Task<string> SubmitMarketplaceTaskAsync(Guid userId, string argsJson)
+    {
+        var args = Parse(argsJson);
+        var title = Str(args, "task");
+        if (string.IsNullOrWhiteSpace(title)) return Json(new { error = "'task' is required." });
+
+        var q = title.Trim().ToLower();
+        var gig = await _context.MarketplaceTasks
+            .Where(m => m.AssigneeId == userId && m.Status == Models.MarketplaceTaskStatus.InProgress && m.Title.ToLower().Contains(q))
+            .OrderBy(m => m.Title.Length)
+            .Select(m => new { m.Id, m.Title })
+            .FirstOrDefaultAsync();
+        if (gig is null) return Json(new { error = $"No in-progress gig assigned to you matches '{title}'." });
+
+        var result = await _marketplace.SubmitTaskAsync(userId, gig.Id);
+        return result.Succeeded
+            ? Json(new { submitted = true, gig = gig.Title })
+            : Json(new { error = result.Error });
+    }
+
+    private async Task<string> ApproveMarketplaceTaskAsync(Guid userId, string argsJson)
+    {
+        var args = Parse(argsJson);
+        var title = Str(args, "task");
+        if (string.IsNullOrWhiteSpace(title)) return Json(new { error = "'task' is required." });
+
+        var q = title.Trim().ToLower();
+        var gig = await _context.MarketplaceTasks
+            .Where(m => m.PosterId == userId && m.Title.ToLower().Contains(q))
+            .OrderBy(m => m.Title.Length)
+            .Select(m => new { m.Id, m.Title })
+            .FirstOrDefaultAsync();
+        if (gig is null) return Json(new { error = $"No gig you posted matches '{title}'." });
+
+        var result = await _marketplace.ApproveTaskAsync(userId, gig.Id);
+        return result.Succeeded
+            ? Json(new { approved = true, gig = gig.Title })
+            : Json(new { error = result.Error });
+    }
+
+    private async Task<string> DecideMarketplaceApplicationAsync(Guid userId, string argsJson)
+    {
+        var args = Parse(argsJson);
+        var gigTitle = Str(args, "gig");
+        var applicantName = Str(args, "applicant");
+        var accept = Bool(args, "accept");
+        if (string.IsNullOrWhiteSpace(gigTitle) || string.IsNullOrWhiteSpace(applicantName) || accept is null)
+            return Json(new { error = "'gig', 'applicant' and 'accept' (true/false) are required." });
+
+        var gq = gigTitle.Trim().ToLower();
+        var an = applicantName.Trim().ToLower();
+        // Only pending applications to gigs THIS user posted are decidable.
+        var application = await _context.TaskApplications
+            .Where(a => a.Status == Models.ApplicationStatus.Pending
+                        && a.Task.PosterId == userId
+                        && a.Task.Title.ToLower().Contains(gq)
+                        && a.Applicant.Name.ToLower().Contains(an))
+            .Select(a => new { a.Id, Applicant = a.Applicant.Name, Gig = a.Task.Title })
+            .FirstOrDefaultAsync();
+        if (application is null)
+            return Json(new { error = $"No pending application from '{applicantName}' on a gig matching '{gigTitle}'." });
+
+        var result = await _marketplace.DecideApplicationAsync(userId, application.Id, accept.Value);
+        return result.Succeeded
+            ? Json(new { decided = true, gig = application.Gig, applicant = application.Applicant, accepted = accept.Value })
+            : Json(new { error = result.Error });
+    }
+
+    private async Task<string> ReviewMarketplaceTaskAsync(Guid userId, string argsJson)
+    {
+        var args = Parse(argsJson);
+        var title = Str(args, "task");
+        var stars = Int(args, "stars");
+        if (string.IsNullOrWhiteSpace(title)) return Json(new { error = "'task' is required." });
+        if (stars is null or < 1 or > 5) return Json(new { error = "'stars' must be an integer from 1 to 5." });
+
+        var q = title.Trim().ToLower();
+        var gig = await _context.MarketplaceTasks
+            .Where(m => (m.PosterId == userId || m.AssigneeId == userId) && m.Title.ToLower().Contains(q))
+            .OrderBy(m => m.Title.Length)
+            .Select(m => new { m.Id, m.Title })
+            .FirstOrDefaultAsync();
+        if (gig is null) return Json(new { error = $"No gig you took part in matches '{title}'." });
+
+        var result = await _marketplace.RateAsync(userId, gig.Id, stars.Value, Str(args, "comment"));
+        return result.Succeeded
+            ? Json(new { reviewed = true, gig = gig.Title, stars = stars.Value })
+            : Json(new { error = result.Error });
+    }
+
+    private async Task<string> SubscribeForumTopicAsync(Guid userId, string argsJson)
+    {
+        var args = Parse(argsJson);
+        var title = Str(args, "topic");
+        if (string.IsNullOrWhiteSpace(title)) return Json(new { error = "'topic' is required." });
+
+        var q = title.Trim().ToLower();
+        var topic = await _context.ForumTopics
+            .Where(t => t.Title.ToLower().Contains(q))
+            .OrderBy(t => t.Title.Length)
+            .Select(t => new { t.Id, t.Title })
+            .FirstOrDefaultAsync();
+        if (topic is null) return Json(new { error = $"No forum topic matches '{title}'." });
+
+        // ToggleSubscription flips the state; only toggle when it differs from the requested one so the tool is idempotent.
+        var desired = Bool(args, "subscribe") ?? true;
+        var currentlySubscribed = await _context.ForumTopicSubscriptions
+            .AnyAsync(s => s.TopicId == topic.Id && s.UserId == userId);
+        if (currentlySubscribed == desired)
+            return Json(new { subscribed = desired, topic = topic.Title, changed = false });
+
+        var result = await _forum.ToggleSubscriptionAsync(topic.Id, userId);
+        return result.Succeeded
+            ? Json(new { subscribed = result.Value, topic = topic.Title, changed = true })
+            : Json(new { error = result.Error });
+    }
+
+    private async Task<string> MarkForumSolutionAsync(Guid userId, string argsJson)
+    {
+        var args = Parse(argsJson);
+        var topicTitle = Str(args, "topic");
+        var snippet = Str(args, "reply");
+        if (string.IsNullOrWhiteSpace(topicTitle) || string.IsNullOrWhiteSpace(snippet))
+            return Json(new { error = "Both 'topic' and 'reply' are required." });
+
+        var tq = topicTitle.Trim().ToLower();
+        var rq = snippet.Trim().ToLower();
+        var reply = await _context.ForumReplies
+            .Where(r => !r.IsDeleted && r.Topic.Title.ToLower().Contains(tq) && r.Body.ToLower().Contains(rq))
+            .OrderBy(r => r.Body.Length)
+            .Select(r => new { r.Id, Topic = r.Topic.Title })
+            .FirstOrDefaultAsync();
+        if (reply is null) return Json(new { error = $"No reply matching '{snippet}' found on a topic matching '{topicTitle}'." });
+
+        // The service enforces that only the topic author (or an admin) can mark a solution.
+        var result = await _forum.MarkSolutionAsync(userId, reply.Id);
+        return result.Succeeded
+            ? Json(new { markedSolution = true, topic = reply.Topic })
             : Json(new { error = result.Error });
     }
 

@@ -36,6 +36,14 @@ internal static class AssistantArgs
         };
     }
 
+    public static int? Int(JsonElement o, string prop)
+    {
+        if (o.ValueKind != JsonValueKind.Object || !o.TryGetProperty(prop, out var v)) return null;
+        if (v.ValueKind == JsonValueKind.Number && v.TryGetInt32(out var i)) return i;
+        if (v.ValueKind == JsonValueKind.String && int.TryParse(v.GetString(), NumberStyles.Any, CultureInfo.InvariantCulture, out var s)) return s;
+        return null;
+    }
+
     public static decimal? Dec(JsonElement o, string prop)
     {
         if (o.ValueKind != JsonValueKind.Object || !o.TryGetProperty(prop, out var v)) return null;

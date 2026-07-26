@@ -20,8 +20,11 @@ namespace Taskpilot.API.Tests;
 /// </summary>
 public class AssistantActionsToolboxTests
 {
-    private static AssistantActionsToolbox Make(TaskpilotDbContext ctx, Mock<ITaskService>? tasks = null, Mock<IMarketplaceService>? market = null)
-        => new(ctx, (tasks ?? new Mock<ITaskService>()).Object, (market ?? new Mock<IMarketplaceService>()).Object);
+    private static AssistantActionsToolbox Make(TaskpilotDbContext ctx,
+        Mock<ITaskService>? tasks = null, Mock<IMarketplaceService>? market = null,
+        Mock<IForumService>? forum = null, Mock<IProjectService>? projects = null)
+        => new(ctx, (tasks ?? new Mock<ITaskService>()).Object, (market ?? new Mock<IMarketplaceService>()).Object,
+            (forum ?? new Mock<IForumService>()).Object, (projects ?? new Mock<IProjectService>()).Object);
 
     [Fact]
     public async Task CreateTask_ResolvesProjectByName_AndDelegatesToService()
@@ -95,6 +98,79 @@ public class AssistantActionsToolboxTests
         Assert.True(JsonDocument.Parse(json).RootElement.TryGetProperty("error", out _));
         market.Verify(m => m.ApplyAsync(It.IsAny<Guid>(), It.IsAny<ApplyDto>()), Times.Never);
     }
+
+    [Fact]
+    public async Task ChangeTaskStatus_ResolvesTaskByTitle_AndDelegatesWithNormalizedStatus()
+    {
+        await using var ctx = TestDb.CreateContext();
+        var me = await TestDb.AddUserAsync(ctx, "Me");
+        var project = await TestDb.AddProjectAsync(ctx, me, "Nebula");
+        var taskId = Guid.NewGuid();
+        ctx.ProjectTasks.Add(new ProjectTask
+        {
+            Id = taskId, ProjectId = project, CreatorId = me, Title = "Wire up auth", Status = ProjectTaskStatus.Backlog,
+        });
+        await ctx.SaveChangesAsync();
+
+        var tasks = new Mock<ITaskService>();
+        tasks.Setup(t => t.ChangeStatusAsync(me, taskId, "Done"))
+            .ReturnsAsync(Result<TaskDto>.Ok(new TaskDto { Title = "Wire up auth", Status = "Done" }));
+
+        var box = Make(ctx, tasks);
+        // "done" (lowercase) is normalized to "Done", and "auth" resolves the task.
+        var json = await box.ExecuteAsync(me, "change_task_status", "{\"task\":\"auth\",\"status\":\"done\"}");
+
+        Assert.True(JsonDocument.Parse(json).RootElement.GetProperty("moved").GetBoolean());
+        tasks.Verify(t => t.ChangeStatusAsync(me, taskId, "Done"), Times.Once);
+    }
+
+    [Fact]
+    public async Task ChangeTaskStatus_UnknownTask_DoesNotTouchTheService()
+    {
+        await using var ctx = TestDb.CreateContext();
+        var me = await TestDb.AddUserAsync(ctx, "Me");
+        var tasks = new Mock<ITaskService>();
+
+        var box = Make(ctx, tasks);
+        var json = await box.ExecuteAsync(me, "change_task_status", "{\"task\":\"ghost\",\"status\":\"Done\"}");
+
+        Assert.True(JsonDocument.Parse(json).RootElement.TryGetProperty("error", out _));
+        tasks.Verify(t => t.ChangeStatusAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<string>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task CreateForumTopic_DelegatesWithTitleBodyAndTags()
+    {
+        await using var ctx = TestDb.CreateContext();
+        var me = await TestDb.AddUserAsync(ctx, "Me");
+        var forum = new Mock<IForumService>();
+        forum.Setup(f => f.CreateTopicAsync(me, It.IsAny<Taskpilot.API.DTOs.Forum.CreateTopicDto>()))
+            .ReturnsAsync(Result<Taskpilot.API.DTOs.Forum.TopicDetailDto>.Ok(
+                new Taskpilot.API.DTOs.Forum.TopicDetailDto { Id = Guid.NewGuid(), Title = "Hello" }));
+
+        var box = Make(ctx, forum: forum);
+        var json = await box.ExecuteAsync(me, "create_forum_topic", "{\"title\":\"Hello\",\"body\":\"World\",\"tags\":[\"help\"]}");
+
+        Assert.True(JsonDocument.Parse(json).RootElement.GetProperty("created").GetBoolean());
+        forum.Verify(f => f.CreateTopicAsync(me, It.Is<Taskpilot.API.DTOs.Forum.CreateTopicDto>(
+            d => d.Title == "Hello" && d.Body == "World" && d.Tags.Contains("help"))), Times.Once);
+    }
+
+    [Fact]
+    public async Task CreateProject_DelegatesToService()
+    {
+        await using var ctx = TestDb.CreateContext();
+        var me = await TestDb.AddUserAsync(ctx, "Me");
+        var projects = new Mock<IProjectService>();
+        projects.Setup(p => p.CreateProjectAsync(me, It.IsAny<SaveProjectDto>()))
+            .ReturnsAsync(Result<ProjectDto>.Ok(new ProjectDto { Id = Guid.NewGuid(), Name = "Orion" }));
+
+        var box = Make(ctx, projects: projects);
+        var json = await box.ExecuteAsync(me, "create_project", "{\"name\":\"Orion\",\"description\":\"d\"}");
+
+        Assert.True(JsonDocument.Parse(json).RootElement.GetProperty("created").GetBoolean());
+        projects.Verify(p => p.CreateProjectAsync(me, It.Is<SaveProjectDto>(d => d.Name == "Orion")), Times.Once);
+    }
 }
 
 /// <summary>Tests that the composite toolbox merges definitions and routes calls correctly.</summary>
@@ -108,7 +184,8 @@ public class CompositeAssistantToolboxTests
         await TestDb.AddProjectAsync(ctx, me, "Alpha");
 
         var read = new AssistantToolbox(ctx);
-        var actions = new AssistantActionsToolbox(ctx, new Mock<ITaskService>().Object, new Mock<IMarketplaceService>().Object);
+        var actions = new AssistantActionsToolbox(ctx, new Mock<ITaskService>().Object, new Mock<IMarketplaceService>().Object,
+            new Mock<IForumService>().Object, new Mock<IProjectService>().Object);
         var people = new AssistantPeopleToolbox(ctx, new Mock<IUserService>().Object);
         var composite = new CompositeAssistantToolbox(read, actions, people);
 

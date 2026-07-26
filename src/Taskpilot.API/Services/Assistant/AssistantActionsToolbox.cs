@@ -9,21 +9,28 @@ namespace Taskpilot.API.Services.Assistant;
 
 /// <summary>
 /// Write tools the assistant can run on the user's behalf when explicitly asked
-/// (create a task, apply to a marketplace gig). Every action goes through the normal
-/// services, so their permission and validation rules apply — the assistant cannot do
-/// anything the user could not do themselves through the UI.
+/// (create a task, move a task between statuses, apply to a marketplace gig, start a
+/// forum topic, create a project). Every action goes through the normal services, so their
+/// permission and validation rules apply — the assistant cannot do anything the user could
+/// not do themselves through the UI.
 /// </summary>
 public class AssistantActionsToolbox : IAssistantToolbox
 {
     private readonly TaskpilotDbContext _context;
     private readonly ITaskService _tasks;
     private readonly IMarketplaceService _marketplace;
+    private readonly IForumService _forum;
+    private readonly IProjectService _projects;
 
-    public AssistantActionsToolbox(TaskpilotDbContext context, ITaskService tasks, IMarketplaceService marketplace)
+    public AssistantActionsToolbox(
+        TaskpilotDbContext context, ITaskService tasks, IMarketplaceService marketplace,
+        IForumService forum, IProjectService projects)
     {
         _context = context;
         _tasks = tasks;
         _marketplace = marketplace;
+        _forum = forum;
+        _projects = projects;
     }
 
     /// <inheritdoc />
@@ -60,6 +67,46 @@ public class AssistantActionsToolbox : IAssistantToolbox
                 },
                 required = new[] { "task" },
             }),
+        new("change_task_status",
+            "Moves one of the user's tasks to a different Kanban status (Backlog, InProgress, Review, Done). "
+            + "Only call this when the user clearly asks to move/complete a task.",
+            new
+            {
+                type = "object",
+                properties = new
+                {
+                    task = new { type = "string", description = "Title (or part of it) of the task to move." },
+                    status = new { type = "string", description = "Target status.", @enum = new[] { "Backlog", "InProgress", "Review", "Done" } },
+                    project = new { type = "string", description = "Optional project name, to disambiguate when several tasks match." },
+                },
+                required = new[] { "task", "status" },
+            }),
+        new("create_forum_topic",
+            "Creates a new forum topic authored by the user. Only call this when the user clearly asks to "
+            + "post/start a forum topic.",
+            new
+            {
+                type = "object",
+                properties = new
+                {
+                    title = new { type = "string", description = "Topic title." },
+                    body = new { type = "string", description = "Topic body (Markdown allowed)." },
+                    tags = new { type = "array", items = new { type = "string" }, description = "Optional tags." },
+                },
+                required = new[] { "title", "body" },
+            }),
+        new("create_project",
+            "Creates a new project owned by the user. Only call this when the user clearly asks to create a project.",
+            new
+            {
+                type = "object",
+                properties = new
+                {
+                    name = new { type = "string", description = "Project name." },
+                    description = new { type = "string", description = "Optional description." },
+                },
+                required = new[] { "name" },
+            }),
     };
 
     /// <inheritdoc />
@@ -67,6 +114,9 @@ public class AssistantActionsToolbox : IAssistantToolbox
     {
         "create_task" => CreateTaskAsync(userId, argumentsJson),
         "apply_to_marketplace_task" => ApplyToMarketplaceTaskAsync(userId, argumentsJson),
+        "change_task_status" => ChangeTaskStatusAsync(userId, argumentsJson),
+        "create_forum_topic" => CreateForumTopicAsync(userId, argumentsJson),
+        "create_project" => CreateProjectAsync(userId, argumentsJson),
         _ => Task.FromResult(Json(new { error = $"Unknown tool: {toolName}" })),
     };
 
@@ -156,6 +206,84 @@ public class AssistantActionsToolbox : IAssistantToolbox
         return Json(new { applied = true, gig = gig.Title, proposedRate = dto.ProposedRate });
     }
 
+    private async Task<string> ChangeTaskStatusAsync(Guid userId, string argsJson)
+    {
+        var args = Parse(argsJson);
+        var taskTitle = Str(args, "task");
+        var status = NormalizeStatus(Str(args, "status"));
+        if (string.IsNullOrWhiteSpace(taskTitle) || status is null)
+            return Json(new { error = "'task' and a valid 'status' (Backlog, InProgress, Review or Done) are required." });
+
+        // Find a task the user can access, optionally narrowed to a named project.
+        var q = taskTitle.Trim().ToLower();
+        var query = _context.ProjectTasks
+            .Where(t => (t.Project.OwnerId == userId || t.Project.Members.Any(m => m.UserId == userId))
+                        && t.Title.ToLower().Contains(q));
+        var projectName = Str(args, "project");
+        if (!string.IsNullOrWhiteSpace(projectName))
+        {
+            var pn = projectName.Trim().ToLower();
+            query = query.Where(t => t.Project.Name.ToLower().Contains(pn));
+        }
+        var task = await query
+            .OrderBy(t => t.Title.Length)
+            .Select(t => new { t.Id, t.Title, Project = t.Project.Name })
+            .FirstOrDefaultAsync();
+        if (task is null)
+            return Json(new { error = $"No task you can access matches '{taskTitle}'." });
+
+        // Goes through the task service, so move permissions (assignee-only, owner-only Done) apply.
+        var result = await _tasks.ChangeStatusAsync(userId, task.Id, status);
+        if (!result.Succeeded)
+            return Json(new { error = result.Error });
+
+        return Json(new { moved = true, task = task.Title, project = task.Project, status = result.Value!.Status });
+    }
+
+    private async Task<string> CreateForumTopicAsync(Guid userId, string argsJson)
+    {
+        var args = Parse(argsJson);
+        var title = Str(args, "title");
+        var body = Str(args, "body");
+        if (string.IsNullOrWhiteSpace(title) || string.IsNullOrWhiteSpace(body))
+            return Json(new { error = "Both 'title' and 'body' are required." });
+
+        var dto = new DTOs.Forum.CreateTopicDto
+        {
+            Title = title.Trim(),
+            Body = body.Trim(),
+            Tags = StrArray(args, "tags"),
+        };
+
+        var result = await _forum.CreateTopicAsync(userId, dto);
+        if (!result.Succeeded)
+            return Json(new { error = result.Error });
+
+        var topic = result.Value!;
+        return Json(new { created = true, topic = new { id = topic.Id, title = topic.Title, tags = topic.Tags } });
+    }
+
+    private async Task<string> CreateProjectAsync(Guid userId, string argsJson)
+    {
+        var args = Parse(argsJson);
+        var name = Str(args, "name");
+        if (string.IsNullOrWhiteSpace(name))
+            return Json(new { error = "'name' is required." });
+
+        var dto = new DTOs.Projects.SaveProjectDto
+        {
+            Name = name.Trim(),
+            Description = Str(args, "description"),
+        };
+
+        var result = await _projects.CreateProjectAsync(userId, dto);
+        if (!result.Succeeded)
+            return Json(new { error = result.Error });
+
+        var project = result.Value!;
+        return Json(new { created = true, project = new { id = project.Id, name = project.Name } });
+    }
+
     // --- helpers ---
 
     private static string Json(object value) => JsonSerializer.Serialize(value);
@@ -198,5 +326,28 @@ public class AssistantActionsToolbox : IAssistantToolbox
             "medium" => "Medium",
             _ => null,
         };
+    }
+
+    private static string? NormalizeStatus(string? status)
+    {
+        if (string.IsNullOrWhiteSpace(status)) return null;
+        return status.Trim().Replace(" ", "").ToLowerInvariant() switch
+        {
+            "backlog" => "Backlog",
+            "inprogress" or "todo" or "doing" => "InProgress",
+            "review" => "Review",
+            "done" or "complete" or "completed" => "Done",
+            _ => null,
+        };
+    }
+
+    private static List<string> StrArray(JsonElement o, string prop)
+    {
+        if (o.ValueKind == JsonValueKind.Object && o.TryGetProperty(prop, out var v) && v.ValueKind == JsonValueKind.Array)
+            return v.EnumerateArray()
+                .Where(e => e.ValueKind == JsonValueKind.String)
+                .Select(e => e.GetString()!)
+                .ToList();
+        return new List<string>();
     }
 }

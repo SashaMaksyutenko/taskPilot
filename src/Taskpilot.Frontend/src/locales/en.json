@@ -39,8 +39,8 @@
   },
   "assistant": {
     "title": "AI Assistant",
-    "subtitle": "Ask about your tasks, deadlines and projects — or how to use TaskPilot.",
-    "empty": "Ask a question to get started — e.g. \"What tasks of mine are overdue?\"",
+    "subtitle": "Ask about your tasks and projects, or tell me to do something — create a task, move it to Done, start a forum topic or spin up a project.",
+    "empty": "Ask a question or give an instruction — e.g. \"What tasks of mine are overdue?\" or \"Create a task 'Write docs' in Website and move it to In Progress.\"",
     "placeholder": "Message the assistant…",
     "send": "Send",
     "thinking": "Thinking…",

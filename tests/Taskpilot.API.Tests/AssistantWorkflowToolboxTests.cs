@@ -451,4 +451,47 @@ public class AssistantWorkflowToolboxTests
         Assert.True(JsonDocument.Parse(json).RootElement.GetProperty("markedSolution").GetBoolean());
         forum.Verify(f => f.MarkSolutionAsync(me, replyId), Times.Once);
     }
+
+    [Fact]
+    public async Task ReactToForumReply_DefaultsToThumbsUp_AndDelegates()
+    {
+        await using var ctx = TestDb.CreateContext();
+        var me = await TestDb.AddUserAsync(ctx, "Me");
+        var topicId = Guid.NewGuid();
+        ctx.ForumTopics.Add(new ForumTopic { Id = topicId, Title = "Deploy tips", Body = "…", AuthorId = me });
+        var replyId = Guid.NewGuid();
+        ctx.ForumReplies.Add(new ForumReply { Id = replyId, TopicId = topicId, AuthorId = me, Body = "Use blue-green deploys" });
+        await ctx.SaveChangesAsync();
+
+        var forum = new Mock<IForumService>();
+        forum.Setup(f => f.ToggleReplyReactionAsync(me, replyId, "👍"))
+            .ReturnsAsync(Result<List<ReactionDto>>.Ok(new List<ReactionDto>()));
+
+        var box = Make(ctx, forum: forum);
+        var json = await box.ExecuteAsync(me, "react_to_forum_reply", "{\"topic\":\"Deploy\",\"reply\":\"blue-green\"}");
+
+        Assert.True(JsonDocument.Parse(json).RootElement.GetProperty("reacted").GetBoolean());
+        forum.Verify(f => f.ToggleReplyReactionAsync(me, replyId, "👍"), Times.Once);
+    }
+
+    [Fact]
+    public async Task VoteForumReply_MapsDirectionToValue_AndDelegates()
+    {
+        await using var ctx = TestDb.CreateContext();
+        var me = await TestDb.AddUserAsync(ctx, "Me");
+        var topicId = Guid.NewGuid();
+        ctx.ForumTopics.Add(new ForumTopic { Id = topicId, Title = "Deploy tips", Body = "…", AuthorId = me });
+        var replyId = Guid.NewGuid();
+        ctx.ForumReplies.Add(new ForumReply { Id = replyId, TopicId = topicId, AuthorId = me, Body = "Use blue-green deploys" });
+        await ctx.SaveChangesAsync();
+
+        var forum = new Mock<IForumService>();
+        forum.Setup(f => f.VoteReplyAsync(me, replyId, 1)).ReturnsAsync(Result<VoteResultDto>.Ok(new VoteResultDto()));
+
+        var box = Make(ctx, forum: forum);
+        var json = await box.ExecuteAsync(me, "vote_forum_reply", "{\"topic\":\"Deploy\",\"reply\":\"blue-green\",\"direction\":\"up\"}");
+
+        Assert.True(JsonDocument.Parse(json).RootElement.GetProperty("voted").GetBoolean());
+        forum.Verify(f => f.VoteReplyAsync(me, replyId, 1), Times.Once);
+    }
 }

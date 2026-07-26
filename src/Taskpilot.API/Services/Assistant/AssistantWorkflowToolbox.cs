@@ -8,9 +8,9 @@ namespace Taskpilot.API.Services.Assistant;
 /// <summary>
 /// The broad set of write tools that let the assistant operate the rest of the app on the
 /// user's behalf — editing and deleting tasks, commenting, replying on and following forum
-/// topics, marking solutions, messaging people, clearing notifications, taking notes, managing
-/// project members, and running the marketplace lifecycle (posting, submitting, approving,
-/// deciding applications and reviewing). Like <see cref="AssistantActionsToolbox"/>, every
+/// topics, marking solutions, reacting to and voting on replies, messaging people, clearing
+/// notifications, taking notes, managing project members, and running the marketplace lifecycle
+/// (posting, submitting, approving, deciding applications and reviewing). Like <see cref="AssistantActionsToolbox"/>, every
 /// action goes through the normal service, so the same permission and validation rules the UI
 /// enforces apply here too.
 /// </summary>
@@ -247,6 +247,32 @@ public class AssistantWorkflowToolbox : IAssistantToolbox
                 },
                 required = new[] { "topic", "reply" },
             }),
+        new("react_to_forum_reply",
+            "Toggles an emoji reaction on a forum reply. Only call this when the user asks to react to a reply.",
+            new
+            {
+                type = "object",
+                properties = new
+                {
+                    topic = new { type = "string", description = "Title (or part of it) of the topic the reply is on." },
+                    reply = new { type = "string", description = "A distinctive snippet of the reply to react to." },
+                    emoji = new { type = "string", description = "The emoji to toggle (defaults to 👍)." },
+                },
+                required = new[] { "topic", "reply" },
+            }),
+        new("vote_forum_reply",
+            "Upvotes or downvotes a forum reply. Only call this when the user clearly asks to up/down-vote a reply.",
+            new
+            {
+                type = "object",
+                properties = new
+                {
+                    topic = new { type = "string", description = "Title (or part of it) of the topic the reply is on." },
+                    reply = new { type = "string", description = "A distinctive snippet of the reply to vote on." },
+                    direction = new { type = "string", description = "Vote direction.", @enum = new[] { "up", "down" } },
+                },
+                required = new[] { "topic", "reply", "direction" },
+            }),
     };
 
     /// <inheritdoc />
@@ -268,6 +294,8 @@ public class AssistantWorkflowToolbox : IAssistantToolbox
         "review_marketplace_task" => ReviewMarketplaceTaskAsync(userId, argumentsJson),
         "subscribe_forum_topic" => SubscribeForumTopicAsync(userId, argumentsJson),
         "mark_forum_solution" => MarkForumSolutionAsync(userId, argumentsJson),
+        "react_to_forum_reply" => ReactToForumReplyAsync(userId, argumentsJson),
+        "vote_forum_reply" => VoteForumReplyAsync(userId, argumentsJson),
         _ => Task.FromResult(Json(new { error = $"Unknown tool: {toolName}" })),
     };
 
@@ -599,19 +627,8 @@ public class AssistantWorkflowToolbox : IAssistantToolbox
     private async Task<string> MarkForumSolutionAsync(Guid userId, string argsJson)
     {
         var args = Parse(argsJson);
-        var topicTitle = Str(args, "topic");
-        var snippet = Str(args, "reply");
-        if (string.IsNullOrWhiteSpace(topicTitle) || string.IsNullOrWhiteSpace(snippet))
-            return Json(new { error = "Both 'topic' and 'reply' are required." });
-
-        var tq = topicTitle.Trim().ToLower();
-        var rq = snippet.Trim().ToLower();
-        var reply = await _context.ForumReplies
-            .Where(r => !r.IsDeleted && r.Topic.Title.ToLower().Contains(tq) && r.Body.ToLower().Contains(rq))
-            .OrderBy(r => r.Body.Length)
-            .Select(r => new { r.Id, Topic = r.Topic.Title })
-            .FirstOrDefaultAsync();
-        if (reply is null) return Json(new { error = $"No reply matching '{snippet}' found on a topic matching '{topicTitle}'." });
+        var reply = await ResolveReplyAsync(Str(args, "topic"), Str(args, "reply"));
+        if (reply is null) return Json(new { error = $"No reply matching '{Str(args, "reply")}' found on a topic matching '{Str(args, "topic")}'." });
 
         // The service enforces that only the topic author (or an admin) can mark a solution.
         var result = await _forum.MarkSolutionAsync(userId, reply.Id);
@@ -620,7 +637,51 @@ public class AssistantWorkflowToolbox : IAssistantToolbox
             : Json(new { error = result.Error });
     }
 
+    private async Task<string> ReactToForumReplyAsync(Guid userId, string argsJson)
+    {
+        var args = Parse(argsJson);
+        var reply = await ResolveReplyAsync(Str(args, "topic"), Str(args, "reply"));
+        if (reply is null) return Json(new { error = $"No reply matching '{Str(args, "reply")}' found on a topic matching '{Str(args, "topic")}'." });
+
+        var emoji = Str(args, "emoji") is { Length: > 0 } e ? e.Trim() : "👍";
+        var result = await _forum.ToggleReplyReactionAsync(userId, reply.Id, emoji);
+        return result.Succeeded
+            ? Json(new { reacted = true, topic = reply.Topic, emoji })
+            : Json(new { error = result.Error });
+    }
+
+    private async Task<string> VoteForumReplyAsync(Guid userId, string argsJson)
+    {
+        var args = Parse(argsJson);
+        var direction = Str(args, "direction")?.Trim().ToLowerInvariant();
+        if (direction is not ("up" or "down"))
+            return Json(new { error = "'direction' must be 'up' or 'down'." });
+        var reply = await ResolveReplyAsync(Str(args, "topic"), Str(args, "reply"));
+        if (reply is null) return Json(new { error = $"No reply matching '{Str(args, "reply")}' found on a topic matching '{Str(args, "topic")}'." });
+
+        var result = await _forum.VoteReplyAsync(userId, reply.Id, direction == "up" ? 1 : -1);
+        return result.Succeeded
+            ? Json(new { voted = true, topic = reply.Topic, direction })
+            : Json(new { error = result.Error });
+    }
+
     // --- resolution helpers ---
+
+    private record ResolvedReply(Guid Id, string Topic);
+
+    /// <summary>Finds a non-deleted reply by a snippet of its body within a topic matched by title.</summary>
+    private async Task<ResolvedReply?> ResolveReplyAsync(string? topicTitle, string? snippet)
+    {
+        if (string.IsNullOrWhiteSpace(topicTitle) || string.IsNullOrWhiteSpace(snippet)) return null;
+        var tq = topicTitle.Trim().ToLower();
+        var rq = snippet.Trim().ToLower();
+        return await _context.ForumReplies
+            .Where(r => !r.IsDeleted && r.Topic.Title.ToLower().Contains(tq) && r.Body.ToLower().Contains(rq))
+            .OrderBy(r => r.Body.Length)
+            .Select(r => new ResolvedReply(r.Id, r.Topic.Title))
+            .FirstOrDefaultAsync();
+    }
+
 
     private record ResolvedTask(Guid Id, string Title, Guid ProjectId, string Project);
 

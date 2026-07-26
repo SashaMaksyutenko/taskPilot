@@ -142,6 +142,7 @@ builder.Services.AddHttpClient<Taskpilot.API.Services.Assistant.IAssistantChatCl
 builder.Services.AddScoped<Taskpilot.API.Services.Assistant.AssistantToolbox>();          // read-only tools
 builder.Services.AddScoped<Taskpilot.API.Services.Assistant.AssistantActionsToolbox>();    // core write/action tools
 builder.Services.AddScoped<Taskpilot.API.Services.Assistant.AssistantWorkflowToolbox>();   // whole-app write tools
+builder.Services.AddScoped<Taskpilot.API.Services.Assistant.AssistantProfileToolbox>();    // own profile + bookmarks
 builder.Services.AddScoped<Taskpilot.API.Services.Assistant.AssistantPeopleToolbox>();     // public profile lookup
 builder.Services.AddScoped<Taskpilot.API.Services.Assistant.IAssistantToolbox,
     Taskpilot.API.Services.Assistant.CompositeAssistantToolbox>();                          // agent sees all

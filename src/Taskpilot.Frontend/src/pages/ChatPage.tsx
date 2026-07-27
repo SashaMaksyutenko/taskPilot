@@ -16,6 +16,7 @@ import Tooltip from '../components/ui/Tooltip'
 import { cn } from '../lib/cn'
 import { apiErrorMessage } from '../lib/apiError'
 import { createChatConnection } from '../lib/chatHub'
+import { REACTION_EMOJIS } from '../lib/reactionEmojis'
 import { chatService } from '../services/chatService'
 import { gifService, isGifMessage, type Gif } from '../services/gifService'
 import { bookmarkService } from '../services/bookmarkService'
@@ -25,15 +26,6 @@ import { userService, type UserSearchResult } from '../services/userService'
 import type { Conversation, ConversationRead, Message, ReactionUpdate } from '../types/chat'
 import { fetchMe } from '../store/authSlice'
 import { useAppDispatch, useAppSelector } from '../store/hooks'
-
-// Curated set of emojis offered by the reaction picker (shown in a scrollable grid).
-const REACTION_EMOJIS = [
-  '👍', '👎', '❤️', '🧡', '💛', '💚', '💙', '💜',
-  '🔥', '🎉', '😂', '🤣', '😊', '😍', '🥰', '😎',
-  '😮', '😢', '😭', '😡', '🤔', '🙄', '😴', '🤯',
-  '🙏', '👏', '🙌', '🤝', '💪', '🫶', '👀', '🚀',
-  '💯', '✅', '❌', '⭐', '🎯', '💡', '☕', '🍕', '🍺',
-]
 
 /**
  * Chat page: a list of conversations on the left and the selected conversation's
@@ -495,7 +487,7 @@ export default function ChatPage() {
   }
 
   return (
-    <div className="-mx-4 flex h-[calc(100dvh-4rem)] flex-col sm:-mx-6 lg:-mx-8">
+    <div className="-mx-4 -my-6 flex h-[calc(100dvh-4rem)] flex-col sm:-mx-6 lg:-mx-8">
       <div className="flex min-h-0 flex-1 overflow-hidden rounded-xl border border-border bg-surface shadow-soft">
         {/* Sidebar: conversations */}
         <aside className="flex w-72 flex-col border-r border-border bg-surface">
@@ -808,7 +800,12 @@ export default function ChatPage() {
                                 +
                               </button>
                               {pickerFor === m.id && (
-                                <div className="absolute bottom-6 left-0 z-10 grid max-h-40 w-52 grid-cols-8 gap-0.5 overflow-y-auto rounded-xl border border-border bg-surface p-1.5 shadow-elevated">
+                                // Own messages sit at the right edge, so open the picker leftward to keep it on-screen.
+                                <div className={cn(
+                                  'absolute bottom-6 z-10 grid max-h-40 w-52 grid-cols-8 gap-0.5 overflow-y-auto rounded-xl border border-border bg-surface p-1.5 shadow-elevated',
+                                  mine ? 'right-0' : 'left-0',
+                                )}>
+
                                   {REACTION_EMOJIS.map((e) => (
                                     <button
                                       key={e}

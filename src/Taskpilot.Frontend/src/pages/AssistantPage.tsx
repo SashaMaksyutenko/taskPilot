@@ -68,7 +68,7 @@ export default function AssistantPage() {
   }
 
   return (
-    <div className="mx-auto flex h-[calc(100vh-64px)] max-w-3xl flex-col px-6 py-6">
+    <div className="mx-auto -my-6 flex h-[calc(100vh-64px)] max-w-3xl flex-col px-6 py-6">
         <h1 className="mb-1 text-2xl font-bold">{t('assistant.title')}</h1>
         <p className="mb-4 text-sm text-muted">{t('assistant.subtitle')}</p>
 

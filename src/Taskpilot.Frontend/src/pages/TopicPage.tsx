@@ -11,13 +11,12 @@ import TagInput from '../components/TagInput'
 import { SkeletonDetail } from '../components/ui/Skeleton'
 import ActionsContextMenu, { type ContextAction } from '../components/menus/ActionsContextMenu'
 import { apiErrorMessage } from '../lib/apiError'
+import { REACTION_EMOJIS } from '../lib/reactionEmojis'
 import { notify } from '../lib/toast'
 import { forumService } from '../services/forumService'
 import { useAppSelector } from '../store/hooks'
 import type { Reply, TopicDetail } from '../types/forum'
 
-// Quick emoji reactions offered on each reply.
-const REACTION_EMOJIS = ['👍', '👎', '❤️', '🔥', '🎉', '😂', '😮', '😢', '🙏', '👏']
 
 // How many replies to show per page (all are loaded; pagination is client-side).
 const REPLIES_PER_PAGE = 10
@@ -533,7 +532,7 @@ export default function TopicPage() {
                       🙂+
                     </button>
                     {reactionPickerFor === r.id && (
-                      <div className="absolute z-10 mt-1 flex w-52 flex-wrap gap-1 rounded-lg border border-border bg-surface p-2 shadow-lg">
+                      <div className="absolute z-10 mt-1 flex max-h-48 w-52 flex-wrap gap-1 overflow-y-auto rounded-lg border border-border bg-surface p-2 shadow-lg">
                         {REACTION_EMOJIS.map((e) => (
                           <button
                             key={e}

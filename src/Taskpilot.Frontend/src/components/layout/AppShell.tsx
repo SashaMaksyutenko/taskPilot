@@ -15,10 +15,16 @@ import { FeaturesProvider } from '../FeaturesProvider'
  * Authenticated app chrome: fixed sidebar, top bar and scrollable main area.
  * Used as a React Router layout route for all logged-in pages.
  */
+// Immersive, viewport-height pages manage their own scroll and fill the screen; the stats
+// footer is hidden on them so they don't overflow the viewport (which would let the page scroll
+// and drag the page's own header out of view).
+const FULL_HEIGHT_ROUTES = ['/chat', '/assistant']
+
 export default function AppShell({ children }: { children?: ReactNode }) {
   const notifications = useNotifications()
   const location = useLocation()
   const shortcuts = useShortcuts()
+  const isFullHeight = FULL_HEIGHT_ROUTES.includes(location.pathname)
 
   return (
     <FeaturesProvider>
@@ -45,7 +51,7 @@ export default function AppShell({ children }: { children?: ReactNode }) {
           </AnimatePresence>
         </main>
 
-        <StatsFooter />
+        {!isFullHeight && <StatsFooter />}
       </div>
 
       {/* Floating shortcut to the AI assistant */}

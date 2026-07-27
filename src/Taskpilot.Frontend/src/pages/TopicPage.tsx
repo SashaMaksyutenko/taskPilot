@@ -532,12 +532,12 @@ export default function TopicPage() {
                       🙂+
                     </button>
                     {reactionPickerFor === r.id && (
-                      <div className="absolute z-10 mt-1 flex max-h-48 w-52 flex-wrap gap-1 overflow-y-auto rounded-lg border border-border bg-surface p-2 shadow-lg">
+                      <div className="absolute z-10 mt-1 grid max-h-64 w-72 grid-cols-8 gap-0.5 overflow-y-auto rounded-lg border border-border bg-surface p-2 shadow-lg">
                         {REACTION_EMOJIS.map((e) => (
                           <button
                             key={e}
                             onClick={() => toggleReaction(r, e)}
-                            className="rounded p-1 text-lg hover:bg-canvas"
+                            className="flex h-8 w-8 items-center justify-center rounded text-xl leading-none transition hover:scale-125 hover:bg-canvas"
                           >
                             {e}
                           </button>

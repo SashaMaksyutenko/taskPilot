@@ -802,7 +802,7 @@ export default function ChatPage() {
                               {pickerFor === m.id && (
                                 // Own messages sit at the right edge, so open the picker leftward to keep it on-screen.
                                 <div className={cn(
-                                  'absolute bottom-6 z-10 grid max-h-40 w-52 grid-cols-8 gap-0.5 overflow-y-auto rounded-xl border border-border bg-surface p-1.5 shadow-elevated',
+                                  'absolute bottom-8 z-10 grid max-h-64 w-72 grid-cols-8 gap-0.5 overflow-y-auto rounded-xl border border-border bg-surface p-2 shadow-elevated',
                                   mine ? 'right-0' : 'left-0',
                                 )}>
 
@@ -814,7 +814,7 @@ export default function ChatPage() {
                                         toggleReaction(m.id, e)
                                         setPickerFor(null)
                                       }}
-                                      className="flex h-6 w-6 items-center justify-center rounded text-base leading-none transition hover:scale-125 hover:bg-canvas"
+                                      className="flex h-8 w-8 items-center justify-center rounded text-xl leading-none transition hover:scale-125 hover:bg-canvas"
                                     >
                                       {e}
                                     </button>
@@ -904,7 +904,7 @@ export default function ChatPage() {
                     </button>
                   </Tooltip>
                   {showEmoji && (
-                    <div className="absolute bottom-12 left-0 z-10 grid max-h-48 w-64 grid-cols-8 gap-0.5 overflow-y-auto rounded-xl border border-border bg-surface p-2 shadow-elevated">
+                    <div className="absolute bottom-12 left-0 z-10 grid max-h-64 w-72 grid-cols-8 gap-0.5 overflow-y-auto rounded-xl border border-border bg-surface p-2 shadow-elevated">
                       {REACTION_EMOJIS.map((e) => (
                         <button
                           key={e}
@@ -913,7 +913,7 @@ export default function ChatPage() {
                             setText((prev) => prev + e)
                             setShowEmoji(false)
                           }}
-                          className="flex h-7 w-7 items-center justify-center rounded text-lg leading-none transition hover:scale-125 hover:bg-canvas"
+                          className="flex h-8 w-8 items-center justify-center rounded text-xl leading-none transition hover:scale-125 hover:bg-canvas"
                         >
                           {e}
                         </button>

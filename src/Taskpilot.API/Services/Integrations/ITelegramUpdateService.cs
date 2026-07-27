@@ -3,8 +3,8 @@ using Taskpilot.API.DTOs.Integrations;
 namespace Taskpilot.API.Services;
 
 /// <summary>
-/// Handles incoming Telegram updates (webhook): account linking commands and, for a linked
-/// user, routing free-text messages to the AI assistant and replying over Telegram.
+/// Handles incoming Telegram updates (delivered by the long-polling worker): account linking
+/// commands and, for a linked user, routing free-text messages to the AI assistant and replying.
 /// </summary>
 public interface ITelegramUpdateService
 {

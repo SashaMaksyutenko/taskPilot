@@ -1,14 +1,17 @@
 using System.Text.Json;
 using Microsoft.Extensions.Options;
-using Taskpilot.API.Configuration;
+using Taskpilot.API.DTOs.Integrations;
 using Taskpilot.API.Services;
+using Taskpilot.Integrations;
 
 namespace Taskpilot.API.Workers;
 
 /// <summary>
-/// Background worker that long-polls the Telegram Bot API for incoming messages and
-/// handles the "/start &lt;code&gt;" linking command and "/help". Does nothing when no
-/// bot token is configured.
+/// Background worker that long-polls the Telegram Bot API for incoming messages and hands each
+/// off to <see cref="ITelegramUpdateService"/> (linking commands plus, for a linked user, the AI
+/// assistant). Does nothing when no bot token is configured. Long-polling is used instead of a
+/// webhook so the bot works without a fixed public HTTPS URL — do NOT also register a webhook,
+/// as Telegram allows only one delivery method at a time.
 /// </summary>
 public class TelegramPollingService : BackgroundService
 {
@@ -107,42 +110,15 @@ public class TelegramPollingService : BackgroundService
         return next > MaxRetryDelay ? MaxRetryDelay : next;
     }
 
-    /// <summary>Handles one update: links accounts on "/start &lt;code&gt;", replies to "/help".</summary>
+    /// <summary>Deserialises one raw update and delegates to the shared update handler.</summary>
     private async Task HandleUpdateAsync(JsonElement update)
     {
-        if (!update.TryGetProperty("message", out var message))
+        var parsed = update.Deserialize<TelegramUpdate>();
+        if (parsed?.Message is null)
             return;
-        if (!message.TryGetProperty("text", out var textEl) || !message.TryGetProperty("chat", out var chat))
-            return;
-
-        var chatId = chat.GetProperty("id").GetRawText(); // numeric id as string
-        var text = textEl.GetString()?.Trim() ?? string.Empty;
 
         using var scope = _scopeFactory.CreateScope();
-        var sender = scope.ServiceProvider.GetRequiredService<ITelegramSender>();
-
-        if (text.StartsWith("/help", StringComparison.OrdinalIgnoreCase))
-        {
-            await sender.SendMessageAsync(chatId, "TaskPilot bot — link your account in the app's Settings to receive notifications here. Send the code shown there (or use \"/start <code>\").");
-            return;
-        }
-
-        // "/start" with no code -> greeting; otherwise treat the last token (from
-        // "/start <code>" or a plain "<code>" message) as a link code.
-        var parts = text.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-        var isBareStart = parts.Length == 1 && parts[0].Equals("/start", StringComparison.OrdinalIgnoreCase);
-        if (isBareStart)
-        {
-            await sender.SendMessageAsync(chatId, "Welcome to TaskPilot! Open Settings in the app, tap \"Connect Telegram\", and send me the code shown there.");
-            return;
-        }
-
-        // The code is the last token (handles both "/start CODE" and just "CODE").
-        var code = parts[^1];
-        var links = scope.ServiceProvider.GetRequiredService<ITelegramLinkService>();
-        var linked = await links.LinkByCodeAsync(code, chatId);
-        await sender.SendMessageAsync(chatId, linked
-            ? "✅ Your Telegram is now linked to TaskPilot. You'll get notifications here."
-            : "That link code is invalid or expired. Generate a new one in TaskPilot settings.");
+        var handler = scope.ServiceProvider.GetRequiredService<ITelegramUpdateService>();
+        await handler.HandleUpdateAsync(parsed);
     }
 }

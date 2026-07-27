@@ -51,7 +51,21 @@ public class TelegramUpdateServiceTests
         await Make(ctx).HandleUpdateAsync(Update(555, "/start ABC123"));
 
         _link.Verify(l => l.LinkByCodeAsync("ABC123", "555"), Times.Once);
-        _sender.Verify(s => s.SendMessageAsync("555", It.Is<string>(t => t.Contains("Linked"))), Times.Once);
+        _sender.Verify(s => s.SendMessageAsync("555", It.Is<string>(t => t.Contains("linked"))), Times.Once);
+    }
+
+    [Fact]
+    public async Task BareCode_FromUnlinkedChat_Links()
+    {
+        await using var ctx = TestDb.CreateContext();
+        _link.Setup(l => l.LinkByCodeAsync("54C2EE60", "555")).ReturnsAsync(true);
+
+        // Users link by sending just the code (no "/start"), per the welcome message.
+        await Make(ctx).HandleUpdateAsync(Update(555, "54C2EE60"));
+
+        _link.Verify(l => l.LinkByCodeAsync("54C2EE60", "555"), Times.Once);
+        _sender.Verify(s => s.SendMessageAsync("555", It.Is<string>(t => t.Contains("linked"))), Times.Once);
+        _assistant.Verify(a => a.AskAsync(It.IsAny<Guid>(), It.IsAny<IReadOnlyList<ChatBotMessageDto>>()), Times.Never);
     }
 
     [Fact]
@@ -117,14 +131,17 @@ public class TelegramUpdateServiceTests
     }
 
     [Fact]
-    public async Task FreeText_FromUnlinkedChat_PromptsToLink_WithoutAsking()
+    public async Task FreeText_FromUnlinkedChat_IsTreatedAsALinkCode_NotAsked()
     {
         await using var ctx = TestDb.CreateContext();
+        _link.Setup(l => l.LinkByCodeAsync(It.IsAny<string>(), "555")).ReturnsAsync(false);
 
-        await Make(ctx).HandleUpdateAsync(Update(555, "hello?"));
+        // Not linked yet, so free text is tried as a code (and here it isn't one) — never the assistant.
+        await Make(ctx).HandleUpdateAsync(Update(555, "hello there"));
 
+        _link.Verify(l => l.LinkByCodeAsync("there", "555"), Times.Once);
         _assistant.Verify(a => a.AskAsync(It.IsAny<Guid>(), It.IsAny<IReadOnlyList<ChatBotMessageDto>>()), Times.Never);
-        _sender.Verify(s => s.SendMessageAsync("555", It.Is<string>(t => t.Contains("Link") || t.Contains("link"))), Times.Once);
+        _sender.Verify(s => s.SendMessageAsync("555", It.Is<string>(t => t.Contains("invalid") || t.Contains("expired"))), Times.Once);
     }
 
     [Fact]

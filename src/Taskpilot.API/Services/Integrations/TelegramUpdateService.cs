@@ -18,6 +18,9 @@ public class TelegramUpdateService : ITelegramUpdateService
     private readonly IAssistantAgent _assistant;
     private readonly ILogger<TelegramUpdateService> _logger;
 
+    private const string WelcomeText =
+        "Welcome to TaskPilot! Open Settings in the app, tap \"Connect Telegram\", and send me the code shown there.";
+
     private const string HelpText =
         "TaskPilot bot commands:\n" +
         "/start <code> — link your account (get the code in TaskPilot → Settings → Telegram)\n" +
@@ -49,63 +52,47 @@ public class TelegramUpdateService : ITelegramUpdateService
 
         try
         {
-            if (text.StartsWith("/start", StringComparison.OrdinalIgnoreCase))
-                await HandleStartAsync(chatId, text);
-            else if (text.Equals("/help", StringComparison.OrdinalIgnoreCase))
+            if (text.StartsWith("/help", StringComparison.OrdinalIgnoreCase))
+            {
                 await _sender.SendMessageAsync(chatId, HelpText);
-            else if (text.Equals("/unlink", StringComparison.OrdinalIgnoreCase))
+            }
+            else if (text.StartsWith("/unlink", StringComparison.OrdinalIgnoreCase))
+            {
                 await HandleUnlinkAsync(chatId);
+            }
+            else if (text.StartsWith("/start", StringComparison.OrdinalIgnoreCase))
+            {
+                // "/start" or "/start <code>".
+                var parts = text.Split(' ', 2, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+                if (parts.Length > 1)
+                    await TryLinkAsync(chatId, parts[1]);
+                else
+                    await _sender.SendMessageAsync(chatId, WelcomeText);
+            }
             else
-                await HandleConversationAsync(chatId, text);
+            {
+                await HandleFreeTextAsync(chatId, text);
+            }
         }
         catch (Exception ex)
         {
-            // Never let a handler failure bubble to the webhook (Telegram would retry endlessly).
+            // Never let a handler failure bubble up (Telegram would retry the update endlessly).
             _logger.LogError(ex, "Failed to handle Telegram update for chat {ChatId}.", chatId);
             await _sender.SendMessageAsync(chatId, "Something went wrong handling that. Please try again.");
         }
     }
 
-    private async Task HandleStartAsync(string chatId, string text)
-    {
-        // "/start" or "/start <code>".
-        var parts = text.Split(' ', 2, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-        var code = parts.Length > 1 ? parts[1] : null;
-
-        if (string.IsNullOrWhiteSpace(code))
-        {
-            await _sender.SendMessageAsync(chatId,
-                "👋 Welcome to TaskPilot!\n\nTo connect this chat to your account, open TaskPilot → " +
-                "Settings → Telegram, copy your one-time code, then send:\n/start <code>");
-            return;
-        }
-
-        var linked = await _link.LinkByCodeAsync(code, chatId);
-        await _sender.SendMessageAsync(chatId, linked
-            ? "✅ Linked! Just message me in plain language and I'll help. Send /help for what I can do."
-            : "❌ That code is invalid or has expired. Get a fresh one in TaskPilot → Settings → Telegram.");
-    }
-
-    private async Task HandleUnlinkAsync(string chatId)
+    /// <summary>
+    /// Non-command text: a linked user is talking to the assistant; an unlinked chat is trying to
+    /// link, so we treat the message as a bare code (that's what the welcome asks them to send).
+    /// </summary>
+    private async Task HandleFreeTextAsync(string chatId, string text)
     {
         var user = await ResolveUserAsync(chatId);
         if (user is null)
         {
-            await _sender.SendMessageAsync(chatId, "This chat isn't linked to a TaskPilot account.");
-            return;
-        }
-
-        await _link.UnlinkAsync(user.Id);
-        await _sender.SendMessageAsync(chatId, "🔌 Unlinked. Send /start <code> to reconnect later.");
-    }
-
-    private async Task HandleConversationAsync(string chatId, string text)
-    {
-        var user = await ResolveUserAsync(chatId);
-        if (user is null)
-        {
-            await _sender.SendMessageAsync(chatId,
-                "I don't know who you are yet. Link your account first: TaskPilot → Settings → Telegram, then send /start <code>.");
+            var code = text.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)[^1];
+            await TryLinkAsync(chatId, code);
             return;
         }
 
@@ -126,6 +113,28 @@ public class TelegramUpdateService : ITelegramUpdateService
         await _sender.SendMessageAsync(chatId, result.Succeeded && !string.IsNullOrWhiteSpace(result.Value)
             ? result.Value!
             : "Sorry, I couldn't answer that right now. Please try again in a moment.");
+    }
+
+    private async Task TryLinkAsync(string chatId, string code)
+    {
+        var linked = await _link.LinkByCodeAsync(code, chatId);
+        await _sender.SendMessageAsync(chatId, linked
+            ? "✅ Your Telegram is now linked to TaskPilot. You'll get notifications here — and you can just message me, " +
+              "e.g. \"what tasks are overdue?\". Send /help for more."
+            : "That link code is invalid or expired. Generate a new one in TaskPilot settings.");
+    }
+
+    private async Task HandleUnlinkAsync(string chatId)
+    {
+        var user = await ResolveUserAsync(chatId);
+        if (user is null)
+        {
+            await _sender.SendMessageAsync(chatId, "This chat isn't linked to a TaskPilot account.");
+            return;
+        }
+
+        await _link.UnlinkAsync(user.Id);
+        await _sender.SendMessageAsync(chatId, "🔌 Unlinked. Send your code again to reconnect later.");
     }
 
     private async Task<LinkedUser?> ResolveUserAsync(string chatId) =>

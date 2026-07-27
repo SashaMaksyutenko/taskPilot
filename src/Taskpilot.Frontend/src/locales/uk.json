@@ -953,7 +953,19 @@
     "myProjects": "Проєкти",
     "sharedProjects": "Спільні проєкти",
     "topics": "Теми на форумі",
-    "noTopics": "Тем ще немає."
+    "noTopics": "Тем ще немає.",
+    "reviews": "Відгуки",
+    "noReviews": "Відгуків ще немає."
+  },
+  "review": {
+    "leave": "Залишити відгук",
+    "selectProject": "Оберіть проєкт",
+    "failed": "Не вдалося надіслати відгук.",
+    "context": {
+      "Marketplace": "Маркетплейс",
+      "Project": "Проєкт",
+      "Forum": "Форум"
+    }
   },
   "endorse": {
     "add": "Підтвердити навичку {{skill}}",

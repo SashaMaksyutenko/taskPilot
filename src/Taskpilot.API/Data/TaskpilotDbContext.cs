@@ -818,16 +818,20 @@ public class TaskpilotDbContext : DbContext
             entity.HasKey(r => r.Id);
 
             entity.Property(r => r.Comment).HasMaxLength(1000);
+            entity.Property(r => r.Context).HasConversion<string>().HasMaxLength(20);
 
-            // One review per rater per task.
-            entity.HasIndex(r => new { r.MarketplaceTaskId, r.RaterId }).IsUnique();
+            // One review per rater about a ratee within a given context entity (e.g. one review
+            // per project between the same two people). Covers marketplace too (ContextId = task id).
+            entity.HasIndex(r => new { r.Context, r.ContextId, r.RaterId, r.RateeId }).IsUnique();
             // Quick lookup of a user's received reviews (for their average rating).
             entity.HasIndex(r => r.RateeId);
 
-            // Deleting a task removes its reviews. Rater/ratee are plain ids (no FK).
+            // Deleting a marketplace task removes its reviews. The FK is now optional so
+            // project/forum reviews (no task) are allowed. Rater/ratee remain plain ids (no FK).
             entity.HasOne(r => r.MarketplaceTask)
                   .WithMany()
                   .HasForeignKey(r => r.MarketplaceTaskId)
+                  .IsRequired(false)
                   .OnDelete(DeleteBehavior.Cascade);
         });
 

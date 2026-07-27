@@ -366,6 +366,7 @@ builder.Services.AddScoped<IReportScheduleService, ReportScheduleService>();
 // Background worker that emails scheduled reports on their cadence.
 builder.Services.AddHostedService<ReportScheduleBackgroundService>();
 builder.Services.AddScoped<IReputationService, ReputationService>();
+builder.Services.AddScoped<IReviewService, ReviewService>();
 builder.Services.AddScoped<IExtensionService, ExtensionService>();
 builder.Services.AddScoped<ISearchService, SearchService>();
 builder.Services.AddScoped<ISavedSearchService, SavedSearchService>();

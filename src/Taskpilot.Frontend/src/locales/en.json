@@ -953,7 +953,19 @@
     "myProjects": "Projects",
     "sharedProjects": "Projects you share",
     "topics": "Forum topics",
-    "noTopics": "No topics yet."
+    "noTopics": "No topics yet.",
+    "reviews": "Reviews",
+    "noReviews": "No reviews yet."
+  },
+  "review": {
+    "leave": "Leave a review",
+    "selectProject": "Select a project",
+    "failed": "Could not submit your review.",
+    "context": {
+      "Marketplace": "Marketplace",
+      "Project": "Project",
+      "Forum": "Forum"
+    }
   },
   "endorse": {
     "add": "Endorse {{skill}}",

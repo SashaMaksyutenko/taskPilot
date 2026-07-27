@@ -3,12 +3,14 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import UserProfilePage from './UserProfilePage'
 import type { PublicProfile } from '../services/userService'
 
-const { getPublicProfile, endorseSkill, getReputationHistory, getTopics, getSharedProjects, state } = vi.hoisted(() => ({
+const { getPublicProfile, endorseSkill, getReputationHistory, getTopics, getSharedProjects, getUserReviews, leaveProjectReview, state } = vi.hoisted(() => ({
   getPublicProfile: vi.fn(),
   endorseSkill: vi.fn(),
   getReputationHistory: vi.fn(),
   getTopics: vi.fn(),
   getSharedProjects: vi.fn(),
+  getUserReviews: vi.fn(),
+  leaveProjectReview: vi.fn(),
   state: { currentUserId: 'me' as string | undefined },
 }))
 
@@ -20,6 +22,7 @@ vi.mock('../services/userService', () => ({
   userService: { getPublicProfile, endorseSkill, getReputationHistory, getSharedProjects },
 }))
 vi.mock('../services/forumService', () => ({ forumService: { getTopics } }))
+vi.mock('../services/reviewService', () => ({ reviewService: { getUserReviews, leaveProjectReview } }))
 vi.mock('../store/hooks', () => ({
   useAppSelector: (sel: (s: unknown) => unknown) => sel({ auth: { user: { id: state.currentUserId } } }),
 }))
@@ -66,6 +69,8 @@ describe('UserProfilePage skill endorsements', () => {
     endorseSkill.mockReset().mockResolvedValue({ skill: 'React', endorsed: true, count: 3 })
     getPublicProfile.mockReset().mockResolvedValue(profile())
     getSharedProjects.mockReset().mockResolvedValue([])
+    getUserReviews.mockReset().mockResolvedValue([])
+    leaveProjectReview.mockReset()
   })
 
   it('endorsing a skill on someone else\'s profile calls the API and updates the count', async () => {
@@ -111,7 +116,39 @@ describe('UserProfilePage skill endorsements', () => {
     ])
     render(<UserProfilePage />)
 
-    expect(await screen.findByText('Nebula')).toBeTruthy()
-    expect(screen.getByText('Orion')).toBeTruthy()
+    // The names appear both as chips and (since the viewer shares them) as leave-review options.
+    expect((await screen.findAllByText('Nebula')).length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Orion').length).toBeGreaterThan(0)
+  })
+
+  it('lists reviews the user has received', async () => {
+    getUserReviews.mockResolvedValue([
+      {
+        id: 'r1', context: 'Project', contextId: 'p1', contextLabel: 'Nebula', contextLink: '/projects/p1',
+        raterId: 'u2', raterName: 'Rita Reviewer', raterAvatarUrl: null, stars: 5, comment: 'Great teammate',
+        createdAt: '2026-07-26T00:00:00Z',
+      },
+    ])
+    render(<UserProfilePage />)
+
+    expect(await screen.findByText('Great teammate')).toBeTruthy()
+    expect(screen.getByText('Rita Reviewer')).toBeTruthy()
+  })
+
+  it('shows the leave-review form only when viewing someone you share a project with', async () => {
+    state.currentUserId = 'me' // viewing u1 (not me)
+    getSharedProjects.mockResolvedValue([{ id: 'p1', name: 'Nebula', color: null }])
+    render(<UserProfilePage />)
+
+    expect(await screen.findByText('review.leave')).toBeTruthy()
+  })
+
+  it('hides the leave-review form on your own profile', async () => {
+    state.currentUserId = 'u1' // own profile
+    getSharedProjects.mockResolvedValue([{ id: 'p1', name: 'Nebula', color: null }])
+    render(<UserProfilePage />)
+
+    await screen.findByText('profile.reviews')
+    expect(screen.queryByText('review.leave')).toBeNull()
   })
 })

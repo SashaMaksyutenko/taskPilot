@@ -3,6 +3,7 @@ import { ThumbsUp } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Link, useParams } from 'react-router-dom'
 import Avatar from '../components/Avatar'
+import ProfileReviews from '../components/ProfileReviews'
 import StarRating from '../components/StarRating'
 import ResultState from '../components/feedback/ResultState'
 import { SkeletonDetail } from '../components/ui/Skeleton'
@@ -70,6 +71,12 @@ export default function UserProfilePage() {
           }
         : prev,
     )
+  }
+
+  // Re-fetch just the profile so the header rating/reputation reflect a review the viewer just left.
+  const refreshProfile = () => {
+    if (!userId) return
+    userService.getPublicProfile(userId).then(setProfile).catch(() => {})
   }
 
   useEffect(() => {
@@ -189,6 +196,14 @@ export default function UserProfilePage() {
                 </div>
               </div>
             )}
+
+            {/* Reviews received (all contexts) + a form to leave a project review */}
+            <ProfileReviews
+              userId={userId}
+              isOwnProfile={isOwnProfile}
+              sharedProjects={sharedProjects}
+              onReviewLeft={refreshProfile}
+            />
 
             {/* Shared projects (only those the viewer also takes part in) */}
             {sharedProjects.length > 0 && (

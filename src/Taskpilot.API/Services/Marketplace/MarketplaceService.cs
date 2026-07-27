@@ -480,6 +480,8 @@ public class MarketplaceService : IMarketplaceService
         _context.Reviews.Add(new Review
         {
             Id = Guid.NewGuid(),
+            Context = ReviewContext.Marketplace,
+            ContextId = taskId,
             MarketplaceTaskId = taskId,
             RaterId = raterId,
             RateeId = rateeId,

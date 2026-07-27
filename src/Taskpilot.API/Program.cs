@@ -181,6 +181,7 @@ if (string.IsNullOrWhiteSpace(builder.Configuration["Vapid:PublicKey"]))
 builder.Services.Configure<TelegramOptions>(builder.Configuration.GetSection("Telegram"));
 builder.Services.AddHttpClient<ITelegramSender, TelegramSender>();
 builder.Services.AddScoped<ITelegramLinkService, TelegramLinkService>();
+builder.Services.AddScoped<ITelegramUpdateService, TelegramUpdateService>();
 builder.Services.AddHostedService<TelegramPollingService>();
 
 // Viber bot (populated from .env: Viber__*). No token = disabled. Linking uses the

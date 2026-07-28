@@ -281,4 +281,103 @@ public class TaskServiceTests
         notifications.Verify(n => n.CreateAsync(member, It.IsAny<NotificationType>(), It.IsAny<string>(), It.IsAny<string>()), Times.Once);
         notifications.Verify(n => n.CreateAsync(owner, It.IsAny<NotificationType>(), It.IsAny<string>(), It.IsAny<string>()), Times.Never);
     }
+
+    [Fact]
+    public async Task Recurring_Weekly_SpawnsNextOccurrenceOnDone_AndStopsRecurringItself()
+    {
+        using var ctx = TestDb.CreateContext();
+        var owner = await TestDb.AddUserAsync(ctx);
+        var projectId = await TestDb.AddProjectAsync(ctx, owner);
+        var svc = Create(ctx);
+        var deadline = new DateTime(2026, 8, 3, 9, 0, 0, DateTimeKind.Utc);
+        var created = (await svc.CreateTaskAsync(owner, projectId, new CreateTaskDto
+        {
+            Title = "Weekly report", AssigneeId = owner, Deadline = deadline,
+            Recurrence = "Weekly", RecurrenceInterval = 1, Tags = new List<string> { "ops" },
+        })).Value!;
+
+        Assert.True((await svc.ChangeStatusAsync(owner, created.Id, "Done")).Succeeded);
+
+        var tasks = await ctx.ProjectTasks.Where(t => t.ProjectId == projectId).ToListAsync();
+        Assert.Equal(2, tasks.Count);
+        var original = tasks.Single(t => t.Id == created.Id);
+        var next = tasks.Single(t => t.Id != created.Id);
+        Assert.Equal(ProjectTaskStatus.Done, original.Status);
+        Assert.Equal(RecurrenceType.None, original.RecurrenceType); // completed copy stops recurring
+        Assert.Equal(ProjectTaskStatus.Backlog, next.Status);
+        Assert.Equal(RecurrenceType.Weekly, next.RecurrenceType);
+        Assert.Equal(deadline.AddDays(7), next.Deadline);
+        Assert.Equal("Weekly report", next.Title);
+        Assert.Contains("ops", next.Tags);
+    }
+
+    [Fact]
+    public async Task NonRecurring_Done_DoesNotSpawn()
+    {
+        using var ctx = TestDb.CreateContext();
+        var owner = await TestDb.AddUserAsync(ctx);
+        var projectId = await TestDb.AddProjectAsync(ctx, owner);
+        var svc = Create(ctx);
+        var created = (await svc.CreateTaskAsync(owner, projectId, new CreateTaskDto { Title = "One-off", AssigneeId = owner })).Value!;
+
+        Assert.True((await svc.ChangeStatusAsync(owner, created.Id, "Done")).Succeeded);
+
+        Assert.Equal(1, await ctx.ProjectTasks.CountAsync(t => t.ProjectId == projectId));
+    }
+
+    [Theory]
+    [InlineData("Daily", 2, 2)]     // every 2 days -> +2 days
+    [InlineData("Monthly", 1, 0)]   // every 1 month -> handled below (days arg ignored)
+    public async Task Recurring_AdvancesDeadlineByRule(string recurrence, int interval, int addedDays)
+    {
+        using var ctx = TestDb.CreateContext();
+        var owner = await TestDb.AddUserAsync(ctx);
+        var projectId = await TestDb.AddProjectAsync(ctx, owner);
+        var svc = Create(ctx);
+        var deadline = new DateTime(2026, 8, 10, 12, 0, 0, DateTimeKind.Utc);
+        var created = (await svc.CreateTaskAsync(owner, projectId, new CreateTaskDto
+        {
+            Title = "Repeat", AssigneeId = owner, Deadline = deadline, Recurrence = recurrence, RecurrenceInterval = interval,
+        })).Value!;
+
+        Assert.True((await svc.ChangeStatusAsync(owner, created.Id, "Done")).Succeeded);
+
+        var next = await ctx.ProjectTasks.SingleAsync(t => t.ProjectId == projectId && t.Id != created.Id);
+        var expected = recurrence == "Monthly" ? deadline.AddMonths(interval) : deadline.AddDays(addedDays);
+        Assert.Equal(expected, next.Deadline);
+    }
+
+    [Fact]
+    public async Task Recurring_NoDeadline_SchedulesNextFromCompletion()
+    {
+        using var ctx = TestDb.CreateContext();
+        var owner = await TestDb.AddUserAsync(ctx);
+        var projectId = await TestDb.AddProjectAsync(ctx, owner);
+        var svc = Create(ctx);
+        var created = (await svc.CreateTaskAsync(owner, projectId, new CreateTaskDto
+        {
+            Title = "No deadline", AssigneeId = owner, Recurrence = "Weekly",
+        })).Value!;
+
+        var before = DateTime.UtcNow;
+        Assert.True((await svc.ChangeStatusAsync(owner, created.Id, "Done")).Succeeded);
+
+        var next = await ctx.ProjectTasks.SingleAsync(t => t.ProjectId == projectId && t.Id != created.Id);
+        Assert.NotNull(next.Deadline);
+        // ~7 days out from completion time.
+        Assert.InRange(next.Deadline!.Value, before.AddDays(7).AddMinutes(-1), DateTime.UtcNow.AddDays(7).AddMinutes(1));
+    }
+
+    [Fact]
+    public async Task Create_InvalidRecurrence_Fails()
+    {
+        using var ctx = TestDb.CreateContext();
+        var owner = await TestDb.AddUserAsync(ctx);
+        var projectId = await TestDb.AddProjectAsync(ctx, owner);
+        var svc = Create(ctx);
+
+        var result = await svc.CreateTaskAsync(owner, projectId, new CreateTaskDto { Title = "X", Recurrence = "Yearly" });
+
+        Assert.False(result.Succeeded);
+    }
 }

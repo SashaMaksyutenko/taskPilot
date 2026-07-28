@@ -161,6 +161,10 @@ public class TaskService : ITaskService
             !await _context.ProjectTasks.AnyAsync(t => t.Id == dto.ParentTaskId.Value && t.ProjectId == projectId))
             return Result<TaskDto>.Fail("Parent task not found in this project.");
 
+        // Optional recurrence.
+        if (ParseRecurrence(dto.Recurrence) is not { } recurrence)
+            return Result<TaskDto>.Fail("Invalid recurrence. Use None, Daily, Weekly or Monthly.");
+
         var task = new ProjectTask
         {
             Id = Guid.NewGuid(),
@@ -174,6 +178,8 @@ public class TaskService : ITaskService
             ParentTaskId = dto.ParentTaskId,
             Deadline = dto.Deadline,
             Tags = NormalizeTags(dto.Tags),
+            RecurrenceType = recurrence,
+            RecurrenceInterval = NormalizeInterval(dto.RecurrenceInterval),
             CreatedAt = DateTime.UtcNow,
         };
         _context.ProjectTasks.Add(task);
@@ -275,6 +281,15 @@ public class TaskService : ITaskService
             !await _context.Users.AnyAsync(u => u.Id == dto.AssigneeId.Value))
             return Result<TaskDto>.Fail("Assignee not found.");
 
+        // Recurrence is only touched when provided (null leaves it unchanged).
+        RecurrenceType? newRecurrence = null;
+        if (dto.Recurrence is not null)
+        {
+            if (ParseRecurrence(dto.Recurrence) is not { } r)
+                return Result<TaskDto>.Fail("Invalid recurrence. Use None, Daily, Weekly or Monthly.");
+            newRecurrence = r;
+        }
+
         // Snapshot the reported fields before they are overwritten. The assignee is also
         // used further down to notify only on an actual change.
         var previousAssigneeId = task.AssigneeId;
@@ -292,6 +307,10 @@ public class TaskService : ITaskService
         task.Deadline = dto.Deadline;
         if (dto.Tags is not null)
             task.Tags = NormalizeTags(dto.Tags);
+        if (newRecurrence is { } nr)
+            task.RecurrenceType = nr;
+        if (dto.RecurrenceInterval is { } interval)
+            task.RecurrenceInterval = NormalizeInterval(interval);
         task.UpdatedAt = DateTime.UtcNow;
         await _context.SaveChangesAsync();
 
@@ -398,6 +417,12 @@ public class TaskService : ITaskService
 
             // Record the timeliness reputation event (early/on-time/late) once per task.
             await _reputation.RecordTaskCompletionAsync(task);
+
+            // A recurring task spawns its next occurrence when it's first completed, then stops
+            // recurring itself so the completed copy is a terminal record and the schedule lives
+            // on the new occurrence (guarded on the transition INTO Done, not on a re-save).
+            if (previousStatus != ProjectTaskStatus.Done && task.RecurrenceType != RecurrenceType.None)
+                await SpawnNextOccurrenceAsync(userId, task);
         }
 
         _logger.LogInformation("Task status changed. TaskId: {TaskId}, Status: {Status}", taskId, parsed);
@@ -977,6 +1002,64 @@ public class TaskService : ITaskService
         return MapDto(task);
     }
 
+    /// <summary>
+    /// Creates the next occurrence of a completed recurring task (a copy with its deadline
+    /// advanced) and stops the completed copy from recurring, so the schedule carries forward.
+    /// </summary>
+    private async Task SpawnNextOccurrenceAsync(Guid userId, ProjectTask completed)
+    {
+        // Advance from the task's own deadline, or from completion time when it had none.
+        var baseTime = completed.Deadline ?? DateTime.UtcNow;
+        var nextDeadline = AdvanceDeadline(baseTime, completed.RecurrenceType, completed.RecurrenceInterval);
+
+        var next = new ProjectTask
+        {
+            Id = Guid.NewGuid(),
+            ProjectId = completed.ProjectId,
+            Title = completed.Title,
+            Description = completed.Description,
+            Status = ProjectTaskStatus.Backlog,
+            Priority = completed.Priority,
+            AssigneeId = completed.AssigneeId,
+            CreatorId = completed.CreatorId,
+            Deadline = nextDeadline,
+            Tags = new List<string>(completed.Tags ?? new List<string>()),
+            RecurrenceType = completed.RecurrenceType,
+            RecurrenceInterval = completed.RecurrenceInterval,
+            CreatedAt = DateTime.UtcNow,
+        };
+        _context.ProjectTasks.Add(next);
+
+        // The completed copy is a terminal record; the recurrence now lives on the new occurrence.
+        completed.RecurrenceType = RecurrenceType.None;
+        await _context.SaveChangesAsync();
+
+        await AuditAsync(userId, TaskAuditActions.Created, next.Id,
+            $"Recurring occurrence of \"{next.Title}\" (due {nextDeadline:yyyy-MM-dd}).");
+        await NotifyAssignedAsync(next.AssigneeId, userId, next);
+
+        _logger.LogInformation("Recurring occurrence created. FromTask: {From}, NewTask: {New}", completed.Id, next.Id);
+    }
+
+    /// <summary>Parses a recurrence string; null/blank means None, an unrecognised value returns null (invalid).</summary>
+    private static RecurrenceType? ParseRecurrence(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value)) return RecurrenceType.None;
+        return Enum.TryParse<RecurrenceType>(value, ignoreCase: true, out var r) ? r : null;
+    }
+
+    /// <summary>Recurrence interval is at least 1.</summary>
+    private static int NormalizeInterval(int? interval) => interval is { } n && n > 0 ? n : 1;
+
+    /// <summary>Advances a date by one recurrence step.</summary>
+    private static DateTime AdvanceDeadline(DateTime from, RecurrenceType type, int interval) => type switch
+    {
+        RecurrenceType.Daily => from.AddDays(interval),
+        RecurrenceType.Weekly => from.AddDays(7 * interval),
+        RecurrenceType.Monthly => from.AddMonths(interval),
+        _ => from,
+    };
+
     private static TaskDto MapDto(ProjectTask t) => new()
     {
         Id = t.Id,
@@ -997,6 +1080,8 @@ public class TaskService : ITaskService
         Tags = t.Tags ?? new List<string>(),
         TimeSpentSeconds = t.TimeSpentSeconds,
         TimerStartedAt = t.TimerStartedAt,
+        Recurrence = t.RecurrenceType.ToString(),
+        RecurrenceInterval = t.RecurrenceInterval,
     };
 
     /// <summary>

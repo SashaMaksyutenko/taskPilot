@@ -14,4 +14,10 @@ public class UpdateTaskDto
 
     /// <summary>Free-form labels; null leaves the existing tags unchanged.</summary>
     public List<string>? Tags { get; set; }
+
+    /// <summary>Optional recurrence: "None", "Daily", "Weekly" or "Monthly".</summary>
+    public string? Recurrence { get; set; }
+
+    /// <summary>Repeat every N units (defaults to 1). Only used when Recurrence isn't None.</summary>
+    public int? RecurrenceInterval { get; set; }
 }

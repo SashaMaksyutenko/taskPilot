@@ -85,4 +85,10 @@ public class ProjectTask
 
     /// <summary>When a timer is currently running, the UTC time it started; null when stopped.</summary>
     public DateTime? TimerStartedAt { get; set; }
+
+    /// <summary>How the task repeats. None (default) means it does not recur.</summary>
+    public RecurrenceType RecurrenceType { get; set; } = RecurrenceType.None;
+
+    /// <summary>Every how many units it repeats (e.g. 2 = every 2 weeks). Ignored when RecurrenceType is None.</summary>
+    public int RecurrenceInterval { get; set; } = 1;
 }

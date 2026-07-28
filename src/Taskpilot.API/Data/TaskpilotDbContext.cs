@@ -697,6 +697,8 @@ public class TaskpilotDbContext : DbContext
                   .HasConversion<string>().HasMaxLength(20).IsRequired();
             entity.Property(t => t.Priority)
                   .HasConversion<string>().HasMaxLength(20).IsRequired();
+            entity.Property(t => t.RecurrenceType)
+                  .HasConversion<string>().HasMaxLength(16).IsRequired();
 
             // Tags are stored as a Postgres text[] and never null.
             entity.Property(t => t.Tags)

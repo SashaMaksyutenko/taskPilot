@@ -27,4 +27,10 @@ public class TaskDto
 
     /// <summary>UTC time a running timer started; null when no timer is running.</summary>
     public DateTime? TimerStartedAt { get; set; }
+
+    /// <summary>"None" | "Daily" | "Weekly" | "Monthly" — how the task repeats.</summary>
+    public string Recurrence { get; set; } = "None";
+
+    /// <summary>Repeat interval (every N units); relevant only when Recurrence isn't None.</summary>
+    public int RecurrenceInterval { get; set; } = 1;
 }

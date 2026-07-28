@@ -18,6 +18,12 @@ public class CreateTaskDto
     /// <summary>Optional parent task id for subtasks.</summary>
     public Guid? ParentTaskId { get; set; }
 
+    /// <summary>Optional recurrence: "None", "Daily", "Weekly" or "Monthly".</summary>
+    public string? Recurrence { get; set; }
+
+    /// <summary>Repeat every N units (defaults to 1). Only used when Recurrence isn't None.</summary>
+    public int? RecurrenceInterval { get; set; }
+
     /// <summary>Optional free-form labels.</summary>
     public List<string>? Tags { get; set; }
 }

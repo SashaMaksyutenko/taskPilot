@@ -6,6 +6,7 @@ const { getPublic } = vi.hoisted(() => ({ getPublic: vi.fn() }))
 
 vi.mock('../../services/statsService', () => ({ statsService: { getPublic } }))
 vi.mock('react-i18next', () => ({ useTranslation: () => ({ t: (k: string) => k }) }))
+vi.mock('react-router-dom', () => ({ Link: ({ children }: { children: React.ReactNode }) => <a>{children}</a> }))
 
 describe('StatsFooter', () => {
   beforeEach(() => {

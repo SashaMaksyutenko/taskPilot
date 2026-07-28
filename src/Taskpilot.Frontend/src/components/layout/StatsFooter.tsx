@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Link } from 'react-router-dom'
 import { statsService } from '../../services/statsService'
 import type { PublicStats } from '../../types/stats'
 
@@ -41,6 +42,9 @@ export default function StatsFooter() {
             <span className="font-semibold tabular-nums text-foreground">{it.value}</span> {it.label}
           </span>
         ))}
+        <Link to="/pricing" className="font-semibold text-primary hover:underline">
+          {t('pricing.nav')}
+        </Link>
       </div>
     </footer>
   )

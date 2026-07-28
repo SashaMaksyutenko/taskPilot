@@ -11,7 +11,7 @@ import { createTaskConnection } from '../../lib/taskHub'
 import { projectService } from '../../services/projectService'
 import { taskService, type ExtensionRequest } from '../../services/taskService'
 import { userService, type UserSearchResult } from '../../services/userService'
-import type { Task, TaskComment } from '../../types/project'
+import { RECURRENCE_OPTIONS, type Task, type TaskComment } from '../../types/project'
 
 const PRIORITIES = ['Low', 'Medium', 'High']
 
@@ -54,6 +54,8 @@ export default function TaskDetailModal({
   const [description, setDescription] = useState(task.description ?? '')
   const [priority, setPriority] = useState(task.priority)
   const [deadline, setDeadline] = useState(toDateInput(task.deadline))
+  const [recurrence, setRecurrence] = useState(task.recurrence ?? 'None')
+  const [recurrenceInterval, setRecurrenceInterval] = useState(task.recurrenceInterval ?? 1)
   const [tags, setTags] = useState<string[]>(task.tags ?? [])
   const [tagInput, setTagInput] = useState('')
 
@@ -302,6 +304,8 @@ export default function TaskDetailModal({
         assigneeId,
         deadline: deadline ? new Date(deadline).toISOString() : null,
         tags,
+        recurrence,
+        recurrenceInterval,
       })
       onSaved(updated)
       onClose()
@@ -376,6 +380,36 @@ export default function TaskDetailModal({
               <p className="mt-1 text-xs text-muted">{t('taskModal.deadlineOwnerOnly')}</p>
             )}
           </div>
+        </div>
+
+        {/* Recurrence — when set, completing the task spawns the next occurrence. */}
+        <div className="mb-4 grid grid-cols-2 gap-4">
+          <div>
+            <label className="mb-1 block text-sm font-medium text-foreground">{t('taskModal.recurrence')}</label>
+            <select
+              value={recurrence}
+              onChange={(e) => setRecurrence(e.target.value)}
+              className="w-full rounded-lg border border-border bg-canvas px-2 py-2 text-sm text-foreground outline-none"
+            >
+              {RECURRENCE_OPTIONS.map((r) => (
+                <option key={r} value={r}>
+                  {t(`taskModal.recurrenceOption.${r}`, r)}
+                </option>
+              ))}
+            </select>
+          </div>
+          {recurrence !== 'None' && (
+            <div>
+              <label className="mb-1 block text-sm font-medium text-foreground">{t('taskModal.recurrenceEvery')}</label>
+              <input
+                type="number"
+                min={1}
+                value={recurrenceInterval}
+                onChange={(e) => setRecurrenceInterval(Math.max(1, Number(e.target.value) || 1))}
+                className="w-full rounded-lg border border-border bg-canvas px-2 py-2 text-sm text-foreground outline-none"
+              />
+            </div>
+          )}
         </div>
 
         {/* Deadline-extension requests */}

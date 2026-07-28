@@ -632,6 +632,14 @@
     "priority": "Priority",
     "deadline": "Deadline",
     "deadlineOwnerOnly": "Only the project owner can change the deadline.",
+    "recurrence": "Repeat",
+    "recurrenceEvery": "Every (N)",
+    "recurrenceOption": {
+      "None": "Doesn't repeat",
+      "Daily": "Daily",
+      "Weekly": "Weekly",
+      "Monthly": "Monthly"
+    },
     "assignee": "Assignee",
     "unassign": "Unassign",
     "unassigned": "Unassigned",

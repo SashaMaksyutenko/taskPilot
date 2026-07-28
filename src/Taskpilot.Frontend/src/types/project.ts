@@ -36,7 +36,13 @@ export interface Task {
   tags: string[]
   timeSpentSeconds: number
   timerStartedAt: string | null
+  /** "None" | "Daily" | "Weekly" | "Monthly". */
+  recurrence: string
+  recurrenceInterval: number
 }
+
+/** Task recurrence options offered in the UI. */
+export const RECURRENCE_OPTIONS = ['None', 'Daily', 'Weekly', 'Monthly'] as const
 
 export type ProjectMemberRole = 'Editor' | 'Viewer'
 

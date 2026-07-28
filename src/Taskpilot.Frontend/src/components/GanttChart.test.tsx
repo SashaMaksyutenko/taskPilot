@@ -26,6 +26,8 @@ const task = (over: Partial<Task>): Task => ({
   tags: [],
   timeSpentSeconds: 0,
   timerStartedAt: null,
+  recurrence: 'None',
+  recurrenceInterval: 1,
   ...over,
 })
 

@@ -20,6 +20,8 @@ export const taskService = {
       deadline?: string
       tags?: string[]
       parentTaskId?: string
+      recurrence?: string
+      recurrenceInterval?: number
     },
   ): Promise<Task> {
     return api.post<Task>(`/api/projects/${projectId}/tasks`, data).then((r) => r.data)
@@ -39,6 +41,8 @@ export const taskService = {
       assigneeId?: string | null
       deadline?: string | null
       tags?: string[]
+      recurrence?: string
+      recurrenceInterval?: number
     },
   ): Promise<Task> {
     return api.put<Task>(`/api/tasks/${taskId}`, data).then((r) => r.data)

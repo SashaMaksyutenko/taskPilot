@@ -738,6 +738,14 @@ export default function BoardPage() {
                           >
                             {t(`board.priority.${task.priority}`, task.priority)}
                           </span>
+                          {task.recurrence && task.recurrence !== 'None' && (
+                            <span
+                              className="text-[11px] text-muted"
+                              title={t(`taskModal.recurrenceOption.${task.recurrence}`, task.recurrence)}
+                            >
+                              🔁
+                            </span>
+                          )}
                           {task.assigneeName && (
                             <span className="text-[11px] text-muted">@{task.assigneeName}</span>
                           )}

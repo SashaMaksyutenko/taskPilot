@@ -632,6 +632,14 @@
     "priority": "Пріоритет",
     "deadline": "Дедлайн",
     "deadlineOwnerOnly": "Змінювати дедлайн може лише власник проєкту.",
+    "recurrence": "Повторення",
+    "recurrenceEvery": "Кожні (N)",
+    "recurrenceOption": {
+      "None": "Не повторюється",
+      "Daily": "Щодня",
+      "Weekly": "Щотижня",
+      "Monthly": "Щомісяця"
+    },
     "assignee": "Виконавець",
     "unassign": "Зняти",
     "unassigned": "Не призначено",

@@ -1,4 +1,5 @@
 import {
+  BookOpen,
   Bookmark,
   Bot,
   Calendar,
@@ -11,6 +12,7 @@ import {
   Shield,
   ShoppingBag,
   MessagesSquare,
+  Tag,
   Users,
 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
@@ -87,6 +89,29 @@ export function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
         <Settings className="h-[18px] w-[18px]" strokeWidth={2} />
         {t('nav.settings', 'Settings')}
       </NavLink>
+
+      {/* Secondary links: the public docs/help and pricing pages. */}
+      <div className="mt-2 space-y-0.5 border-t border-border pt-2">
+        {[
+          { to: '/docs', key: 'docs.nav', icon: BookOpen },
+          { to: '/pricing', key: 'pricing.nav', icon: Tag },
+        ].map(({ to, key, icon: Icon }) => (
+          <NavLink
+            key={to}
+            to={to}
+            onClick={onNavigate}
+            className={({ isActive }) =>
+              cn(
+                'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition',
+                isActive ? 'bg-primary-muted text-primary' : 'text-muted hover:bg-canvas hover:text-foreground',
+              )
+            }
+          >
+            <Icon className="h-[18px] w-[18px] shrink-0" strokeWidth={2} />
+            {t(key)}
+          </NavLink>
+        ))}
+      </div>
     </nav>
   )
 }

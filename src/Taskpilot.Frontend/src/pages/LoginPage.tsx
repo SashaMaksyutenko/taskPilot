@@ -8,6 +8,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { z } from 'zod'
 import LangSwitch from '../components/LangSwitch'
 import SocialSignIn from '../components/auth/SocialSignIn'
+import AuthFooterLinks from '../components/AuthFooterLinks'
 import Button from '../components/ui/Button'
 import Card from '../components/ui/Card'
 import Input from '../components/ui/Input'
@@ -145,6 +146,7 @@ export default function LoginPage() {
             </Link>
           </p>
         </Card>
+        <AuthFooterLinks />
       </div>
     </div>
   )

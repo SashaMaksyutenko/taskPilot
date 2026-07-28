@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import { Link, useParams } from 'react-router-dom'
 import Markdown from '../components/Markdown'
+import PublicPageHeader from '../components/PublicPageHeader'
 import { DOC_ARTICLES } from '../data/docsContent'
 
 /**
@@ -16,26 +17,7 @@ export default function DocsPage() {
 
   return (
     <div className="min-h-screen gradient-hero text-foreground">
-      <header className="mx-auto flex max-w-6xl items-center gap-3 px-6 py-5">
-        <Link to="/" className="flex items-center gap-3">
-          <img src="/logo-mark.svg" alt="" className="h-9 w-9" />
-          <span className="text-lg font-bold tracking-tight">TaskPilot</span>
-        </Link>
-        <div className="ml-auto flex items-center gap-3">
-          <Link to="/" className="text-sm font-semibold text-muted hover:text-foreground">
-            ← {t('nav.home')}
-          </Link>
-          <Link to="/pricing" className="text-sm font-semibold text-muted hover:text-foreground">
-            {t('pricing.nav')}
-          </Link>
-          <Link
-            to="/register"
-            className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white transition hover:bg-primary-hover"
-          >
-            {t('landing.getStarted')}
-          </Link>
-        </div>
-      </header>
+      <PublicPageHeader />
 
       <main className="mx-auto max-w-6xl px-6 pb-20">
         <h1 className="mb-8 text-3xl font-extrabold tracking-tight">{t('docs.title')}</h1>

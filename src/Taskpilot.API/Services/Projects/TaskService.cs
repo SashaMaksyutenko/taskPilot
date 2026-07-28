@@ -24,6 +24,7 @@ public class TaskService : ITaskService
     private readonly IReputationService _reputation;
     private readonly IAuditService _audit;
     private readonly ITaskAttachmentService _attachments;
+    private readonly IAutomationService _automation;
     private readonly ILogger<TaskService> _logger;
 
     public TaskService(
@@ -33,6 +34,7 @@ public class TaskService : ITaskService
         IReputationService reputation,
         IAuditService audit,
         ITaskAttachmentService attachments,
+        IAutomationService automation,
         ILogger<TaskService> logger)
     {
         _context = context;
@@ -41,6 +43,7 @@ public class TaskService : ITaskService
         _reputation = reputation;
         _audit = audit;
         _attachments = attachments;
+        _automation = automation;
         _logger = logger;
     }
 
@@ -199,6 +202,9 @@ public class TaskService : ITaskService
 
         // Open the task's history. The title is recorded because it can be edited later.
         await AuditAsync(userId, TaskAuditActions.Created, task.Id, $"Created \"{task.Title}\" ({task.Priority}).");
+
+        // Run any "on task created" project automations (may set priority/assignee, comment, notify).
+        await _automation.RunOnTaskCreatedAsync(task);
 
         _logger.LogInformation("Task created. TaskId: {TaskId}, ProjectId: {ProjectId}", task.Id, projectId);
         return Result<TaskDto>.Ok(await LoadDtoAsync(task.Id));
@@ -424,6 +430,10 @@ public class TaskService : ITaskService
             if (previousStatus != ProjectTaskStatus.Done && task.RecurrenceType != RecurrenceType.None)
                 await SpawnNextOccurrenceAsync(userId, task);
         }
+
+        // Run any "on status changed" project automations when the status actually changed.
+        if (previousStatus != parsed)
+            await _automation.RunOnTaskStatusChangedAsync(task);
 
         _logger.LogInformation("Task status changed. TaskId: {TaskId}, Status: {Status}", taskId, parsed);
         return Result<TaskDto>.Ok(await LoadDtoAsync(task.Id));

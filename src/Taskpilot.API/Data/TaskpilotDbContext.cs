@@ -112,6 +112,8 @@ public class TaskpilotDbContext : DbContext
     /// <summary>Comments on project tasks.</summary>
     public DbSet<TaskComment> TaskComments => Set<TaskComment>();
 
+    public DbSet<AutomationRule> AutomationRules => Set<AutomationRule>();
+
     /// <summary>Moderation warnings issued to users.</summary>
     public DbSet<UserWarning> UserWarnings => Set<UserWarning>();
 
@@ -729,6 +731,27 @@ public class TaskpilotDbContext : DbContext
                   .WithMany()
                   .HasForeignKey(t => t.ParentTaskId)
                   .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        // AutomationRule entity configuration
+        modelBuilder.Entity<AutomationRule>(entity =>
+        {
+            entity.HasKey(r => r.Id);
+
+            entity.Property(r => r.Name).IsRequired().HasMaxLength(120);
+            entity.Property(r => r.Trigger).HasConversion<string>().HasMaxLength(32).IsRequired();
+            entity.Property(r => r.TriggerStatus).HasConversion<string>().HasMaxLength(20);
+            entity.Property(r => r.Action).HasConversion<string>().HasMaxLength(32).IsRequired();
+            entity.Property(r => r.ActionValue).HasMaxLength(2000);
+
+            // Rules are looked up per project when a task event fires.
+            entity.HasIndex(r => r.ProjectId);
+
+            // Deleting a project removes its automation rules.
+            entity.HasOne(r => r.Project)
+                  .WithMany()
+                  .HasForeignKey(r => r.ProjectId)
+                  .OnDelete(DeleteBehavior.Cascade);
         });
 
         // ProjectTemplate entity configuration

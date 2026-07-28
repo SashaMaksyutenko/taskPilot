@@ -18,7 +18,7 @@ public class TaskPermissionTests
 {
     private static TaskService Create(TaskpilotDbContext ctx) =>
         new(ctx, Mock.Of<IWebhookService>(), Mock.Of<INotificationService>(), Mock.Of<IReputationService>(),
-            Mock.Of<IAuditService>(), Mock.Of<ITaskAttachmentService>(), NullLogger<TaskService>.Instance);
+            Mock.Of<IAuditService>(), Mock.Of<ITaskAttachmentService>(), Mock.Of<IAutomationService>(), NullLogger<TaskService>.Instance);
 
     /// <summary>Adds an Editor member to the project and returns their id.</summary>
     private static async Task<Guid> AddEditorAsync(TaskpilotDbContext ctx, Guid projectId, string name)

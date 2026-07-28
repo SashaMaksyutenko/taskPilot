@@ -148,6 +148,48 @@
     "copy": "Copy text",
     "empty": "No notes yet."
   },
+  "pricing": {
+    "nav": "Pricing",
+    "badge": "Simple, transparent pricing",
+    "title": "Pricing that scales with your team",
+    "subtitle": "Start free. Upgrade when you need AI, automations and integrations.",
+    "popular": "Most popular",
+    "perUserMonth": "/ user / month",
+    "custom": "Custom",
+    "footnote": "All plans include unlimited tasks, dark mode, mobile PWA and end-to-end encrypted file storage.",
+    "ctaFree": "Get started free",
+    "ctaPro": "Start free trial",
+    "ctaEnterprise": "Contact sales",
+    "tier": {
+      "free": "Free",
+      "pro": "Pro",
+      "enterprise": "Enterprise"
+    },
+    "tagline": {
+      "free": "For individuals and small teams getting started.",
+      "pro": "For growing teams that want automation and AI.",
+      "enterprise": "For organizations that need control and support."
+    },
+    "feature": {
+      "projects": "Unlimited projects & Kanban boards",
+      "calendar": "Calendar & Gantt timeline",
+      "collaboration": "Real-time chat & team collaboration",
+      "forum": "Community forum",
+      "sso": "Google / GitHub / LinkedIn sign-in",
+      "everythingFree": "Everything in Free",
+      "ai": "AI assistant & subtask generation",
+      "recurring": "Recurring tasks",
+      "automations": "Automations (rules & robots)",
+      "marketplace": "Task marketplace & reputation",
+      "integrations": "Telegram, email & webhook integrations",
+      "reports": "Reports, analytics & exports",
+      "everythingPro": "Everything in Pro",
+      "branding": "Custom organization branding",
+      "api": "API keys & webhooks",
+      "audit": "Audit log & admin analytics",
+      "support": "Priority support"
+    }
+  },
   "landing": {
     "tagline": "Your co-pilot for team productivity",
     "subtitle": "Projects, real-time chat, a task marketplace, forum, notes and more — all in one place.",

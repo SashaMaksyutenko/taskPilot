@@ -21,6 +21,7 @@ import BookmarksPage from './pages/BookmarksPage'
 import SearchPage from './pages/SearchPage'
 import ProjectsPage from './pages/ProjectsPage'
 import RootPage from './pages/RootPage'
+import PricingPage from './pages/PricingPage'
 import SettingsPage from './pages/SettingsPage'
 import TopicPage from './pages/TopicPage'
 import UserProfilePage from './pages/UserProfilePage'
@@ -62,6 +63,9 @@ function App() {
         <Route path="/auth/google/callback" element={<GoogleCallbackPage />} />
         <Route path="/auth/github/callback" element={<GitHubCallbackPage />} />
         <Route path="/auth/linkedin/callback" element={<LinkedInCallbackPage />} />
+
+        {/* Public marketing pricing page (reachable whether signed in or not). */}
+        <Route path="/pricing" element={<PricingPage />} />
 
         {/* Site root: landing for guests, dashboard for logged-in users. */}
         <Route path="/" element={<RootPage />} />

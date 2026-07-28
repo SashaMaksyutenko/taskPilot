@@ -49,6 +49,9 @@ export default function LandingPage() {
         <span className="text-lg font-bold tracking-tight">TaskPilot</span>
         <div className="ml-auto flex items-center gap-3">
           <LangSwitch />
+          <Link to="/pricing" className="text-sm font-semibold text-muted hover:text-foreground">
+            {t('pricing.nav')}
+          </Link>
           <Link to="/login" className="text-sm font-semibold text-muted hover:text-foreground">
             {t('landing.login')}
           </Link>

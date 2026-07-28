@@ -209,6 +209,36 @@
       "Rejected": "Rejected"
     }
   },
+  "automation": {
+    "button": "Automations",
+    "title": "Automations",
+    "subtitle": "Run an action automatically when something happens to a task.",
+    "empty": "No automations yet.",
+    "newRule": "New rule",
+    "namePlaceholder": "Name (optional)",
+    "when": "When",
+    "status": "Status",
+    "anyStatus": "any status",
+    "then": "Then",
+    "value": "Value",
+    "add": "Add rule",
+    "delete": "Delete",
+    "on": "On",
+    "off": "Off",
+    "failed": "Could not save the rule.",
+    "selectMember": "Select a member",
+    "commentPlaceholder": "Comment text…",
+    "trigger": {
+      "OnTaskCreated": "a task is created",
+      "OnTaskStatusChanged": "a task moves to"
+    },
+    "action": {
+      "SetPriority": "Set priority",
+      "AssignToUser": "Assign to",
+      "NotifyOwner": "Notify the project owner",
+      "AddComment": "Add a comment"
+    }
+  },
   "members": {
     "button": "Members",
     "title": "Project members",

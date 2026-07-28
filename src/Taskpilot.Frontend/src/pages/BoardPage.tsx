@@ -5,6 +5,7 @@ import TaskActionsDropdown from '../components/menus/TaskActionsDropdown'
 import TaskContextMenu from '../components/menus/TaskContextMenu'
 import TaskDetailModal from '../components/modals/TaskDetailModal'
 import ProjectMembersModal from '../components/modals/ProjectMembersModal'
+import AutomationsModal from '../components/modals/AutomationsModal'
 import ConfirmDialog from '../components/modals/ConfirmDialog'
 import Button from '../components/ui/Button'
 import Input from '../components/ui/Input'
@@ -74,6 +75,7 @@ export default function BoardPage() {
     setSelectedTask(task)
   }
   const [membersOpen, setMembersOpen] = useState(false)
+  const [automationsOpen, setAutomationsOpen] = useState(false)
   const [canWrite, setCanWrite] = useState(true)
   // Other projects this task can be moved to (owned/active, excluding the current one).
   const [moveTargets, setMoveTargets] = useState<{ id: string; name: string }[]>([])
@@ -443,6 +445,11 @@ export default function BoardPage() {
           <Button variant="secondary" size="sm" onClick={() => setMembersOpen(true)}>
             {t('members.button')}
           </Button>
+          {isOwner && (
+            <Button variant="secondary" size="sm" onClick={() => setAutomationsOpen(true)}>
+              {t('automation.button')}
+            </Button>
+          )}
           <Button variant="secondary" size="sm" onClick={exportCsv}>
             {t('board.exportCsv')}
           </Button>
@@ -794,6 +801,14 @@ export default function BoardPage() {
           currentUserId={currentUserId}
           onClose={() => setMembersOpen(false)}
           onLeft={() => navigate('/projects')}
+        />
+      )}
+
+      {automationsOpen && (
+        <AutomationsModal
+          projectId={projectId}
+          members={members}
+          onClose={() => setAutomationsOpen(false)}
         />
       )}
 

@@ -17,6 +17,7 @@
     "actionFailed": "Something went wrong. Please try again."
   },
   "nav": {
+    "home": "Home",
     "dashboard": "Dashboard",
     "projects": "Projects",
     "calendar": "Calendar",
@@ -147,6 +148,10 @@
     "unpin": "Unpin",
     "copy": "Copy text",
     "empty": "No notes yet."
+  },
+  "docs": {
+    "nav": "Docs",
+    "title": "Documentation"
   },
   "pricing": {
     "nav": "Pricing",

@@ -22,6 +22,7 @@ import SearchPage from './pages/SearchPage'
 import ProjectsPage from './pages/ProjectsPage'
 import RootPage from './pages/RootPage'
 import PricingPage from './pages/PricingPage'
+import DocsPage from './pages/DocsPage'
 import SettingsPage from './pages/SettingsPage'
 import TopicPage from './pages/TopicPage'
 import UserProfilePage from './pages/UserProfilePage'
@@ -66,6 +67,10 @@ function App() {
 
         {/* Public marketing pricing page (reachable whether signed in or not). */}
         <Route path="/pricing" element={<PricingPage />} />
+
+        {/* Public docs / help site. */}
+        <Route path="/docs" element={<DocsPage />} />
+        <Route path="/docs/:slug" element={<DocsPage />} />
 
         {/* Site root: landing for guests, dashboard for logged-in users. */}
         <Route path="/" element={<RootPage />} />

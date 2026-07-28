@@ -41,6 +41,12 @@ export default function PricingPage() {
           <span className="text-lg font-bold tracking-tight">TaskPilot</span>
         </Link>
         <div className="ml-auto flex items-center gap-3">
+          <Link to="/" className="text-sm font-semibold text-muted hover:text-foreground">
+            ← {t('nav.home')}
+          </Link>
+          <Link to="/docs" className="text-sm font-semibold text-muted hover:text-foreground">
+            {t('docs.nav')}
+          </Link>
           <Link to="/login" className="text-sm font-semibold text-muted hover:text-foreground">
             {t('landing.login')}
           </Link>

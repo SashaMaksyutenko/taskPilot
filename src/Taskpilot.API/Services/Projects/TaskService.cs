@@ -376,6 +376,11 @@ public class TaskService : ITaskService
             !await ProjectAccess.IsTaskProjectOwnerAsync(_context, taskId, userId))
             return Result<TaskDto>.Fail("Only the project owner can move a task to Done.");
 
+        // A task blocked by unfinished dependencies cannot be completed until they're done.
+        if (parsed is ProjectTaskStatus.Done &&
+            await _context.TaskDependencies.AnyAsync(d => d.TaskId == taskId && d.DependsOnTask.Status != ProjectTaskStatus.Done))
+            return Result<TaskDto>.Fail("This task is blocked by unfinished tasks it depends on.");
+
         // Remember where the task came from so the history can show the transition.
         var previousStatus = task.Status;
 

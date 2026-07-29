@@ -380,4 +380,24 @@ public class TaskServiceTests
 
         Assert.False(result.Succeeded);
     }
+
+    [Fact]
+    public async Task ChangeStatus_ToDone_BlockedByUnfinishedDependency_FailsUntilBlockerDone()
+    {
+        using var ctx = TestDb.CreateContext();
+        var owner = await TestDb.AddUserAsync(ctx);
+        var projectId = await TestDb.AddProjectAsync(ctx, owner);
+        var svc = Create(ctx);
+        var a = (await svc.CreateTaskAsync(owner, projectId, new CreateTaskDto { Title = "A", AssigneeId = owner })).Value!;
+        var b = (await svc.CreateTaskAsync(owner, projectId, new CreateTaskDto { Title = "B", AssigneeId = owner })).Value!;
+        ctx.TaskDependencies.Add(new TaskDependency { Id = Guid.NewGuid(), TaskId = a.Id, DependsOnTaskId = b.Id });
+        await ctx.SaveChangesAsync();
+
+        // A is blocked by B (still Backlog) — it cannot be completed yet.
+        Assert.False((await svc.ChangeStatusAsync(owner, a.Id, "Done")).Succeeded);
+
+        // Finish the blocker, then A can be completed.
+        Assert.True((await svc.ChangeStatusAsync(owner, b.Id, "Done")).Succeeded);
+        Assert.True((await svc.ChangeStatusAsync(owner, a.Id, "Done")).Succeeded);
+    }
 }

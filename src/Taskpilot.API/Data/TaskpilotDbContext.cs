@@ -114,6 +114,8 @@ public class TaskpilotDbContext : DbContext
 
     public DbSet<AutomationRule> AutomationRules => Set<AutomationRule>();
 
+    public DbSet<TaskDependency> TaskDependencies => Set<TaskDependency>();
+
     /// <summary>Moderation warnings issued to users.</summary>
     public DbSet<UserWarning> UserWarnings => Set<UserWarning>();
 
@@ -731,6 +733,25 @@ public class TaskpilotDbContext : DbContext
                   .WithMany()
                   .HasForeignKey(t => t.ParentTaskId)
                   .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        // TaskDependency entity configuration
+        modelBuilder.Entity<TaskDependency>(entity =>
+        {
+            entity.HasKey(d => d.Id);
+
+            // A task depends on another at most once.
+            entity.HasIndex(d => new { d.TaskId, d.DependsOnTaskId }).IsUnique();
+
+            // Deleting either task removes the dependency edge (Postgres allows both cascade paths).
+            entity.HasOne(d => d.Task)
+                  .WithMany()
+                  .HasForeignKey(d => d.TaskId)
+                  .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(d => d.DependsOnTask)
+                  .WithMany()
+                  .HasForeignKey(d => d.DependsOnTaskId)
+                  .OnDelete(DeleteBehavior.Cascade);
         });
 
         // AutomationRule entity configuration

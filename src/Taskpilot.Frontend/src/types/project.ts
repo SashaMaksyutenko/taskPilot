@@ -81,6 +81,32 @@ export interface PublicBoard {
   tasks: PublicTask[]
 }
 
+/** Created vs completed counts for one week (mirrors WeekBucketDto). */
+export interface WeekBucket {
+  weekStart: string
+  created: number
+  completed: number
+}
+
+/** Open/done load for one assignee (mirrors AssigneeLoadDto). */
+export interface AssigneeLoad {
+  name: string
+  open: number
+  done: number
+}
+
+/** Aggregate delivery metrics for a project board (mirrors ProjectAnalyticsDto). */
+export interface ProjectAnalytics {
+  totalTasks: number
+  byStatus: Record<string, number>
+  byPriority: Record<string, number>
+  weeks: WeekBucket[]
+  avgCycleTimeDays: number | null
+  throughputThisWeek: number
+  throughputPrevWeek: number
+  byAssignee: AssigneeLoad[]
+}
+
 export type ProjectMemberRole = 'Editor' | 'Viewer'
 
 export interface ProjectMember {

@@ -1,5 +1,5 @@
 import api from '../lib/api'
-import type { Project, ProjectMember, ShareLink, PublicBoard } from '../types/project'
+import type { Project, ProjectMember, ShareLink, PublicBoard, ProjectAnalytics } from '../types/project'
 
 /** REST calls for projects. */
 export const projectService = {
@@ -87,6 +87,11 @@ export const projectService = {
   /** Fetches a shared board by token (public — no auth required). */
   getPublicBoard(token: string): Promise<PublicBoard> {
     return api.get<PublicBoard>(`/api/public/boards/${token}`).then((r) => r.data)
+  },
+
+  /** Aggregate delivery metrics for a project board (any member). */
+  getAnalytics(projectId: string): Promise<ProjectAnalytics> {
+    return api.get<ProjectAnalytics>(`/api/projects/${projectId}/analytics`).then((r) => r.data)
   },
 
   leaveProject(projectId: string): Promise<void> {

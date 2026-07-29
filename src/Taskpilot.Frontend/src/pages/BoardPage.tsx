@@ -7,6 +7,7 @@ import TaskDetailModal from '../components/modals/TaskDetailModal'
 import ProjectMembersModal from '../components/modals/ProjectMembersModal'
 import AutomationsModal from '../components/modals/AutomationsModal'
 import ShareBoardModal from '../components/modals/ShareBoardModal'
+import ProjectAnalyticsPanel from '../components/ProjectAnalyticsPanel'
 import ConfirmDialog from '../components/modals/ConfirmDialog'
 import Button from '../components/ui/Button'
 import Input from '../components/ui/Input'
@@ -370,7 +371,7 @@ export default function BoardPage() {
 
   // The toolbar would be too crowded with four report buttons, so they live in a menu.
   const [reportsOpen, setReportsOpen] = useState(false)
-  const [view, setView] = useState<'board' | 'gantt' | 'team'>('board')
+  const [view, setView] = useState<'board' | 'gantt' | 'team' | 'analytics'>('board')
   const runReport = (fn: () => Promise<void>) => {
     setReportsOpen(false)
     void fn()
@@ -431,7 +432,7 @@ export default function BoardPage() {
 
           {/* Board / timeline switcher */}
           <div className="ml-auto inline-flex overflow-hidden rounded-lg border border-border">
-            {(['board', 'gantt', 'team'] as const).map((v) => (
+            {(['board', 'gantt', 'team', 'analytics'] as const).map((v) => (
               <button
                 key={v}
                 onClick={() => setView(v)}
@@ -646,6 +647,9 @@ export default function BoardPage() {
 
         {/* Team availability — who is busy with what over the next month */}
         {view === 'team' && <TeamWorkload projectId={projectId} />}
+
+        {/* Delivery analytics — status/priority mix, weekly trend, cycle time, workload */}
+        {view === 'analytics' && <ProjectAnalyticsPanel projectId={projectId} />}
 
         {/* Columns */}
         {view === 'board' && (

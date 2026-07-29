@@ -655,7 +655,7 @@
     "exportXlsx": "Export Excel",
     "exportPdf": "Export PDF",
     "reports": "Reports",
-    "view": { "board": "Board", "gantt": "Timeline", "team": "Team" },
+    "view": { "board": "Board", "gantt": "Timeline", "team": "Team", "analytics": "Analytics" },
     "reportPdf": "Project — PDF",
     "reportXlsx": "Project — Excel",
     "teamReportPdf": "Team — PDF",
@@ -763,6 +763,23 @@
     "commentPlaceholder": "Write a comment… (Ctrl+Enter to post)",
     "addComment": "Comment",
     "deleteComment": "Delete comment"
+  },
+  "analytics": {
+    "loading": "Loading analytics…",
+    "totalTasks": "Total tasks",
+    "avgCycleTime": "Avg cycle time",
+    "throughput": "Completed this week",
+    "days": "{{count}} days",
+    "vsPrev": "{{delta}} vs last week",
+    "burnUp": "Created vs completed (8 weeks)",
+    "created": "Created",
+    "completed": "Completed",
+    "byStatus": "By status",
+    "byPriority": "By priority",
+    "workload": "Workload by assignee",
+    "open": "Open",
+    "done": "Done",
+    "unassigned": "Unassigned"
   },
   "gantt": {
     "empty": "No tasks with a deadline yet — set one to see the timeline.",

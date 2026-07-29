@@ -655,7 +655,7 @@
     "exportXlsx": "Експорт Excel",
     "exportPdf": "Експорт PDF",
     "reports": "Звіти",
-    "view": { "board": "Дошка", "gantt": "Таймлайн", "team": "Команда" },
+    "view": { "board": "Дошка", "gantt": "Таймлайн", "team": "Команда", "analytics": "Аналітика" },
     "reportPdf": "Проєкт — PDF",
     "reportXlsx": "Проєкт — Excel",
     "teamReportPdf": "Команда — PDF",
@@ -763,6 +763,23 @@
     "commentPlaceholder": "Напишіть коментар… (Ctrl+Enter — надіслати)",
     "addComment": "Коментувати",
     "deleteComment": "Видалити коментар"
+  },
+  "analytics": {
+    "loading": "Завантаження аналітики…",
+    "totalTasks": "Усього задач",
+    "avgCycleTime": "Сер. час виконання",
+    "throughput": "Завершено цього тижня",
+    "days": "{{count}} дн.",
+    "vsPrev": "{{delta}} проти минулого тижня",
+    "burnUp": "Створено vs завершено (8 тижнів)",
+    "created": "Створено",
+    "completed": "Завершено",
+    "byStatus": "За статусом",
+    "byPriority": "За пріоритетом",
+    "workload": "Навантаження по виконавцях",
+    "open": "Відкриті",
+    "done": "Завершені",
+    "unassigned": "Без виконавця"
   },
   "gantt": {
     "empty": "Ще немає задач із дедлайном — встановіть його, щоб побачити таймлайн.",

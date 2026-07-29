@@ -1,5 +1,5 @@
 import api from '../lib/api'
-import type { Task, TaskComment, TaskStatus } from '../types/project'
+import type { Task, TaskComment, TaskStatus, TaskDependencies } from '../types/project'
 import type { CalendarTask } from '../types/calendar'
 import type { Attachment, FileVersion } from '../types/attachment'
 
@@ -50,6 +50,20 @@ export const taskService = {
 
   changeStatus(taskId: string, status: TaskStatus): Promise<Task> {
     return api.post<Task>(`/api/tasks/${taskId}/status`, { status }).then((r) => r.data)
+  },
+
+  /** A task's dependency graph (what it's blocked by, what it blocks, and whether it's blocked). */
+  getDependencies(taskId: string): Promise<TaskDependencies> {
+    return api.get<TaskDependencies>(`/api/tasks/${taskId}/dependencies`).then((r) => r.data)
+  },
+
+  /** Adds "this task depends on (is blocked by) dependsOnTaskId"; returns the updated graph. */
+  addDependency(taskId: string, dependsOnTaskId: string): Promise<TaskDependencies> {
+    return api.post<TaskDependencies>(`/api/tasks/${taskId}/dependencies`, { dependsOnTaskId }).then((r) => r.data)
+  },
+
+  removeDependency(taskId: string, dependsOnTaskId: string): Promise<void> {
+    return api.delete(`/api/tasks/${taskId}/dependencies/${dependsOnTaskId}`).then(() => undefined)
   },
 
   /** Changes the status of several tasks at once. */

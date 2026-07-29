@@ -44,6 +44,20 @@ export interface Task {
 /** Task recurrence options offered in the UI. */
 export const RECURRENCE_OPTIONS = ['None', 'Daily', 'Weekly', 'Monthly'] as const
 
+/** A light reference to a task, used in dependency listings (mirrors TaskRefDto). */
+export interface TaskRef {
+  id: string
+  title: string
+  status: string
+}
+
+/** A task's dependency graph (mirrors TaskDependenciesDto). */
+export interface TaskDependencies {
+  dependsOn: TaskRef[]
+  blocks: TaskRef[]
+  isBlocked: boolean
+}
+
 export type ProjectMemberRole = 'Editor' | 'Viewer'
 
 export interface ProjectMember {

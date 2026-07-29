@@ -788,6 +788,7 @@ export default function BoardPage() {
           task={selectedTask}
           showHistory={openOnHistory}
           isOwner={isOwner}
+          canWrite={canWrite}
           onClose={() => setSelectedTask(null)}
           onSaved={(updated) => setTasks((prev) => prev.map((t) => (t.id === updated.id ? updated : t)))}
           onDeleted={(taskId) => setTasks((prev) => prev.filter((t) => t.id !== taskId))}

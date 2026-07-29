@@ -12,6 +12,7 @@ import { projectService } from '../../services/projectService'
 import { taskService, type ExtensionRequest } from '../../services/taskService'
 import { userService, type UserSearchResult } from '../../services/userService'
 import { RECURRENCE_OPTIONS, type Task, type TaskComment } from '../../types/project'
+import TaskDependenciesSection from '../TaskDependenciesSection'
 
 const PRIORITIES = ['Low', 'Medium', 'High']
 
@@ -39,6 +40,7 @@ export default function TaskDetailModal({
   onDeleted,
   showHistory = false,
   isOwner = false,
+  canWrite = false,
 }: {
   task: Task
   onClose: () => void
@@ -48,6 +50,8 @@ export default function TaskDetailModal({
   showHistory?: boolean
   /** Whether the current user owns the project — only the owner may change the deadline. */
   isOwner?: boolean
+  /** Whether the current user may edit tasks (owner/Editor) — gates managing dependencies. */
+  canWrite?: boolean
 }) {
   const { t } = useTranslation()
   const [title, setTitle] = useState(task.title)
@@ -580,6 +584,11 @@ export default function TaskDetailModal({
               </ul>
             )}
           </div>
+        </div>
+
+        {/* Dependencies (blocked-by / blocks) */}
+        <div className="mb-4 border-t border-border pt-4">
+          <TaskDependenciesSection taskId={task.id} projectId={task.projectId} canWrite={canWrite} />
         </div>
 
         {/* Subtasks */}

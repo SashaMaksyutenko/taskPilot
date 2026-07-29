@@ -702,6 +702,15 @@
       "Rejected": "Rejected"
     }
   },
+  "deps": {
+    "title": "Dependencies",
+    "blocked": "Blocked",
+    "blockedBy": "Blocked by",
+    "blocksLabel": "Blocks",
+    "none": "Not blocked by anything.",
+    "addBlocker": "Add a blocking task…",
+    "remove": "Remove"
+  },
   "taskModal": {
     "title": "Task details",
     "titleField": "Title",

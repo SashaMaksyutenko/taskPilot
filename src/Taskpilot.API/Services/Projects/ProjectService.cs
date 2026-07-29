@@ -252,6 +252,88 @@ public class ProjectService : IProjectService
         return Result.Ok();
     }
 
+    /// <inheritdoc />
+    public async Task<Result<ShareLinkDto>> GetShareLinkAsync(Guid ownerId, Guid projectId)
+    {
+        var project = await GetOwnedAsync(projectId, ownerId);
+        if (project is null)
+            return Result<ShareLinkDto>.Fail("Project not found.");
+
+        return Result<ShareLinkDto>.Ok(new ShareLinkDto { Token = project.ShareToken, Enabled = project.ShareToken is not null });
+    }
+
+    /// <inheritdoc />
+    public async Task<Result<ShareLinkDto>> CreateShareLinkAsync(Guid ownerId, Guid projectId)
+    {
+        var project = await GetOwnedAsync(projectId, ownerId);
+        if (project is null)
+            return Result<ShareLinkDto>.Fail("Project not found.");
+
+        project.ShareToken ??= NewShareToken();
+        await _context.SaveChangesAsync();
+
+        _logger.LogInformation("Project share link created. ProjectId: {ProjectId}", projectId);
+        return Result<ShareLinkDto>.Ok(new ShareLinkDto { Token = project.ShareToken, Enabled = true });
+    }
+
+    /// <inheritdoc />
+    public async Task<Result> RevokeShareLinkAsync(Guid ownerId, Guid projectId)
+    {
+        var project = await GetOwnedAsync(projectId, ownerId);
+        if (project is null)
+            return Result.Fail("Project not found.");
+
+        project.ShareToken = null;
+        await _context.SaveChangesAsync();
+
+        _logger.LogInformation("Project share link revoked. ProjectId: {ProjectId}", projectId);
+        return Result.Ok();
+    }
+
+    /// <inheritdoc />
+    public async Task<Result<PublicBoardDto>> GetPublicBoardAsync(string token)
+    {
+        if (string.IsNullOrWhiteSpace(token))
+            return Result<PublicBoardDto>.Fail("Board not found.");
+
+        var project = await _context.Projects
+            .Where(p => p.ShareToken == token)
+            .Select(p => new { p.Name, p.Color })
+            .FirstOrDefaultAsync();
+        if (project is null)
+            return Result<PublicBoardDto>.Fail("Board not found.");
+
+        // Read-only, no ids or private data — just what a Kanban board shows.
+        var rows = await _context.ProjectTasks
+            .Where(t => t.Project.ShareToken == token)
+            .Select(t => new
+            {
+                t.Title, t.Status, t.Priority, t.Deadline, t.Tags,
+                AssigneeName = t.Assignee != null ? t.Assignee.Name : null,
+            })
+            .AsNoTracking()
+            .ToListAsync();
+
+        return Result<PublicBoardDto>.Ok(new PublicBoardDto
+        {
+            Name = project.Name,
+            Color = project.Color,
+            Tasks = rows.Select(r => new PublicTaskDto
+            {
+                Title = r.Title,
+                Status = r.Status.ToString(),
+                Priority = r.Priority.ToString(),
+                AssigneeName = r.AssigneeName,
+                Deadline = r.Deadline,
+                Tags = r.Tags ?? new List<string>(),
+            }).ToList(),
+        });
+    }
+
+    /// <summary>A long, URL-safe, hard-to-guess share token (64 hex chars).</summary>
+    private static string NewShareToken() =>
+        Guid.NewGuid().ToString("N") + Guid.NewGuid().ToString("N");
+
     // --- helpers ---
 
     /// <summary>Loads a tracked project only if it belongs to the given owner.</summary>

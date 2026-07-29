@@ -44,4 +44,16 @@ public interface IProjectService
 
     /// <summary>Lets a member leave a project they collaborate on (not the owner).</summary>
     Task<Result> LeaveAsync(Guid userId, Guid projectId);
+
+    /// <summary>Returns the project's current public-share state (owner only).</summary>
+    Task<Result<ShareLinkDto>> GetShareLinkAsync(Guid ownerId, Guid projectId);
+
+    /// <summary>Generates a public share link for the board if it doesn't have one (owner only).</summary>
+    Task<Result<ShareLinkDto>> CreateShareLinkAsync(Guid ownerId, Guid projectId);
+
+    /// <summary>Revokes the board's public share link (owner only).</summary>
+    Task<Result> RevokeShareLinkAsync(Guid ownerId, Guid projectId);
+
+    /// <summary>Resolves a share token to a read-only board for anonymous viewers.</summary>
+    Task<Result<PublicBoardDto>> GetPublicBoardAsync(string token);
 }

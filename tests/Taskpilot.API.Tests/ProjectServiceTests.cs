@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Taskpilot.API.DTOs.Projects;
+using Taskpilot.API.Models;
 using Taskpilot.API.Services;
 using Xunit;
 
@@ -79,5 +80,78 @@ public class ProjectServiceTests
 
         Assert.True(archived.Value!.IsArchived);
         Assert.False(restored.Value!.IsArchived);
+    }
+
+    private static async Task<Guid> AddTaskAsync(Taskpilot.API.Data.TaskpilotDbContext ctx, Guid projectId, Guid owner, string title)
+    {
+        var id = Guid.NewGuid();
+        ctx.ProjectTasks.Add(new ProjectTask { Id = id, ProjectId = projectId, CreatorId = owner, Title = title, Status = ProjectTaskStatus.Backlog });
+        await ctx.SaveChangesAsync();
+        return id;
+    }
+
+    [Fact]
+    public async Task CreateShareLink_GeneratesToken_AndPublicBoardResolves()
+    {
+        using var ctx = TestDb.CreateContext();
+        var owner = await TestDb.AddUserAsync(ctx, "Owner");
+        var svc = Create(ctx);
+        var project = (await svc.CreateProjectAsync(owner, new SaveProjectDto { Name = "Roadmap", Color = "#123" })).Value!;
+        await AddTaskAsync(ctx, project.Id, owner, "Public task");
+
+        var link = await svc.CreateShareLinkAsync(owner, project.Id);
+        Assert.True(link.Succeeded);
+        Assert.True(link.Value!.Enabled);
+        Assert.False(string.IsNullOrWhiteSpace(link.Value.Token));
+
+        var board = await svc.GetPublicBoardAsync(link.Value.Token!);
+        Assert.True(board.Succeeded);
+        Assert.Equal("Roadmap", board.Value!.Name);
+        Assert.Contains(board.Value.Tasks, t => t.Title == "Public task");
+    }
+
+    [Fact]
+    public async Task CreateShareLink_IsIdempotent()
+    {
+        using var ctx = TestDb.CreateContext();
+        var owner = await TestDb.AddUserAsync(ctx, "Owner");
+        var svc = Create(ctx);
+        var project = (await svc.CreateProjectAsync(owner, new SaveProjectDto { Name = "P" })).Value!;
+
+        var first = (await svc.CreateShareLinkAsync(owner, project.Id)).Value!.Token;
+        var second = (await svc.CreateShareLinkAsync(owner, project.Id)).Value!.Token;
+        Assert.Equal(first, second);
+    }
+
+    [Fact]
+    public async Task ShareLink_ByNonOwner_Fails()
+    {
+        using var ctx = TestDb.CreateContext();
+        var owner = await TestDb.AddUserAsync(ctx, "Owner");
+        var stranger = await TestDb.AddUserAsync(ctx, "Stranger");
+        var svc = Create(ctx);
+        var project = (await svc.CreateProjectAsync(owner, new SaveProjectDto { Name = "P" })).Value!;
+
+        Assert.False((await svc.CreateShareLinkAsync(stranger, project.Id)).Succeeded);
+    }
+
+    [Fact]
+    public async Task RevokeShareLink_MakesTheBoardUnavailable()
+    {
+        using var ctx = TestDb.CreateContext();
+        var owner = await TestDb.AddUserAsync(ctx, "Owner");
+        var svc = Create(ctx);
+        var project = (await svc.CreateProjectAsync(owner, new SaveProjectDto { Name = "P" })).Value!;
+        var token = (await svc.CreateShareLinkAsync(owner, project.Id)).Value!.Token!;
+
+        Assert.True((await svc.RevokeShareLinkAsync(owner, project.Id)).Succeeded);
+        Assert.False((await svc.GetPublicBoardAsync(token)).Succeeded);
+    }
+
+    [Fact]
+    public async Task GetPublicBoard_UnknownToken_Fails()
+    {
+        using var ctx = TestDb.CreateContext();
+        Assert.False((await Create(ctx).GetPublicBoardAsync("nope")).Succeeded);
     }
 }

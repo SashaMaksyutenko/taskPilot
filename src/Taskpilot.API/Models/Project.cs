@@ -29,6 +29,12 @@ public class Project
     /// <summary>UTC time the project was archived; null while active.</summary>
     public DateTime? ArchivedAt { get; set; }
 
+    /// <summary>
+    /// When set, the board is viewable read-only (no login) at this opaque token. Null = not shared.
+    /// The owner can generate or revoke it.
+    /// </summary>
+    public string? ShareToken { get; set; }
+
     /// <summary>Tasks belonging to this project.</summary>
     public ICollection<ProjectTask> Tasks { get; set; } = new List<ProjectTask>();
 

@@ -664,8 +664,11 @@ public class TaskpilotDbContext : DbContext
             entity.Property(p => p.Name).IsRequired().HasMaxLength(150);
             entity.Property(p => p.Description).HasMaxLength(5000);
             entity.Property(p => p.Color).HasMaxLength(20);
+            entity.Property(p => p.ShareToken).HasMaxLength(64);
 
             entity.HasIndex(p => p.OwnerId);
+            // Public board tokens resolve one project; unique (Postgres treats NULLs as distinct).
+            entity.HasIndex(p => p.ShareToken).IsUnique();
 
             entity.HasOne(p => p.Owner)
                   .WithMany()

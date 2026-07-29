@@ -59,6 +59,39 @@ public class ProjectsController : BaseApiController
         return result.Succeeded ? Ok(new { muted = result.Value }) : BadRequest(new { error = result.Error });
     }
 
+    /// <summary>Current public-share state of the board (owner only).</summary>
+    [HttpGet("{projectId:guid}/share")]
+    public async Task<IActionResult> GetShareLink(Guid projectId)
+    {
+        var userId = CurrentUserId();
+        if (userId is null) return Unauthorized();
+
+        var result = await _projects.GetShareLinkAsync(userId.Value, projectId);
+        return result.Succeeded ? Ok(result.Value) : NotFound(new { error = result.Error });
+    }
+
+    /// <summary>Generates (or returns) a public read-only share link for the board (owner only).</summary>
+    [HttpPost("{projectId:guid}/share")]
+    public async Task<IActionResult> CreateShareLink(Guid projectId)
+    {
+        var userId = CurrentUserId();
+        if (userId is null) return Unauthorized();
+
+        var result = await _projects.CreateShareLinkAsync(userId.Value, projectId);
+        return result.Succeeded ? Ok(result.Value) : BadRequest(new { error = result.Error });
+    }
+
+    /// <summary>Revokes the board's public share link (owner only).</summary>
+    [HttpDelete("{projectId:guid}/share")]
+    public async Task<IActionResult> RevokeShareLink(Guid projectId)
+    {
+        var userId = CurrentUserId();
+        if (userId is null) return Unauthorized();
+
+        var result = await _projects.RevokeShareLinkAsync(userId.Value, projectId);
+        return result.Succeeded ? NoContent() : BadRequest(new { error = result.Error });
+    }
+
     /// <summary>Creates a new project.</summary>
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] SaveProjectDto dto)

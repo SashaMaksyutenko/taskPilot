@@ -1,5 +1,5 @@
 import api from '../lib/api'
-import type { Project, ProjectMember } from '../types/project'
+import type { Project, ProjectMember, ShareLink, PublicBoard } from '../types/project'
 
 /** REST calls for projects. */
 export const projectService = {
@@ -67,6 +67,26 @@ export const projectService = {
 
   removeMember(projectId: string, userId: string): Promise<void> {
     return api.delete(`/api/projects/${projectId}/members/${userId}`).then(() => undefined)
+  },
+
+  /** Current public-share state of a board (owner only). */
+  getShareLink(projectId: string): Promise<ShareLink> {
+    return api.get<ShareLink>(`/api/projects/${projectId}/share`).then((r) => r.data)
+  },
+
+  /** Generates (or returns) the board's public read-only share link (owner only). */
+  createShareLink(projectId: string): Promise<ShareLink> {
+    return api.post<ShareLink>(`/api/projects/${projectId}/share`).then((r) => r.data)
+  },
+
+  /** Revokes the board's public share link (owner only). */
+  revokeShareLink(projectId: string): Promise<void> {
+    return api.delete(`/api/projects/${projectId}/share`).then(() => undefined)
+  },
+
+  /** Fetches a shared board by token (public — no auth required). */
+  getPublicBoard(token: string): Promise<PublicBoard> {
+    return api.get<PublicBoard>(`/api/public/boards/${token}`).then((r) => r.data)
   },
 
   leaveProject(projectId: string): Promise<void> {

@@ -23,6 +23,7 @@ import ProjectsPage from './pages/ProjectsPage'
 import RootPage from './pages/RootPage'
 import PricingPage from './pages/PricingPage'
 import DocsPage from './pages/DocsPage'
+import PublicBoardPage from './pages/PublicBoardPage'
 import SettingsPage from './pages/SettingsPage'
 import TopicPage from './pages/TopicPage'
 import UserProfilePage from './pages/UserProfilePage'
@@ -71,6 +72,9 @@ function App() {
         {/* Public docs / help site. */}
         <Route path="/docs" element={<DocsPage />} />
         <Route path="/docs/:slug" element={<DocsPage />} />
+
+        {/* Public read-only shared board (no login). */}
+        <Route path="/board/:token" element={<PublicBoardPage />} />
 
         {/* Site root: landing for guests, dashboard for logged-in users. */}
         <Route path="/" element={<RootPage />} />

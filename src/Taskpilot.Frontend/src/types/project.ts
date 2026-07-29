@@ -58,6 +58,29 @@ export interface TaskDependencies {
   isBlocked: boolean
 }
 
+/** Public share state of a board (mirrors ShareLinkDto). */
+export interface ShareLink {
+  token: string | null
+  enabled: boolean
+}
+
+/** A task on a public read-only board (mirrors PublicTaskDto). */
+export interface PublicTask {
+  title: string
+  status: string
+  priority: string
+  assigneeName: string | null
+  deadline: string | null
+  tags: string[]
+}
+
+/** A shared project board for anonymous viewers (mirrors PublicBoardDto). */
+export interface PublicBoard {
+  name: string
+  color: string | null
+  tasks: PublicTask[]
+}
+
 export type ProjectMemberRole = 'Editor' | 'Viewer'
 
 export interface ProjectMember {

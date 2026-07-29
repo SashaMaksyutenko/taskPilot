@@ -256,6 +256,20 @@
       "Rejected": "Rejected"
     }
   },
+  "share": {
+    "button": "Share",
+    "title": "Share this board",
+    "subtitle": "Create a public link so anyone can view this board read-only, without an account.",
+    "enable": "Create public link",
+    "disable": "Disable public link",
+    "copy": "Copy",
+    "copied": "Copied!",
+    "readOnlyNote": "Anyone with the link can view (but not edit) this board."
+  },
+  "publicBoard": {
+    "readOnly": "Read-only shared board",
+    "notFound": "This board isn't shared, or the link was revoked."
+  },
   "automation": {
     "button": "Automations",
     "title": "Automations",

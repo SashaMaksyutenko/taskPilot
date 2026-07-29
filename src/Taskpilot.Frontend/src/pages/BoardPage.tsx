@@ -6,6 +6,7 @@ import TaskContextMenu from '../components/menus/TaskContextMenu'
 import TaskDetailModal from '../components/modals/TaskDetailModal'
 import ProjectMembersModal from '../components/modals/ProjectMembersModal'
 import AutomationsModal from '../components/modals/AutomationsModal'
+import ShareBoardModal from '../components/modals/ShareBoardModal'
 import ConfirmDialog from '../components/modals/ConfirmDialog'
 import Button from '../components/ui/Button'
 import Input from '../components/ui/Input'
@@ -76,6 +77,7 @@ export default function BoardPage() {
   }
   const [membersOpen, setMembersOpen] = useState(false)
   const [automationsOpen, setAutomationsOpen] = useState(false)
+  const [shareOpen, setShareOpen] = useState(false)
   const [canWrite, setCanWrite] = useState(true)
   // Other projects this task can be moved to (owned/active, excluding the current one).
   const [moveTargets, setMoveTargets] = useState<{ id: string; name: string }[]>([])
@@ -450,6 +452,11 @@ export default function BoardPage() {
               {t('automation.button')}
             </Button>
           )}
+          {isOwner && (
+            <Button variant="secondary" size="sm" onClick={() => setShareOpen(true)}>
+              {t('share.button')}
+            </Button>
+          )}
           <Button variant="secondary" size="sm" onClick={exportCsv}>
             {t('board.exportCsv')}
           </Button>
@@ -812,6 +819,8 @@ export default function BoardPage() {
           onClose={() => setAutomationsOpen(false)}
         />
       )}
+
+      {shareOpen && <ShareBoardModal projectId={projectId} onClose={() => setShareOpen(false)} />}
 
       {/* Task delete confirmation */}
       <ConfirmDialog

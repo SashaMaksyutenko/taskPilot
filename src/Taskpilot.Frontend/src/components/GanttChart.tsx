@@ -18,7 +18,16 @@ const TICKS = 5
  * Project timeline (Gantt): one bar per task, spanning creation → deadline.
  * Tasks without a deadline have no end, so they are counted but not drawn.
  */
-export default function GanttChart({ tasks, onSelect }: { tasks: Task[]; onSelect?: (task: Task) => void }) {
+export default function GanttChart({
+  tasks,
+  onSelect,
+  criticalTaskIds,
+}: {
+  tasks: Task[]
+  onSelect?: (task: Task) => void
+  /** Ids of tasks on the project's critical path — highlighted on the timeline. */
+  criticalTaskIds?: Set<string>
+}) {
   const { t } = useTranslation()
 
   const model = useMemo(() => {
@@ -99,10 +108,12 @@ export default function GanttChart({ tasks, onSelect }: { tasks: Task[]; onSelec
                   onClick={() => onSelect?.(task)}
                   title={`${task.title} · ${fmt(new Date(start))} → ${fmt(new Date(end))}${
                     task.assigneeName ? ` · ${task.assigneeName}` : ''
-                  }`}
+                  }${criticalTaskIds?.has(task.id) ? ` · ${t('gantt.critical')}` : ''}`}
                   className={cn(
                     'absolute inset-y-1 rounded transition hover:opacity-80',
                     STATUS_BAR[task.status] ?? 'bg-slate-400',
+                    // Highlight the critical-path bottleneck sequence.
+                    criticalTaskIds?.has(task.id) && 'ring-2 ring-red-500 ring-offset-1 ring-offset-canvas',
                   )}
                   style={{ left: `${left}%`, width: `${width}%` }}
                 />
@@ -111,6 +122,12 @@ export default function GanttChart({ tasks, onSelect }: { tasks: Task[]; onSelec
           ))}
         </div>
 
+        {criticalTaskIds && criticalTaskIds.size > 0 && (
+          <p className="mt-3 flex items-center gap-2 text-xs text-muted">
+            <span className="inline-block h-3 w-4 flex-none rounded ring-2 ring-red-500" />
+            {t('gantt.criticalLegend')}
+          </p>
+        )}
         {model.unscheduled > 0 && (
           <p className="mt-3 text-xs text-muted">{t('gantt.unscheduled', { n: model.unscheduled })}</p>
         )}

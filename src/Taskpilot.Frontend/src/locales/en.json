@@ -785,6 +785,8 @@
   },
   "gantt": {
     "empty": "No tasks with a deadline yet — set one to see the timeline.",
+    "critical": "on the critical path",
+    "criticalLegend": "Highlighted bars are on the critical path (the longest dependency chain).",
     "unscheduled": "Not shown — no deadline set: {{n}}"
   },
   "team": {

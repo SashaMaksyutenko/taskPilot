@@ -79,6 +79,7 @@ export default function BoardPage() {
   const [membersOpen, setMembersOpen] = useState(false)
   const [automationsOpen, setAutomationsOpen] = useState(false)
   const [shareOpen, setShareOpen] = useState(false)
+  const [criticalIds, setCriticalIds] = useState<Set<string>>(new Set())
   const [canWrite, setCanWrite] = useState(true)
   // Other projects this task can be moved to (owned/active, excluding the current one).
   const [moveTargets, setMoveTargets] = useState<{ id: string; name: string }[]>([])
@@ -117,6 +118,11 @@ export default function BoardPage() {
         setCanWrite(!!me && (me.isOwner || me.role === 'Editor'))
         setMembers(ms.map((m) => ({ id: m.userId, name: m.name })))
       })
+      .catch(() => {})
+    // Critical-path task ids — highlighted on the timeline (only a real chain of >1).
+    projectService
+      .getCriticalPath(projectId)
+      .then((cp) => setCriticalIds(cp.length > 1 ? new Set(cp.tasks.map((task) => task.id)) : new Set()))
       .catch(() => {})
   }, [projectId, currentUserId])
 
@@ -641,7 +647,7 @@ export default function BoardPage() {
         {/* Timeline (Gantt) — same filtered tasks as the board */}
         {view === 'gantt' && (
           <Card className="p-4">
-            <GanttChart tasks={visibleTasks} onSelect={setSelectedTask} />
+            <GanttChart tasks={visibleTasks} onSelect={setSelectedTask} criticalTaskIds={criticalIds} />
           </Card>
         )}
 

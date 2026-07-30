@@ -1,5 +1,5 @@
 import api from '../lib/api'
-import type { Project, ProjectMember, ShareLink, PublicBoard, ProjectAnalytics } from '../types/project'
+import type { Project, ProjectMember, ShareLink, PublicBoard, ProjectAnalytics, CriticalPath } from '../types/project'
 
 /** REST calls for projects. */
 export const projectService = {
@@ -92,6 +92,11 @@ export const projectService = {
   /** Aggregate delivery metrics for a project board (any member). */
   getAnalytics(projectId: string): Promise<ProjectAnalytics> {
     return api.get<ProjectAnalytics>(`/api/projects/${projectId}/analytics`).then((r) => r.data)
+  },
+
+  /** The project's critical path — longest chain of dependent tasks (any member). */
+  getCriticalPath(projectId: string): Promise<CriticalPath> {
+    return api.get<CriticalPath>(`/api/projects/${projectId}/critical-path`).then((r) => r.data)
   },
 
   leaveProject(projectId: string): Promise<void> {

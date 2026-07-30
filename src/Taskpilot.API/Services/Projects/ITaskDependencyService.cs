@@ -17,4 +17,7 @@ public interface ITaskDependencyService
 
     /// <summary>Removes a dependency edge.</summary>
     Task<Result> RemoveAsync(Guid userId, Guid taskId, Guid dependsOnTaskId);
+
+    /// <summary>Computes the project's critical path (longest chain of dependent tasks).</summary>
+    Task<Result<CriticalPathDto>> GetCriticalPathAsync(Guid userId, Guid projectId);
 }

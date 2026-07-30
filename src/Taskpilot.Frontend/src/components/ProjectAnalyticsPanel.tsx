@@ -5,7 +5,7 @@ import {
   ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from 'recharts'
 import { projectService } from '../services/projectService'
-import type { ProjectAnalytics } from '../types/project'
+import type { CriticalPath, ProjectAnalytics } from '../types/project'
 
 const STATUS_COLORS: Record<string, string> = {
   Backlog: '#94A3B8', InProgress: '#3B82F6', Review: '#F59E0B', Done: '#10B981',
@@ -42,9 +42,11 @@ function Card({ title, children }: { title: string; children: React.ReactNode })
 export default function ProjectAnalyticsPanel({ projectId }: { projectId: string }) {
   const { t } = useTranslation()
   const [data, setData] = useState<ProjectAnalytics | null>(null)
+  const [critical, setCritical] = useState<CriticalPath | null>(null)
 
   useEffect(() => {
     projectService.getAnalytics(projectId).then(setData).catch(() => {})
+    projectService.getCriticalPath(projectId).then(setCritical).catch(() => {})
   }, [projectId])
 
   if (!data) return <p className="p-6 text-sm text-muted">{t('analytics.loading')}</p>
@@ -80,6 +82,31 @@ export default function ProjectAnalyticsPanel({ projectId }: { projectId: string
           hint={delta === 0 ? undefined : t('analytics.vsPrev', { delta: delta > 0 ? `+${delta}` : String(delta) })}
         />
       </div>
+
+      {/* Critical path — the longest chain of dependent tasks */}
+      {critical && critical.length > 1 && (
+        <div className="rounded-xl border border-border bg-surface p-5">
+          <h3 className="mb-1 font-bold">{t('analytics.criticalPath')}</h3>
+          <p className="mb-3 text-xs text-muted">{t('analytics.criticalPathHint', { count: critical.length })}</p>
+          <div className="flex flex-wrap items-center gap-1.5">
+            {critical.tasks.map((task, i) => (
+              <span key={task.id} className="flex items-center gap-1.5">
+                {i > 0 && <span className="text-muted">→</span>}
+                <span className="flex items-center gap-1.5 rounded-full border border-border bg-canvas px-2.5 py-1 text-xs">
+                  <span
+                    className={`h-2 w-2 flex-none rounded-full ${
+                      task.status === 'Done' ? 'bg-green-500'
+                        : task.status === 'Review' ? 'bg-amber-500'
+                          : task.status === 'InProgress' ? 'bg-blue-500' : 'bg-slate-400'
+                    }`}
+                  />
+                  <span className={task.status === 'Done' ? 'text-muted line-through' : ''}>{task.title}</span>
+                </span>
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="grid gap-4 lg:grid-cols-2">
         {/* Burn-up trend — full width */}

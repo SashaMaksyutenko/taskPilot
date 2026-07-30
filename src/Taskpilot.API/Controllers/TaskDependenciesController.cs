@@ -49,4 +49,15 @@ public class TaskDependenciesController : BaseApiController
         var result = await _dependencies.RemoveAsync(userId.Value, taskId, dependsOnTaskId);
         return result.Succeeded ? NoContent() : BadRequest(new { error = result.Error });
     }
+
+    /// <summary>The project's critical path — the longest chain of dependent tasks (any member).</summary>
+    [HttpGet("api/projects/{projectId:guid}/critical-path")]
+    public async Task<IActionResult> CriticalPath(Guid projectId)
+    {
+        var userId = CurrentUserId();
+        if (userId is null) return Unauthorized();
+
+        var result = await _dependencies.GetCriticalPathAsync(userId.Value, projectId);
+        return result.Succeeded ? Ok(result.Value) : NotFound(new { error = result.Error });
+    }
 }

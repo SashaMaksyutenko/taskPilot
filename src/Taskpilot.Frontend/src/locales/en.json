@@ -779,7 +779,9 @@
     "workload": "Workload by assignee",
     "open": "Open",
     "done": "Done",
-    "unassigned": "Unassigned"
+    "unassigned": "Unassigned",
+    "criticalPath": "Critical path",
+    "criticalPathHint": "Longest chain of dependent tasks — {{count}} steps that must happen in order."
   },
   "gantt": {
     "empty": "No tasks with a deadline yet — set one to see the timeline.",

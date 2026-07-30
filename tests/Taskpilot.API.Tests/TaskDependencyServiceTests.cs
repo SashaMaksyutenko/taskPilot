@@ -153,4 +153,69 @@ public class TaskDependencyServiceTests
         Assert.True((await svc.RemoveAsync(owner, a, b)).Succeeded);
         Assert.Empty((await svc.GetAsync(owner, a)).Value!.DependsOn);
     }
+
+    [Fact]
+    public async Task CriticalPath_LinearChain_ReturnsOrderedPath()
+    {
+        await using var ctx = TestDb.CreateContext();
+        var owner = await TestDb.AddUserAsync(ctx, "Owner");
+        var project = await TestDb.AddProjectAsync(ctx, owner, "P");
+        var a = await SeedTaskAsync(ctx, owner, project, "A");
+        var b = await SeedTaskAsync(ctx, owner, project, "B");
+        var c = await SeedTaskAsync(ctx, owner, project, "C");
+        var svc = Make(ctx);
+        await svc.AddAsync(owner, a, b); // A depends on B
+        await svc.AddAsync(owner, b, c); // B depends on C
+
+        var cp = (await svc.GetCriticalPathAsync(owner, project)).Value!;
+
+        Assert.Equal(3, cp.Length);
+        // Ordered first-to-do → last: C, B, A.
+        Assert.Equal(new[] { c, b, a }, cp.Tasks.Select(t => t.Id).ToArray());
+    }
+
+    [Fact]
+    public async Task CriticalPath_PicksLongestBranch()
+    {
+        await using var ctx = TestDb.CreateContext();
+        var owner = await TestDb.AddUserAsync(ctx, "Owner");
+        var project = await TestDb.AddProjectAsync(ctx, owner, "P");
+        var a = await SeedTaskAsync(ctx, owner, project, "A");
+        var b = await SeedTaskAsync(ctx, owner, project, "B");
+        var c = await SeedTaskAsync(ctx, owner, project, "C");
+        var d = await SeedTaskAsync(ctx, owner, project, "D");
+        var svc = Make(ctx);
+        await svc.AddAsync(owner, a, b);  // A ← B  (chain length 2)
+        await svc.AddAsync(owner, a, c);  // A ← C
+        await svc.AddAsync(owner, c, d);  // C ← D  (chain D → C → A, length 3)
+
+        var cp = (await svc.GetCriticalPathAsync(owner, project)).Value!;
+        Assert.Equal(3, cp.Length);
+        Assert.Equal(new[] { d, c, a }, cp.Tasks.Select(t => t.Id).ToArray());
+    }
+
+    [Fact]
+    public async Task CriticalPath_NoDependencies_LengthOne()
+    {
+        await using var ctx = TestDb.CreateContext();
+        var owner = await TestDb.AddUserAsync(ctx, "Owner");
+        var project = await TestDb.AddProjectAsync(ctx, owner, "P");
+        await SeedTaskAsync(ctx, owner, project, "A");
+        await SeedTaskAsync(ctx, owner, project, "B");
+
+        var cp = (await Make(ctx).GetCriticalPathAsync(owner, project)).Value!;
+        Assert.Equal(1, cp.Length);
+        Assert.Single(cp.Tasks);
+    }
+
+    [Fact]
+    public async Task CriticalPath_ByNonMember_Fails()
+    {
+        await using var ctx = TestDb.CreateContext();
+        var owner = await TestDb.AddUserAsync(ctx, "Owner");
+        var stranger = await TestDb.AddUserAsync(ctx, "Stranger");
+        var project = await TestDb.AddProjectAsync(ctx, owner, "P");
+
+        Assert.False((await Make(ctx).GetCriticalPathAsync(stranger, project)).Succeeded);
+    }
 }

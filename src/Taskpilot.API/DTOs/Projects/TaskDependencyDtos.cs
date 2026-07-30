@@ -14,6 +14,20 @@ public class AddDependencyDto
     public Guid DependsOnTaskId { get; set; }
 }
 
+/// <summary>
+/// The project's critical path — the longest chain of dependent tasks (each blocks the next),
+/// ordered from the first task to do to the last. With equal task weights, its length is the
+/// minimum number of sequential steps to finish the dependent work.
+/// </summary>
+public class CriticalPathDto
+{
+    /// <summary>Number of tasks in the longest chain.</summary>
+    public int Length { get; set; }
+
+    /// <summary>The chain, ordered first-to-do → last.</summary>
+    public List<TaskRefDto> Tasks { get; set; } = new();
+}
+
 /// <summary>A task's dependency graph as returned to clients.</summary>
 public class TaskDependenciesDto
 {

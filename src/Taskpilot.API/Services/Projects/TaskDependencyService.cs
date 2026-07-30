@@ -83,6 +83,70 @@ public class TaskDependencyService : ITaskDependencyService
         return Result.Ok();
     }
 
+    /// <inheritdoc />
+    public async Task<Result<CriticalPathDto>> GetCriticalPathAsync(Guid userId, Guid projectId)
+    {
+        if (!await ProjectAccess.CanAccessAsync(_context, projectId, userId))
+            return Result<CriticalPathDto>.Fail("Project not found.");
+
+        var tasks = await _context.ProjectTasks
+            .Where(t => t.ProjectId == projectId)
+            .Select(t => new { t.Id, t.Title, t.Status })
+            .ToListAsync();
+        var edges = await _context.TaskDependencies
+            .Where(d => d.Task.ProjectId == projectId)
+            .Select(d => new { d.TaskId, d.DependsOnTaskId })
+            .ToListAsync();
+
+        var info = tasks.ToDictionary(t => t.Id);
+        // blockers[a] = tasks that a depends on (must be done before a).
+        var blockers = edges
+            .Where(e => info.ContainsKey(e.DependsOnTaskId))
+            .GroupBy(e => e.TaskId)
+            .ToDictionary(g => g.Key, g => g.Select(e => e.DependsOnTaskId).ToList());
+
+        // Longest chain ENDING at each task (memoised; the graph is acyclic by construction).
+        // pred = which blocker extends the longest chain, for path reconstruction.
+        var memo = new Dictionary<Guid, (int Len, Guid? Pred)>();
+        (int Len, Guid? Pred) Longest(Guid node)
+        {
+            if (memo.TryGetValue(node, out var cached)) return cached;
+            var best = (Len: 1, Pred: (Guid?)null);
+            if (blockers.TryGetValue(node, out var bs))
+                foreach (var b in bs)
+                {
+                    var sub = Longest(b);
+                    if (sub.Len + 1 > best.Len)
+                        best = (sub.Len + 1, b);
+                }
+            memo[node] = best;
+            return best;
+        }
+
+        Guid? endNode = null;
+        var bestLen = 0;
+        foreach (var t in tasks)
+        {
+            var r = Longest(t.Id);
+            if (r.Len > bestLen)
+            {
+                bestLen = r.Len;
+                endNode = t.Id;
+            }
+        }
+
+        // Walk back from the last task through predecessors, then reverse to first-to-do → last.
+        var chain = new List<TaskRefDto>();
+        for (var cur = endNode; cur is { } id; cur = memo[id].Pred)
+        {
+            var ti = info[id];
+            chain.Add(new TaskRefDto { Id = ti.Id, Title = ti.Title, Status = ti.Status.ToString() });
+        }
+        chain.Reverse();
+
+        return Result<CriticalPathDto>.Ok(new CriticalPathDto { Length = bestLen, Tasks = chain });
+    }
+
     // --- helpers ---
 
     private Task<Guid?> ProjectIdOfTaskAsync(Guid taskId) =>

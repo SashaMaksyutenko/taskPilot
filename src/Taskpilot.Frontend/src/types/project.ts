@@ -95,6 +95,12 @@ export interface AssigneeLoad {
   done: number
 }
 
+/** The project's longest dependency chain (mirrors CriticalPathDto). */
+export interface CriticalPath {
+  length: number
+  tasks: TaskRef[]
+}
+
 /** Aggregate delivery metrics for a project board (mirrors ProjectAnalyticsDto). */
 export interface ProjectAnalytics {
   totalTasks: number

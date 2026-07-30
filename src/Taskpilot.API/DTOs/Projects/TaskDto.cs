@@ -28,6 +28,9 @@ public class TaskDto
     /// <summary>UTC time a running timer started; null when no timer is running.</summary>
     public DateTime? TimerStartedAt { get; set; }
 
+    /// <summary>The sprint this task belongs to, or null when it's in the backlog.</summary>
+    public Guid? SprintId { get; set; }
+
     /// <summary>"None" | "Daily" | "Weekly" | "Monthly" — how the task repeats.</summary>
     public string Recurrence { get; set; } = "None";
 

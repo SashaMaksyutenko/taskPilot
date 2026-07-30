@@ -91,4 +91,7 @@ public class ProjectTask
 
     /// <summary>Every how many units it repeats (e.g. 2 = every 2 weeks). Ignored when RecurrenceType is None.</summary>
     public int RecurrenceInterval { get; set; } = 1;
+
+    /// <summary>The sprint this task belongs to, or null when it's in the backlog.</summary>
+    public Guid? SprintId { get; set; }
 }

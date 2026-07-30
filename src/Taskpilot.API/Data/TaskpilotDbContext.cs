@@ -116,6 +116,8 @@ public class TaskpilotDbContext : DbContext
 
     public DbSet<TaskDependency> TaskDependencies => Set<TaskDependency>();
 
+    public DbSet<Sprint> Sprints => Set<Sprint>();
+
     /// <summary>Moderation warnings issued to users.</summary>
     public DbSet<UserWarning> UserWarnings => Set<UserWarning>();
 
@@ -707,6 +709,12 @@ public class TaskpilotDbContext : DbContext
             entity.Property(t => t.RecurrenceType)
                   .HasConversion<string>().HasMaxLength(16).IsRequired();
 
+            // A task optionally belongs to a sprint; deleting the sprint returns tasks to the backlog.
+            entity.HasOne<Sprint>()
+                  .WithMany()
+                  .HasForeignKey(t => t.SprintId)
+                  .OnDelete(DeleteBehavior.SetNull);
+
             // Tags are stored as a Postgres text[] and never null.
             entity.Property(t => t.Tags)
                   .HasColumnType("text[]")
@@ -736,6 +744,21 @@ public class TaskpilotDbContext : DbContext
                   .WithMany()
                   .HasForeignKey(t => t.ParentTaskId)
                   .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        // Sprint entity configuration
+        modelBuilder.Entity<Sprint>(entity =>
+        {
+            entity.HasKey(s => s.Id);
+            entity.Property(s => s.Name).IsRequired().HasMaxLength(120);
+            entity.Property(s => s.Goal).HasMaxLength(2000);
+            entity.Property(s => s.Status).HasConversion<string>().HasMaxLength(16).IsRequired();
+
+            entity.HasIndex(s => s.ProjectId);
+            entity.HasOne(s => s.Project)
+                  .WithMany()
+                  .HasForeignKey(s => s.ProjectId)
+                  .OnDelete(DeleteBehavior.Cascade);
         });
 
         // TaskDependency entity configuration

@@ -1095,6 +1095,7 @@ public class TaskService : ITaskService
         Tags = t.Tags ?? new List<string>(),
         TimeSpentSeconds = t.TimeSpentSeconds,
         TimerStartedAt = t.TimerStartedAt,
+        SprintId = t.SprintId,
         Recurrence = t.RecurrenceType.ToString(),
         RecurrenceInterval = t.RecurrenceInterval,
     };

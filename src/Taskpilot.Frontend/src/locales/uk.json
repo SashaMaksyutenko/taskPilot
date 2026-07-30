@@ -655,7 +655,7 @@
     "exportXlsx": "Експорт Excel",
     "exportPdf": "Експорт PDF",
     "reports": "Звіти",
-    "view": { "board": "Дошка", "gantt": "Таймлайн", "team": "Команда", "analytics": "Аналітика" },
+    "view": { "board": "Дошка", "gantt": "Таймлайн", "team": "Команда", "analytics": "Аналітика", "sprints": "Спрінти" },
     "reportPdf": "Проєкт — PDF",
     "reportXlsx": "Проєкт — Excel",
     "teamReportPdf": "Команда — PDF",
@@ -763,6 +763,16 @@
     "commentPlaceholder": "Напишіть коментар… (Ctrl+Enter — надіслати)",
     "addComment": "Коментувати",
     "deleteComment": "Видалити коментар"
+  },
+  "sprints": {
+    "new": "Новий спрінт",
+    "namePlaceholder": "Назва спрінта (напр. Спрінт 1)",
+    "add": "Додати спрінт",
+    "empty": "Спрінтів ще немає — створіть, щоб спланувати ітерацію.",
+    "delete": "Видалити",
+    "field": "Спрінт",
+    "backlog": "Беклог (без спрінта)",
+    "status": { "Planned": "Заплановано", "Active": "Активний", "Completed": "Завершено" }
   },
   "analytics": {
     "loading": "Завантаження аналітики…",

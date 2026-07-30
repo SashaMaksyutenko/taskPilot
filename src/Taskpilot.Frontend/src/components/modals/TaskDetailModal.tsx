@@ -13,6 +13,8 @@ import { taskService, type ExtensionRequest } from '../../services/taskService'
 import { userService, type UserSearchResult } from '../../services/userService'
 import { RECURRENCE_OPTIONS, type Task, type TaskComment } from '../../types/project'
 import TaskDependenciesSection from '../TaskDependenciesSection'
+import { sprintService } from '../../services/sprintService'
+import type { Sprint } from '../../types/project'
 
 const PRIORITIES = ['Low', 'Medium', 'High']
 
@@ -60,6 +62,18 @@ export default function TaskDetailModal({
   const [deadline, setDeadline] = useState(toDateInput(task.deadline))
   const [recurrence, setRecurrence] = useState(task.recurrence ?? 'None')
   const [recurrenceInterval, setRecurrenceInterval] = useState(task.recurrenceInterval ?? 1)
+
+  // Sprint the task belongs to (null = backlog), plus the project's sprints to pick from.
+  const [sprints, setSprints] = useState<Sprint[]>([])
+  const [sprintId, setSprintId] = useState<string>(task.sprintId ?? '')
+  useEffect(() => {
+    sprintService.list(task.projectId).then(setSprints).catch(() => {})
+  }, [task.projectId])
+
+  const changeSprint = async (value: string) => {
+    setSprintId(value)
+    await sprintService.assignTask(task.id, value || null).catch(() => {})
+  }
   const [tags, setTags] = useState<string[]>(task.tags ?? [])
   const [tagInput, setTagInput] = useState('')
 
@@ -585,6 +599,22 @@ export default function TaskDetailModal({
             )}
           </div>
         </div>
+
+        {/* Sprint the task belongs to */}
+        {(sprints.length > 0 || canWrite) && (
+          <div className="mb-4 border-t border-border pt-4">
+            <label className="mb-1 block text-sm font-medium">{t('sprints.field')}</label>
+            <select
+              value={sprintId}
+              onChange={(e) => changeSprint(e.target.value)}
+              disabled={!canWrite}
+              className="w-full rounded-lg border border-border bg-canvas px-3 py-2 text-sm outline-none focus:border-primary disabled:opacity-60"
+            >
+              <option value="">{t('sprints.backlog')}</option>
+              {sprints.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+            </select>
+          </div>
+        )}
 
         {/* Dependencies (blocked-by / blocks) */}
         <div className="mb-4 border-t border-border pt-4">

@@ -36,6 +36,8 @@ export interface Task {
   tags: string[]
   timeSpentSeconds: number
   timerStartedAt: string | null
+  /** Sprint the task belongs to, or null when in the backlog. */
+  sprintId: string | null
   /** "None" | "Daily" | "Weekly" | "Monthly". */
   recurrence: string
   recurrenceInterval: number
@@ -111,6 +113,28 @@ export interface ProjectAnalytics {
   throughputThisWeek: number
   throughputPrevWeek: number
   byAssignee: AssigneeLoad[]
+}
+
+/** A sprint / iteration with its task tallies (mirrors SprintDto). */
+export interface Sprint {
+  id: string
+  projectId: string
+  name: string
+  goal: string | null
+  startDate: string | null
+  endDate: string | null
+  status: string
+  taskCount: number
+  doneCount: number
+}
+
+/** Input for creating/updating a sprint (mirrors SaveSprintDto). */
+export interface SaveSprint {
+  name: string
+  goal?: string | null
+  startDate?: string | null
+  endDate?: string | null
+  status?: string
 }
 
 export type ProjectMemberRole = 'Editor' | 'Viewer'

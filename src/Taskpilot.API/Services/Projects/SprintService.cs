@@ -33,14 +33,21 @@ public class SprintService : ISprintService
         var counts = (await _context.ProjectTasks
                 .Where(t => t.ProjectId == projectId && t.SprintId != null)
                 .GroupBy(t => t.SprintId!.Value)
-                .Select(g => new { SprintId = g.Key, Total = g.Count(), Done = g.Count(t => t.Status == ProjectTaskStatus.Done) })
+                .Select(g => new
+                {
+                    SprintId = g.Key,
+                    Total = g.Count(),
+                    Done = g.Count(t => t.Status == ProjectTaskStatus.Done),
+                    Planned = g.Sum(t => t.Estimate ?? 0),
+                    Completed = g.Sum(t => t.Status == ProjectTaskStatus.Done ? (t.Estimate ?? 0) : 0),
+                })
                 .ToListAsync())
             .ToDictionary(c => c.SprintId);
 
         return Result<List<SprintDto>>.Ok(sprints.Select(s =>
         {
             counts.TryGetValue(s.Id, out var c);
-            return MapDto(s, c?.Total ?? 0, c?.Done ?? 0);
+            return MapDto(s, c?.Total ?? 0, c?.Done ?? 0, c?.Planned ?? 0, c?.Completed ?? 0);
         }).ToList());
     }
 
@@ -69,7 +76,7 @@ public class SprintService : ISprintService
         await _context.SaveChangesAsync();
 
         _logger.LogInformation("Sprint created. SprintId: {SprintId}, ProjectId: {ProjectId}", sprint.Id, projectId);
-        return Result<SprintDto>.Ok(MapDto(sprint, 0, 0));
+        return Result<SprintDto>.Ok(MapDto(sprint, 0, 0, 0, 0));
     }
 
     /// <inheritdoc />
@@ -93,9 +100,15 @@ public class SprintService : ISprintService
             sprint.Status = ParseStatus(dto.Status)!.Value;
         await _context.SaveChangesAsync();
 
-        var total = await _context.ProjectTasks.CountAsync(t => t.SprintId == sprintId);
-        var done = await _context.ProjectTasks.CountAsync(t => t.SprintId == sprintId && t.Status == ProjectTaskStatus.Done);
-        return Result<SprintDto>.Ok(MapDto(sprint, total, done));
+        var tasks = await _context.ProjectTasks
+            .Where(t => t.SprintId == sprintId)
+            .Select(t => new { t.Status, t.Estimate })
+            .ToListAsync();
+        var total = tasks.Count;
+        var done = tasks.Count(t => t.Status == ProjectTaskStatus.Done);
+        var planned = tasks.Sum(t => t.Estimate ?? 0);
+        var completed = tasks.Where(t => t.Status == ProjectTaskStatus.Done).Sum(t => t.Estimate ?? 0);
+        return Result<SprintDto>.Ok(MapDto(sprint, total, done, planned, completed));
     }
 
     /// <inheritdoc />
@@ -139,7 +152,7 @@ public class SprintService : ISprintService
 
     // --- helpers ---
 
-    private static SprintDto MapDto(Sprint s, int taskCount, int doneCount) => new()
+    private static SprintDto MapDto(Sprint s, int taskCount, int doneCount, int plannedPoints, int completedPoints) => new()
     {
         Id = s.Id,
         ProjectId = s.ProjectId,
@@ -150,6 +163,8 @@ public class SprintService : ISprintService
         Status = s.Status.ToString(),
         TaskCount = taskCount,
         DoneCount = doneCount,
+        PlannedPoints = plannedPoints,
+        CompletedPoints = completedPoints,
     };
 
     private static SprintStatus? ParseStatus(string? value) =>

@@ -183,6 +183,7 @@ public class TaskService : ITaskService
             Tags = NormalizeTags(dto.Tags),
             RecurrenceType = recurrence,
             RecurrenceInterval = NormalizeInterval(dto.RecurrenceInterval),
+            Estimate = dto.Estimate is >= 0 ? dto.Estimate : null,
             CreatedAt = DateTime.UtcNow,
         };
         _context.ProjectTasks.Add(task);
@@ -317,6 +318,8 @@ public class TaskService : ITaskService
             task.RecurrenceType = nr;
         if (dto.RecurrenceInterval is { } interval)
             task.RecurrenceInterval = NormalizeInterval(interval);
+        if (dto.Estimate is { } estimate)
+            task.Estimate = estimate >= 0 ? estimate : null; // -1 clears the estimate
         task.UpdatedAt = DateTime.UtcNow;
         await _context.SaveChangesAsync();
 
@@ -1096,6 +1099,7 @@ public class TaskService : ITaskService
         TimeSpentSeconds = t.TimeSpentSeconds,
         TimerStartedAt = t.TimerStartedAt,
         SprintId = t.SprintId,
+        Estimate = t.Estimate,
         Recurrence = t.RecurrenceType.ToString(),
         RecurrenceInterval = t.RecurrenceInterval,
     };

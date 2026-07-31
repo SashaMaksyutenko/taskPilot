@@ -26,6 +26,10 @@ public class SprintDto
     /// <summary>How many tasks are in the sprint, and how many of those are done.</summary>
     public int TaskCount { get; set; }
     public int DoneCount { get; set; }
+
+    /// <summary>Story points committed to the sprint, and points completed (its velocity contribution).</summary>
+    public int PlannedPoints { get; set; }
+    public int CompletedPoints { get; set; }
 }
 
 /// <summary>Input for moving a task into a sprint (null clears it back to the backlog).</summary>

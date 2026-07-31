@@ -727,6 +727,8 @@
   },
   "taskModal": {
     "title": "Task details",
+    "estimate": "Estimate (points)",
+    "estimatePlaceholder": "e.g. 5",
     "titleField": "Title",
     "description": "Description",
     "priority": "Priority",
@@ -772,6 +774,10 @@
     "delete": "Delete",
     "field": "Sprint",
     "backlog": "Backlog (no sprint)",
+    "points": "{{done}}/{{total}} pts",
+    "velocity": "Velocity (story points)",
+    "planned": "Committed",
+    "completed": "Completed",
     "status": { "Planned": "Planned", "Active": "Active", "Completed": "Completed" }
   },
   "analytics": {

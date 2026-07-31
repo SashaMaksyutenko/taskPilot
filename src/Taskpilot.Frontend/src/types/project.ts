@@ -38,6 +38,8 @@ export interface Task {
   timerStartedAt: string | null
   /** Sprint the task belongs to, or null when in the backlog. */
   sprintId: string | null
+  /** Effort estimate in story points, or null when not estimated. */
+  estimate: number | null
   /** "None" | "Daily" | "Weekly" | "Monthly". */
   recurrence: string
   recurrenceInterval: number
@@ -126,6 +128,8 @@ export interface Sprint {
   status: string
   taskCount: number
   doneCount: number
+  plannedPoints: number
+  completedPoints: number
 }
 
 /** Input for creating/updating a sprint (mirrors SaveSprintDto). */

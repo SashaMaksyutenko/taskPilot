@@ -31,6 +31,9 @@ public class TaskDto
     /// <summary>The sprint this task belongs to, or null when it's in the backlog.</summary>
     public Guid? SprintId { get; set; }
 
+    /// <summary>Effort estimate in story points, or null when not estimated.</summary>
+    public int? Estimate { get; set; }
+
     /// <summary>"None" | "Daily" | "Weekly" | "Monthly" — how the task repeats.</summary>
     public string Recurrence { get; set; } = "None";
 

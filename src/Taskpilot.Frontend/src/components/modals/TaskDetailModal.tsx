@@ -62,6 +62,7 @@ export default function TaskDetailModal({
   const [deadline, setDeadline] = useState(toDateInput(task.deadline))
   const [recurrence, setRecurrence] = useState(task.recurrence ?? 'None')
   const [recurrenceInterval, setRecurrenceInterval] = useState(task.recurrenceInterval ?? 1)
+  const [estimate, setEstimate] = useState(task.estimate != null ? String(task.estimate) : '')
 
   // Sprint the task belongs to (null = backlog), plus the project's sprints to pick from.
   const [sprints, setSprints] = useState<Sprint[]>([])
@@ -324,6 +325,7 @@ export default function TaskDetailModal({
         tags,
         recurrence,
         recurrenceInterval,
+        estimate: estimate.trim() === '' ? -1 : Math.max(0, Math.floor(Number(estimate) || 0)),
       })
       onSaved(updated)
       onClose()
@@ -600,21 +602,35 @@ export default function TaskDetailModal({
           </div>
         </div>
 
-        {/* Sprint the task belongs to */}
-        {(sprints.length > 0 || canWrite) && (
-          <div className="mb-4 border-t border-border pt-4">
-            <label className="mb-1 block text-sm font-medium">{t('sprints.field')}</label>
-            <select
-              value={sprintId}
-              onChange={(e) => changeSprint(e.target.value)}
+        {/* Sprint + story-point estimate */}
+        <div className="mb-4 grid gap-3 border-t border-border pt-4 sm:grid-cols-2">
+          {(sprints.length > 0 || canWrite) && (
+            <div>
+              <label className="mb-1 block text-sm font-medium">{t('sprints.field')}</label>
+              <select
+                value={sprintId}
+                onChange={(e) => changeSprint(e.target.value)}
+                disabled={!canWrite}
+                className="w-full rounded-lg border border-border bg-canvas px-3 py-2 text-sm outline-none focus:border-primary disabled:opacity-60"
+              >
+                <option value="">{t('sprints.backlog')}</option>
+                {sprints.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+              </select>
+            </div>
+          )}
+          <div>
+            <label className="mb-1 block text-sm font-medium">{t('taskModal.estimate')}</label>
+            <input
+              type="number"
+              min="0"
+              value={estimate}
+              onChange={(e) => setEstimate(e.target.value)}
               disabled={!canWrite}
+              placeholder={t('taskModal.estimatePlaceholder')}
               className="w-full rounded-lg border border-border bg-canvas px-3 py-2 text-sm outline-none focus:border-primary disabled:opacity-60"
-            >
-              <option value="">{t('sprints.backlog')}</option>
-              {sprints.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
-            </select>
+            />
           </div>
-        )}
+        </div>
 
         {/* Dependencies (blocked-by / blocks) */}
         <div className="mb-4 border-t border-border pt-4">

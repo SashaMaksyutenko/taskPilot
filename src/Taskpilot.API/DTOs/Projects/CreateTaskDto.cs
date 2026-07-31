@@ -18,6 +18,9 @@ public class CreateTaskDto
     /// <summary>Optional parent task id for subtasks.</summary>
     public Guid? ParentTaskId { get; set; }
 
+    /// <summary>Optional effort estimate in story points.</summary>
+    public int? Estimate { get; set; }
+
     /// <summary>Optional recurrence: "None", "Daily", "Weekly" or "Monthly".</summary>
     public string? Recurrence { get; set; }
 

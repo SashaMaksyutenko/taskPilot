@@ -129,4 +129,31 @@ public class SprintServiceTests
         Assert.True((await svc.DeleteSprintAsync(owner, sprint.Id)).Succeeded);
         Assert.Empty((await svc.GetSprintsAsync(owner, project)).Value!);
     }
+
+    [Fact]
+    public async Task GetSprints_SumsPlannedAndCompletedStoryPoints()
+    {
+        await using var ctx = TestDb.CreateContext();
+        var owner = await TestDb.AddUserAsync(ctx, "Owner");
+        var project = await TestDb.AddProjectAsync(ctx, owner, "P");
+        var svc = Make(ctx);
+        var sprint = (await svc.CreateSprintAsync(owner, project, new SaveSprintDto { Name = "S" })).Value!;
+
+        // 5 pts done, 3 pts open, and a done task with no estimate (counts 0 points).
+        void Add(ProjectTaskStatus status, int? estimate) => ctx.ProjectTasks.Add(new ProjectTask
+        {
+            Id = Guid.NewGuid(), ProjectId = project, CreatorId = owner, Title = "T",
+            Status = status, SprintId = sprint.Id, Estimate = estimate,
+        });
+        Add(ProjectTaskStatus.Done, 5);
+        Add(ProjectTaskStatus.Backlog, 3);
+        Add(ProjectTaskStatus.Done, null);
+        await ctx.SaveChangesAsync();
+
+        var s = (await svc.GetSprintsAsync(owner, project)).Value!.Single();
+        Assert.Equal(3, s.TaskCount);
+        Assert.Equal(2, s.DoneCount);
+        Assert.Equal(8, s.PlannedPoints);   // 5 + 3 + 0
+        Assert.Equal(5, s.CompletedPoints); // only the done+estimated task
+    }
 }

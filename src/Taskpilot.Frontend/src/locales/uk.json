@@ -727,6 +727,8 @@
   },
   "taskModal": {
     "title": "Деталі задачі",
+    "estimate": "Оцінка (очки)",
+    "estimatePlaceholder": "напр. 5",
     "titleField": "Назва",
     "description": "Опис",
     "priority": "Пріоритет",
@@ -772,6 +774,10 @@
     "delete": "Видалити",
     "field": "Спрінт",
     "backlog": "Беклог (без спрінта)",
+    "points": "{{done}}/{{total}} оч.",
+    "velocity": "Швидкість (story points)",
+    "planned": "Заплановано",
+    "completed": "Завершено",
     "status": { "Planned": "Заплановано", "Active": "Активний", "Completed": "Завершено" }
   },
   "analytics": {

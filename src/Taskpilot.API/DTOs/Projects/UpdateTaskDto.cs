@@ -15,6 +15,9 @@ public class UpdateTaskDto
     /// <summary>Free-form labels; null leaves the existing tags unchanged.</summary>
     public List<string>? Tags { get; set; }
 
+    /// <summary>Optional effort estimate in story points (pass -1 to clear it).</summary>
+    public int? Estimate { get; set; }
+
     /// <summary>Optional recurrence: "None", "Daily", "Weekly" or "Monthly".</summary>
     public string? Recurrence { get; set; }
 

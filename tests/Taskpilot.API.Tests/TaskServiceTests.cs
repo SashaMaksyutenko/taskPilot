@@ -400,4 +400,23 @@ public class TaskServiceTests
         Assert.True((await svc.ChangeStatusAsync(owner, b.Id, "Done")).Succeeded);
         Assert.True((await svc.ChangeStatusAsync(owner, a.Id, "Done")).Succeeded);
     }
+
+    [Fact]
+    public async Task Estimate_SetOnCreate_ChangedAndClearedOnUpdate()
+    {
+        using var ctx = TestDb.CreateContext();
+        var owner = await TestDb.AddUserAsync(ctx);
+        var projectId = await TestDb.AddProjectAsync(ctx, owner);
+        var svc = Create(ctx);
+
+        var created = (await svc.CreateTaskAsync(owner, projectId, new CreateTaskDto { Title = "Estimate me", Estimate = 5 })).Value!;
+        Assert.Equal(5, created.Estimate);
+
+        var raised = (await svc.UpdateTaskAsync(owner, created.Id, new UpdateTaskDto { Title = "Estimate me", Estimate = 8 })).Value!;
+        Assert.Equal(8, raised.Estimate);
+
+        // -1 clears the estimate; null would leave it unchanged.
+        var cleared = (await svc.UpdateTaskAsync(owner, created.Id, new UpdateTaskDto { Title = "Estimate me", Estimate = -1 })).Value!;
+        Assert.Null(cleared.Estimate);
+    }
 }

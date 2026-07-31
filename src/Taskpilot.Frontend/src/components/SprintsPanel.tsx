@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { apiErrorMessage } from '../lib/apiError'
 import { sprintService } from '../services/sprintService'
 import type { Sprint } from '../types/project'
@@ -125,11 +126,37 @@ export default function SprintsPanel({ projectId, canWrite }: { projectId: strin
                   <div className="h-2 flex-1 overflow-hidden rounded-full bg-border">
                     <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${pct}%` }} />
                   </div>
-                  <span className="flex-none text-xs text-muted tabular-nums">{s.doneCount}/{s.taskCount}</span>
+                  <span className="flex-none text-xs text-muted tabular-nums">
+                    {s.doneCount}/{s.taskCount}
+                    {s.plannedPoints > 0 && <span> · {t('sprints.points', { done: s.completedPoints, total: s.plannedPoints })}</span>}
+                  </span>
                 </div>
               </div>
             )
           })}
+        </div>
+      )}
+
+      {/* Velocity — committed vs completed story points per sprint */}
+      {sprints.some((s) => s.plannedPoints > 0) && (
+        <div className="rounded-xl border border-border bg-surface p-5 text-primary">
+          <h3 className="mb-3 font-bold">{t('sprints.velocity')}</h3>
+          <div className="h-56">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                data={sprints.map((s) => ({ name: s.name, planned: s.plannedPoints, completed: s.completedPoints }))}
+                margin={{ top: 5, right: 5, left: -20, bottom: 0 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" stroke="#94A3B833" />
+                <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+                <YAxis tick={{ fontSize: 11 }} allowDecimals={false} />
+                <Tooltip />
+                <Legend />
+                <Bar dataKey="planned" name={t('sprints.planned')} fill="#94A3B8" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="completed" name={t('sprints.completed')} fill="#10B981" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         </div>
       )}
     </div>

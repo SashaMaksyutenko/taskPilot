@@ -43,6 +43,7 @@ export const taskService = {
       tags?: string[]
       recurrence?: string
       recurrenceInterval?: number
+      estimate?: number | null
     },
   ): Promise<Task> {
     return api.put<Task>(`/api/tasks/${taskId}`, data).then((r) => r.data)

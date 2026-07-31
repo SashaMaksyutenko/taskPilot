@@ -15,6 +15,9 @@ public interface ITaskService
     /// <summary>Lists a project's tasks, optionally filtered by status (a Kanban column).</summary>
     Task<Result<List<TaskDto>>> GetTasksAsync(Guid userId, Guid projectId, string? status);
 
+    /// <summary>Every task assigned to the user across all their active projects (the "My work" list).</summary>
+    Task<Result<List<MyTaskDto>>> GetMyTasksAsync(Guid userId);
+
     Task<Result<TaskDto>> GetTaskAsync(Guid userId, Guid taskId);
 
     /// <summary>Lists the subtasks (children) of a task the user can access.</summary>

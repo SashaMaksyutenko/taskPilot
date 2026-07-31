@@ -20,6 +20,7 @@
     "home": "Home",
     "dashboard": "Dashboard",
     "projects": "Projects",
+    "myTasks": "My work",
     "calendar": "Calendar",
     "forum": "Forum",
     "market": "Market",
@@ -37,6 +38,11 @@
     "title": "Users",
     "searchPlaceholder": "Search people by name…",
     "empty": "No users found."
+  },
+  "myTasks": {
+    "title": "My work",
+    "subtitle": "Every task assigned to you across your projects, soonest deadline first.",
+    "empty": "You have no open tasks assigned. Enjoy the calm!"
   },
   "assistant": {
     "title": "AI Assistant",

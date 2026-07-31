@@ -1,5 +1,5 @@
 import api from '../lib/api'
-import type { Task, TaskComment, TaskStatus, TaskDependencies } from '../types/project'
+import type { Task, TaskComment, TaskStatus, TaskDependencies, MyTask } from '../types/project'
 import type { CalendarTask } from '../types/calendar'
 import type { Attachment, FileVersion } from '../types/attachment'
 
@@ -9,6 +9,11 @@ export const taskService = {
     return api
       .get<Task[]>(`/api/projects/${projectId}/tasks`, { params: status ? { status } : {} })
       .then((r) => r.data)
+  },
+
+  /** Every task assigned to me across my active projects ("My work"). */
+  getMine(): Promise<MyTask[]> {
+    return api.get<MyTask[]>('/api/tasks/mine').then((r) => r.data)
   },
 
   createTask(

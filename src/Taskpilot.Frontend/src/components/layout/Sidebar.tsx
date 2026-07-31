@@ -5,6 +5,7 @@ import {
   Calendar,
   FolderKanban,
   LayoutDashboard,
+  ListChecks,
   MessageSquare,
   NotebookPen,
   Search,
@@ -26,6 +27,7 @@ import { useFeatures } from '../../hooks/useFeatures'
 const LINKS = [
   { to: '/', key: 'nav.dashboard', icon: LayoutDashboard, end: true },
   { to: '/projects', key: 'nav.projects', icon: FolderKanban, end: false },
+  { to: '/my-tasks', key: 'nav.myTasks', icon: ListChecks, end: false },
   { to: '/calendar', key: 'nav.calendar', icon: Calendar, end: false },
   { to: '/forum', key: 'nav.forum', icon: MessagesSquare, end: false },
   { to: '/marketplace', key: 'nav.market', icon: ShoppingBag, end: false },

@@ -238,6 +238,37 @@ public class TaskService : ITaskService
     }
 
     /// <inheritdoc />
+    public async Task<Result<List<MyTaskDto>>> GetMyTasksAsync(Guid userId)
+    {
+        // Tasks assigned to me, in active projects I can still access, soonest-deadline first.
+        var rows = await _context.ProjectTasks
+            .Where(t => t.AssigneeId == userId
+                        && t.Project.ArchivedAt == null
+                        && (t.Project.OwnerId == userId || t.Project.Members.Any(m => m.UserId == userId)))
+            .OrderBy(t => t.Deadline == null)
+            .ThenBy(t => t.Deadline)
+            .Select(t => new
+            {
+                t.Id, t.Title, t.Status, t.Priority, t.Deadline,
+                t.ProjectId, ProjectName = t.Project.Name, ProjectColor = t.Project.Color,
+            })
+            .AsNoTracking()
+            .ToListAsync();
+
+        return Result<List<MyTaskDto>>.Ok(rows.Select(r => new MyTaskDto
+        {
+            Id = r.Id,
+            Title = r.Title,
+            Status = r.Status.ToString(),
+            Priority = r.Priority.ToString(),
+            Deadline = r.Deadline,
+            ProjectId = r.ProjectId,
+            ProjectName = r.ProjectName,
+            ProjectColor = r.ProjectColor,
+        }).ToList());
+    }
+
+    /// <inheritdoc />
     public async Task<Result<TaskDto>> GetTaskAsync(Guid userId, Guid taskId)
     {
         var task = await LoadAccessibleAsync(taskId, userId);

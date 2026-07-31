@@ -141,6 +141,18 @@ export interface SaveSprint {
   status?: string
 }
 
+/** A task assigned to me, with its project, for the cross-project "My work" list (mirrors MyTaskDto). */
+export interface MyTask {
+  id: string
+  title: string
+  status: string
+  priority: string
+  deadline: string | null
+  projectId: string
+  projectName: string
+  projectColor: string | null
+}
+
 export type ProjectMemberRole = 'Editor' | 'Viewer'
 
 export interface ProjectMember {

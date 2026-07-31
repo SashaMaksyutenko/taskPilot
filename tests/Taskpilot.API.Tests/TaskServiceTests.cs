@@ -419,4 +419,33 @@ public class TaskServiceTests
         var cleared = (await svc.UpdateTaskAsync(owner, created.Id, new UpdateTaskDto { Title = "Estimate me", Estimate = -1 })).Value!;
         Assert.Null(cleared.Estimate);
     }
+
+    [Fact]
+    public async Task GetMyTasks_ReturnsAssignedInActiveProjects_OrderedByDeadline()
+    {
+        using var ctx = TestDb.CreateContext();
+        var me = await TestDb.AddUserAsync(ctx, "Me");
+        var other = await TestDb.AddUserAsync(ctx, "Other");
+        var p1 = await TestDb.AddProjectAsync(ctx, me, "P1");
+        var p2 = await TestDb.AddProjectAsync(ctx, me, "P2");
+        var archived = await TestDb.AddProjectAsync(ctx, me, "Old");
+        (await ctx.Projects.FindAsync(archived))!.ArchivedAt = DateTime.UtcNow;
+
+        void Add(Guid project, Guid? assignee, DateTime? deadline, string title) => ctx.ProjectTasks.Add(new ProjectTask
+        {
+            Id = Guid.NewGuid(), ProjectId = project, CreatorId = me, Title = title, AssigneeId = assignee, Deadline = deadline,
+        });
+        Add(p1, me, DateTime.UtcNow.AddDays(2), "Later");
+        Add(p2, me, DateTime.UtcNow.AddDays(1), "Sooner");
+        Add(p1, me, null, "NoDeadline");
+        Add(p1, other, DateTime.UtcNow.AddDays(1), "NotMine");   // assigned to someone else
+        Add(archived, me, DateTime.UtcNow.AddDays(1), "Archived"); // in an archived project
+        await ctx.SaveChangesAsync();
+
+        var mine = (await Create(ctx).GetMyTasksAsync(me)).Value!;
+
+        // Only my tasks in active projects; deadline ascending, no-deadline last.
+        Assert.Equal(new[] { "Sooner", "Later", "NoDeadline" }, mine.Select(t => t.Title).ToArray());
+        Assert.Contains(mine, t => t.Title == "Sooner" && t.ProjectName == "P2");
+    }
 }

@@ -20,6 +20,7 @@ import NotesPage from './pages/NotesPage'
 import BookmarksPage from './pages/BookmarksPage'
 import SearchPage from './pages/SearchPage'
 import ProjectsPage from './pages/ProjectsPage'
+import MyTasksPage from './pages/MyTasksPage'
 import RootPage from './pages/RootPage'
 import PricingPage from './pages/PricingPage'
 import DocsPage from './pages/DocsPage'
@@ -85,6 +86,7 @@ function App() {
             <Route path="/chat" element={<ChatPage />} />
             <Route path="/assistant" element={<AssistantPage />} />
             <Route path="/projects" element={<ProjectsPage />} />
+            <Route path="/my-tasks" element={<MyTasksPage />} />
             <Route path="/projects/:projectId" element={<BoardPage />} />
             <Route path="/calendar" element={<CalendarPage />} />
             {/* Forum + Marketplace can be switched off org-wide by an admin. */}

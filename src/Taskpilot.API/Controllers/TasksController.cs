@@ -142,6 +142,17 @@ public class TasksController : BaseApiController
             : BadRequest(new { error = result.Error });
     }
 
+    /// <summary>Every task assigned to the current user across their active projects ("My work").</summary>
+    [HttpGet("api/tasks/mine")]
+    public async Task<IActionResult> Mine()
+    {
+        var userId = CurrentUserId();
+        if (userId is null) return Unauthorized();
+
+        var result = await _tasks.GetMyTasksAsync(userId.Value);
+        return result.Succeeded ? Ok(result.Value) : BadRequest(new { error = result.Error });
+    }
+
     /// <summary>Returns a single task.</summary>
     [HttpGet("api/tasks/{taskId:guid}")]
     public async Task<IActionResult> Get(Guid taskId)

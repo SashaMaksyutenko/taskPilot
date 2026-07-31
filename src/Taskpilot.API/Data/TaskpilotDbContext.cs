@@ -116,6 +116,8 @@ public class TaskpilotDbContext : DbContext
 
     public DbSet<TaskDependency> TaskDependencies => Set<TaskDependency>();
 
+    public DbSet<TaskWatcher> TaskWatchers => Set<TaskWatcher>();
+
     public DbSet<Sprint> Sprints => Set<Sprint>();
 
     /// <summary>Moderation warnings issued to users.</summary>
@@ -777,6 +779,25 @@ public class TaskpilotDbContext : DbContext
             entity.HasOne(d => d.DependsOnTask)
                   .WithMany()
                   .HasForeignKey(d => d.DependsOnTaskId)
+                  .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // TaskWatcher entity configuration
+        modelBuilder.Entity<TaskWatcher>(entity =>
+        {
+            entity.HasKey(w => w.Id);
+
+            // A user watches a task at most once.
+            entity.HasIndex(w => new { w.TaskId, w.UserId }).IsUnique();
+
+            // Deleting the task or the user removes the watch (Postgres allows both cascade paths).
+            entity.HasOne(w => w.Task)
+                  .WithMany()
+                  .HasForeignKey(w => w.TaskId)
+                  .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(w => w.User)
+                  .WithMany()
+                  .HasForeignKey(w => w.UserId)
                   .OnDelete(DeleteBehavior.Cascade);
         });
 

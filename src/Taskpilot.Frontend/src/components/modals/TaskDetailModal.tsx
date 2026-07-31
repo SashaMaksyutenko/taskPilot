@@ -13,6 +13,7 @@ import { taskService, type ExtensionRequest } from '../../services/taskService'
 import { userService, type UserSearchResult } from '../../services/userService'
 import { RECURRENCE_OPTIONS, type Task, type TaskComment } from '../../types/project'
 import TaskDependenciesSection from '../TaskDependenciesSection'
+import TaskWatchersSection from '../TaskWatchersSection'
 import { sprintService } from '../../services/sprintService'
 import type { Sprint } from '../../types/project'
 
@@ -635,6 +636,11 @@ export default function TaskDetailModal({
         {/* Dependencies (blocked-by / blocks) */}
         <div className="mb-4 border-t border-border pt-4">
           <TaskDependenciesSection taskId={task.id} projectId={task.projectId} canWrite={canWrite} />
+        </div>
+
+        {/* Watchers (subscribe to this task's notifications) */}
+        <div className="mb-4 border-t border-border pt-4">
+          <TaskWatchersSection taskId={task.id} />
         </div>
 
         {/* Subtasks */}

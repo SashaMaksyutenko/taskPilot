@@ -448,4 +448,30 @@ public class TaskServiceTests
         Assert.Equal(new[] { "Sooner", "Later", "NoDeadline" }, mine.Select(t => t.Title).ToArray());
         Assert.Contains(mine, t => t.Title == "Sooner" && t.ProjectName == "P2");
     }
+
+    [Fact]
+    public async Task ChangeStatus_NotifiesWatchers_ButNotTheActor()
+    {
+        using var ctx = TestDb.CreateContext();
+        var owner = await TestDb.AddUserAsync(ctx, "Owner");
+        var watcher = await TestDb.AddUserAsync(ctx, "Watcher");
+        var projectId = await TestDb.AddProjectAsync(ctx, owner);
+        ctx.ProjectMembers.Add(new ProjectMember { Id = Guid.NewGuid(), ProjectId = projectId, UserId = watcher });
+        await ctx.SaveChangesAsync();
+
+        var (svc, notifications) = CreateWithMock(ctx);
+        var created = (await svc.CreateTaskAsync(owner, projectId, new CreateTaskDto { Title = "Watch me" })).Value!;
+        // The member subscribes to the task.
+        ctx.TaskWatchers.Add(new TaskWatcher { Id = Guid.NewGuid(), TaskId = created.Id, UserId = watcher });
+        await ctx.SaveChangesAsync();
+
+        var result = await svc.ChangeStatusAsync(owner, created.Id, "InProgress");
+        Assert.True(result.Succeeded);
+
+        // The watcher is notified; the owner (the actor) is not notified about their own move.
+        notifications.Verify(n => n.CreateAsync(watcher, NotificationType.Task,
+            It.Is<string>(s => s.Contains("watching")), It.IsAny<string?>()), Times.Once);
+        notifications.Verify(n => n.CreateAsync(owner, It.IsAny<NotificationType>(),
+            It.IsAny<string>(), It.IsAny<string?>()), Times.Never);
+    }
 }

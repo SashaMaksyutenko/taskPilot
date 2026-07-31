@@ -470,6 +470,26 @@ public class TaskService : ITaskService
                 await SpawnNextOccurrenceAsync(userId, task);
         }
 
+        // Notify anyone watching this task (opt-in subscribers), skipping the actor and anyone
+        // already told above (the assignee, and the creator on completion).
+        if (previousStatus != parsed)
+        {
+            var watchers = await _context.TaskWatchers
+                .Where(w => w.TaskId == task.Id)
+                .Select(w => w.UserId)
+                .ToListAsync();
+            foreach (var watcherId in watchers)
+            {
+                if (!notified.Add(watcherId))
+                    continue;
+                await _notifications.CreateAsync(
+                    watcherId,
+                    NotificationType.Task,
+                    $"Task \"{task.Title}\" you're watching was moved to {parsed}.",
+                    $"/projects/{task.ProjectId}");
+            }
+        }
+
         // Run any "on status changed" project automations when the status actually changed.
         if (previousStatus != parsed)
             await _automation.RunOnTaskStatusChangedAsync(task);

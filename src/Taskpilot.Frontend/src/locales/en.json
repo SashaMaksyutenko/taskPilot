@@ -731,6 +731,12 @@
     "addBlocker": "Add a blocking task…",
     "remove": "Remove"
   },
+  "watchers": {
+    "title": "Watchers",
+    "watch": "Watch",
+    "watching": "Watching",
+    "none": "No one is watching this task yet."
+  },
   "taskModal": {
     "title": "Task details",
     "estimate": "Estimate (points)",

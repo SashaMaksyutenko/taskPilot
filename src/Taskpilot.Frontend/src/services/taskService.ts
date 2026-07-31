@@ -1,5 +1,5 @@
 import api from '../lib/api'
-import type { Task, TaskComment, TaskStatus, TaskDependencies, MyTask } from '../types/project'
+import type { Task, TaskComment, TaskStatus, TaskDependencies, TaskWatchers, MyTask } from '../types/project'
 import type { CalendarTask } from '../types/calendar'
 import type { Attachment, FileVersion } from '../types/attachment'
 
@@ -70,6 +70,21 @@ export const taskService = {
 
   removeDependency(taskId: string, dependsOnTaskId: string): Promise<void> {
     return api.delete(`/api/tasks/${taskId}/dependencies/${dependsOnTaskId}`).then(() => undefined)
+  },
+
+  /** A task's watchers and whether the current user is watching it. */
+  getWatchers(taskId: string): Promise<TaskWatchers> {
+    return api.get<TaskWatchers>(`/api/tasks/${taskId}/watchers`).then((r) => r.data)
+  },
+
+  /** Subscribes the current user to a task's notifications; returns the updated watcher list. */
+  watch(taskId: string): Promise<TaskWatchers> {
+    return api.post<TaskWatchers>(`/api/tasks/${taskId}/watch`).then((r) => r.data)
+  },
+
+  /** Unsubscribes the current user from a task's notifications; returns the updated watcher list. */
+  unwatch(taskId: string): Promise<TaskWatchers> {
+    return api.delete<TaskWatchers>(`/api/tasks/${taskId}/watch`).then((r) => r.data)
   },
 
   /** Changes the status of several tasks at once. */

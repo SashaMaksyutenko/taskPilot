@@ -62,6 +62,19 @@ export interface TaskDependencies {
   isBlocked: boolean
 }
 
+/** One user watching a task (mirrors TaskWatcherDto). */
+export interface TaskWatcher {
+  userId: string
+  name: string
+  avatarUrl: string | null
+}
+
+/** A task's watchers plus whether the current user is one of them (mirrors TaskWatchersDto). */
+export interface TaskWatchers {
+  watchers: TaskWatcher[]
+  isWatching: boolean
+}
+
 /** Public share state of a board (mirrors ShareLinkDto). */
 export interface ShareLink {
   token: string | null

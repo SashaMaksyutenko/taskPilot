@@ -370,6 +370,7 @@ builder.Services.AddScoped<IReputationService, ReputationService>();
 builder.Services.AddScoped<IReviewService, ReviewService>();
 builder.Services.AddScoped<IAutomationService, AutomationService>();
 builder.Services.AddScoped<ITaskDependencyService, TaskDependencyService>();
+builder.Services.AddScoped<ITaskWatcherService, TaskWatcherService>();
 builder.Services.AddScoped<IProjectAnalyticsService, ProjectAnalyticsService>();
 builder.Services.AddScoped<ISprintService, SprintService>();
 builder.Services.AddScoped<IExtensionService, ExtensionService>();

@@ -122,6 +122,10 @@ public class TaskpilotDbContext : DbContext
 
     public DbSet<ProjectWipLimit> ProjectWipLimits => Set<ProjectWipLimit>();
 
+    public DbSet<CustomFieldDefinition> CustomFieldDefinitions => Set<CustomFieldDefinition>();
+
+    public DbSet<CustomFieldValue> CustomFieldValues => Set<CustomFieldValue>();
+
     public DbSet<Sprint> Sprints => Set<Sprint>();
 
     /// <summary>Moderation warnings issued to users.</summary>
@@ -1242,6 +1246,45 @@ public class TaskpilotDbContext : DbContext
             entity.HasOne(r => r.User)
                   .WithMany()
                   .HasForeignKey(r => r.UserId)
+                  .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        // CustomFieldDefinition entity configuration
+        modelBuilder.Entity<CustomFieldDefinition>(entity =>
+        {
+            entity.HasKey(f => f.Id);
+            entity.Property(f => f.Name).IsRequired().HasMaxLength(80);
+            entity.Property(f => f.Type).HasConversion<string>().HasMaxLength(16).IsRequired();
+
+            // Fields listed per project, in their configured order.
+            entity.HasIndex(f => new { f.ProjectId, f.Position });
+
+            // Deleting a project removes its field definitions.
+            entity.HasOne(f => f.Project)
+                  .WithMany()
+                  .HasForeignKey(f => f.ProjectId)
+                  .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // CustomFieldValue entity configuration
+        modelBuilder.Entity<CustomFieldValue>(entity =>
+        {
+            entity.HasKey(v => v.Id);
+            entity.Property(v => v.Value).HasMaxLength(2000);
+
+            // At most one value per (task, field); also the lookup for a task's values.
+            entity.HasIndex(v => new { v.TaskId, v.FieldId }).IsUnique();
+
+            // Deleting a task removes its values (cascade); deleting a field also removes them,
+            // but that path is restricted to avoid multiple cascade paths — the service clears
+            // a field's values explicitly before removing the definition.
+            entity.HasOne(v => v.Task)
+                  .WithMany()
+                  .HasForeignKey(v => v.TaskId)
+                  .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(v => v.Field)
+                  .WithMany()
+                  .HasForeignKey(v => v.FieldId)
                   .OnDelete(DeleteBehavior.Restrict);
         });
 

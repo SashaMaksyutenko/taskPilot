@@ -166,6 +166,27 @@ export interface MyTask {
   projectColor: string | null
 }
 
+/** The data type of a custom field. */
+export type CustomFieldType = 'Text' | 'Number' | 'Select' | 'Date'
+
+/** A project's custom-field definition (mirrors CustomFieldDefinitionDto). */
+export interface CustomFieldDefinition {
+  id: string
+  name: string
+  type: CustomFieldType
+  options: string[]
+  position: number
+}
+
+/** A task's custom field merged with its current value (mirrors TaskFieldDto). */
+export interface TaskField {
+  fieldId: string
+  name: string
+  type: CustomFieldType
+  options: string[]
+  value: string
+}
+
 /** A WIP (work-in-progress) limit on one board column (mirrors WipLimitDto). */
 export interface WipLimit {
   status: string

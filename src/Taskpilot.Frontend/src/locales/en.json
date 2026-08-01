@@ -741,6 +741,22 @@
     "watching": "Watching",
     "none": "No one is watching this task yet."
   },
+  "customFields": {
+    "title": "Custom fields",
+    "subtitle": "Define extra fields (text, number, select or date) for this project's tasks.",
+    "button": "Fields",
+    "empty": "No custom fields yet.",
+    "add": "Add field",
+    "remove": "Remove field",
+    "namePlaceholder": "Field name (e.g. Environment)",
+    "optionsPlaceholder": "Options, one per line",
+    "type": {
+      "Text": "Text",
+      "Number": "Number",
+      "Select": "Select",
+      "Date": "Date"
+    }
+  },
   "taskModal": {
     "title": "Task details",
     "estimate": "Estimate (points)",

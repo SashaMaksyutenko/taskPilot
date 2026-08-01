@@ -6,6 +6,7 @@ import TaskContextMenu from '../components/menus/TaskContextMenu'
 import TaskDetailModal from '../components/modals/TaskDetailModal'
 import ProjectMembersModal from '../components/modals/ProjectMembersModal'
 import AutomationsModal from '../components/modals/AutomationsModal'
+import CustomFieldsModal from '../components/modals/CustomFieldsModal'
 import ShareBoardModal from '../components/modals/ShareBoardModal'
 import ProjectAnalyticsPanel from '../components/ProjectAnalyticsPanel'
 import SprintsPanel from '../components/SprintsPanel'
@@ -79,6 +80,7 @@ export default function BoardPage() {
   }
   const [membersOpen, setMembersOpen] = useState(false)
   const [automationsOpen, setAutomationsOpen] = useState(false)
+  const [customFieldsOpen, setCustomFieldsOpen] = useState(false)
   const [shareOpen, setShareOpen] = useState(false)
   const [criticalIds, setCriticalIds] = useState<Set<string>>(new Set())
   const [canWrite, setCanWrite] = useState(true)
@@ -483,6 +485,11 @@ export default function BoardPage() {
           {isOwner && (
             <Button variant="secondary" size="sm" onClick={() => setAutomationsOpen(true)}>
               {t('automation.button')}
+            </Button>
+          )}
+          {canWrite && (
+            <Button variant="secondary" size="sm" onClick={() => setCustomFieldsOpen(true)}>
+              {t('customFields.button')}
             </Button>
           )}
           {isOwner && (
@@ -892,6 +899,10 @@ export default function BoardPage() {
           members={members}
           onClose={() => setAutomationsOpen(false)}
         />
+      )}
+
+      {customFieldsOpen && (
+        <CustomFieldsModal projectId={projectId} onClose={() => setCustomFieldsOpen(false)} />
       )}
 
       {shareOpen && <ShareBoardModal projectId={projectId} onClose={() => setShareOpen(false)} />}

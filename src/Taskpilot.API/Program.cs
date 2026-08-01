@@ -372,6 +372,7 @@ builder.Services.AddScoped<IAutomationService, AutomationService>();
 builder.Services.AddScoped<ITaskDependencyService, TaskDependencyService>();
 builder.Services.AddScoped<ITaskWatcherService, TaskWatcherService>();
 builder.Services.AddScoped<IWipLimitService, WipLimitService>();
+builder.Services.AddScoped<ICustomFieldService, CustomFieldService>();
 builder.Services.AddScoped<IProjectAnalyticsService, ProjectAnalyticsService>();
 builder.Services.AddScoped<ISprintService, SprintService>();
 builder.Services.AddScoped<IExtensionService, ExtensionService>();

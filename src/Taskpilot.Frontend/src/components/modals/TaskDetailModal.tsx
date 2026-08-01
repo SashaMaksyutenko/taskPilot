@@ -15,6 +15,7 @@ import { userService, type UserSearchResult } from '../../services/userService'
 import { RECURRENCE_OPTIONS, type Task, type TaskComment, type CommentReactionsUpdate } from '../../types/project'
 import TaskDependenciesSection from '../TaskDependenciesSection'
 import TaskWatchersSection from '../TaskWatchersSection'
+import TaskCustomFieldsSection from '../TaskCustomFieldsSection'
 import { sprintService } from '../../services/sprintService'
 import type { Sprint } from '../../types/project'
 
@@ -658,6 +659,11 @@ export default function TaskDetailModal({
         {/* Watchers (subscribe to this task's notifications) */}
         <div className="mb-4 border-t border-border pt-4">
           <TaskWatchersSection taskId={task.id} />
+        </div>
+
+        {/* Custom fields (project-defined) */}
+        <div className="mb-4 border-t border-border pt-4 empty:hidden">
+          <TaskCustomFieldsSection taskId={task.id} canWrite={canWrite} />
         </div>
 
         {/* Subtasks */}

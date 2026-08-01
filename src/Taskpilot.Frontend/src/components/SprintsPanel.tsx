@@ -28,6 +28,45 @@ function StatusDot({ status }: { status: string }) {
   return <span className={`h-2 w-2 flex-none rounded-full ${color}`} />
 }
 
+/** A droppable list of task chips for one sprint (or the backlog). */
+function SprintTaskList({
+  list,
+  zoneKey,
+  dnd,
+  canWrite,
+  emptyLabel,
+}: {
+  list: Task[]
+  zoneKey: string
+  dnd: ReturnType<typeof useDragAndDrop>
+  canWrite: boolean
+  emptyLabel: string
+}) {
+  return (
+    <div
+      {...dnd.dropZoneProps(zoneKey)}
+      className={`mt-2 min-h-[2.5rem] space-y-1.5 rounded-lg border border-dashed p-1.5 transition-colors ${
+        dnd.activeZone === zoneKey ? 'border-primary bg-primary/5' : 'border-border'
+      }`}
+    >
+      {list.length === 0 ? (
+        <p className="px-1.5 py-1 text-xs text-muted">{emptyLabel}</p>
+      ) : (
+        list.map((task) => (
+          <div
+            key={task.id}
+            {...(canWrite ? dnd.draggableProps(task.id) : {})}
+            className="flex items-center gap-2 rounded-lg border border-border bg-canvas px-2.5 py-1.5 text-xs"
+          >
+            <StatusDot status={task.status} />
+            <span className="min-w-0 flex-1 truncate">{task.title}</span>
+          </div>
+        ))
+      )}
+    </div>
+  )
+}
+
 /**
  * Sprints/iterations view for a project: create sprints, track each one's progress (done/total)
  * and velocity, and **plan by dragging tasks** between the backlog and each sprint. Assigning
@@ -111,34 +150,6 @@ export default function SprintsPanel({ projectId, canWrite }: { projectId: strin
       ? tasks.filter((x) => !x.sprintId && x.status !== 'Done')
       : tasks.filter((x) => x.sprintId === sprintId)
 
-  const TaskList = ({ sprintId }: { sprintId: string | null }) => {
-    const zoneKey = sprintId ?? BACKLOG
-    const list = tasksIn(sprintId)
-    return (
-      <div
-        {...dnd.dropZoneProps(zoneKey)}
-        className={`mt-2 min-h-[2.5rem] space-y-1.5 rounded-lg border border-dashed p-1.5 transition-colors ${
-          dnd.activeZone === zoneKey ? 'border-primary bg-primary/5' : 'border-border'
-        }`}
-      >
-        {list.length === 0 ? (
-          <p className="px-1.5 py-1 text-xs text-muted">{t('board.dropHere')}</p>
-        ) : (
-          list.map((task) => (
-            <div
-              key={task.id}
-              {...(canWrite ? dnd.draggableProps(task.id) : {})}
-              className="flex items-center gap-2 rounded-lg border border-border bg-canvas px-2.5 py-1.5 text-xs"
-            >
-              <StatusDot status={task.status} />
-              <span className="min-w-0 flex-1 truncate">{task.title}</span>
-            </div>
-          ))
-        )}
-      </div>
-    )
-  }
-
   return (
     <div className="mx-auto max-w-3xl space-y-4">
       {dnd.overlay}
@@ -175,7 +186,7 @@ export default function SprintsPanel({ projectId, canWrite }: { projectId: strin
               <span className="font-semibold">{t('sprints.backlog')}</span>
               <span className="text-xs text-muted">{tasksIn(null).length}</span>
             </div>
-            <TaskList sprintId={null} />
+            <SprintTaskList list={tasksIn(null)} zoneKey={BACKLOG} dnd={dnd} canWrite={canWrite} emptyLabel={t('board.dropHere')} />
           </div>
 
           {sprints.map((s) => {
@@ -214,7 +225,7 @@ export default function SprintsPanel({ projectId, canWrite }: { projectId: strin
                     {s.plannedPoints > 0 && <span> · {t('sprints.points', { done: s.completedPoints, total: s.plannedPoints })}</span>}
                   </span>
                 </div>
-                <TaskList sprintId={s.id} />
+                <SprintTaskList list={tasksIn(s.id)} zoneKey={s.id} dnd={dnd} canWrite={canWrite} emptyLabel={t('board.dropHere')} />
               </div>
             )
           })}

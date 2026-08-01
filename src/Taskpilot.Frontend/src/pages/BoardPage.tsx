@@ -458,14 +458,14 @@ export default function BoardPage() {
     <div className="-mx-4 sm:-mx-6 lg:-mx-8">
         {showConfetti && <Confetti onDone={() => setShowConfetti(false)} />}
         {dnd.overlay}
-        <div className="mb-5 flex items-center gap-3">
+        <div className="mb-5 flex flex-wrap items-center gap-3">
           <Link to="/projects" className="text-sm text-muted hover:text-foreground hover:underline">
             {t('board.backToProjects')}
           </Link>
           <h1 className="text-xl font-bold">{project?.name ?? t('board.title')}</h1>
 
           {/* Board / timeline switcher */}
-          <div className="ml-auto inline-flex overflow-hidden rounded-lg border border-border">
+          <div className="ml-auto inline-flex shrink-0 overflow-hidden rounded-lg border border-border">
             {(['board', 'gantt', 'team', 'analytics', 'sprints'] as const).map((v) => (
               <button
                 key={v}

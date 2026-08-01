@@ -415,6 +415,19 @@ public class TaskService : ITaskService
             await _context.TaskDependencies.AnyAsync(d => d.TaskId == taskId && d.DependsOnTask.Status != ProjectTaskStatus.Done))
             return Result<TaskDto>.Fail("This task is blocked by unfinished tasks it depends on.");
 
+        // Enforce the target column's WIP limit when one is set, but only on a real column change
+        // (the task doesn't count against a column it's already in).
+        if (parsed != task.Status)
+        {
+            var wipLimit = await _context.ProjectWipLimits
+                .Where(w => w.ProjectId == task.ProjectId && w.Status == parsed)
+                .Select(w => (int?)w.MaxTasks)
+                .FirstOrDefaultAsync();
+            if (wipLimit is { } max &&
+                await _context.ProjectTasks.CountAsync(t => t.ProjectId == task.ProjectId && t.Status == parsed && t.Id != taskId) >= max)
+                return Result<TaskDto>.Fail($"The {parsed} column is at its WIP limit ({max}).");
+        }
+
         // Remember where the task came from so the history can show the transition.
         var previousStatus = task.Status;
 

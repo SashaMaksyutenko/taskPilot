@@ -474,4 +474,27 @@ public class TaskServiceTests
         notifications.Verify(n => n.CreateAsync(owner, It.IsAny<NotificationType>(),
             It.IsAny<string>(), It.IsAny<string?>()), Times.Never);
     }
+
+    [Fact]
+    public async Task ChangeStatus_RejectedWhenTargetColumnAtWipLimit()
+    {
+        using var ctx = TestDb.CreateContext();
+        var owner = await TestDb.AddUserAsync(ctx);
+        var projectId = await TestDb.AddProjectAsync(ctx, owner);
+        // InProgress may hold at most one task.
+        ctx.ProjectWipLimits.Add(new ProjectWipLimit { Id = Guid.NewGuid(), ProjectId = projectId, Status = ProjectTaskStatus.InProgress, MaxTasks = 1 });
+        await ctx.SaveChangesAsync();
+        var svc = Create(ctx);
+
+        var a = (await svc.CreateTaskAsync(owner, projectId, new CreateTaskDto { Title = "A" })).Value!;
+        var b = (await svc.CreateTaskAsync(owner, projectId, new CreateTaskDto { Title = "B" })).Value!;
+
+        // A moves in fine; B is rejected because the column is full.
+        Assert.True((await svc.ChangeStatusAsync(owner, a.Id, "InProgress")).Succeeded);
+        Assert.False((await svc.ChangeStatusAsync(owner, b.Id, "InProgress")).Succeeded);
+
+        // Freeing the column lets B in.
+        Assert.True((await svc.ChangeStatusAsync(owner, a.Id, "Review")).Succeeded);
+        Assert.True((await svc.ChangeStatusAsync(owner, b.Id, "InProgress")).Succeeded);
+    }
 }

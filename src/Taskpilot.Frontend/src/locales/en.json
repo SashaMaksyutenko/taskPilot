@@ -691,6 +691,10 @@
       "High": "High",
       "Medium": "Medium",
       "Low": "Low"
+    },
+    "wip": {
+      "set": "Set a WIP limit for this column",
+      "placeholder": "Limit"
     }
   },
   "history": {

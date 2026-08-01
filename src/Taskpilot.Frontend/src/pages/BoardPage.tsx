@@ -94,6 +94,10 @@ export default function BoardPage() {
   const [deletingTask, setDeletingTask] = useState<Task | null>(null)
   // Celebratory confetti shown briefly when a task is moved to Done.
   const [showConfetti, setShowConfetti] = useState(false)
+  // Per-column WIP limits (status → max tasks); the column being edited, if any.
+  const [wipLimits, setWipLimits] = useState<Record<string, number>>({})
+  const [editingWip, setEditingWip] = useState<string | null>(null)
+  const [wipDraft, setWipDraft] = useState('')
 
   const isOwner = !!project && project.ownerId === currentUserId
   // A member may move only tasks assigned to them; the owner may move any.
@@ -125,7 +129,26 @@ export default function BoardPage() {
       .getCriticalPath(projectId)
       .then((cp) => setCriticalIds(cp.length > 1 ? new Set(cp.tasks.map((task) => task.id)) : new Set()))
       .catch(() => {})
+    // Per-column WIP limits.
+    projectService
+      .getWipLimits(projectId)
+      .then((ls) => setWipLimits(Object.fromEntries(ls.map((l) => [l.status, l.maxTasks]))))
+      .catch(() => {})
   }, [projectId, currentUserId])
+
+  // Save (or clear, when blank/0) the WIP limit for a column from the inline editor.
+  const saveWip = async (status: string) => {
+    setEditingWip(null)
+    const parsed = parseInt(wipDraft, 10)
+    const value = Number.isFinite(parsed) && parsed > 0 ? parsed : null
+    if ((wipLimits[status] ?? null) === value) return
+    try {
+      const list = await projectService.setWipLimit(projectId, status, value)
+      setWipLimits(Object.fromEntries(list.map((l) => [l.status, l.maxTasks])))
+    } catch (e) {
+      notify.error(apiErrorMessage(e))
+    }
+  }
 
   // Open a task's details when arriving via a shared "?task=" deep link.
   useEffect(() => {
@@ -163,7 +186,9 @@ export default function BoardPage() {
     if (status === 'Done') setShowConfetti(true)
     try {
       await taskService.changeStatus(taskId, status as TaskStatus)
-    } catch {
+    } catch (e) {
+      // Surface the reason (e.g. a WIP limit) and roll the board back to the server truth.
+      notify.error(apiErrorMessage(e))
       taskService.getTasks(projectId).then(setTasks).catch(() => {})
     }
   }
@@ -697,9 +722,44 @@ export default function BoardPage() {
                     <span className={`h-2 w-2 rounded-full ${columnDot[col.key] ?? 'bg-border'}`} />
                     {t(`board.status.${col.key}`)}
                   </span>
-                  <span className="rounded-full bg-border/60 px-2 py-0.5 text-xs font-semibold text-muted">
-                    {colTasks.length}
-                  </span>
+                  {(() => {
+                    const limit = wipLimits[col.key]
+                    const over = limit != null && colTasks.length >= limit
+                    if (editingWip === col.key) {
+                      return (
+                        <input
+                          type="number"
+                          min={0}
+                          autoFocus
+                          value={wipDraft}
+                          onChange={(e) => setWipDraft(e.target.value)}
+                          onBlur={() => saveWip(col.key)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') saveWip(col.key)
+                            if (e.key === 'Escape') setEditingWip(null)
+                          }}
+                          placeholder={t('board.wip.placeholder')}
+                          className="w-16 rounded-full border border-primary bg-surface px-2 py-0.5 text-xs font-semibold outline-none"
+                        />
+                      )
+                    }
+                    const label = limit != null ? `${colTasks.length} / ${limit}` : `${colTasks.length}`
+                    const cls = over
+                      ? 'bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-300'
+                      : 'bg-border/60 text-muted'
+                    return canWrite ? (
+                      <button
+                        type="button"
+                        onClick={() => { setEditingWip(col.key); setWipDraft(limit != null ? String(limit) : '') }}
+                        title={t('board.wip.set')}
+                        className={`rounded-full px-2 py-0.5 text-xs font-semibold transition hover:ring-1 hover:ring-primary/40 ${cls}`}
+                      >
+                        {label}
+                      </button>
+                    ) : (
+                      <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${cls}`}>{label}</span>
+                    )
+                  })()}
                 </div>
 
                 <div className="space-y-2">

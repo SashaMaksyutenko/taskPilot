@@ -1,5 +1,5 @@
 import api from '../lib/api'
-import type { Project, ProjectMember, ShareLink, PublicBoard, ProjectAnalytics, CriticalPath } from '../types/project'
+import type { Project, ProjectMember, ShareLink, PublicBoard, ProjectAnalytics, CriticalPath, WipLimit } from '../types/project'
 
 /** REST calls for projects. */
 export const projectService = {
@@ -97,6 +97,16 @@ export const projectService = {
   /** The project's critical path — longest chain of dependent tasks (any member). */
   getCriticalPath(projectId: string): Promise<CriticalPath> {
     return api.get<CriticalPath>(`/api/projects/${projectId}/critical-path`).then((r) => r.data)
+  },
+
+  /** A project's per-column WIP limits (any member). */
+  getWipLimits(projectId: string): Promise<WipLimit[]> {
+    return api.get<WipLimit[]>(`/api/projects/${projectId}/wip-limits`).then((r) => r.data)
+  },
+
+  /** Sets (maxTasks ≥ 1) or clears (null) a column's WIP limit; returns the updated list. */
+  setWipLimit(projectId: string, status: string, maxTasks: number | null): Promise<WipLimit[]> {
+    return api.put<WipLimit[]>(`/api/projects/${projectId}/wip-limits`, { status, maxTasks }).then((r) => r.data)
   },
 
   leaveProject(projectId: string): Promise<void> {

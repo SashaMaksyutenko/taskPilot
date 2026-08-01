@@ -166,6 +166,12 @@ export interface MyTask {
   projectColor: string | null
 }
 
+/** A WIP (work-in-progress) limit on one board column (mirrors WipLimitDto). */
+export interface WipLimit {
+  status: string
+  maxTasks: number
+}
+
 export type ProjectMemberRole = 'Editor' | 'Viewer'
 
 export interface ProjectMember {

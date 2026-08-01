@@ -120,6 +120,8 @@ public class TaskpilotDbContext : DbContext
 
     public DbSet<TaskCommentReaction> TaskCommentReactions => Set<TaskCommentReaction>();
 
+    public DbSet<ProjectWipLimit> ProjectWipLimits => Set<ProjectWipLimit>();
+
     public DbSet<Sprint> Sprints => Set<Sprint>();
 
     /// <summary>Moderation warnings issued to users.</summary>
@@ -1241,6 +1243,24 @@ public class TaskpilotDbContext : DbContext
                   .WithMany()
                   .HasForeignKey(r => r.UserId)
                   .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        // ProjectWipLimit entity configuration
+        modelBuilder.Entity<ProjectWipLimit>(entity =>
+        {
+            entity.HasKey(w => w.Id);
+
+            // Store the column status as a readable string, like ProjectTask.Status.
+            entity.Property(w => w.Status).HasConversion<string>().HasMaxLength(20).IsRequired();
+
+            // At most one limit per (project, column).
+            entity.HasIndex(w => new { w.ProjectId, w.Status }).IsUnique();
+
+            // Deleting a project removes its WIP limits.
+            entity.HasOne(w => w.Project)
+                  .WithMany()
+                  .HasForeignKey(w => w.ProjectId)
+                  .OnDelete(DeleteBehavior.Cascade);
         });
 
         // TaskCommentReaction entity configuration (mirrors MessageReaction)

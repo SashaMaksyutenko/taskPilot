@@ -26,6 +26,7 @@
     "market": "Market",
     "chat": "Chat",
     "users": "Users",
+    "leaderboard": "Leaderboard",
     "assistant": "Assistant",
     "notes": "Notes",
     "bookmarks": "Bookmarks",
@@ -43,6 +44,16 @@
     "title": "My work",
     "subtitle": "Every task assigned to you across your projects, soonest deadline first.",
     "empty": "You have no open tasks assigned. Enjoy the calm!"
+  },
+  "leaderboard": {
+    "title": "Leaderboard",
+    "subtitle": "Top contributors by reputation — earned for on-time work, accepted solutions and completed marketplace tasks.",
+    "empty": "No one has earned reputation yet. Complete a task on time to get on the board!",
+    "user": "User",
+    "points": "Points",
+    "you": "Your standing",
+    "tasks_one": "{{count}} task done",
+    "tasks_other": "{{count}} tasks done"
   },
   "assistant": {
     "title": "AI Assistant",

@@ -14,6 +14,7 @@ import {
   ShoppingBag,
   MessagesSquare,
   Tag,
+  Trophy,
   Users,
 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
@@ -33,6 +34,7 @@ const LINKS = [
   { to: '/marketplace', key: 'nav.market', icon: ShoppingBag, end: false },
   { to: '/chat', key: 'nav.chat', icon: MessageSquare, end: false },
   { to: '/users', key: 'nav.users', icon: Users, end: false },
+  { to: '/leaderboard', key: 'nav.leaderboard', icon: Trophy, end: false },
   { to: '/assistant', key: 'nav.assistant', icon: Bot, end: false },
   { to: '/notes', key: 'nav.notes', icon: NotebookPen, end: false },
   { to: '/bookmarks', key: 'nav.bookmarks', icon: Bookmark, end: false },

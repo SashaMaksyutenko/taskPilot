@@ -21,6 +21,7 @@ import BookmarksPage from './pages/BookmarksPage'
 import SearchPage from './pages/SearchPage'
 import ProjectsPage from './pages/ProjectsPage'
 import MyTasksPage from './pages/MyTasksPage'
+import LeaderboardPage from './pages/LeaderboardPage'
 import RootPage from './pages/RootPage'
 import PricingPage from './pages/PricingPage'
 import DocsPage from './pages/DocsPage'
@@ -104,6 +105,7 @@ function App() {
             <Route path="/search" element={<SearchPage />} />
             <Route path="/users" element={<UsersPage />} />
             <Route path="/users/:userId" element={<UserProfilePage />} />
+            <Route path="/leaderboard" element={<LeaderboardPage />} />
             <Route element={<AdminRoute />}>
               <Route path="/admin" element={<AdminPage />} />
               <Route path="/admin/audit" element={<AuditPage />} />

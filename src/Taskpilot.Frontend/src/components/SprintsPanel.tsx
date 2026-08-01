@@ -2,10 +2,13 @@ import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { apiErrorMessage } from '../lib/apiError'
+import { useDragAndDrop } from '../hooks/useDragAndDrop'
 import { sprintService } from '../services/sprintService'
-import type { Sprint } from '../types/project'
+import { taskService } from '../services/taskService'
+import type { Sprint, Task } from '../types/project'
 
 const STATUSES = ['Planned', 'Active', 'Completed']
+const BACKLOG = 'backlog'
 
 function StatusBadge({ status }: { status: string }) {
   const cls =
@@ -16,23 +19,58 @@ function StatusBadge({ status }: { status: string }) {
   return <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${cls}`}>{t(`sprints.status.${status}`, status)}</span>
 }
 
+function StatusDot({ status }: { status: string }) {
+  const color =
+    status === 'Done' ? 'bg-green-500'
+      : status === 'Review' ? 'bg-amber-500'
+        : status === 'InProgress' ? 'bg-blue-500'
+          : 'bg-slate-400'
+  return <span className={`h-2 w-2 flex-none rounded-full ${color}`} />
+}
+
 /**
- * Sprints/iterations view for a project: create sprints, track each one's progress (done/total),
- * change its status and delete it. Tasks are moved in/out from the task modal's sprint picker.
+ * Sprints/iterations view for a project: create sprints, track each one's progress (done/total)
+ * and velocity, and **plan by dragging tasks** between the backlog and each sprint. Assigning
+ * reuses the task→sprint endpoint; the task modal's sprint picker still works too.
  */
 export default function SprintsPanel({ projectId, canWrite }: { projectId: string; canWrite: boolean }) {
   const { t } = useTranslation()
   const [sprints, setSprints] = useState<Sprint[]>([])
+  const [tasks, setTasks] = useState<Task[]>([])
   const [name, setName] = useState('')
   const [start, setStart] = useState('')
   const [end, setEnd] = useState('')
   const [error, setError] = useState('')
 
   const load = () => sprintService.list(projectId).then(setSprints).catch(() => {})
+  const loadTasks = () => taskService.getTasks(projectId).then(setTasks).catch(() => {})
   useEffect(() => {
     load()
+    loadTasks()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [projectId])
+
+  // Move a task into a sprint (or the backlog); optimistic, then refresh the sprint tallies.
+  const dnd = useDragAndDrop({
+    onDrop: (zoneKey, taskId) => {
+      const target = zoneKey === BACKLOG ? null : zoneKey
+      const task = tasks.find((t) => t.id === taskId)
+      if (!task || (task.sprintId ?? null) === target) return
+      setTasks((prev) => prev.map((x) => (x.id === taskId ? { ...x, sprintId: target } : x)))
+      sprintService
+        .assignTask(taskId, target)
+        .then(load)
+        .catch(() => loadTasks())
+    },
+    renderGhost: (id) => {
+      const task = tasks.find((x) => x.id === id)
+      return task ? (
+        <div className="rounded-lg border border-primary bg-surface px-2.5 py-1.5 text-xs font-medium shadow-card">
+          {task.title}
+        </div>
+      ) : null
+    },
+  })
 
   const create = async () => {
     if (!name.trim()) return
@@ -62,12 +100,48 @@ export default function SprintsPanel({ projectId, canWrite }: { projectId: strin
   const remove = async (id: string) => {
     await sprintService.remove(id).catch(() => {})
     load()
+    loadTasks()
   }
 
   const fmt = (d: string | null) => (d ? new Date(d).toLocaleDateString() : null)
 
+  // Tasks to show in a drop zone: a sprint's tasks, or the not-done backlog for the null zone.
+  const tasksIn = (sprintId: string | null) =>
+    sprintId === null
+      ? tasks.filter((x) => !x.sprintId && x.status !== 'Done')
+      : tasks.filter((x) => x.sprintId === sprintId)
+
+  const TaskList = ({ sprintId }: { sprintId: string | null }) => {
+    const zoneKey = sprintId ?? BACKLOG
+    const list = tasksIn(sprintId)
+    return (
+      <div
+        {...dnd.dropZoneProps(zoneKey)}
+        className={`mt-2 min-h-[2.5rem] space-y-1.5 rounded-lg border border-dashed p-1.5 transition-colors ${
+          dnd.activeZone === zoneKey ? 'border-primary bg-primary/5' : 'border-border'
+        }`}
+      >
+        {list.length === 0 ? (
+          <p className="px-1.5 py-1 text-xs text-muted">{t('board.dropHere')}</p>
+        ) : (
+          list.map((task) => (
+            <div
+              key={task.id}
+              {...(canWrite ? dnd.draggableProps(task.id) : {})}
+              className="flex items-center gap-2 rounded-lg border border-border bg-canvas px-2.5 py-1.5 text-xs"
+            >
+              <StatusDot status={task.status} />
+              <span className="min-w-0 flex-1 truncate">{task.title}</span>
+            </div>
+          ))
+        )}
+      </div>
+    )
+  }
+
   return (
     <div className="mx-auto max-w-3xl space-y-4">
+      {dnd.overlay}
       {canWrite && (
         <div className="rounded-xl border border-border bg-surface p-4">
           <h3 className="mb-3 font-semibold">{t('sprints.new')}</h3>
@@ -95,6 +169,15 @@ export default function SprintsPanel({ projectId, canWrite }: { projectId: strin
         <p className="text-sm text-muted">{t('sprints.empty')}</p>
       ) : (
         <div className="space-y-3">
+          {/* Backlog — unassigned, not-done tasks available to pull into a sprint. */}
+          <div className="rounded-xl border border-border bg-surface p-4">
+            <div className="flex items-center gap-2">
+              <span className="font-semibold">{t('sprints.backlog')}</span>
+              <span className="text-xs text-muted">{tasksIn(null).length}</span>
+            </div>
+            <TaskList sprintId={null} />
+          </div>
+
           {sprints.map((s) => {
             const pct = s.taskCount ? Math.round((s.doneCount / s.taskCount) * 100) : 0
             const range = [fmt(s.startDate), fmt(s.endDate)].filter(Boolean).join(' – ')
@@ -131,6 +214,7 @@ export default function SprintsPanel({ projectId, canWrite }: { projectId: strin
                     {s.plannedPoints > 0 && <span> · {t('sprints.points', { done: s.completedPoints, total: s.plannedPoints })}</span>}
                   </span>
                 </div>
+                <TaskList sprintId={s.id} />
               </div>
             )
           })}

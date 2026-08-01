@@ -64,6 +64,23 @@ public class TaskCommentsController : BaseApiController
         return Ok(result.Value);
     }
 
+    /// <summary>Toggles the caller's emoji reaction on a comment.</summary>
+    [HttpPost("api/tasks/comments/{commentId:guid}/react")]
+    public async Task<IActionResult> React(Guid commentId, [FromBody] ReactCommentDto dto)
+    {
+        var userId = CurrentUserId();
+        if (userId is null) return Unauthorized();
+
+        var result = await _comments.ToggleReactionAsync(userId.Value, commentId, dto.Emoji);
+        if (!result.Succeeded)
+            return BadRequest(new { error = result.Error });
+
+        // Push the updated reactions to everyone viewing this task in real time.
+        await _taskHub.Clients.Group(TaskHub.GroupName(result.Value!.TaskId))
+            .SendAsync("ReceiveCommentReaction", result.Value);
+        return Ok(result.Value);
+    }
+
     /// <summary>Deletes a comment the caller authored.</summary>
     [HttpDelete("api/tasks/comments/{commentId:guid}")]
     public async Task<IActionResult> Delete(Guid commentId)

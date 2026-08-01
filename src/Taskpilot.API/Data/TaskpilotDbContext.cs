@@ -118,6 +118,8 @@ public class TaskpilotDbContext : DbContext
 
     public DbSet<TaskWatcher> TaskWatchers => Set<TaskWatcher>();
 
+    public DbSet<TaskCommentReaction> TaskCommentReactions => Set<TaskCommentReaction>();
+
     public DbSet<Sprint> Sprints => Set<Sprint>();
 
     /// <summary>Moderation warnings issued to users.</summary>
@@ -1232,6 +1234,29 @@ public class TaskpilotDbContext : DbContext
             entity.HasOne(r => r.Message)
                   .WithMany(m => m.Reactions)
                   .HasForeignKey(r => r.MessageId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            // User link is restricted to avoid multiple cascade paths.
+            entity.HasOne(r => r.User)
+                  .WithMany()
+                  .HasForeignKey(r => r.UserId)
+                  .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        // TaskCommentReaction entity configuration (mirrors MessageReaction)
+        modelBuilder.Entity<TaskCommentReaction>(entity =>
+        {
+            entity.HasKey(r => r.Id);
+
+            entity.Property(r => r.Emoji).IsRequired().HasMaxLength(16);
+
+            // One reaction per (comment, user, emoji); also the lookup for a comment.
+            entity.HasIndex(r => new { r.CommentId, r.UserId, r.Emoji }).IsUnique();
+
+            // Deleting a comment removes its reactions.
+            entity.HasOne(r => r.Comment)
+                  .WithMany(c => c.Reactions)
+                  .HasForeignKey(r => r.CommentId)
                   .OnDelete(DeleteBehavior.Cascade);
 
             // User link is restricted to avoid multiple cascade paths.

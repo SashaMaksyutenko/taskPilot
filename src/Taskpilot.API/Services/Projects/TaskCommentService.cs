@@ -43,8 +43,41 @@ public class TaskCommentService : ITaskCommentService
             .AsNoTracking()
             .ToListAsync();
 
-        return Result<List<TaskCommentDto>>.Ok(rows.Select(MapDto).ToList());
+        // Load all reactions for these comments in one query, then group them per comment in memory.
+        var commentIds = rows.Select(r => r.Id).ToList();
+        var reactionRows = await _context.TaskCommentReactions
+            .Where(r => commentIds.Contains(r.CommentId))
+            .Select(r => new { r.CommentId, r.Emoji, r.UserId, r.CreatedAt })
+            .AsNoTracking()
+            .ToListAsync();
+        var byComment = reactionRows
+            .GroupBy(r => r.CommentId)
+            .ToDictionary(g => g.Key, g => g.Select(r => (r.Emoji, r.UserId, r.CreatedAt)).ToList());
+
+        var dtos = rows.Select(r =>
+        {
+            var dto = MapDto(r);
+            if (byComment.TryGetValue(r.Id, out var reactions))
+                dto.Reactions = MapReactions(reactions, userId);
+            return dto;
+        }).ToList();
+
+        return Result<List<TaskCommentDto>>.Ok(dtos);
     }
+
+    /// <summary>Groups a comment's reactions by emoji, flagging the ones the current user placed.</summary>
+    private static List<CommentReactionDto> MapReactions(
+        IEnumerable<(string Emoji, Guid UserId, DateTime CreatedAt)> reactions, Guid currentUserId) =>
+        reactions
+            .GroupBy(r => r.Emoji)
+            .OrderBy(g => g.Min(r => r.CreatedAt))
+            .Select(g => new CommentReactionDto
+            {
+                Emoji = g.Key,
+                Count = g.Count(),
+                Mine = g.Any(r => r.UserId == currentUserId),
+            })
+            .ToList();
 
     // Intermediate row materialized from SQL; the avatar URL is composed in memory.
     private record CommentRow(
@@ -167,6 +200,47 @@ public class TaskCommentService : ITaskCommentService
 
         _logger.LogInformation("Comment deleted. CommentId: {CommentId}", commentId);
         return Result<Guid>.Ok(taskId);
+    }
+
+    /// <inheritdoc />
+    public async Task<Result<CommentReactionsUpdateDto>> ToggleReactionAsync(Guid userId, Guid commentId, string emoji)
+    {
+        emoji = emoji?.Trim() ?? string.Empty;
+        if (string.IsNullOrEmpty(emoji) || emoji.Length > 16)
+            return Result<CommentReactionsUpdateDto>.Fail("Invalid emoji.");
+
+        var comment = await _context.TaskComments.FirstOrDefaultAsync(c => c.Id == commentId);
+        if (comment is null || !await OwnsTaskAsync(comment.TaskId, userId))
+            return Result<CommentReactionsUpdateDto>.Fail("Comment not found.");
+
+        // Toggle: add the reaction if the caller hasn't placed it, otherwise remove it.
+        var existing = await _context.TaskCommentReactions
+            .FirstOrDefaultAsync(r => r.CommentId == commentId && r.UserId == userId && r.Emoji == emoji);
+        if (existing is null)
+            _context.TaskCommentReactions.Add(new TaskCommentReaction
+            {
+                Id = Guid.NewGuid(),
+                CommentId = commentId,
+                UserId = userId,
+                Emoji = emoji,
+                CreatedAt = DateTime.UtcNow,
+            });
+        else
+            _context.TaskCommentReactions.Remove(existing);
+        await _context.SaveChangesAsync();
+
+        var reactions = await _context.TaskCommentReactions
+            .Where(r => r.CommentId == commentId)
+            .Select(r => new { r.Emoji, r.UserId, r.CreatedAt })
+            .AsNoTracking()
+            .ToListAsync();
+
+        return Result<CommentReactionsUpdateDto>.Ok(new CommentReactionsUpdateDto
+        {
+            CommentId = commentId,
+            TaskId = comment.TaskId,
+            Reactions = MapReactions(reactions.Select(r => (r.Emoji, r.UserId, r.CreatedAt)), userId),
+        });
     }
 
     /// <summary>True if the task exists and the caller owns or collaborates on its project.</summary>

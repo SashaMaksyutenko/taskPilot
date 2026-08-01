@@ -176,6 +176,14 @@ export interface ProjectMember {
   isOwner: boolean
 }
 
+/** A group of reactions with the same emoji on a comment (mirrors CommentReactionDto). */
+export interface CommentReaction {
+  emoji: string
+  count: number
+  /** Whether the current user reacted with this emoji. */
+  mine: boolean
+}
+
 export interface TaskComment {
   id: string
   taskId: string
@@ -185,6 +193,14 @@ export interface TaskComment {
   body: string
   createdAt: string
   updatedAt: string | null
+  reactions: CommentReaction[]
+}
+
+/** Realtime payload when a comment's reactions change (mirrors CommentReactionsUpdateDto). */
+export interface CommentReactionsUpdate {
+  commentId: string
+  taskId: string
+  reactions: CommentReaction[]
 }
 
 /** The four Kanban columns, in order. */

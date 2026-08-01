@@ -8,10 +8,11 @@ import { taskAttachments } from '../../services/attachmentSources'
 import TaskHistory from '../TaskHistory'
 import { apiErrorMessage } from '../../lib/apiError'
 import { createTaskConnection } from '../../lib/taskHub'
+import { REACTION_EMOJIS } from '../../lib/reactionEmojis'
 import { projectService } from '../../services/projectService'
 import { taskService, type ExtensionRequest } from '../../services/taskService'
 import { userService, type UserSearchResult } from '../../services/userService'
-import { RECURRENCE_OPTIONS, type Task, type TaskComment } from '../../types/project'
+import { RECURRENCE_OPTIONS, type Task, type TaskComment, type CommentReactionsUpdate } from '../../types/project'
 import TaskDependenciesSection from '../TaskDependenciesSection'
 import TaskWatchersSection from '../TaskWatchersSection'
 import { sprintService } from '../../services/sprintService'
@@ -114,6 +115,9 @@ export default function TaskDetailModal({
   // Subtasks (children of this task).
   const [subtasks, setSubtasks] = useState<Task[]>([])
   const [newSubtask, setNewSubtask] = useState('')
+
+  // Which comment's emoji picker is open (by comment id), if any.
+  const [reactionPickerFor, setReactionPickerFor] = useState<string | null>(null)
 
   // AI subtask suggestions (shown only when the server has an LLM key configured).
   const [aiEnabled, setAiEnabled] = useState(false)
@@ -225,6 +229,11 @@ export default function TaskDetailModal({
     connection.on('RemoveComment', (commentId: string) => {
       setComments((prev) => prev.filter((c) => c.id !== commentId))
     })
+    connection.on('ReceiveCommentReaction', (update: CommentReactionsUpdate) => {
+      setComments((prev) =>
+        prev.map((c) => (c.id === update.commentId ? { ...c, reactions: update.reactions } : c)),
+      )
+    })
 
     connection
       .start()
@@ -256,6 +265,14 @@ export default function TaskDetailModal({
   const removeComment = async (id: string) => {
     await taskService.deleteComment(id).catch(() => {})
     setComments((prev) => prev.filter((c) => c.id !== id))
+  }
+
+  // Toggle an emoji reaction on a comment; the response carries the fresh reaction groups.
+  const toggleCommentReaction = async (commentId: string, emoji: string) => {
+    setReactionPickerFor(null)
+    const reactions = await taskService.reactToComment(commentId, emoji).catch(() => null)
+    if (reactions)
+      setComments((prev) => prev.map((c) => (c.id === commentId ? { ...c, reactions } : c)))
   }
 
   // Debounced user search for picking an assignee.
@@ -767,6 +784,44 @@ export default function TaskDetailModal({
                   <p className="mt-1 whitespace-pre-wrap break-words text-foreground">
                     <MentionText text={c.body} />
                   </p>
+
+                  {/* Emoji reactions */}
+                  <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                    {c.reactions.map((re) => (
+                      <button
+                        key={re.emoji}
+                        onClick={() => toggleCommentReaction(c.id, re.emoji)}
+                        className={`flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs transition ${
+                          re.mine ? 'border-primary bg-primary/10 dark:border-border' : 'border-border hover:bg-surface'
+                        }`}
+                      >
+                        <span>{re.emoji}</span>
+                        <span className="font-semibold">{re.count}</span>
+                      </button>
+                    ))}
+                    <div className="relative">
+                      <button
+                        onClick={() => setReactionPickerFor(reactionPickerFor === c.id ? null : c.id)}
+                        className="rounded-full border border-border px-2 py-0.5 text-xs text-muted opacity-0 transition hover:bg-surface group-hover:opacity-100"
+                        aria-label={t('taskModal.addReaction', 'Add reaction')}
+                      >
+                        🙂+
+                      </button>
+                      {reactionPickerFor === c.id && (
+                        <div className="absolute z-10 mt-1 grid max-h-64 w-72 grid-cols-8 gap-0.5 overflow-y-auto rounded-lg border border-border bg-surface p-2 shadow-lg">
+                          {REACTION_EMOJIS.map((e) => (
+                            <button
+                              key={e}
+                              onClick={() => toggleCommentReaction(c.id, e)}
+                              className="flex h-8 w-8 items-center justify-center rounded text-xl leading-none transition hover:scale-125 hover:bg-canvas"
+                            >
+                              {e}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </li>
               ))}
             </ul>

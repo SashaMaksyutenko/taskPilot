@@ -1,5 +1,5 @@
 import api from '../lib/api'
-import type { Task, TaskComment, TaskStatus, TaskDependencies, TaskWatchers, MyTask } from '../types/project'
+import type { Task, TaskComment, CommentReaction, TaskStatus, TaskDependencies, TaskWatchers, MyTask } from '../types/project'
 import type { CalendarTask } from '../types/calendar'
 import type { Attachment, FileVersion } from '../types/attachment'
 
@@ -134,6 +134,13 @@ export const taskService = {
   /** Deletes a comment authored by the current user. */
   deleteComment(commentId: string): Promise<void> {
     return api.delete(`/api/tasks/comments/${commentId}`).then(() => undefined)
+  },
+
+  /** Toggles the current user's emoji reaction on a comment; returns the updated reaction groups. */
+  reactToComment(commentId: string, emoji: string): Promise<CommentReaction[]> {
+    return api
+      .post<{ reactions: CommentReaction[] }>(`/api/tasks/comments/${commentId}/react`, { emoji })
+      .then((r) => r.data.reactions)
   },
 
   /** Downloads the project's tasks as a CSV blob. */

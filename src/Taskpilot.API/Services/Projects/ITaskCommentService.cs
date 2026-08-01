@@ -17,4 +17,7 @@ public interface ITaskCommentService
 
     /// <summary>Deletes a comment the caller authored; returns the task id for broadcasting.</summary>
     Task<Result<Guid>> DeleteAsync(Guid userId, Guid commentId);
+
+    /// <summary>Toggles the caller's emoji reaction on a comment; returns the updated reaction groups.</summary>
+    Task<Result<CommentReactionsUpdateDto>> ToggleReactionAsync(Guid userId, Guid commentId, string emoji);
 }

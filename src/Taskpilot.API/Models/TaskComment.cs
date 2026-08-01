@@ -29,4 +29,7 @@ public class TaskComment
 
     /// <summary>UTC time the comment was last edited; null if never.</summary>
     public DateTime? UpdatedAt { get; set; }
+
+    /// <summary>Emoji reactions placed on this comment.</summary>
+    public ICollection<TaskCommentReaction> Reactions { get; set; } = new List<TaskCommentReaction>();
 }

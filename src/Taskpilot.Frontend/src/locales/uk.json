@@ -776,7 +776,8 @@
     "noComments": "Коментарів ще немає.",
     "commentPlaceholder": "Напишіть коментар… (Ctrl+Enter — надіслати)",
     "addComment": "Коментувати",
-    "deleteComment": "Видалити коментар"
+    "deleteComment": "Видалити коментар",
+    "addReaction": "Додати реакцію"
   },
   "sprints": {
     "new": "Новий спрінт",

@@ -776,7 +776,8 @@
     "noComments": "No comments yet.",
     "commentPlaceholder": "Write a comment… (Ctrl+Enter to post)",
     "addComment": "Comment",
-    "deleteComment": "Delete comment"
+    "deleteComment": "Delete comment",
+    "addReaction": "Add reaction"
   },
   "sprints": {
     "new": "New sprint",

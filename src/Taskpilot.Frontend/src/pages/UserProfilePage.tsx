@@ -9,7 +9,7 @@ import ResultState from '../components/feedback/ResultState'
 import { SkeletonDetail } from '../components/ui/Skeleton'
 import { cn } from '../lib/cn'
 import { forumService } from '../services/forumService'
-import { userService, type PublicProfile, type ReputationEntry, type SharedProject } from '../services/userService'
+import { userService, type Achievement, type PublicProfile, type ReputationEntry, type SharedProject } from '../services/userService'
 import { useAppSelector } from '../store/hooks'
 import type { TopicListItem } from '../types/forum'
 
@@ -19,6 +19,17 @@ const BADGE_ICON: Record<string, string> = {
   contributor: '⬆️',
   freelancer: '💼',
   veteran: '🏆',
+}
+
+/** Emoji per achievement code (name/description come from i18n). */
+const ACHIEVEMENT_ICON: Record<string, string> = {
+  first_task: '🎯',
+  ten_tasks: '✅',
+  fifty_tasks: '🏅',
+  punctual: '⏱️',
+  reputable: '⭐',
+  solver: '💡',
+  trader: '🛒',
 }
 
 /** A contact line shown only when the value is present. */
@@ -49,6 +60,7 @@ export default function UserProfilePage() {
   const [profile, setProfile] = useState<PublicProfile | null>(null)
   const [topics, setTopics] = useState<TopicListItem[]>([])
   const [reputation, setReputation] = useState<ReputationEntry[]>([])
+  const [achievements, setAchievements] = useState<Achievement[]>([])
   const [sharedProjects, setSharedProjects] = useState<SharedProject[]>([])
   const [notFound, setNotFound] = useState(false)
 
@@ -87,6 +99,7 @@ export default function UserProfilePage() {
       .catch(() => setNotFound(true))
     forumService.getTopics({ authorId: userId }).then((r) => setTopics(r.items)).catch(() => {})
     userService.getReputationHistory(userId).then((r) => setReputation(r.entries)).catch(() => {})
+    userService.getAchievements(userId).then(setAchievements).catch(() => {})
     userService.getSharedProjects(userId).then(setSharedProjects).catch(() => {})
   }, [userId])
 
@@ -236,6 +249,35 @@ export default function UserProfilePage() {
                   <Contact label={t('settings.linkedin')} value={profile.linkedIn} href={profile.linkedIn ?? undefined} />
                   <Contact label={t('settings.github')} value={profile.github} href={profile.github ?? undefined} />
                   <Contact label={t('settings.phone')} value={profile.phone} />
+                </div>
+              </div>
+            )}
+
+            {/* Achievement badges */}
+            {achievements.length > 0 && (
+              <div className="mt-6 rounded-xl border border-border bg-surface p-6">
+                <h2 className="mb-3 font-bold">{t('achievements.title')}</h2>
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                  {achievements.map((a) => (
+                    <div
+                      key={a.code}
+                      title={t(`achievements.desc.${a.code}`, '')}
+                      className={cn(
+                        'flex items-center gap-2.5 rounded-lg border p-2.5',
+                        a.earned
+                          ? 'border-primary/30 bg-primary/5'
+                          : 'border-border bg-canvas/50 opacity-60',
+                      )}
+                    >
+                      <span className={cn('text-2xl', !a.earned && 'grayscale')}>{ACHIEVEMENT_ICON[a.code] ?? '🏅'}</span>
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-medium">{t(`achievements.name.${a.code}`, a.code)}</p>
+                        <p className="text-xs text-muted">
+                          {a.earned ? t('achievements.earned') : `${Math.min(a.current, a.target)}/${a.target}`}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             )}

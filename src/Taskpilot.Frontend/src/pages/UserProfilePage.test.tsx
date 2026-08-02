@@ -3,10 +3,11 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import UserProfilePage from './UserProfilePage'
 import type { PublicProfile } from '../services/userService'
 
-const { getPublicProfile, endorseSkill, getReputationHistory, getTopics, getSharedProjects, getUserReviews, leaveProjectReview, state } = vi.hoisted(() => ({
+const { getPublicProfile, endorseSkill, getReputationHistory, getAchievements, getTopics, getSharedProjects, getUserReviews, leaveProjectReview, state } = vi.hoisted(() => ({
   getPublicProfile: vi.fn(),
   endorseSkill: vi.fn(),
   getReputationHistory: vi.fn(),
+  getAchievements: vi.fn(),
   getTopics: vi.fn(),
   getSharedProjects: vi.fn(),
   getUserReviews: vi.fn(),
@@ -19,7 +20,7 @@ vi.mock('react-router-dom', () => ({
   Link: ({ children }: { children: React.ReactNode }) => <a>{children}</a>,
 }))
 vi.mock('../services/userService', () => ({
-  userService: { getPublicProfile, endorseSkill, getReputationHistory, getSharedProjects },
+  userService: { getPublicProfile, endorseSkill, getReputationHistory, getAchievements, getSharedProjects },
 }))
 vi.mock('../services/forumService', () => ({ forumService: { getTopics } }))
 vi.mock('../services/reviewService', () => ({ reviewService: { getUserReviews, leaveProjectReview } }))
@@ -65,6 +66,7 @@ describe('UserProfilePage skill endorsements', () => {
   beforeEach(() => {
     state.currentUserId = 'me'
     getReputationHistory.mockReset().mockResolvedValue({ entries: [], ledgerTotal: 0 })
+    getAchievements.mockReset().mockResolvedValue([])
     getTopics.mockReset().mockResolvedValue({ items: [] })
     endorseSkill.mockReset().mockResolvedValue({ skill: 'React', endorsed: true, count: 3 })
     getPublicProfile.mockReset().mockResolvedValue(profile())

@@ -452,6 +452,28 @@
     "preview": "Preview",
     "nothingToPreview": "Nothing to preview yet."
   },
+  "achievements": {
+    "title": "Achievements",
+    "earned": "Earned",
+    "name": {
+      "first_task": "First task",
+      "ten_tasks": "Getting things done",
+      "fifty_tasks": "Task machine",
+      "punctual": "Always on time",
+      "reputable": "Well respected",
+      "solver": "Problem solver",
+      "trader": "Marketplace pro"
+    },
+    "desc": {
+      "first_task": "Complete your first task",
+      "ten_tasks": "Complete 10 tasks",
+      "fifty_tasks": "Complete 50 tasks",
+      "punctual": "Finish 5 tasks on time or early",
+      "reputable": "Reach 100 reputation points",
+      "solver": "Have a forum reply accepted as the solution",
+      "trader": "Complete a marketplace task"
+    }
+  },
   "reputation": {
     "points": "{{count}} pts",
     "history": "Reputation history",

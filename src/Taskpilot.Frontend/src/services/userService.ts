@@ -97,6 +97,14 @@ export interface ReputationHistory {
   ledgerTotal: number
 }
 
+/** One achievement badge with progress (mirrors AchievementDto). */
+export interface Achievement {
+  code: string
+  earned: boolean
+  current: number
+  target: number
+}
+
 /** REST calls for the current user's account (profile, password). */
 export const userService = {
   updateProfile(data: UpdateProfileData): Promise<User> {
@@ -133,6 +141,11 @@ export const userService = {
   /** The user's reputation history (ledger entries + running total). */
   getReputationHistory(userId: string): Promise<ReputationHistory> {
     return api.get<ReputationHistory>(`/api/users/${userId}/reputation/history`).then((r) => r.data)
+  },
+
+  /** A user's achievement badges (earned + progress). */
+  getAchievements(userId: string): Promise<Achievement[]> {
+    return api.get<Achievement[]>(`/api/users/${userId}/achievements`).then((r) => r.data)
   },
 
   /** Downloads a user's activity report (yourself, or anyone if you're an admin). */

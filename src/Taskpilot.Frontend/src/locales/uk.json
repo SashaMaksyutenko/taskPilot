@@ -559,6 +559,15 @@
     "backupRemaining": "Залишилось резервних кодів: {{count}}",
     "regenerate": "Оновити резервні коди"
   },
+  "digest": {
+    "title": "Ваш тиждень у підсумку",
+    "completed": "Виконано",
+    "created": "Створено",
+    "overdue": "Прострочено",
+    "dueSoon": "Дедлайн цього тижня",
+    "summarize": "AI-опис",
+    "generating": "Пишу…"
+  },
   "dashboard": {
     "welcome": "З поверненням",
     "subtitle": "Ось що відбувається у ваших справах.",

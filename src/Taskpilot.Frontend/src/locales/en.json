@@ -557,6 +557,15 @@
     "backupRemaining": "{{count}} backup codes left",
     "regenerate": "Regenerate backup codes"
   },
+  "digest": {
+    "title": "Your week in review",
+    "completed": "Completed",
+    "created": "Created",
+    "overdue": "Overdue",
+    "dueSoon": "Due this week",
+    "summarize": "AI summary",
+    "generating": "Writing…"
+  },
   "dashboard": {
     "welcome": "Welcome back",
     "subtitle": "Here’s what’s happening across your work.",

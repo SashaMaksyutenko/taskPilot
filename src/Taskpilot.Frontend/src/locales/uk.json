@@ -713,6 +713,8 @@
     "clearSelection": "Зняти вибір",
     "deleteTitle": "Видалити задачу",
     "deleteConfirm": "Видалити «{{title}}» разом з підзадачами? Дію не можна скасувати.",
+    "importCsv": "Імпорт CSV",
+    "importResult": "Імпортовано задач: {{created}} (пропущено: {{skipped}}).",
     "exportCsv": "Експорт CSV",
     "exportXlsx": "Експорт Excel",
     "exportPdf": "Експорт PDF",

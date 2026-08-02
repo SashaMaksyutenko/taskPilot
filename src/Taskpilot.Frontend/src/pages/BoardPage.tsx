@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import TaskActionsDropdown from '../components/menus/TaskActionsDropdown'
@@ -373,6 +373,19 @@ export default function BoardPage() {
     if (blob) download(blob, 'csv')
   }
 
+  const importInputRef = useRef<HTMLInputElement>(null)
+  const importCsv = async (file: File | undefined) => {
+    if (!file) return
+    try {
+      const res = await taskService.importCsv(projectId, await file.text())
+      notify.success(t('board.importResult', { created: res.created, skipped: res.skipped }))
+      if (res.errors.length > 0) notify.error(res.errors[0])
+      taskService.getTasks(projectId).then(setTasks).catch(() => {})
+    } catch (e) {
+      notify.error(apiErrorMessage(e))
+    }
+  }
+
   const exportXlsx = async () => {
     const blob = await taskService.exportXlsx(projectId).catch(() => null)
     if (blob) download(blob, 'xlsx')
@@ -496,6 +509,23 @@ export default function BoardPage() {
             <Button variant="secondary" size="sm" onClick={() => setShareOpen(true)}>
               {t('share.button')}
             </Button>
+          )}
+          {canWrite && (
+            <>
+              <input
+                ref={importInputRef}
+                type="file"
+                accept=".csv,text/csv"
+                className="hidden"
+                onChange={(e) => {
+                  importCsv(e.target.files?.[0])
+                  e.target.value = ''
+                }}
+              />
+              <Button variant="secondary" size="sm" onClick={() => importInputRef.current?.click()}>
+                {t('board.importCsv')}
+              </Button>
+            </>
           )}
           <Button variant="secondary" size="sm" onClick={exportCsv}>
             {t('board.exportCsv')}

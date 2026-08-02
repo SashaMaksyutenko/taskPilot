@@ -150,6 +150,13 @@ export const taskService = {
       .then((r) => r.data as Blob)
   },
 
+  /** Imports tasks from CSV text; returns how many were created/skipped. */
+  importCsv(projectId: string, csv: string): Promise<{ created: number; skipped: number; errors: string[] }> {
+    return api
+      .post<{ created: number; skipped: number; errors: string[] }>(`/api/projects/${projectId}/tasks/import`, { csv })
+      .then((r) => r.data)
+  },
+
   /** Downloads the project's tasks as an Excel (.xlsx) blob. */
   exportXlsx(projectId: string): Promise<Blob> {
     return api

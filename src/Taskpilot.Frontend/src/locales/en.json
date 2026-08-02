@@ -711,6 +711,8 @@
     "clearSelection": "Clear",
     "deleteTitle": "Delete task",
     "deleteConfirm": "Delete \"{{title}}\" and its subtasks? This cannot be undone.",
+    "importCsv": "Import CSV",
+    "importResult": "Imported {{created}} tasks ({{skipped}} skipped).",
     "exportCsv": "Export CSV",
     "exportXlsx": "Export Excel",
     "exportPdf": "Export PDF",

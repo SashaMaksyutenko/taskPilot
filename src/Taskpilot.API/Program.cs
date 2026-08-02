@@ -134,6 +134,13 @@ builder.Services.Configure<SecurityOptions>(builder.Configuration.GetSection("Se
 // OpenAI (populated from .env: OpenAi__*). Disabled until an API key is set.
 // IChatBotClient powers AI subtask suggestions; the data-aware assistant is wired below.
 builder.Services.Configure<OpenAiOptions>(builder.Configuration.GetSection("OpenAi"));
+// Embeddings for semantic search — a SEPARATE provider (the assistant may run on Groq,
+// which has no embeddings endpoint). Disabled until Embeddings__ApiKey is set.
+builder.Services.Configure<EmbeddingOptions>(builder.Configuration.GetSection("Embeddings"));
+builder.Services.AddHttpClient<Taskpilot.API.Services.Search.IEmbeddingClient,
+    Taskpilot.API.Services.Search.OpenAiEmbeddingClient>();
+builder.Services.AddScoped<Taskpilot.API.Services.Search.ISemanticSearchService,
+    Taskpilot.API.Services.Search.SemanticSearchService>();
 builder.Services.AddHttpClient<IChatBotClient, OpenAiChatBotClient>();
 builder.Services.AddScoped<ITaskAiService, TaskAiService>();
 // Data-aware assistant: tool-calling OpenAI client + read/write toolboxes + agent loop.

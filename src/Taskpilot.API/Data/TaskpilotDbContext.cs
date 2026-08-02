@@ -126,6 +126,8 @@ public class TaskpilotDbContext : DbContext
 
     public DbSet<CustomFieldValue> CustomFieldValues => Set<CustomFieldValue>();
 
+    public DbSet<SearchDocument> SearchDocuments => Set<SearchDocument>();
+
     public DbSet<Sprint> Sprints => Set<Sprint>();
 
     /// <summary>Moderation warnings issued to users.</summary>
@@ -1247,6 +1249,22 @@ public class TaskpilotDbContext : DbContext
                   .WithMany()
                   .HasForeignKey(r => r.UserId)
                   .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        // SearchDocument entity configuration (semantic-search index)
+        modelBuilder.Entity<SearchDocument>(entity =>
+        {
+            entity.HasKey(d => d.Id);
+            entity.Property(d => d.SourceType).IsRequired().HasMaxLength(16);
+
+            // One index row per (user, source item); also the lookup for a user's index.
+            entity.HasIndex(d => new { d.OwnerUserId, d.SourceType, d.SourceId }).IsUnique();
+
+            // Deleting a user removes their personal index.
+            entity.HasOne(d => d.OwnerUser)
+                  .WithMany()
+                  .HasForeignKey(d => d.OwnerUserId)
+                  .OnDelete(DeleteBehavior.Cascade);
         });
 
         // CustomFieldDefinition entity configuration

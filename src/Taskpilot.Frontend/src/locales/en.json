@@ -92,7 +92,19 @@
     "noResults": "No results.",
     "hint": "Type at least 2 characters.",
     "save": "Save",
-    "removeSaved": "Remove saved search"
+    "removeSaved": "Remove saved search",
+    "mode": { "keyword": "Keyword", "semantic": "Semantic" },
+    "source": { "Task": "Task", "Note": "Note" },
+    "semantic": {
+      "placeholder": "Describe what you're looking for…",
+      "hint": "Search your tasks and notes by meaning — type at least 2 characters.",
+      "noResults": "Nothing similar found. Try rebuilding the index if you added items recently.",
+      "reindex": "Rebuild index",
+      "reindexing": "Rebuilding…",
+      "indexed": "{{count}} items indexed",
+      "disabledTitle": "Semantic search is off",
+      "disabledHint": "It needs an embeddings provider. Set an Embeddings API key on the server to search your tasks and notes by meaning (not just keywords)."
+    }
   },
   "topbar": {
     "theme": "Toggle theme",

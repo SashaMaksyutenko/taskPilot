@@ -699,6 +699,12 @@
     "title": "Board",
     "filterByTag": "Filter:",
     "clearFilter": "Clear",
+    "filter": {
+      "anyAssignee": "Anyone",
+      "me": "Assigned to me",
+      "unassigned": "Unassigned",
+      "anyPriority": "Any priority"
+    },
     "duplicate": "Duplicate",
     "copyLink": "Copy link",
     "assignTo": "Assign to",

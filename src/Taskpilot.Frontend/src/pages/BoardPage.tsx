@@ -29,6 +29,7 @@ import { taskService, type ReportSchedule } from '../services/taskService'
 import { epicService } from '../services/epicService'
 import { notify } from '../lib/toast'
 import { STATUS_COLUMNS, type Epic, type Project, type Task, type TaskStatus } from '../types/project'
+import { FILTER_ME, FILTER_UNASSIGNED, hasActiveFilters, matchesBoardFilters } from '../lib/boardFilters'
 
 const priorityClasses: Record<string, string> = {
   High: 'bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-300',
@@ -96,6 +97,9 @@ export default function BoardPage() {
   const [members, setMembers] = useState<{ id: string; name: string }[]>([])
   // Tags currently used to filter the board (empty = show everything).
   const [activeTags, setActiveTags] = useState<string[]>([])
+  // Assignee/priority board filters ('' = any).
+  const [filterAssignee, setFilterAssignee] = useState('')
+  const [filterPriority, setFilterPriority] = useState('')
   // Ids of tasks selected for a bulk action.
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   // Task awaiting delete confirmation.
@@ -358,11 +362,16 @@ export default function BoardPage() {
   const toggleTag = (tag: string) =>
     setActiveTags((prev) => (prev.includes(tag) ? prev.filter((x) => x !== tag) : [...prev, tag]))
 
-  // A task passes the filter when no tag is selected or it carries any selected tag.
-  const visibleTasks =
-    activeTags.length === 0
-      ? topLevelTasks
-      : topLevelTasks.filter((t) => t.tags.some((tag) => activeTags.includes(tag)))
+  // A task passes when it satisfies every active filter (tags / assignee / priority).
+  const boardFilters = { tags: activeTags, assignee: filterAssignee, priority: filterPriority }
+  const visibleTasks = hasActiveFilters(boardFilters)
+    ? topLevelTasks.filter((t) => matchesBoardFilters(t, boardFilters, currentUserId))
+    : topLevelTasks
+  const clearFilters = () => {
+    setActiveTags([])
+    setFilterAssignee('')
+    setFilterPriority('')
+  }
 
   // How to order tasks within each column ('manual' keeps board/creation order).
   const [taskSort, setTaskSort] = useState<TaskSortKey>('manual')
@@ -678,12 +687,33 @@ export default function BoardPage() {
           <p className="mb-5 text-sm text-muted">👁️ {t('board.readOnly')}</p>
         )}
 
-        {/* Tag filter bar */}
-        {allTags.length > 0 && (
+        {/* Filter bar: assignee + priority selects, plus tag pills when the project has tags. */}
+        {view === 'board' && (
           <div className="mb-5 flex flex-wrap items-center gap-1.5">
-            <span className="mr-1 text-xs font-semibold text-muted">
-              {t('board.filterByTag')}
-            </span>
+            <select
+              value={filterAssignee}
+              onChange={(e) => setFilterAssignee(e.target.value)}
+              className="rounded-lg border border-border bg-surface px-2 py-1 text-xs text-foreground outline-none"
+            >
+              <option value="">{t('board.filter.anyAssignee')}</option>
+              <option value={FILTER_ME}>{t('board.filter.me')}</option>
+              <option value={FILTER_UNASSIGNED}>{t('board.filter.unassigned')}</option>
+              {members.map((m) => (
+                <option key={m.id} value={m.id}>{m.name}</option>
+              ))}
+            </select>
+            <select
+              value={filterPriority}
+              onChange={(e) => setFilterPriority(e.target.value)}
+              className="rounded-lg border border-border bg-surface px-2 py-1 text-xs text-foreground outline-none"
+            >
+              <option value="">{t('board.filter.anyPriority')}</option>
+              {['High', 'Medium', 'Low'].map((p) => (
+                <option key={p} value={p}>{t(`board.priority.${p}`)}</option>
+              ))}
+            </select>
+
+            {allTags.length > 0 && <span className="ml-1 mr-0.5 text-xs font-semibold text-muted">{t('board.filterByTag')}</span>}
             {allTags.map((tag) => {
               const active = activeTags.includes(tag)
               return (
@@ -691,18 +721,17 @@ export default function BoardPage() {
                   key={tag}
                   onClick={() => toggleTag(tag)}
                   className={`rounded-full px-2 py-0.5 text-xs font-medium transition ${
-                    active
-                      ? 'bg-primary text-white'
-                      : 'bg-primary/10 text-primary hover:bg-primary/20'
+                    active ? 'bg-primary text-white' : 'bg-primary/10 text-primary hover:bg-primary/20'
                   }`}
                 >
                   {tag}
                 </button>
               )
             })}
-            {activeTags.length > 0 && (
+
+            {hasActiveFilters(boardFilters) && (
               <button
-                onClick={() => setActiveTags([])}
+                onClick={clearFilters}
                 className="ml-1 text-xs font-semibold text-muted hover:text-red-600 hover:underline"
               >
                 {t('board.clearFilter')}

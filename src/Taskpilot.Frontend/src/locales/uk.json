@@ -701,6 +701,12 @@
     "title": "Дошка",
     "filterByTag": "Фільтр:",
     "clearFilter": "Скинути",
+    "filter": {
+      "anyAssignee": "Будь-хто",
+      "me": "Призначені мені",
+      "unassigned": "Без виконавця",
+      "anyPriority": "Будь-який пріоритет"
+    },
     "duplicate": "Дублювати",
     "copyLink": "Копіювати посилання",
     "assignTo": "Призначити",

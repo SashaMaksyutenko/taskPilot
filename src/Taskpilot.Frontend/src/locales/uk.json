@@ -719,7 +719,7 @@
     "exportXlsx": "Експорт Excel",
     "exportPdf": "Експорт PDF",
     "reports": "Звіти",
-    "view": { "board": "Дошка", "gantt": "Таймлайн", "team": "Команда", "analytics": "Аналітика", "sprints": "Спрінти" },
+    "view": { "board": "Дошка", "gantt": "Таймлайн", "team": "Команда", "analytics": "Аналітика", "sprints": "Спрінти", "activity": "Активність" },
     "reportPdf": "Проєкт — PDF",
     "reportXlsx": "Проєкт — Excel",
     "teamReportPdf": "Команда — PDF",
@@ -792,6 +792,17 @@
     "none": "Нічим не заблокована.",
     "addBlocker": "Додати блокуючу задачу…",
     "remove": "Прибрати"
+  },
+  "activity": {
+    "empty": "Активності ще немає.",
+    "action": {
+      "created": "створив(-ла) задачу",
+      "updated": "оновив(-ла) задачу",
+      "statusChanged": "змінив(-ла) статус",
+      "rescheduled": "переніс(-ла) дедлайн",
+      "moved": "перемістив(-ла) задачу",
+      "deleted": "видалив(-ла) задачу"
+    }
   },
   "watchers": {
     "title": "Спостерігачі",

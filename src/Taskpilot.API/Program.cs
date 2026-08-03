@@ -384,6 +384,7 @@ builder.Services.AddScoped<ILeaderboardService, LeaderboardService>();
 builder.Services.AddScoped<IAchievementService, AchievementService>();
 builder.Services.AddScoped<IWeeklyDigestService, WeeklyDigestService>();
 builder.Services.AddScoped<ICsvImportService, CsvImportService>();
+builder.Services.AddScoped<IActivityService, ActivityService>();
 builder.Services.AddScoped<IProjectAnalyticsService, ProjectAnalyticsService>();
 builder.Services.AddScoped<ISprintService, SprintService>();
 builder.Services.AddScoped<IExtensionService, ExtensionService>();

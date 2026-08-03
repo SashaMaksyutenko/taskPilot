@@ -10,6 +10,7 @@ import CustomFieldsModal from '../components/modals/CustomFieldsModal'
 import ShareBoardModal from '../components/modals/ShareBoardModal'
 import ProjectAnalyticsPanel from '../components/ProjectAnalyticsPanel'
 import SprintsPanel from '../components/SprintsPanel'
+import ActivityPanel from '../components/ActivityPanel'
 import ConfirmDialog from '../components/modals/ConfirmDialog'
 import Button from '../components/ui/Button'
 import Input from '../components/ui/Input'
@@ -418,7 +419,7 @@ export default function BoardPage() {
 
   // The toolbar would be too crowded with four report buttons, so they live in a menu.
   const [reportsOpen, setReportsOpen] = useState(false)
-  const [view, setView] = useState<'board' | 'gantt' | 'team' | 'analytics' | 'sprints'>('board')
+  const [view, setView] = useState<'board' | 'gantt' | 'team' | 'analytics' | 'sprints' | 'activity'>('board')
   const runReport = (fn: () => Promise<void>) => {
     setReportsOpen(false)
     void fn()
@@ -479,7 +480,7 @@ export default function BoardPage() {
 
           {/* Board / timeline switcher */}
           <div className="ml-auto inline-flex shrink-0 overflow-hidden rounded-lg border border-border">
-            {(['board', 'gantt', 'team', 'analytics', 'sprints'] as const).map((v) => (
+            {(['board', 'gantt', 'team', 'analytics', 'sprints', 'activity'] as const).map((v) => (
               <button
                 key={v}
                 onClick={() => setView(v)}
@@ -722,6 +723,8 @@ export default function BoardPage() {
 
         {/* Sprints / iterations */}
         {view === 'sprints' && <SprintsPanel projectId={projectId} canWrite={canWrite} />}
+
+        {view === 'activity' && <ActivityPanel projectId={projectId} />}
 
         {/* Columns */}
         {view === 'board' && (

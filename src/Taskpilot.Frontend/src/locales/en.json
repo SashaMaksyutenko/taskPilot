@@ -717,7 +717,7 @@
     "exportXlsx": "Export Excel",
     "exportPdf": "Export PDF",
     "reports": "Reports",
-    "view": { "board": "Board", "gantt": "Timeline", "team": "Team", "analytics": "Analytics", "sprints": "Sprints" },
+    "view": { "board": "Board", "gantt": "Timeline", "team": "Team", "analytics": "Analytics", "sprints": "Sprints", "activity": "Activity" },
     "reportPdf": "Project — PDF",
     "reportXlsx": "Project — Excel",
     "teamReportPdf": "Team — PDF",
@@ -790,6 +790,17 @@
     "none": "Not blocked by anything.",
     "addBlocker": "Add a blocking task…",
     "remove": "Remove"
+  },
+  "activity": {
+    "empty": "No activity yet.",
+    "action": {
+      "created": "created a task",
+      "updated": "updated a task",
+      "statusChanged": "changed status",
+      "rescheduled": "rescheduled a task",
+      "moved": "moved a task",
+      "deleted": "deleted a task"
+    }
   },
   "watchers": {
     "title": "Watchers",

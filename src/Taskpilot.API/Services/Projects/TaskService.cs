@@ -585,6 +585,62 @@ public class TaskService : ITaskService
     }
 
     /// <inheritdoc />
+    public async Task<Result<int>> BulkAssignAsync(Guid userId, IEnumerable<Guid> taskIds, Guid? assigneeId)
+    {
+        // Validate the assignee once before touching any task.
+        if (assigneeId is { } aid && !await _context.Users.AnyAsync(u => u.Id == aid))
+            return Result<int>.Fail("Assignee not found.");
+
+        // Reuse UpdateTaskAsync per task (preserving every other field) so access checks,
+        // audit, webhooks and the assignment notification fire exactly as for a single edit.
+        var changed = 0;
+        foreach (var id in taskIds.Distinct())
+        {
+            var task = await LoadAccessibleAsync(id, userId);
+            if (task is null) continue;
+            var result = await UpdateTaskAsync(userId, id, Preserving(task, assigneeId: assigneeId, overrideAssignee: true));
+            if (result.Succeeded) changed++;
+        }
+
+        _logger.LogInformation("Bulk assign. UserId: {UserId}, Assignee: {Assignee}, Changed: {Changed}", userId, assigneeId, changed);
+        return Result<int>.Ok(changed);
+    }
+
+    /// <inheritdoc />
+    public async Task<Result<int>> BulkSetPriorityAsync(Guid userId, IEnumerable<Guid> taskIds, string priority)
+    {
+        if (!Enum.TryParse<TaskPriority>(priority, ignoreCase: true, out _))
+            return Result<int>.Fail("Invalid priority.");
+
+        var changed = 0;
+        foreach (var id in taskIds.Distinct())
+        {
+            var task = await LoadAccessibleAsync(id, userId);
+            if (task is null) continue;
+            var result = await UpdateTaskAsync(userId, id, Preserving(task, priority: priority));
+            if (result.Succeeded) changed++;
+        }
+
+        _logger.LogInformation("Bulk priority. UserId: {UserId}, Priority: {Priority}, Changed: {Changed}", userId, priority, changed);
+        return Result<int>.Ok(changed);
+    }
+
+    /// <summary>
+    /// Builds an <see cref="UpdateTaskDto"/> that keeps every editable field as-is except an
+    /// optional single override. Keeping Deadline equal avoids the owner-only deadline guard.
+    /// </summary>
+    private static UpdateTaskDto Preserving(ProjectTask task, Guid? assigneeId = null, string? priority = null,
+        bool overrideAssignee = false) => new()
+    {
+        Title = task.Title,
+        Description = task.Description,
+        Priority = priority ?? task.Priority.ToString(),
+        AssigneeId = overrideAssignee || assigneeId is not null ? assigneeId : task.AssigneeId,
+        Deadline = task.Deadline,
+        // Tags/Estimate/Recurrence stay null → left unchanged.
+    };
+
+    /// <inheritdoc />
     public async Task<Result<TaskDto>> DuplicateTaskAsync(Guid userId, Guid taskId)
     {
         var source = await LoadAccessibleAsync(taskId, userId);

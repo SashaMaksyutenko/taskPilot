@@ -709,6 +709,8 @@
     "viewHistory": "Переглянути історію",
     "selected": "Вибрано: {{count}}",
     "bulkMoveTo": "Перемістити в…",
+    "bulkAssignTo": "Призначити…",
+    "bulkPriority": "Пріоритет…",
     "bulkDelete": "Видалити",
     "clearSelection": "Зняти вибір",
     "deleteTitle": "Видалити задачу",

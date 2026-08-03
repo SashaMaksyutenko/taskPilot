@@ -41,6 +41,12 @@ public interface ITaskService
     /// <summary>Deletes several tasks at once; returns how many were deleted.</summary>
     Task<Result<int>> BulkDeleteAsync(Guid userId, IEnumerable<Guid> taskIds);
 
+    /// <summary>Reassigns several tasks to one user (or unassigns); returns how many changed.</summary>
+    Task<Result<int>> BulkAssignAsync(Guid userId, IEnumerable<Guid> taskIds, Guid? assigneeId);
+
+    /// <summary>Sets the priority of several tasks at once; returns how many changed.</summary>
+    Task<Result<int>> BulkSetPriorityAsync(Guid userId, IEnumerable<Guid> taskIds, string priority);
+
     /// <summary>Creates a copy of an existing task in the same project (status reset to Backlog).</summary>
     Task<Result<TaskDto>> DuplicateTaskAsync(Guid userId, Guid taskId);
 

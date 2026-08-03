@@ -707,6 +707,8 @@
     "viewHistory": "View history",
     "selected": "{{count}} selected",
     "bulkMoveTo": "Move to…",
+    "bulkAssignTo": "Assign to…",
+    "bulkPriority": "Priority…",
     "bulkDelete": "Delete",
     "clearSelection": "Clear",
     "deleteTitle": "Delete task",

@@ -249,6 +249,32 @@ public class TasksController : BaseApiController
             : BadRequest(new { error = result.Error });
     }
 
+    /// <summary>Reassigns several tasks to one user (or unassigns) at once.</summary>
+    [HttpPost("api/tasks/bulk/assign")]
+    public async Task<IActionResult> BulkAssign([FromBody] BulkAssignDto dto)
+    {
+        var userId = CurrentUserId();
+        if (userId is null) return Unauthorized();
+
+        var result = await _tasks.BulkAssignAsync(userId.Value, dto.TaskIds, dto.AssigneeId);
+        return result.Succeeded
+            ? Ok(new { changed = result.Value })
+            : BadRequest(new { error = result.Error });
+    }
+
+    /// <summary>Sets the priority of several tasks at once.</summary>
+    [HttpPost("api/tasks/bulk/priority")]
+    public async Task<IActionResult> BulkPriority([FromBody] BulkPriorityDto dto)
+    {
+        var userId = CurrentUserId();
+        if (userId is null) return Unauthorized();
+
+        var result = await _tasks.BulkSetPriorityAsync(userId.Value, dto.TaskIds, dto.Priority);
+        return result.Succeeded
+            ? Ok(new { changed = result.Value })
+            : BadRequest(new { error = result.Error });
+    }
+
     /// <summary>Starts the task's time tracker.</summary>
     [HttpPost("api/tasks/{taskId:guid}/timer/start")]
     public async Task<IActionResult> StartTimer(Guid taskId)

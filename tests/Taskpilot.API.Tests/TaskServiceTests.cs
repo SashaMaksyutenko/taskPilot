@@ -476,6 +476,60 @@ public class TaskServiceTests
     }
 
     [Fact]
+    public async Task BulkAssign_ReassignsAll_AndCanUnassign()
+    {
+        using var ctx = TestDb.CreateContext();
+        var owner = await TestDb.AddUserAsync(ctx, "Owner");
+        var bob = await TestDb.AddUserAsync(ctx, "Bob");
+        var projectId = await TestDb.AddProjectAsync(ctx, owner);
+        var svc = Create(ctx);
+        var ids = new List<Guid>();
+        for (var i = 0; i < 3; i++)
+            ids.Add((await svc.CreateTaskAsync(owner, projectId, new CreateTaskDto { Title = $"Task {i}" })).Value!.Id);
+
+        var assigned = await svc.BulkAssignAsync(owner, ids, bob);
+        Assert.Equal(3, assigned.Value);
+        Assert.All(await ctx.ProjectTasks.Where(t => ids.Contains(t.Id)).ToListAsync(), t => Assert.Equal(bob, t.AssigneeId));
+
+        // Passing null unassigns.
+        await svc.BulkAssignAsync(owner, ids, null);
+        Assert.All(await ctx.ProjectTasks.Where(t => ids.Contains(t.Id)).ToListAsync(), t => Assert.Null(t.AssigneeId));
+    }
+
+    [Fact]
+    public async Task BulkAssign_InvalidAssignee_Fails()
+    {
+        using var ctx = TestDb.CreateContext();
+        var owner = await TestDb.AddUserAsync(ctx, "Owner");
+        var projectId = await TestDb.AddProjectAsync(ctx, owner);
+        var svc = Create(ctx);
+        var id = (await svc.CreateTaskAsync(owner, projectId, new CreateTaskDto { Title = "Task" })).Value!.Id;
+
+        Assert.False((await svc.BulkAssignAsync(owner, new[] { id }, Guid.NewGuid())).Succeeded);
+    }
+
+    [Fact]
+    public async Task BulkSetPriority_SetsAll_AndRejectsInvalid()
+    {
+        using var ctx = TestDb.CreateContext();
+        var owner = await TestDb.AddUserAsync(ctx, "Owner");
+        var projectId = await TestDb.AddProjectAsync(ctx, owner);
+        var svc = Create(ctx);
+        var ids = new List<Guid>
+        {
+            (await svc.CreateTaskAsync(owner, projectId, new CreateTaskDto { Title = "A", Priority = "Low" })).Value!.Id,
+            (await svc.CreateTaskAsync(owner, projectId, new CreateTaskDto { Title = "B", Priority = "Low" })).Value!.Id,
+        };
+
+        var changed = await svc.BulkSetPriorityAsync(owner, ids, "High");
+        Assert.Equal(2, changed.Value);
+        Assert.All(await ctx.ProjectTasks.Where(t => ids.Contains(t.Id)).ToListAsync(),
+            t => Assert.Equal(TaskPriority.High, t.Priority));
+
+        Assert.False((await svc.BulkSetPriorityAsync(owner, ids, "Nope")).Succeeded);
+    }
+
+    [Fact]
     public async Task ChangeStatus_RejectedWhenTargetColumnAtWipLimit()
     {
         using var ctx = TestDb.CreateContext();

@@ -321,6 +321,24 @@ export default function BoardPage() {
     if (res) notify.success(t('toast.tasksDeleted', { count: res.deleted }))
   }
 
+  const bulkAssign = async (assigneeId: string | null) => {
+    const ids = [...selectedIds]
+    if (ids.length === 0) return
+    const res = await taskService.bulkAssign(ids, assigneeId).catch(() => null)
+    clearSelection()
+    taskService.getTasks(projectId).then(setTasks).catch(() => {})
+    if (res) notify.success(t('toast.tasksUpdated', { count: res.changed }))
+  }
+
+  const bulkPriority = async (priority: string) => {
+    const ids = [...selectedIds]
+    if (ids.length === 0) return
+    const res = await taskService.bulkPriority(ids, priority).catch(() => null)
+    clearSelection()
+    taskService.getTasks(projectId).then(setTasks).catch(() => {})
+    if (res) notify.success(t('toast.tasksUpdated', { count: res.changed }))
+  }
+
   // The board shows only top-level tasks; subtasks are managed inside their parent.
   const topLevelTasks = tasks.filter((t) => !t.parentTaskId)
 
@@ -696,6 +714,41 @@ export default function BoardPage() {
               {STATUS_COLUMNS.map((col) => (
                 <option key={col.key} value={col.key}>
                   {t(`board.status.${col.key}`)}
+                </option>
+              ))}
+            </select>
+            <select
+              defaultValue=""
+              onChange={(e) => {
+                if (e.target.value) bulkAssign(e.target.value === '__unassign' ? null : e.target.value)
+                e.target.value = ''
+              }}
+              className="rounded-lg border border-border bg-surface px-2 py-1 text-sm text-foreground outline-none"
+            >
+              <option value="" disabled>
+                {t('board.bulkAssignTo')}
+              </option>
+              <option value="__unassign">{t('board.unassign')}</option>
+              {members.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.name}
+                </option>
+              ))}
+            </select>
+            <select
+              defaultValue=""
+              onChange={(e) => {
+                if (e.target.value) bulkPriority(e.target.value)
+                e.target.value = ''
+              }}
+              className="rounded-lg border border-border bg-surface px-2 py-1 text-sm text-foreground outline-none"
+            >
+              <option value="" disabled>
+                {t('board.bulkPriority')}
+              </option>
+              {['Low', 'Medium', 'High'].map((p) => (
+                <option key={p} value={p}>
+                  {t(`board.priority.${p}`)}
                 </option>
               ))}
             </select>

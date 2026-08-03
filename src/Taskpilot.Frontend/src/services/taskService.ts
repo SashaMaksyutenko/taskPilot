@@ -97,6 +97,16 @@ export const taskService = {
     return api.post<{ deleted: number }>('/api/tasks/bulk/delete', { taskIds }).then((r) => r.data)
   },
 
+  /** Reassigns several tasks to one user (null to unassign). */
+  bulkAssign(taskIds: string[], assigneeId: string | null): Promise<{ changed: number }> {
+    return api.post<{ changed: number }>('/api/tasks/bulk/assign', { taskIds, assigneeId }).then((r) => r.data)
+  },
+
+  /** Sets the priority of several tasks at once. */
+  bulkPriority(taskIds: string[], priority: string): Promise<{ changed: number }> {
+    return api.post<{ changed: number }>('/api/tasks/bulk/priority', { taskIds, priority }).then((r) => r.data)
+  },
+
   /** Creates a copy of a task in the same project. */
   duplicateTask(taskId: string): Promise<Task> {
     return api.post<Task>(`/api/tasks/${taskId}/duplicate`).then((r) => r.data)

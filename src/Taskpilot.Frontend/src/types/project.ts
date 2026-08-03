@@ -38,6 +38,8 @@ export interface Task {
   timerStartedAt: string | null
   /** Sprint the task belongs to, or null when in the backlog. */
   sprintId: string | null
+  /** Epic the task belongs to, or null when ungrouped. */
+  epicId: string | null
   /** Effort estimate in story points, or null when not estimated. */
   estimate: number | null
   /** "None" | "Daily" | "Weekly" | "Monthly". */
@@ -143,6 +145,22 @@ export interface Sprint {
   doneCount: number
   plannedPoints: number
   completedPoints: number
+}
+
+/** An epic — a themed grouping of tasks (mirrors EpicDto). */
+export interface Epic {
+  id: string
+  projectId: string
+  title: string
+  color: string | null
+  taskCount: number
+  doneCount: number
+}
+
+/** Input for creating/updating an epic (mirrors SaveEpicDto). */
+export interface SaveEpic {
+  title: string
+  color?: string | null
 }
 
 /** Input for creating/updating a sprint (mirrors SaveSprintDto). */

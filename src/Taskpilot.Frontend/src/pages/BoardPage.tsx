@@ -7,6 +7,7 @@ import TaskDetailModal from '../components/modals/TaskDetailModal'
 import ProjectMembersModal from '../components/modals/ProjectMembersModal'
 import AutomationsModal from '../components/modals/AutomationsModal'
 import CustomFieldsModal from '../components/modals/CustomFieldsModal'
+import EpicsModal from '../components/modals/EpicsModal'
 import ShareBoardModal from '../components/modals/ShareBoardModal'
 import ProjectAnalyticsPanel from '../components/ProjectAnalyticsPanel'
 import SprintsPanel from '../components/SprintsPanel'
@@ -25,8 +26,9 @@ import { projectService } from '../services/projectService'
 import { useDragAndDrop } from '../hooks/useDragAndDrop'
 import { apiErrorMessage } from '../lib/apiError'
 import { taskService, type ReportSchedule } from '../services/taskService'
+import { epicService } from '../services/epicService'
 import { notify } from '../lib/toast'
-import { STATUS_COLUMNS, type Project, type Task, type TaskStatus } from '../types/project'
+import { STATUS_COLUMNS, type Epic, type Project, type Task, type TaskStatus } from '../types/project'
 
 const priorityClasses: Record<string, string> = {
   High: 'bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-300',
@@ -82,6 +84,9 @@ export default function BoardPage() {
   const [membersOpen, setMembersOpen] = useState(false)
   const [automationsOpen, setAutomationsOpen] = useState(false)
   const [customFieldsOpen, setCustomFieldsOpen] = useState(false)
+  const [epicsOpen, setEpicsOpen] = useState(false)
+  // The project's epics, for the coloured chip shown on each task card.
+  const [epics, setEpics] = useState<Epic[]>([])
   const [shareOpen, setShareOpen] = useState(false)
   const [criticalIds, setCriticalIds] = useState<Set<string>>(new Set())
   const [canWrite, setCanWrite] = useState(true)
@@ -137,7 +142,12 @@ export default function BoardPage() {
       .getWipLimits(projectId)
       .then((ls) => setWipLimits(Object.fromEntries(ls.map((l) => [l.status, l.maxTasks]))))
       .catch(() => {})
+    // Project epics — for the coloured chip on cards and the modal.
+    epicService.list(projectId).then(setEpics).catch(() => {})
   }, [projectId, currentUserId])
+
+  // Quick lookup of an epic by id for the card chip.
+  const epicById = new Map(epics.map((e) => [e.id, e]))
 
   // Save (or clear, when blank/0) the WIP limit for a column from the inline editor.
   const saveWip = async (status: string) => {
@@ -522,6 +532,11 @@ export default function BoardPage() {
           {canWrite && (
             <Button variant="secondary" size="sm" onClick={() => setCustomFieldsOpen(true)}>
               {t('customFields.button')}
+            </Button>
+          )}
+          {canWrite && (
+            <Button variant="secondary" size="sm" onClick={() => setEpicsOpen(true)}>
+              {t('epics.button')}
             </Button>
           )}
           {isOwner && (
@@ -910,6 +925,17 @@ export default function BoardPage() {
                             }`}
                           />
                         )}
+                        {task.epicId && epicById.has(task.epicId) && (
+                          <span
+                            className={`mb-1 inline-block max-w-full truncate rounded px-1.5 py-0.5 text-[10px] font-semibold ${canWrite ? 'ml-5' : ''}`}
+                            style={{
+                              background: `${epicById.get(task.epicId)!.color ?? '#64748b'}22`,
+                              color: epicById.get(task.epicId)!.color ?? '#64748b',
+                            }}
+                          >
+                            {epicById.get(task.epicId)!.title}
+                          </span>
+                        )}
                         <div className={`pr-5 text-sm font-medium ${canWrite ? 'pl-5' : ''}`}>{task.title}</div>
                         <div className="mt-2 flex items-center gap-2">
                           <span
@@ -989,6 +1015,16 @@ export default function BoardPage() {
 
       {customFieldsOpen && (
         <CustomFieldsModal projectId={projectId} onClose={() => setCustomFieldsOpen(false)} />
+      )}
+
+      {epicsOpen && (
+        <EpicsModal
+          projectId={projectId}
+          onClose={() => {
+            setEpicsOpen(false)
+            epicService.list(projectId).then(setEpics).catch(() => {})
+          }}
+        />
       )}
 
       {shareOpen && <ShareBoardModal projectId={projectId} onClose={() => setShareOpen(false)} />}

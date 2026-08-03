@@ -27,6 +27,7 @@ const task = (over: Partial<Task>): Task => ({
   timeSpentSeconds: 0,
   timerStartedAt: null,
   sprintId: null,
+  epicId: null,
   estimate: null,
   recurrence: 'None',
   recurrenceInterval: 1,

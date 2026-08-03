@@ -95,6 +95,9 @@ public class ProjectTask
     /// <summary>The sprint this task belongs to, or null when it's in the backlog.</summary>
     public Guid? SprintId { get; set; }
 
+    /// <summary>The epic this task belongs to, or null when it's ungrouped.</summary>
+    public Guid? EpicId { get; set; }
+
     /// <summary>Optional effort estimate in story points; null when not estimated.</summary>
     public int? Estimate { get; set; }
 }

@@ -130,6 +130,8 @@ public class TaskpilotDbContext : DbContext
 
     public DbSet<Sprint> Sprints => Set<Sprint>();
 
+    public DbSet<Epic> Epics => Set<Epic>();
+
     /// <summary>Moderation warnings issued to users.</summary>
     public DbSet<UserWarning> UserWarnings => Set<UserWarning>();
 
@@ -727,6 +729,12 @@ public class TaskpilotDbContext : DbContext
                   .HasForeignKey(t => t.SprintId)
                   .OnDelete(DeleteBehavior.SetNull);
 
+            // A task optionally belongs to an epic; deleting the epic ungroups its tasks.
+            entity.HasOne<Epic>()
+                  .WithMany()
+                  .HasForeignKey(t => t.EpicId)
+                  .OnDelete(DeleteBehavior.SetNull);
+
             // Tags are stored as a Postgres text[] and never null.
             entity.Property(t => t.Tags)
                   .HasColumnType("text[]")
@@ -770,6 +778,20 @@ public class TaskpilotDbContext : DbContext
             entity.HasOne(s => s.Project)
                   .WithMany()
                   .HasForeignKey(s => s.ProjectId)
+                  .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // Epic entity configuration
+        modelBuilder.Entity<Epic>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Title).IsRequired().HasMaxLength(120);
+            entity.Property(e => e.Color).HasMaxLength(16);
+
+            entity.HasIndex(e => e.ProjectId);
+            entity.HasOne(e => e.Project)
+                  .WithMany()
+                  .HasForeignKey(e => e.ProjectId)
                   .OnDelete(DeleteBehavior.Cascade);
         });
 

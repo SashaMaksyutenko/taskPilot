@@ -387,6 +387,7 @@ builder.Services.AddScoped<ICsvImportService, CsvImportService>();
 builder.Services.AddScoped<IActivityService, ActivityService>();
 builder.Services.AddScoped<IProjectAnalyticsService, ProjectAnalyticsService>();
 builder.Services.AddScoped<ISprintService, SprintService>();
+builder.Services.AddScoped<IEpicService, EpicService>();
 builder.Services.AddScoped<IExtensionService, ExtensionService>();
 builder.Services.AddScoped<ISearchService, SearchService>();
 builder.Services.AddScoped<ISavedSearchService, SavedSearchService>();

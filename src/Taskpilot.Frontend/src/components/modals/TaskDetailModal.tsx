@@ -17,7 +17,8 @@ import TaskDependenciesSection from '../TaskDependenciesSection'
 import TaskWatchersSection from '../TaskWatchersSection'
 import TaskCustomFieldsSection from '../TaskCustomFieldsSection'
 import { sprintService } from '../../services/sprintService'
-import type { Sprint } from '../../types/project'
+import { epicService } from '../../services/epicService'
+import type { Sprint, Epic } from '../../types/project'
 
 const PRIORITIES = ['Low', 'Medium', 'High']
 
@@ -77,6 +78,18 @@ export default function TaskDetailModal({
   const changeSprint = async (value: string) => {
     setSprintId(value)
     await sprintService.assignTask(task.id, value || null).catch(() => {})
+  }
+
+  // Epic the task belongs to (null = ungrouped), plus the project's epics to pick from.
+  const [epics, setEpics] = useState<Epic[]>([])
+  const [epicId, setEpicId] = useState<string>(task.epicId ?? '')
+  useEffect(() => {
+    epicService.list(task.projectId).then(setEpics).catch(() => {})
+  }, [task.projectId])
+
+  const changeEpic = async (value: string) => {
+    setEpicId(value)
+    await epicService.assignTask(task.id, value || null).catch(() => {})
   }
   const [tags, setTags] = useState<string[]>(task.tags ?? [])
   const [tagInput, setTagInput] = useState('')
@@ -649,6 +662,20 @@ export default function TaskDetailModal({
               className="w-full rounded-lg border border-border bg-canvas px-3 py-2 text-sm outline-none focus:border-primary disabled:opacity-60"
             />
           </div>
+          {(epics.length > 0 || canWrite) && (
+            <div>
+              <label className="mb-1 block text-sm font-medium">{t('epics.field')}</label>
+              <select
+                value={epicId}
+                onChange={(e) => changeEpic(e.target.value)}
+                disabled={!canWrite}
+                className="w-full rounded-lg border border-border bg-canvas px-3 py-2 text-sm outline-none focus:border-primary disabled:opacity-60"
+              >
+                <option value="">{t('epics.none')}</option>
+                {epics.map((e) => <option key={e.id} value={e.id}>{e.title}</option>)}
+              </select>
+            </div>
+          )}
         </div>
 
         {/* Dependencies (blocked-by / blocks) */}

@@ -31,6 +31,9 @@ public class TaskDto
     /// <summary>The sprint this task belongs to, or null when it's in the backlog.</summary>
     public Guid? SprintId { get; set; }
 
+    /// <summary>The epic this task belongs to, or null when it's ungrouped.</summary>
+    public Guid? EpicId { get; set; }
+
     /// <summary>Effort estimate in story points, or null when not estimated.</summary>
     public int? Estimate { get; set; }
 

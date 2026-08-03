@@ -1219,6 +1219,7 @@ public class TaskService : ITaskService
         TimeSpentSeconds = t.TimeSpentSeconds,
         TimerStartedAt = t.TimerStartedAt,
         SprintId = t.SprintId,
+        EpicId = t.EpicId,
         Estimate = t.Estimate,
         Recurrence = t.RecurrenceType.ToString(),
         RecurrenceInterval = t.RecurrenceInterval,

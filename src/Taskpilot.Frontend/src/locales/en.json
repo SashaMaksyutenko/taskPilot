@@ -810,6 +810,17 @@
     "watching": "Watching",
     "none": "No one is watching this task yet."
   },
+  "epics": {
+    "title": "Epics",
+    "subtitle": "Group related tasks under a theme or goal — an epic can span several sprints.",
+    "button": "Epics",
+    "field": "Epic",
+    "none": "No epic",
+    "empty": "No epics yet.",
+    "add": "Add epic",
+    "remove": "Remove epic",
+    "namePlaceholder": "Epic name (e.g. Checkout revamp)"
+  },
   "customFields": {
     "title": "Custom fields",
     "subtitle": "Define extra fields (text, number, select or date) for this project's tasks.",

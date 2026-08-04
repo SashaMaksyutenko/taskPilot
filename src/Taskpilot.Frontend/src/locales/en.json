@@ -21,6 +21,7 @@
     "dashboard": "Dashboard",
     "projects": "Projects",
     "myTasks": "My work",
+    "group": { "work": "Work", "community": "Community", "tools": "Tools" },
     "calendar": "Calendar",
     "forum": "Forum",
     "market": "Market",

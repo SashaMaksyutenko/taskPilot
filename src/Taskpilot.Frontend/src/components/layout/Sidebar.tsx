@@ -16,6 +16,7 @@ import {
   Tag,
   Trophy,
   Users,
+  type LucideIcon,
 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { NavLink } from 'react-router-dom'
@@ -25,96 +26,100 @@ import BrandLogo from '../BrandLogo'
 import { useBranding } from '../../hooks/useBranding'
 import { useFeatures } from '../../hooks/useFeatures'
 
-const LINKS = [
-  { to: '/', key: 'nav.dashboard', icon: LayoutDashboard, end: true },
-  { to: '/projects', key: 'nav.projects', icon: FolderKanban, end: false },
-  { to: '/my-tasks', key: 'nav.myTasks', icon: ListChecks, end: false },
-  { to: '/calendar', key: 'nav.calendar', icon: Calendar, end: false },
-  { to: '/forum', key: 'nav.forum', icon: MessagesSquare, end: false },
-  { to: '/marketplace', key: 'nav.market', icon: ShoppingBag, end: false },
-  { to: '/chat', key: 'nav.chat', icon: MessageSquare, end: false },
-  { to: '/users', key: 'nav.users', icon: Users, end: false },
-  { to: '/leaderboard', key: 'nav.leaderboard', icon: Trophy, end: false },
-  { to: '/assistant', key: 'nav.assistant', icon: Bot, end: false },
-  { to: '/notes', key: 'nav.notes', icon: NotebookPen, end: false },
-  { to: '/bookmarks', key: 'nav.bookmarks', icon: Bookmark, end: false },
-  { to: '/search', key: 'nav.search', icon: Search, end: false },
-] as const
+type NavItemDef = { to: string; key: string; icon: LucideIcon; end?: boolean }
 
-/** Reusable sidebar navigation links (desktop sidebar + mobile drawer). */
+/** A single nav row with a gradient accent bar when active. */
+function NavItem({ item, onNavigate }: { item: NavItemDef; onNavigate?: () => void }) {
+  const { t } = useTranslation()
+  const Icon = item.icon
+  return (
+    <NavLink
+      to={item.to}
+      end={item.end}
+      onClick={onNavigate}
+      className={({ isActive }) =>
+        cn(
+          'group relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition',
+          isActive ? 'bg-primary-muted text-primary font-semibold' : 'text-muted hover:bg-canvas hover:text-foreground',
+        )
+      }
+    >
+      {({ isActive }) => (
+        <>
+          <span
+            className={cn(
+              'gradient-primary absolute left-0 top-1/2 h-5 w-1 -translate-y-1/2 rounded-r-full transition-opacity',
+              isActive ? 'opacity-100' : 'opacity-0',
+            )}
+          />
+          <Icon className="h-[18px] w-[18px] shrink-0" strokeWidth={2} />
+          {t(item.key)}
+        </>
+      )}
+    </NavLink>
+  )
+}
+
+/** Reusable sidebar navigation (desktop sidebar + mobile drawer), grouped into sections. */
 export function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
   const { t } = useTranslation()
   const user = useAppSelector((s) => s.auth.user)
   const features = useFeatures()
 
-  // Hide the entry point for any feature the admin has switched off.
-  const visibleLinks = LINKS.filter((l) => {
-    if (l.to === '/forum') return features.forumEnabled
-    if (l.to === '/marketplace') return features.marketplaceEnabled
-    return true
-  })
-  const links = user?.role === 'Admin'
-    ? [...visibleLinks, { to: '/admin', key: 'nav.admin', icon: Shield, end: false as const }]
-    : visibleLinks
+  // Community section respects the admin's feature toggles.
+  const community: NavItemDef[] = [
+    ...(features.forumEnabled ? [{ to: '/forum', key: 'nav.forum', icon: MessagesSquare }] : []),
+    ...(features.marketplaceEnabled ? [{ to: '/marketplace', key: 'nav.market', icon: ShoppingBag }] : []),
+    { to: '/chat', key: 'nav.chat', icon: MessageSquare },
+    { to: '/users', key: 'nav.users', icon: Users },
+    { to: '/leaderboard', key: 'nav.leaderboard', icon: Trophy },
+  ]
+
+  const sections: { label: string | null; items: NavItemDef[] }[] = [
+    { label: null, items: [{ to: '/', key: 'nav.dashboard', icon: LayoutDashboard, end: true }] },
+    {
+      label: 'nav.group.work',
+      items: [
+        { to: '/projects', key: 'nav.projects', icon: FolderKanban },
+        { to: '/my-tasks', key: 'nav.myTasks', icon: ListChecks },
+        { to: '/calendar', key: 'nav.calendar', icon: Calendar },
+      ],
+    },
+    { label: 'nav.group.community', items: community },
+    {
+      label: 'nav.group.tools',
+      items: [
+        { to: '/assistant', key: 'nav.assistant', icon: Bot },
+        { to: '/notes', key: 'nav.notes', icon: NotebookPen },
+        { to: '/bookmarks', key: 'nav.bookmarks', icon: Bookmark },
+        { to: '/search', key: 'nav.search', icon: Search },
+      ],
+    },
+  ]
 
   return (
     <nav className="space-y-0.5">
-      {links.map(({ to, key, icon: Icon, end }) => (
-        <NavLink
-          key={to}
-          to={to}
-          end={end}
-          onClick={onNavigate}
-          className={({ isActive }) =>
-            cn(
-              'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition',
-              isActive
-                ? 'bg-primary-muted text-primary'
-                : 'text-muted hover:bg-canvas hover:text-foreground',
-            )
-          }
-        >
-          <Icon className="h-[18px] w-[18px] shrink-0" strokeWidth={2} />
-          {t(key)}
-        </NavLink>
+      {sections.map((s) => (
+        <div key={s.label ?? 'main'}>
+          {s.label && (
+            <p className="px-3 pb-1 pt-3 text-[10px] font-semibold uppercase tracking-wider text-muted/70">{t(s.label)}</p>
+          )}
+          {s.items.map((item) => (
+            <NavItem key={item.to} item={item} onNavigate={onNavigate} />
+          ))}
+        </div>
       ))}
-      <NavLink
-        to="/settings"
-        onClick={onNavigate}
-        className={({ isActive }) =>
-          cn(
-            'mt-2 flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition',
-            isActive
-              ? 'bg-primary-muted text-primary'
-              : 'text-muted hover:bg-canvas hover:text-foreground',
-          )
-        }
-      >
-        <Settings className="h-[18px] w-[18px]" strokeWidth={2} />
-        {t('nav.settings', 'Settings')}
-      </NavLink>
 
-      {/* Secondary links: the public docs/help and pricing pages. */}
+      {/* System: admin (admins only) + settings */}
       <div className="mt-2 space-y-0.5 border-t border-border pt-2">
-        {[
-          { to: '/docs', key: 'docs.nav', icon: BookOpen },
-          { to: '/pricing', key: 'pricing.nav', icon: Tag },
-        ].map(({ to, key, icon: Icon }) => (
-          <NavLink
-            key={to}
-            to={to}
-            onClick={onNavigate}
-            className={({ isActive }) =>
-              cn(
-                'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition',
-                isActive ? 'bg-primary-muted text-primary' : 'text-muted hover:bg-canvas hover:text-foreground',
-              )
-            }
-          >
-            <Icon className="h-[18px] w-[18px] shrink-0" strokeWidth={2} />
-            {t(key)}
-          </NavLink>
-        ))}
+        {user?.role === 'Admin' && <NavItem item={{ to: '/admin', key: 'nav.admin', icon: Shield }} onNavigate={onNavigate} />}
+        <NavItem item={{ to: '/settings', key: 'nav.settings', icon: Settings }} onNavigate={onNavigate} />
+      </div>
+
+      {/* Public docs/help and pricing pages. */}
+      <div className="mt-2 space-y-0.5 border-t border-border pt-2">
+        <NavItem item={{ to: '/docs', key: 'docs.nav', icon: BookOpen }} onNavigate={onNavigate} />
+        <NavItem item={{ to: '/pricing', key: 'pricing.nav', icon: Tag }} onNavigate={onNavigate} />
       </div>
     </nav>
   )

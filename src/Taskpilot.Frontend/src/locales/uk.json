@@ -21,6 +21,7 @@
     "dashboard": "Головна",
     "projects": "Проєкти",
     "myTasks": "Мої задачі",
+    "group": { "work": "Робота", "community": "Спільнота", "tools": "Інструменти" },
     "calendar": "Календар",
     "forum": "Форум",
     "market": "Маркет",

@@ -10,6 +10,8 @@ import { calendarService } from '../services/calendarService'
 import { chatbotService } from '../services/chatbotService'
 import { notificationService } from '../services/notificationService'
 import { projectService } from '../services/projectService'
+import { taskService } from '../services/taskService'
+import type { MyTask } from '../types/project'
 import { fetchMe } from '../store/authSlice'
 import { useAppDispatch, useAppSelector } from '../store/hooks'
 import type { AppNotification } from '../types/notification'
@@ -18,6 +20,13 @@ import { cn } from '../lib/cn'
 
 const pad = (n: number) => String(n).padStart(2, '0')
 const isoDate = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+
+/** Coloured dot for a task's Kanban status. */
+const statusDot = (status: string) =>
+  status === 'Done' ? 'bg-green-500'
+    : status === 'Review' ? 'bg-amber-500'
+      : status === 'InProgress' ? 'bg-blue-500'
+        : 'bg-slate-400'
 
 /** Personal dashboard — stats, overdue tasks, recent activity. */
 export default function HomePage() {
@@ -30,6 +39,7 @@ export default function HomePage() {
   const [unread, setUnread] = useState(0)
   const [upcoming, setUpcoming] = useState(0)
   const [overdue, setOverdue] = useState<CalendarTask[]>([])
+  const [myTasks, setMyTasks] = useState<MyTask[]>([])
   const [notifications, setNotifications] = useState<AppNotification[]>([])
   const [aiEnabled, setAiEnabled] = useState(false)
   const [loading, setLoading] = useState(true)
@@ -49,6 +59,7 @@ export default function HomePage() {
       notificationService.getNotifications().then((n) => setNotifications(n.slice(0, 6))),
       calendarService.getTasks(isoDate(today), isoDate(in30)).then((t) => setUpcoming(t.length)),
       calendarService.getOverdue().then(setOverdue),
+      taskService.getMine().then((ts) => setMyTasks(ts.filter((x) => x.status !== 'Done').slice(0, 6))),
       chatbotService.status().then((s) => setAiEnabled(s.enabled)),
     ]).finally(() => setLoading(false))
   }, [])
@@ -138,46 +149,51 @@ export default function HomePage() {
           </Card>
         )}
 
+        {/* My work + quick actions */}
         <div className="mt-6 grid gap-4 lg:grid-cols-3">
           <Card className="p-5 lg:col-span-2">
-            <div className="mb-4 flex items-center">
-              <h2 className="font-bold">{t('dashboard.recentActivity')}</h2>
-              {unread > 0 && (
-                <button onClick={markAllRead} className="ml-auto text-xs font-semibold text-primary hover:underline">
-                  {t('dashboard.markAllRead')}
-                </button>
-              )}
+            <div className="mb-3 flex items-center">
+              <h2 className="font-bold">{t('nav.myTasks')}</h2>
+              <Link to="/my-tasks" className="ml-auto text-xs font-semibold text-primary hover:underline">
+                {t('dashboard.seeAll')} →
+              </Link>
             </div>
             {loading ? (
               <div className="space-y-3 py-2">
                 {Array.from({ length: 4 }).map((_, i) => (
                   <div key={i} className="flex items-center gap-3">
-                    <Skeleton className="h-9 w-9 rounded-full" />
-                    <div className="flex-1 space-y-1.5">
-                      <Skeleton className="h-3 w-2/3" />
-                      <Skeleton className="h-2.5 w-1/4" />
-                    </div>
+                    <Skeleton className="h-2.5 w-2.5 rounded-full" />
+                    <Skeleton className="h-3 flex-1" />
                   </div>
                 ))}
               </div>
-            ) : notifications.length === 0 ? (
-              <p className="py-8 text-center text-sm text-muted">{t('dashboard.noActivity')}</p>
+            ) : myTasks.length === 0 ? (
+              <p className="py-8 text-center text-sm text-muted">{t('myTasks.empty')}</p>
             ) : (
-              <ul className="divide-y divide-border">
-                {notifications.map((n) => (
-                  <li key={n.id}>
-                    <button
-                      onClick={() => openNotification(n)}
-                      className="flex w-full items-start gap-3 py-3 text-left hover:opacity-80"
-                    >
-                      <span className={cn('mt-1.5 h-2 w-2 flex-none rounded-full', n.isRead ? 'bg-border' : 'bg-accent')} />
-                      <div>
-                        <p className="text-sm">{n.message}</p>
-                        <p className="text-xs text-muted">{new Date(n.createdAt).toLocaleString()}</p>
-                      </div>
-                    </button>
-                  </li>
-                ))}
+              <ul className="space-y-1">
+                {myTasks.map((task) => {
+                  const overdueTask = task.deadline && new Date(task.deadline).getTime() < Date.now()
+                  return (
+                    <li key={task.id}>
+                      <Link
+                        to={`/projects/${task.projectId}?task=${task.id}`}
+                        className="flex items-center gap-2.5 rounded-lg px-2 py-2 text-sm transition hover:bg-canvas"
+                      >
+                        <span className={cn('h-2 w-2 flex-none rounded-full', statusDot(task.status))} />
+                        <span className="min-w-0 flex-1 truncate font-medium">{task.title}</span>
+                        <span className="hidden items-center gap-1.5 text-xs text-muted sm:flex">
+                          <span className="inline-block h-2 w-2 rounded-full" style={{ background: task.projectColor ?? '#94a3b8' }} />
+                          <span className="max-w-[8rem] truncate">{task.projectName}</span>
+                        </span>
+                        {task.deadline && (
+                          <span className={cn('flex-none text-xs', overdueTask ? 'font-semibold text-red-600 dark:text-red-400' : 'text-muted')}>
+                            {new Date(task.deadline).toLocaleDateString()}
+                          </span>
+                        )}
+                      </Link>
+                    </li>
+                  )
+                })}
               </ul>
             )}
           </Card>
@@ -191,6 +207,50 @@ export default function HomePage() {
             </div>
           </Card>
         </div>
+
+        {/* Recent activity — full width */}
+        <Card className="mt-6 p-5">
+          <div className="mb-4 flex items-center">
+            <h2 className="font-bold">{t('dashboard.recentActivity')}</h2>
+            {unread > 0 && (
+              <button onClick={markAllRead} className="ml-auto text-xs font-semibold text-primary hover:underline">
+                {t('dashboard.markAllRead')}
+              </button>
+            )}
+          </div>
+          {loading ? (
+            <div className="space-y-3 py-2">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="flex items-center gap-3">
+                  <Skeleton className="h-9 w-9 rounded-full" />
+                  <div className="flex-1 space-y-1.5">
+                    <Skeleton className="h-3 w-2/3" />
+                    <Skeleton className="h-2.5 w-1/4" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : notifications.length === 0 ? (
+            <p className="py-8 text-center text-sm text-muted">{t('dashboard.noActivity')}</p>
+          ) : (
+            <ul className="divide-y divide-border">
+              {notifications.map((n) => (
+                <li key={n.id}>
+                  <button
+                    onClick={() => openNotification(n)}
+                    className="flex w-full items-start gap-3 py-3 text-left hover:opacity-80"
+                  >
+                    <span className={cn('mt-1.5 h-2 w-2 flex-none rounded-full', n.isRead ? 'bg-border' : 'bg-accent')} />
+                    <div>
+                      <p className="text-sm">{n.message}</p>
+                      <p className="text-xs text-muted">{new Date(n.createdAt).toLocaleString()}</p>
+                    </div>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Card>
       </FadeIn>
     </div>
   )

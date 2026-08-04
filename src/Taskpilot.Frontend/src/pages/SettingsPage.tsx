@@ -8,6 +8,7 @@ import TagInput from '../components/TagInput'
 import { notify } from '../lib/toast'
 import { apiErrorMessage } from '../lib/apiError'
 import { enablePush, disablePush, getPushEnabled, pushSupported } from '../lib/push'
+import { ACCENTS, getAccentId, setAccent } from '../lib/accent'
 import { authService } from '../services/authService'
 import { notificationService, type QuietHours } from '../services/notificationService'
 import { userService, type UpdateProfileData } from '../services/userService'
@@ -63,6 +64,13 @@ export default function SettingsPage() {
   const navigate = useNavigate()
   const { t } = useTranslation()
   const { user, isAuthenticated } = useAppSelector((s) => s.auth)
+
+  // Accent colour (applies live across the whole app; persisted in the browser).
+  const [accent, setAccentState] = useState(getAccentId())
+  const pickAccent = (id: string) => {
+    setAccent(id)
+    setAccentState(id)
+  }
 
   // Account closure (irreversible).
   const [deleteOpen, setDeleteOpen] = useState(false)
@@ -555,6 +563,31 @@ export default function SettingsPage() {
             </ul>
           </section>
         )}
+
+        {/* Appearance — accent colour picker */}
+        <section className="mb-8 rounded-xl border border-border bg-surface p-6">
+          <h2 className="mb-1 font-bold">{t('settings.appearance')}</h2>
+          <p className="mb-4 text-sm text-muted">{t('settings.accentHint')}</p>
+          <div className="flex flex-wrap gap-3">
+            {ACCENTS.map((a) => (
+              <button
+                key={a.id}
+                type="button"
+                onClick={() => pickAccent(a.id)}
+                title={t(`settings.accent.${a.id}`, a.id)}
+                aria-label={t(`settings.accent.${a.id}`, a.id)}
+                className={`flex h-10 w-10 items-center justify-center rounded-full text-white shadow-sm transition ${
+                  accent === a.id
+                    ? 'ring-2 ring-foreground ring-offset-2 ring-offset-surface'
+                    : 'hover:scale-110'
+                }`}
+                style={{ backgroundImage: a.swatch }}
+              >
+                {accent === a.id && <span className="text-sm font-bold">✓</span>}
+              </button>
+            ))}
+          </div>
+        </section>
 
         {/* Profile */}
         <section className="mb-8 rounded-xl border border-border bg-surface p-6">

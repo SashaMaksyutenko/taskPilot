@@ -592,6 +592,16 @@
   },
   "settings": {
     "title": "Settings",
+    "appearance": "Appearance",
+    "accentHint": "Pick an accent colour — it changes the whole app instantly and is remembered on this device.",
+    "accent": {
+      "indigo": "Indigo",
+      "blue": "Blue",
+      "emerald": "Emerald",
+      "rose": "Rose",
+      "amber": "Amber",
+      "violet": "Violet"
+    },
     "profile": "Profile",
     "changeAvatar": "Change photo",
     "removeAvatar": "Remove photo",
@@ -1069,6 +1079,7 @@
     "muted": "Conversation muted",
     "unmuted": "Conversation unmuted",
     "mutedLabel": "Muted",
+    "backToList": "Back",
     "muteFailed": "Could not update mute setting.",
     "block": "Block user",
     "unblock": "Unblock user",

@@ -9,13 +9,15 @@ import '@fontsource/inter/600.css'
 import '@fontsource/inter/700.css'
 import './index.css'
 import './lib/i18n' // initialize localization (i18next) before the app renders
+import { initAccent } from './lib/accent'
 import { registerServiceWorker } from './lib/registerServiceWorker'
 import App from './App.tsx'
 
-// Apply the saved theme before the app renders to avoid a flash of the wrong theme.
+// Apply the saved theme + accent before the app renders to avoid a flash of the wrong look.
 if (localStorage.getItem('theme') === 'dark') {
   document.documentElement.classList.add('dark')
 }
+initAccent()
 
 // Register the service worker so the app is installable and offline-aware.
 registerServiceWorker()

@@ -1,5 +1,5 @@
 import { Fragment, useEffect, useRef, useState } from 'react'
-import { Ban, Bell, BellOff, Paperclip, Send, Smile, MessageSquare } from 'lucide-react'
+import { ArrowLeft, Ban, Bell, BellOff, Paperclip, Send, Smile, MessageSquare } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import type { HubConnection } from '@microsoft/signalr'
@@ -490,7 +490,13 @@ export default function ChatPage() {
     <div className="-mx-4 -my-6 flex h-[calc(100dvh-4rem)] flex-col sm:-mx-6 lg:-mx-8">
       <div className="flex min-h-0 flex-1 overflow-hidden rounded-xl border border-border bg-surface shadow-soft">
         {/* Sidebar: conversations */}
-        <aside className="flex w-72 flex-col border-r border-border bg-surface">
+        {/* Conversation list — full width on mobile; hidden once a chat is open (single-pane). */}
+        <aside
+          className={cn(
+            'w-full flex-col border-r border-border bg-surface md:w-72',
+            selectedId ? 'hidden md:flex' : 'flex',
+          )}
+        >
           <div className="border-b border-border px-4 py-3">
             <span className="font-bold text-foreground">{t('chat.title')}</span>
           </div>
@@ -588,12 +594,20 @@ export default function ChatPage() {
           </div>
         </aside>
 
-        {/* Main: messages */}
-        <main className="flex min-h-0 flex-1 flex-col bg-canvas/30">
+        {/* Main: messages — hidden on mobile until a chat is opened (single-pane). */}
+        <main className={cn('min-h-0 flex-1 flex-col bg-canvas/30', selectedId ? 'flex' : 'hidden md:flex')}>
           {selectedId ? (
             <>
               {selectedConv && (
                 <div className="flex items-center gap-2 border-b border-border px-4 py-2.5">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedId(null)}
+                    className="-ml-1 rounded-lg p-1.5 text-muted hover:bg-canvas md:hidden"
+                    aria-label={t('chat.backToList', 'Back')}
+                  >
+                    <ArrowLeft className="h-5 w-5" />
+                  </button>
                   <Avatar name={conversationTitle(selectedConv)} src={conversationAvatar(selectedConv)} size={32} />
                   <span className="min-w-0 flex-1 truncate font-semibold text-foreground">
                     {conversationTitle(selectedConv)}

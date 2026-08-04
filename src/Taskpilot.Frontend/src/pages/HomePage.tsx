@@ -78,28 +78,38 @@ export default function HomePage() {
   return (
     <div className="mx-auto max-w-5xl">
       <FadeIn>
-        <h1 className="page-title">
-          {t('dashboard.welcome')}
-          {user ? `, ${user.name}` : ''} 👋
-        </h1>
-        <p className="page-subtitle mt-1">{t('dashboard.subtitle')}</p>
+        {/* Hero: greeting + KPIs on a soft brand-gradient band */}
+        <div className="gradient-hero rounded-2xl border border-border p-6 shadow-card sm:p-8">
+          <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
+            {t('dashboard.welcome')}
+            {user ? (
+              <>
+                , <span className="text-grad">{user.name}</span>
+              </>
+            ) : (
+              ''
+            )}{' '}
+            👋
+          </h1>
+          <p className="page-subtitle mt-1.5">{t('dashboard.subtitle')}</p>
 
-        <div className="mt-8 grid grid-cols-2 gap-4 lg:grid-cols-4">
-          {stats.map((s, i) => (
-            <FadeIn key={s.label} delay={i * 0.05}>
-              <Card className="p-5">
-                <div className={cn('mb-3 inline-flex rounded-xl bg-gradient-to-br p-2.5', s.tone)}>
-                  <s.icon className="h-5 w-5" strokeWidth={2} />
+          <div className="mt-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
+            {stats.map((s, i) => (
+              <FadeIn key={s.label} delay={i * 0.05}>
+                <div className="rounded-xl border border-border bg-surface/80 p-4 shadow-soft backdrop-blur-sm transition hover:shadow-card">
+                  <div className={cn('mb-3 inline-flex rounded-xl bg-gradient-to-br p-2.5', s.tone)}>
+                    <s.icon className="h-5 w-5" strokeWidth={2} />
+                  </div>
+                  {loading ? (
+                    <div className="h-8 w-12 animate-pulse rounded bg-canvas" />
+                  ) : (
+                    <div className="text-3xl font-bold tabular-nums">{s.value}</div>
+                  )}
+                  <div className="mt-1 text-sm text-muted">{s.label}</div>
                 </div>
-                {loading ? (
-                  <div className="h-8 w-12 animate-pulse rounded bg-canvas" />
-                ) : (
-                  <div className="text-3xl font-bold tabular-nums">{s.value}</div>
-                )}
-                <div className="mt-1 text-sm text-muted">{s.label}</div>
-              </Card>
-            </FadeIn>
-          ))}
+              </FadeIn>
+            ))}
+          </div>
         </div>
 
         <WeeklyDigest aiEnabled={aiEnabled} />
@@ -215,7 +225,7 @@ function AssistantCard({ onAsk }: { onAsk: (prompt: string) => void }) {
         </div>
         <button
           onClick={() => onAsk('')}
-          className="inline-flex flex-none items-center gap-1.5 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-primary-hover"
+          className="gradient-primary inline-flex flex-none items-center gap-1.5 rounded-lg px-4 py-2.5 text-sm font-semibold text-white shadow-sm shadow-primary/25 transition hover:brightness-[1.06]"
         >
           {t('dashboard.aiOpen')}
           <ArrowRight className="h-4 w-4" />
@@ -232,7 +242,7 @@ function QuickLink({ to, label, primary }: { to: string; label: string; primary?
       className={cn(
         'block rounded-lg py-2.5 text-center text-sm font-semibold transition',
         primary
-          ? 'bg-primary text-white hover:bg-primary-hover'
+          ? 'gradient-primary text-white shadow-sm shadow-primary/25 hover:brightness-[1.06]'
           : 'border border-border text-foreground hover:bg-canvas',
       )}
     >

@@ -184,6 +184,44 @@ public class TaskCommentService : ITaskCommentService
     }
 
     /// <inheritdoc />
+    public async Task<Result<TaskCommentDto>> EditAsync(Guid userId, Guid commentId, string body)
+    {
+        var comment = await _context.TaskComments.FirstOrDefaultAsync(c => c.Id == commentId);
+        if (comment is null)
+            return Result<TaskCommentDto>.Fail("Comment not found.");
+        // Only the author may edit their own comment.
+        if (comment.AuthorId != userId)
+            return Result<TaskCommentDto>.Fail("You can only edit your own comments.");
+
+        body = (body ?? string.Empty).Trim();
+        if (body.Length == 0)
+            return Result<TaskCommentDto>.Fail("Comment cannot be empty.");
+        if (body.Length > 5000)
+            return Result<TaskCommentDto>.Fail("Comment is too long.");
+
+        comment.Body = body;
+        comment.UpdatedAt = DateTime.UtcNow;
+        await _context.SaveChangesAsync();
+
+        // Reload with author + reactions so the response (and broadcast) is a complete comment.
+        var row = await _context.TaskComments
+            .Where(c => c.Id == commentId)
+            .Select(c => new CommentRow(c.Id, c.TaskId, c.AuthorId, c.Author.Name, c.Author.AvatarFileId, c.Body, c.CreatedAt, c.UpdatedAt))
+            .AsNoTracking()
+            .FirstAsync();
+        var dto = MapDto(row);
+        var reactions = await _context.TaskCommentReactions
+            .Where(r => r.CommentId == commentId)
+            .Select(r => new { r.Emoji, r.UserId, r.CreatedAt })
+            .AsNoTracking()
+            .ToListAsync();
+        dto.Reactions = MapReactions(reactions.Select(r => (r.Emoji, r.UserId, r.CreatedAt)), userId);
+
+        _logger.LogInformation("Comment edited. CommentId: {CommentId}", commentId);
+        return Result<TaskCommentDto>.Ok(dto);
+    }
+
+    /// <inheritdoc />
     public async Task<Result<Guid>> DeleteAsync(Guid userId, Guid commentId)
     {
         var comment = await _context.TaskComments.FirstOrDefaultAsync(c => c.Id == commentId);

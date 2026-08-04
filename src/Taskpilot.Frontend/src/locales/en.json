@@ -883,6 +883,8 @@
     "commentPlaceholder": "Write a comment… (Ctrl+Enter to post)",
     "addComment": "Comment",
     "deleteComment": "Delete comment",
+    "editComment": "Edit comment",
+    "edited": "edited",
     "addReaction": "Add reaction"
   },
   "sprints": {

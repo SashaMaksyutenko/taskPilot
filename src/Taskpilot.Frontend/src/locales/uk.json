@@ -885,6 +885,8 @@
     "commentPlaceholder": "Напишіть коментар… (Ctrl+Enter — надіслати)",
     "addComment": "Коментувати",
     "deleteComment": "Видалити коментар",
+    "editComment": "Редагувати коментар",
+    "edited": "ред.",
     "addReaction": "Додати реакцію"
   },
   "sprints": {

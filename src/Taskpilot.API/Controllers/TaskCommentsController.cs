@@ -64,6 +64,26 @@ public class TaskCommentsController : BaseApiController
         return Ok(result.Value);
     }
 
+    /// <summary>Edits a comment the caller authored.</summary>
+    [HttpPut("api/tasks/comments/{commentId:guid}")]
+    public async Task<IActionResult> Edit(Guid commentId, [FromBody] CreateCommentDto dto)
+    {
+        var userId = CurrentUserId();
+        if (userId is null) return Unauthorized();
+
+        var validation = await _createValidator.ValidateAsync(dto);
+        if (!validation.IsValid)
+            return BadRequest(new { error = validation.Errors[0].ErrorMessage });
+
+        var result = await _comments.EditAsync(userId.Value, commentId, dto.Body);
+        if (!result.Succeeded)
+            return BadRequest(new { error = result.Error });
+
+        // Push the edit to everyone viewing this task in real time.
+        await _taskHub.Clients.Group(TaskHub.GroupName(result.Value!.TaskId)).SendAsync("UpdateComment", result.Value);
+        return Ok(result.Value);
+    }
+
     /// <summary>Toggles the caller's emoji reaction on a comment.</summary>
     [HttpPost("api/tasks/comments/{commentId:guid}/react")]
     public async Task<IActionResult> React(Guid commentId, [FromBody] ReactCommentDto dto)

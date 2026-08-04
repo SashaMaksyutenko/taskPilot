@@ -9,6 +9,7 @@ import TaskHistory from '../TaskHistory'
 import { apiErrorMessage } from '../../lib/apiError'
 import { createTaskConnection } from '../../lib/taskHub'
 import { REACTION_EMOJIS } from '../../lib/reactionEmojis'
+import { useAppSelector } from '../../store/hooks'
 import { projectService } from '../../services/projectService'
 import { taskService, type ExtensionRequest } from '../../services/taskService'
 import { userService, type UserSearchResult } from '../../services/userService'
@@ -208,9 +209,13 @@ export default function TaskDetailModal({
   const [saving, setSaving] = useState(false)
 
   // Comments thread.
+  const currentUserId = useAppSelector((s) => s.auth.user?.id)
   const [comments, setComments] = useState<TaskComment[]>([])
   const [newComment, setNewComment] = useState('')
   const [posting, setPosting] = useState(false)
+  // The comment currently being edited inline, and its draft text.
+  const [editingCommentId, setEditingCommentId] = useState<string | null>(null)
+  const [editDraft, setEditDraft] = useState('')
   const [commentError, setCommentError] = useState('')
 
   // Project members — used as @mention candidates.
@@ -242,6 +247,9 @@ export default function TaskDetailModal({
     })
     connection.on('RemoveComment', (commentId: string) => {
       setComments((prev) => prev.filter((c) => c.id !== commentId))
+    })
+    connection.on('UpdateComment', (comment: TaskComment) => {
+      setComments((prev) => prev.map((c) => (c.id === comment.id ? comment : c)))
     })
     connection.on('ReceiveCommentReaction', (update: CommentReactionsUpdate) => {
       setComments((prev) =>
@@ -279,6 +287,19 @@ export default function TaskDetailModal({
   const removeComment = async (id: string) => {
     await taskService.deleteComment(id).catch(() => {})
     setComments((prev) => prev.filter((c) => c.id !== id))
+  }
+
+  const startEditComment = (c: TaskComment) => {
+    setEditingCommentId(c.id)
+    setEditDraft(c.body)
+  }
+
+  const saveEditComment = async (id: string) => {
+    const body = editDraft.trim()
+    if (!body) return
+    const updated = await taskService.editComment(id, body).catch(() => null)
+    if (updated) setComments((prev) => prev.map((c) => (c.id === id ? updated : c)))
+    setEditingCommentId(null)
   }
 
   // Toggle an emoji reaction on a comment; the response carries the fresh reaction groups.
@@ -804,7 +825,17 @@ export default function TaskDetailModal({
                     <div className="flex items-center gap-2">
                       <span className="text-xs text-muted">
                         {new Date(c.createdAt).toLocaleString()}
+                        {c.updatedAt && <span className="italic"> · {t('taskModal.edited')}</span>}
                       </span>
+                      {c.authorId === currentUserId && editingCommentId !== c.id && (
+                        <button
+                          onClick={() => startEditComment(c)}
+                          className="text-xs font-semibold text-primary opacity-0 transition group-hover:opacity-100 hover:underline"
+                          title={t('taskModal.editComment')}
+                        >
+                          ✎
+                        </button>
+                      )}
                       <button
                         onClick={() => removeComment(c.id)}
                         className="text-xs font-semibold text-red-600 opacity-0 transition group-hover:opacity-100 hover:underline"
@@ -814,9 +845,37 @@ export default function TaskDetailModal({
                       </button>
                     </div>
                   </div>
-                  <p className="mt-1 whitespace-pre-wrap break-words text-foreground">
-                    <MentionText text={c.body} />
-                  </p>
+                  {editingCommentId === c.id ? (
+                    <div className="mt-1">
+                      <textarea
+                        value={editDraft}
+                        onChange={(e) => setEditDraft(e.target.value)}
+                        rows={2}
+                        autoFocus
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); saveEditComment(c.id) }
+                          if (e.key === 'Escape') setEditingCommentId(null)
+                        }}
+                        className="w-full rounded-lg border border-border bg-surface px-2 py-1.5 text-sm outline-none focus:border-primary"
+                      />
+                      <div className="mt-1 flex gap-2">
+                        <button
+                          onClick={() => saveEditComment(c.id)}
+                          disabled={!editDraft.trim()}
+                          className="rounded-md bg-primary px-2.5 py-1 text-xs font-semibold text-white hover:bg-primary-hover disabled:opacity-50"
+                        >
+                          {t('common.save', 'Save')}
+                        </button>
+                        <button onClick={() => setEditingCommentId(null)} className="text-xs font-semibold text-muted hover:underline">
+                          {t('common.cancel', 'Cancel')}
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="mt-1 whitespace-pre-wrap break-words text-foreground">
+                      <MentionText text={c.body} />
+                    </p>
+                  )}
 
                   {/* Emoji reactions */}
                   <div className="mt-1.5 flex flex-wrap items-center gap-1.5">

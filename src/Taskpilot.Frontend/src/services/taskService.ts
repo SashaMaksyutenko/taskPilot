@@ -141,6 +141,11 @@ export const taskService = {
     return api.post<TaskComment>(`/api/tasks/${taskId}/comments`, { body }).then((r) => r.data)
   },
 
+  /** Edits a comment authored by the current user; returns the updated comment. */
+  editComment(commentId: string, body: string): Promise<TaskComment> {
+    return api.put<TaskComment>(`/api/tasks/comments/${commentId}`, { body }).then((r) => r.data)
+  },
+
   /** Deletes a comment authored by the current user. */
   deleteComment(commentId: string): Promise<void> {
     return api.delete(`/api/tasks/comments/${commentId}`).then(() => undefined)

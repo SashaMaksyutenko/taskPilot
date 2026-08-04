@@ -709,7 +709,7 @@ export default function ChatPage() {
                             'max-w-md rounded-2xl px-4 py-2 transition-shadow',
                             highlightId === m.id && 'ring-2 ring-accent ring-offset-2 ring-offset-canvas',
                             mine
-                              ? 'bg-primary text-white shadow-soft'
+                              ? 'gradient-primary text-white shadow-sm shadow-primary/20'
                               : 'border border-border bg-surface text-foreground shadow-soft',
                           )}
                         >

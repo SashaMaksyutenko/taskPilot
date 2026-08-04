@@ -522,7 +522,7 @@ export default function BoardPage() {
                 key={v}
                 onClick={() => setView(v)}
                 className={`shrink-0 whitespace-nowrap px-2.5 py-1.5 text-sm font-medium transition sm:px-3 ${
-                  view === v ? 'bg-primary text-white' : 'text-foreground hover:bg-canvas'
+                  view === v ? 'gradient-primary text-white shadow-sm shadow-primary/20' : 'text-foreground hover:bg-canvas'
                 }`}
               >
                 {t(`board.view.${v}`)}
@@ -659,7 +659,7 @@ export default function BoardPage() {
                       </select>
                       <button
                         onClick={addSchedule}
-                        className="flex-none rounded bg-primary px-2 py-1 text-xs font-semibold text-white hover:bg-primary-hover"
+                        className="gradient-primary flex-none rounded px-2 py-1 text-xs font-semibold text-white transition hover:brightness-[1.06]"
                       >
                         +
                       </button>

@@ -736,6 +736,7 @@
     "exportXlsx": "Export Excel",
     "exportPdf": "Export PDF",
     "reports": "Reports",
+    "more": "More",
     "view": { "board": "Board", "gantt": "Timeline", "team": "Team", "analytics": "Analytics", "sprints": "Sprints", "activity": "Activity" },
     "reportPdf": "Project — PDF",
     "reportXlsx": "Project — Excel",

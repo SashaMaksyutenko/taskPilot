@@ -8,6 +8,7 @@ import ProjectMembersModal from '../components/modals/ProjectMembersModal'
 import AutomationsModal from '../components/modals/AutomationsModal'
 import CustomFieldsModal from '../components/modals/CustomFieldsModal'
 import EpicsModal from '../components/modals/EpicsModal'
+import BoardActionsMenu from '../components/menus/BoardActionsMenu'
 import ShareBoardModal from '../components/modals/ShareBoardModal'
 import ProjectAnalyticsPanel from '../components/ProjectAnalyticsPanel'
 import SprintsPanel from '../components/SprintsPanel'
@@ -530,55 +531,33 @@ export default function BoardPage() {
             ))}
           </div>
 
-          <Button variant="secondary" size="sm" onClick={() => setMembersOpen(true)}>
-            {t('members.button')}
-          </Button>
-          {isOwner && (
-            <Button variant="secondary" size="sm" onClick={() => setAutomationsOpen(true)}>
-              {t('automation.button')}
-            </Button>
-          )}
+          {/* Hidden CSV import picker, triggered from the "More" menu. */}
           {canWrite && (
-            <Button variant="secondary" size="sm" onClick={() => setCustomFieldsOpen(true)}>
-              {t('customFields.button')}
-            </Button>
+            <input
+              ref={importInputRef}
+              type="file"
+              accept=".csv,text/csv"
+              className="hidden"
+              onChange={(e) => {
+                importCsv(e.target.files?.[0])
+                e.target.value = ''
+              }}
+            />
           )}
-          {canWrite && (
-            <Button variant="secondary" size="sm" onClick={() => setEpicsOpen(true)}>
-              {t('epics.button')}
-            </Button>
-          )}
-          {isOwner && (
-            <Button variant="secondary" size="sm" onClick={() => setShareOpen(true)}>
-              {t('share.button')}
-            </Button>
-          )}
-          {canWrite && (
-            <>
-              <input
-                ref={importInputRef}
-                type="file"
-                accept=".csv,text/csv"
-                className="hidden"
-                onChange={(e) => {
-                  importCsv(e.target.files?.[0])
-                  e.target.value = ''
-                }}
-              />
-              <Button variant="secondary" size="sm" onClick={() => importInputRef.current?.click()}>
-                {t('board.importCsv')}
-              </Button>
-            </>
-          )}
-          <Button variant="secondary" size="sm" onClick={exportCsv}>
-            {t('board.exportCsv')}
-          </Button>
-          <Button variant="secondary" size="sm" onClick={exportXlsx}>
-            {t('board.exportXlsx')}
-          </Button>
-          <Button variant="secondary" size="sm" onClick={exportPdf}>
-            {t('board.exportPdf')}
-          </Button>
+          {/* Secondary actions collapsed into one menu so the toolbar stays clean. */}
+          <BoardActionsMenu
+            isOwner={isOwner}
+            canWrite={canWrite}
+            onMembers={() => setMembersOpen(true)}
+            onAutomations={() => setAutomationsOpen(true)}
+            onFields={() => setCustomFieldsOpen(true)}
+            onEpics={() => setEpicsOpen(true)}
+            onShare={() => setShareOpen(true)}
+            onImport={() => importInputRef.current?.click()}
+            onExportCsv={exportCsv}
+            onExportXlsx={exportXlsx}
+            onExportPdf={exportPdf}
+          />
           {/* Reports menu (project health + team performance, PDF/Excel each) */}
           <div className="relative">
             <Button variant="accent" size="sm" onClick={() => setReportsOpen((o) => !o)}>

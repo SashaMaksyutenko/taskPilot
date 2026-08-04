@@ -738,6 +738,7 @@
     "exportXlsx": "Експорт Excel",
     "exportPdf": "Експорт PDF",
     "reports": "Звіти",
+    "more": "Ще",
     "view": { "board": "Дошка", "gantt": "Таймлайн", "team": "Команда", "analytics": "Аналітика", "sprints": "Спрінти", "activity": "Активність" },
     "reportPdf": "Проєкт — PDF",
     "reportXlsx": "Проєкт — Excel",

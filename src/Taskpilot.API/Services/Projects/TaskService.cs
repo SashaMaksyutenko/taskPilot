@@ -113,6 +113,29 @@ public class TaskService : ITaskService
     }
 
     /// <summary>
+    /// Idempotently subscribes users as watchers of a task — auto-watch on participation
+    /// (creating it or being assigned), GitHub-style. Null ids and existing watchers are skipped.
+    /// </summary>
+    private async Task EnsureWatchingAsync(Guid taskId, params Guid?[] userIds)
+    {
+        var ids = userIds.Where(id => id.HasValue).Select(id => id!.Value).Distinct().ToList();
+        if (ids.Count == 0)
+            return;
+
+        var existing = await _context.TaskWatchers
+            .Where(w => w.TaskId == taskId && ids.Contains(w.UserId))
+            .Select(w => w.UserId)
+            .ToListAsync();
+        var toAdd = ids.Except(existing).ToList();
+        if (toAdd.Count == 0)
+            return;
+
+        foreach (var id in toAdd)
+            _context.TaskWatchers.Add(new TaskWatcher { Id = Guid.NewGuid(), TaskId = taskId, UserId = id, CreatedAt = DateTime.UtcNow });
+        await _context.SaveChangesAsync();
+    }
+
+    /// <summary>
     /// Ensures a task's assignee can actually reach the project: if they are neither
     /// the owner nor already a member, they are added as an Editor member so they can
     /// see the board and work on their task.
@@ -200,6 +223,8 @@ public class TaskService : ITaskService
         // Give the assignee access to the project, then notify them.
         await EnsureAssigneeHasAccessAsync(projectId, task.AssigneeId);
         await NotifyAssignedAsync(task.AssigneeId, userId, task);
+        // Auto-watch: the creator and the assignee follow the task from the start.
+        await EnsureWatchingAsync(task.Id, userId, task.AssigneeId);
 
         // Open the task's history. The title is recorded because it can be edited later.
         await AuditAsync(userId, TaskAuditActions.Created, task.Id, $"Created \"{task.Title}\" ({task.Priority}).");
@@ -384,11 +409,12 @@ public class TaskService : ITaskService
             updatedAt = task.UpdatedAt,
         });
 
-        // On a real assignee change, give the new assignee access, then notify them.
+        // On a real assignee change, give the new assignee access, notify them, and auto-watch.
         if (task.AssigneeId != previousAssigneeId)
         {
             await EnsureAssigneeHasAccessAsync(task.ProjectId, task.AssigneeId);
             await NotifyAssignedAsync(task.AssigneeId, userId, task);
+            await EnsureWatchingAsync(task.Id, task.AssigneeId);
         }
 
         return Result<TaskDto>.Ok(await LoadDtoAsync(task.Id));

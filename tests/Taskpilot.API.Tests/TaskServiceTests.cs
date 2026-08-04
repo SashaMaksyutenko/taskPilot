@@ -476,6 +476,37 @@ public class TaskServiceTests
     }
 
     [Fact]
+    public async Task CreateTask_AutoWatchesCreatorAndAssignee()
+    {
+        using var ctx = TestDb.CreateContext();
+        var owner = await TestDb.AddUserAsync(ctx, "Owner");
+        var bob = await TestDb.AddUserAsync(ctx, "Bob");
+        var projectId = await TestDb.AddProjectAsync(ctx, owner);
+        var svc = Create(ctx);
+
+        var created = (await svc.CreateTaskAsync(owner, projectId, new CreateTaskDto { Title = "Ship", AssigneeId = bob })).Value!;
+
+        Assert.True(await ctx.TaskWatchers.AnyAsync(w => w.TaskId == created.Id && w.UserId == owner)); // creator
+        Assert.True(await ctx.TaskWatchers.AnyAsync(w => w.TaskId == created.Id && w.UserId == bob));   // assignee
+    }
+
+    [Fact]
+    public async Task UpdateTask_AutoWatchesNewAssignee()
+    {
+        using var ctx = TestDb.CreateContext();
+        var owner = await TestDb.AddUserAsync(ctx, "Owner");
+        var bob = await TestDb.AddUserAsync(ctx, "Bob");
+        var projectId = await TestDb.AddProjectAsync(ctx, owner);
+        var svc = Create(ctx);
+        var created = (await svc.CreateTaskAsync(owner, projectId, new CreateTaskDto { Title = "Ship" })).Value!;
+        Assert.False(await ctx.TaskWatchers.AnyAsync(w => w.TaskId == created.Id && w.UserId == bob));
+
+        await svc.UpdateTaskAsync(owner, created.Id, new UpdateTaskDto { Title = "Ship", AssigneeId = bob });
+
+        Assert.True(await ctx.TaskWatchers.AnyAsync(w => w.TaskId == created.Id && w.UserId == bob));
+    }
+
+    [Fact]
     public async Task BulkAssign_ReassignsAll_AndCanUnassign()
     {
         using var ctx = TestDb.CreateContext();

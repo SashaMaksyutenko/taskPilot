@@ -158,6 +158,20 @@ public class TaskCommentService : ITaskCommentService
         // Resolve @mentions among the audience.
         var mentioned = MentionParser.Extract(comment.Body, audience);
 
+        // Subscribe the commenter and anyone they @mentioned to the task (GitHub-style), so they
+        // follow its future changes. Idempotent — skip users already watching.
+        var toWatch = mentioned.Append(userId).Distinct().ToList();
+        var alreadyWatching = await _context.TaskWatchers
+            .Where(w => w.TaskId == taskId && toWatch.Contains(w.UserId))
+            .Select(w => w.UserId)
+            .ToListAsync();
+        foreach (var watchUserId in toWatch.Except(alreadyWatching))
+            _context.TaskWatchers.Add(new TaskWatcher
+            {
+                Id = Guid.NewGuid(), TaskId = taskId, UserId = watchUserId, CreatedAt = DateTime.UtcNow,
+            });
+        await _context.SaveChangesAsync();
+
         foreach (var (id, _) in audience)
         {
             var isMention = mentioned.Contains(id);

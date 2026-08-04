@@ -515,13 +515,13 @@ export default function BoardPage() {
           </Link>
           <h1 className="text-xl font-bold">{project?.name ?? t('board.title')}</h1>
 
-          {/* Board / timeline switcher */}
-          <div className="ml-auto inline-flex shrink-0 overflow-hidden rounded-lg border border-border">
+          {/* Board / timeline switcher — scrolls horizontally on narrow screens instead of clipping. */}
+          <div className="ml-auto flex max-w-full shrink overflow-x-auto rounded-lg border border-border">
             {(['board', 'gantt', 'team', 'analytics', 'sprints', 'activity'] as const).map((v) => (
               <button
                 key={v}
                 onClick={() => setView(v)}
-                className={`px-3 py-1.5 text-sm font-medium transition ${
+                className={`shrink-0 whitespace-nowrap px-2.5 py-1.5 text-sm font-medium transition sm:px-3 ${
                   view === v ? 'bg-primary text-white' : 'text-foreground hover:bg-canvas'
                 }`}
               >

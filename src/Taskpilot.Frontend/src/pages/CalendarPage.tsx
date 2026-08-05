@@ -14,10 +14,10 @@ import { taskService } from '../services/taskService'
 import type { CalendarTask } from '../types/calendar'
 
 const STATUS_COLORS: Record<string, string> = {
-  Backlog: 'bg-border text-foreground',
-  InProgress: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-950/50 dark:text-indigo-300',
-  Review: 'bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300',
-  Done: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300',
+  Backlog: 'bg-border/60 text-muted',
+  InProgress: 'bg-primary/10 text-primary',
+  Review: 'bg-amber-500/10 text-amber-600 dark:text-amber-400',
+  Done: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400',
 }
 
 type View = 'month' | 'week' | 'day'
@@ -221,7 +221,7 @@ export default function CalendarPage() {
                 className={cn(
                   'min-h-28 p-2 transition-colors',
                   d ? 'bg-surface' : 'bg-canvas/50',
-                  key !== null && dnd.activeZone === key && 'bg-primary/10 ring-2 ring-inset ring-primary',
+                  key !== null && dnd.activeZone === key && 'bg-primary/5 ring-1 ring-inset ring-primary/50',
                 )}
               >
                 {d && (
@@ -261,7 +261,7 @@ export default function CalendarPage() {
                 {...dnd.dropZoneProps(key)}
                 className={cn(
                   'min-h-[22rem] bg-surface p-2 transition-colors',
-                  dnd.activeZone === key && 'bg-primary/10 ring-2 ring-inset ring-primary',
+                  dnd.activeZone === key && 'bg-primary/5 ring-1 ring-inset ring-primary/50',
                 )}
               >
                 <div className="mb-2 flex items-center gap-1.5 border-b border-border pb-2">
@@ -290,7 +290,7 @@ export default function CalendarPage() {
     return (
       <Card
         {...dnd.dropZoneProps(key)}
-        className={cn('min-h-[22rem] p-4 transition-colors', dnd.activeZone === key && 'bg-primary/10 ring-2 ring-inset ring-primary')}
+        className={cn('min-h-[22rem] p-4 transition-colors', dnd.activeZone === key && 'bg-primary/5 ring-1 ring-inset ring-primary/50')}
       >
         {dayTasks.length === 0 ? (
           <p className="py-16 text-center text-sm text-muted">{t('calendar.noTasks')}</p>

@@ -216,7 +216,7 @@ export default function ForumPage() {
       ) : topics.length === 0 ? (
         <EmptyState message={t('forum.empty')} />
       ) : (
-        <ul className="space-y-2">
+        <ul className="divide-y divide-border overflow-hidden rounded-[var(--radius-card)] border border-border bg-surface">
           {topics.map((topic) => (
             <li key={topic.id}>
               <TopicContextMenu
@@ -233,15 +233,15 @@ export default function ForumPage() {
                 onBookmark={() => toggleBookmark(topic)}
               >
                 <Link to={`/forum/${topic.id}`} className="block">
-                  <Card hover className="flex items-center gap-3 p-4">
-                    <Avatar name={topic.authorName} src={topic.authorAvatarUrl} size={38} />
+                  <div className="flex items-center gap-3 px-4 py-3 transition hover:bg-canvas">
+                    <Avatar name={topic.authorName} src={topic.authorAvatarUrl} size={32} />
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-1.5 truncate font-semibold">
                         {topic.isPinned && <span>📌</span>}
                         {topic.isLocked && <span title={t('topic.locked')}>🔒</span>}
                         <span className="truncate">{topic.title}</span>
                         {topic.isSolved && (
-                          <span className="flex-none rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">
+                          <span className="flex-none rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
                             ✓ {t('forum.solved')}
                           </span>
                         )}
@@ -289,7 +289,7 @@ export default function ForumPage() {
                         {t('forum.views')}
                       </div>
                     </div>
-                  </Card>
+                  </div>
                 </Link>
               </TopicContextMenu>
             </li>

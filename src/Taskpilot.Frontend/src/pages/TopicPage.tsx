@@ -291,7 +291,7 @@ export default function TopicPage() {
         </Link>
 
         {/* Original post */}
-        <div className="mt-3 rounded-xl border border-border bg-surface p-6">
+        <div className="mt-3 rounded-[var(--radius-card)] border border-border bg-surface p-5">
           {editingTopic ? (
             <div>
               <input
@@ -444,8 +444,8 @@ export default function TopicPage() {
             <ActionsContextMenu key={r.id} actions={replyActions}>
             <div
               id={`reply-${r.id}`}
-              className={`flex gap-3 rounded-xl border bg-surface p-4 ${
-                r.isSolution ? 'border-green-400' : 'border-border'
+              className={`flex gap-3 rounded-[var(--radius-card)] border p-3.5 ${
+                r.isSolution ? 'border-emerald-500/60 bg-emerald-500/[0.04]' : 'border-border bg-surface'
               }`}
             >
               {/* Vote control */}
@@ -467,7 +467,7 @@ export default function TopicPage() {
 
               <div className="min-w-0 flex-1">
                 {r.isSolution && (
-                  <span className="mb-1 inline-block rounded bg-green-100 px-2 py-0.5 text-[11px] font-semibold text-green-700">
+                  <span className="mb-1 inline-block rounded bg-emerald-500/10 px-2 py-0.5 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
                     ✓ {t('topic.solution')}
                   </span>
                 )}
@@ -673,7 +673,7 @@ export default function TopicPage() {
         {reportingReply && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setReportingReply(null)}>
             <div
-              className="w-full max-w-md rounded-xl border border-border bg-surface p-5 shadow-xl"
+              className="w-full max-w-md rounded-[var(--radius-card)] border border-border bg-surface p-5 shadow-elevated"
               onClick={(e) => e.stopPropagation()}
             >
               <h3 className="mb-1 font-bold">{t('topic.reportTitle')}</h3>

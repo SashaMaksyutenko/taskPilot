@@ -73,12 +73,12 @@ export default function AssistantPage() {
         <p className="mb-4 text-sm text-muted">{t('assistant.subtitle')}</p>
 
         {enabled === false ? (
-          <div className="rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-800 dark:border-amber-700 dark:bg-amber-950/30 dark:text-amber-300">
+          <div className="rounded-[var(--radius-card)] border border-amber-500/30 bg-amber-500/5 p-4 text-sm text-amber-600 dark:text-amber-400">
             {t('assistant.disabled')}
           </div>
         ) : (
           <>
-            <div className="flex-1 space-y-3 overflow-y-auto rounded-xl border border-border bg-surface p-4">
+            <div className="flex-1 space-y-3 overflow-y-auto rounded-[var(--radius-card)] border border-border bg-surface p-4">
               {messages.length === 0 && <EmptyState message={t('assistant.empty')} />}
               {messages.map((m, i) => (
                 <div key={i} className={m.role === 'user' ? 'flex justify-end' : 'flex justify-start'}>
@@ -86,7 +86,7 @@ export default function AssistantPage() {
                     className={`max-w-[85%] rounded-2xl px-4 py-2 text-sm ${
                       m.role === 'user'
                         ? 'bg-primary text-white'
-                        : 'bg-canvas text-primary'
+                        : 'border border-border bg-surface text-foreground'
                     }`}
                   >
                     {m.role === 'assistant' ? <Markdown>{m.content}</Markdown> : m.content}

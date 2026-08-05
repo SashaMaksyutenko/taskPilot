@@ -33,9 +33,9 @@ import { STATUS_COLUMNS, type Epic, type Project, type Task, type TaskStatus } f
 import { FILTER_ME, FILTER_UNASSIGNED, hasActiveFilters, matchesBoardFilters } from '../lib/boardFilters'
 
 const priorityClasses: Record<string, string> = {
-  High: 'bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-300',
-  Medium: 'bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300',
-  Low: 'bg-border text-muted',
+  High: 'bg-red-500/10 text-red-600 dark:text-red-400',
+  Medium: 'bg-amber-500/10 text-amber-600 dark:text-amber-400',
+  Low: 'bg-border/60 text-muted',
 }
 
 // How tasks are ordered inside each board column (labels come from i18n).
@@ -44,14 +44,7 @@ type TaskSortKey = (typeof TASK_SORT_KEYS)[number]
 // High first, then Medium, then Low.
 const priorityRank: Record<string, number> = { High: 0, Medium: 1, Low: 2 }
 
-const columnAccent: Record<string, string> = {
-  Backlog: 'border-t-slate-400',
-  InProgress: 'border-t-primary',
-  Review: 'border-t-amber-500',
-  Done: 'border-t-emerald-500',
-}
-
-// Matching dot color for each column header.
+// Status dot color for each column header.
 const columnDot: Record<string, string> = {
   Backlog: 'bg-slate-400',
   InProgress: 'bg-primary',
@@ -829,11 +822,11 @@ export default function BoardPage() {
               <div
                 key={col.key}
                 {...dnd.dropZoneProps(col.key)}
-                className={`rounded-xl border-t-4 bg-canvas p-3 transition-colors ${columnAccent[col.key] ?? 'border-t-border'} ${
-                  dnd.activeZone === col.key ? 'bg-primary/5 ring-2 ring-inset ring-primary/40' : ''
+                className={`rounded-[var(--radius-card)] border border-border bg-canvas/40 p-2.5 transition-colors ${
+                  dnd.activeZone === col.key ? 'bg-primary/5 ring-1 ring-inset ring-primary/50' : ''
                 }`}
               >
-                <div className="mb-3 flex items-center justify-between px-1 text-sm font-bold">
+                <div className="mb-2.5 flex items-center justify-between px-1 text-[13px] font-semibold">
                   <span className="flex items-center gap-2">
                     <span className={`h-2 w-2 rounded-full ${columnDot[col.key] ?? 'bg-border'}`} />
                     {t(`board.status.${col.key}`)}
@@ -861,7 +854,7 @@ export default function BoardPage() {
                     }
                     const label = limit != null ? `${colTasks.length} / ${limit}` : `${colTasks.length}`
                     const cls = over
-                      ? 'bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-300'
+                      ? 'bg-red-500/10 text-red-600 dark:text-red-400'
                       : 'bg-border/60 text-muted'
                     return canWrite ? (
                       <button
@@ -902,7 +895,7 @@ export default function BoardPage() {
                           if (dnd.justDragged()) return
                           openTask(task)
                         }}
-                        className={`group relative rounded-lg border border-border bg-surface p-3 shadow-soft transition hover:border-primary/30 hover:shadow-card ${
+                        className={`group relative rounded-lg border border-border bg-surface p-2.5 transition hover:border-muted/50 ${
                           canMoveTask(task) ? 'cursor-grab' : ''
                         } ${dnd.draggingId === task.id ? 'opacity-40' : ''}`}
                       >
@@ -944,7 +937,7 @@ export default function BoardPage() {
                             {epicById.get(task.epicId)!.title}
                           </span>
                         )}
-                        <div className={`pr-5 text-sm font-medium ${canWrite ? 'pl-5' : ''}`}>{task.title}</div>
+                        <div className={`pr-5 text-[13px] font-medium ${canWrite ? 'pl-5' : ''}`}>{task.title}</div>
                         <div className="mt-2 flex items-center gap-2">
                           <span
                             className={`rounded px-2 py-0.5 text-[11px] font-semibold ${

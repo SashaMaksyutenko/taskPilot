@@ -39,7 +39,7 @@ function NavItem({ item, onNavigate }: { item: NavItemDef; onNavigate?: () => vo
       onClick={onNavigate}
       className={({ isActive }) =>
         cn(
-          'group relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition',
+          'group relative flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-[13px] font-medium transition',
           isActive ? 'bg-primary-muted text-primary font-semibold' : 'text-muted hover:bg-canvas hover:text-foreground',
         )
       }
@@ -48,11 +48,11 @@ function NavItem({ item, onNavigate }: { item: NavItemDef; onNavigate?: () => vo
         <>
           <span
             className={cn(
-              'gradient-primary absolute left-0 top-1/2 h-5 w-1 -translate-y-1/2 rounded-r-full transition-opacity',
+              'gradient-primary absolute left-0 top-1/2 h-4 w-[3px] -translate-y-1/2 rounded-r-full transition-opacity',
               isActive ? 'opacity-100' : 'opacity-0',
             )}
           />
-          <Icon className="h-[18px] w-[18px] shrink-0" strokeWidth={2} />
+          <Icon className="h-4 w-4 shrink-0" strokeWidth={2} />
           {t(item.key)}
         </>
       )}
@@ -132,12 +132,12 @@ export default function Sidebar() {
   const { name } = useBranding()
   return (
     <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col border-r border-border bg-surface lg:flex">
-      <div className="flex h-16 items-center gap-2.5 border-b border-border px-5">
-        <BrandLogo className="h-8 w-8 rounded" />
-        <span className="text-lg font-bold tracking-tight text-foreground">{name}</span>
+      <div className="flex h-14 items-center gap-2.5 border-b border-border px-4">
+        <BrandLogo className="h-7 w-7 rounded" />
+        <span className="text-[15px] font-bold tracking-tight text-foreground">{name}</span>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-3">
+      <div className="flex-1 overflow-y-auto p-2.5">
         <SidebarNav />
       </div>
     </aside>

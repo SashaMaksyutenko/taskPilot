@@ -58,7 +58,7 @@ export default function TopBar({
 
   return (
     <>
-      <header className="sticky top-0 z-20 flex h-16 items-center gap-3 border-b border-border bg-surface/90 px-4 backdrop-blur-md sm:px-6">
+      <header className="sticky top-0 z-20 flex h-14 items-center gap-3 border-b border-border bg-surface/90 px-4 backdrop-blur-md sm:px-6">
         <button
           type="button"
           onClick={() => setMobileOpen(true)}
@@ -226,9 +226,9 @@ export default function TopBar({
               exit={{ x: '-100%' }}
               transition={{ type: 'tween', ease: 'easeOut', duration: 0.25 }}
             >
-              <div className="flex h-16 items-center justify-between border-b border-border px-4">
+              <div className="flex h-14 items-center justify-between border-b border-border px-4">
                 <div className="flex items-center gap-2">
-                  <BrandLogo className="h-8 w-8 rounded" />
+                  <BrandLogo className="h-7 w-7 rounded" />
                   <span className="font-bold">{orgName}</span>
                 </div>
                 <button type="button" onClick={() => setMobileOpen(false)} className="rounded-lg p-2 hover:bg-canvas">

@@ -4,36 +4,41 @@
 /* Class-based dark mode (manual toggle via .dark on <html>). */
 @custom-variant dark (&:where(.dark, .dark *));
 
-/* Brand design tokens — aligned with the TaskPilot logo (indigo + orange). */
+/* Brand design tokens — restrained, near-monochrome workspace palette with a single
+   configurable accent (Linear-inspired). Colour is used sparingly: active states,
+   primary actions, links and status. The accent is overridable at runtime by the
+   in-app colour picker (see lib/accent.ts), which sets --color-primary* on <html>. */
 @theme {
   --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
 
-  /* Primary stays a readable indigo for text/links; the vibrancy comes from the
-     gradient utilities used on filled surfaces (white text sits on top). */
-  --color-primary: #4f46e5;
-  --color-primary-hover: #4338ca;
-  --color-primary-muted: #ede9fe;
+  /* Single accent. */
+  --color-primary: #5e6ad2;
+  --color-primary-hover: #4f5bc8;
+  --color-primary-muted: #edeefb;
 
-  /* Stops for the brand gradient (indigo → violet). */
-  --color-gradient-from: #6366f1;
-  --color-gradient-to: #8b5cf6;
+  /* Kept for backwards-compat: some components still reference the gradient stops, but
+     both resolve to the flat accent so no true gradient is ever rendered anywhere. */
+  --color-gradient-from: #5e6ad2;
+  --color-gradient-to: #5e6ad2;
 
-  --color-accent: #fb8c3c;
-  --color-accent-hover: #f97316;
+  /* Warm secondary accent — used only for the odd status highlight, kept muted. */
+  --color-accent: #d99a1c;
+  --color-accent-hover: #c98a10;
 
   --color-surface: #ffffff;
   --color-surface-raised: #ffffff;
-  --color-canvas: #f6f7fb;
-  --color-border: #e6e8f0;
-  --color-muted: #64748b;
-  --color-foreground: #0f172a;
+  --color-canvas: #fbfbfc;
+  --color-border: #ececee;
+  --color-muted: #6b6f76;
+  --color-foreground: #17181c;
 
-  /* Slightly deeper, softly indigo-tinted shadows for a more modern sense of depth. */
-  --shadow-soft: 0 1px 3px 0 rgb(30 27 75 / 0.07), 0 1px 2px -1px rgb(30 27 75 / 0.06);
-  --shadow-card: 0 6px 14px -6px rgb(30 27 75 / 0.14), 0 3px 6px -3px rgb(30 27 75 / 0.08);
-  --shadow-elevated: 0 24px 40px -12px rgb(30 27 75 / 0.20), 0 10px 16px -8px rgb(30 27 75 / 0.10);
+  /* Flat, hairline-first depth — the design leans on borders, not shadows. */
+  --shadow-soft: 0 1px 2px 0 rgb(20 21 26 / 0.04);
+  --shadow-card: 0 1px 2px 0 rgb(20 21 26 / 0.05), 0 10px 24px -14px rgb(20 21 26 / 0.14);
+  --shadow-elevated: 0 16px 40px -16px rgb(20 21 26 / 0.24), 0 6px 14px -8px rgb(20 21 26 / 0.12);
 
-  --radius-card: 1rem;
+  /* Tighter corners for a crisper, denser feel. */
+  --radius-card: 0.625rem;
 }
 
 @layer base {
@@ -42,15 +47,18 @@
     @apply bg-canvas text-foreground antialiased;
   }
 
+  /* Near-black dark theme; accent brightens a touch to stay legible on dark grounds. */
   .dark body,
   .dark {
-    --color-surface: #1b2436;
-    --color-surface-raised: #212c42;
-    --color-canvas: #0d1424;
-    --color-border: #334155;
-    --color-muted: #94a3b8;
-    --color-foreground: #f1f5f9;
-    --color-primary-muted: rgb(129 140 248 / 0.18);
+    --color-primary: #7c86e8;
+    --color-primary-hover: #8b94ec;
+    --color-primary-muted: rgb(124 134 232 / 0.16);
+    --color-surface: #131418;
+    --color-surface-raised: #191b20;
+    --color-canvas: #0e0f12;
+    --color-border: #23252b;
+    --color-muted: #9297a0;
+    --color-foreground: #e6e7ea;
   }
 }
 
@@ -63,33 +71,30 @@
     @apply text-sm text-muted;
   }
 
-  /* Brand gradient for filled surfaces (buttons, active states, badges). White text
-     sits on top, so readability is unaffected by the brighter colours. */
+  /* Flat accent fill. The historic name is retained so every prior usage — primary
+     buttons, active tabs, chat bubbles, the sidebar indicator — becomes a clean solid
+     accent surface with no gradient. White text still sits on top. */
   .gradient-primary {
-    background-image: linear-gradient(135deg, var(--color-gradient-from) 0%, var(--color-gradient-to) 100%);
+    background-color: var(--color-primary);
   }
 
-  /* Gradient text for headings/accents. */
-  .text-gradient {
-    background-image: linear-gradient(120deg, var(--color-gradient-from), var(--color-gradient-to));
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
+  /* Historic gradient-text helpers now render as the solid accent colour. */
+  .text-gradient,
+  .text-grad {
+    color: var(--color-primary);
   }
 
+  /* Hero/auth bands are calm now: a single whisper of accent over the canvas, no
+     multi-colour wash. */
   .gradient-hero {
     background:
-      radial-gradient(ellipse 80% 60% at 50% -10%, rgb(99 102 241 / 0.28), transparent),
-      radial-gradient(ellipse 60% 50% at 85% 15%, rgb(139 92 246 / 0.22), transparent),
-      radial-gradient(ellipse 55% 45% at 10% 30%, rgb(251 140 60 / 0.14), transparent),
+      radial-gradient(120% 120% at 100% 0%, rgb(94 106 210 / 0.06), transparent 58%),
       var(--color-canvas);
   }
 
   .dark .gradient-hero {
     background:
-      radial-gradient(ellipse 80% 60% at 50% -10%, rgb(99 102 241 / 0.30), transparent),
-      radial-gradient(ellipse 60% 50% at 85% 15%, rgb(139 92 246 / 0.22), transparent),
-      radial-gradient(ellipse 55% 45% at 10% 30%, rgb(251 140 60 / 0.10), transparent),
+      radial-gradient(120% 120% at 100% 0%, rgb(124 134 232 / 0.09), transparent 58%),
       var(--color-canvas);
   }
 }

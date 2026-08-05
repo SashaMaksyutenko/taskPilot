@@ -31,6 +31,14 @@ Env.TraversePath().Load();
 // QuestPDF runs under its free Community license (allowed for this project size).
 QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
 
+// Disable reload-on-change for the default appsettings*.json sources BEFORE the host is
+// built. Otherwise .NET attaches a FileSystemWatcher (inotify) to each config file, and
+// containers with a low inotify-instance limit (e.g. Render caps it at 128) crash startup
+// with "The configured user limit ... on the number of inotify instances has been reached".
+// The host reads this from DOTNET_-prefixed environment variables ("__" maps to ":"), so
+// setting it here is picked up by CreateBuilder below. Config is static in production anyway.
+Environment.SetEnvironmentVariable("DOTNET_hostBuilder__reloadConfigOnChange", "false");
+
 // Build the host. Configuration is read from appsettings.json, environment
 // variables (including everything loaded from .env above) and command-line args.
 var builder = WebApplication.CreateBuilder(args);

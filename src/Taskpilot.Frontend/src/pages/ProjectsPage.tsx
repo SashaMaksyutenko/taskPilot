@@ -253,7 +253,7 @@ export default function ProjectsPage() {
                   to={`/projects/${p.id}`}
                   className={`block ${p.isArchived ? 'opacity-60' : ''}`}
                 >
-                <Card hover className="p-5">
+                <Card hover className="p-4">
                 <div className="flex items-center gap-2">
                   <span className="inline-block h-3 w-3 rounded-full" style={{ background: p.color ?? '#94a3b8' }} />
                   <span className="font-semibold">{p.name}</span>
@@ -263,7 +263,7 @@ export default function ProjectsPage() {
                     </span>
                   )}
                   {!!currentUserId && p.ownerId !== currentUserId && (
-                    <span className="rounded-full bg-sky-100 px-2 py-0.5 text-[11px] font-semibold text-sky-700 dark:bg-sky-900/40 dark:text-sky-300">
+                    <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-semibold text-primary">
                       {t('projects.shared')}
                     </span>
                   )}
@@ -287,8 +287,8 @@ export default function ProjectsPage() {
                         <span>{t('projects.progress', { done: p.completedTaskCount, total: p.taskCount })}</span>
                         <span>{pct}%</span>
                       </div>
-                      <div className="h-2 overflow-hidden rounded-full bg-border">
-                        <div className="h-full rounded-full bg-green-500 transition-all" style={{ width: `${pct}%` }} />
+                      <div className="h-1.5 overflow-hidden rounded-full bg-border">
+                        <div className="h-full rounded-full bg-emerald-500 transition-all" style={{ width: `${pct}%` }} />
                       </div>
                     </div>
                   )
@@ -307,7 +307,7 @@ export default function ProjectsPage() {
             onClick={() => setEditing(null)}
           >
             <div
-              className="w-full max-w-md rounded-xl bg-surface p-6 shadow-elevated"
+              className="w-full max-w-md rounded-[var(--radius-card)] border border-border bg-surface p-6 shadow-elevated"
               onClick={(e) => e.stopPropagation()}
             >
               <h2 className="mb-4 text-lg font-bold">{t('projects.editTitle')}</h2>

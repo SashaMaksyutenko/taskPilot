@@ -68,11 +68,11 @@ export default function UsersPage() {
           {items.map((u) => (
             <Link key={u.id} to={`/users/${u.id}`} className="block">
               <Card hover className="flex items-center gap-3 p-4">
-                <Avatar name={u.name} src={u.avatarUrl} size={44} />
+                <Avatar name={u.name} src={u.avatarUrl} size={40} />
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
                     <span className="truncate font-semibold">{u.name}</span>
-                    <span className="flex-none rounded-full bg-canvas px-2 py-0.5 text-[10px] font-semibold text-muted">
+                    <span className="flex-none rounded-full border border-border px-2 py-0.5 text-[10px] font-semibold text-muted">
                       {t(`admin.roles.${u.role}`, u.role)}
                     </span>
                   </div>

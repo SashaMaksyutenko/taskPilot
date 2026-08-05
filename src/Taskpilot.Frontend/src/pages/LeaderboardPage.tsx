@@ -20,8 +20,8 @@ function Row({ entry, isMe }: { entry: LeaderboardEntry; isMe: boolean }) {
   return (
     <Link
       to={`/users/${entry.userId}`}
-      className={`flex items-center gap-3 rounded-lg border px-3 py-2.5 transition ${
-        isMe ? 'border-primary bg-primary/5' : 'border-border bg-surface hover:bg-canvas'
+      className={`flex items-center gap-3 px-3 py-2.5 transition ${
+        isMe ? 'border-l-2 border-primary bg-primary/5' : 'hover:bg-canvas'
       }`}
     >
       <Rank rank={entry.rank} />
@@ -61,7 +61,7 @@ export default function LeaderboardPage() {
             <span className="flex-1">{t('leaderboard.user')}</span>
             <span className="w-16 text-right">{t('leaderboard.points')}</span>
           </div>
-          <ul className="space-y-1.5">
+          <ul className="divide-y divide-border overflow-hidden rounded-[var(--radius-card)] border border-border bg-surface">
             {board.entries.map((e) => (
               <li key={e.userId}>
                 <Row entry={e} isMe={e.userId === meId} />
@@ -73,7 +73,9 @@ export default function LeaderboardPage() {
           {board.me && !meShown && (
             <>
               <p className="mt-4 mb-2 px-3 text-xs font-medium uppercase tracking-wide text-muted">{t('leaderboard.you')}</p>
-              <Row entry={board.me} isMe />
+              <div className="overflow-hidden rounded-[var(--radius-card)] border border-primary bg-surface">
+                <Row entry={board.me} isMe />
+              </div>
             </>
           )}
         </>

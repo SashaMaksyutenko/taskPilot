@@ -12,10 +12,10 @@ import { useAppSelector } from '../store/hooks'
 import type { MarketTaskListItem } from '../types/marketplace'
 
 const statusColor: Record<string, string> = {
-  Open: 'bg-green-100 text-green-700',
-  InProgress: 'bg-blue-100 text-blue-700',
-  Completed: 'bg-border text-foreground',
-  Cancelled: 'bg-red-100 text-red-700',
+  Open: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400',
+  InProgress: 'bg-primary/10 text-primary',
+  Completed: 'bg-border/60 text-muted',
+  Cancelled: 'bg-red-500/10 text-red-600 dark:text-red-400',
 }
 
 /**
@@ -80,7 +80,7 @@ export default function MarketplacePage() {
 
         {/* Post a task — Managers/Admins only */}
         {canPost && (
-        <div className="mb-8 rounded-xl border border-border bg-surface p-5">
+        <div className="mb-8 rounded-[var(--radius-card)] border border-border bg-surface p-5">
           <h2 className="mb-3 font-bold">{t('market.postSection')}</h2>
           <input
             value={title}
@@ -130,7 +130,7 @@ export default function MarketplacePage() {
         ) : tasks.length === 0 ? (
           <EmptyState message={t('market.empty')} />
         ) : (
-          <ul className="space-y-2">
+          <ul className="divide-y divide-border overflow-hidden rounded-[var(--radius-card)] border border-border bg-surface">
             {tasks.map((task) => (
               <li key={task.id}>
                 <ActionsContextMenu
@@ -145,9 +145,9 @@ export default function MarketplacePage() {
                 >
                 <Link
                   to={`/marketplace/${task.id}`}
-                  className="flex items-center gap-3 rounded-xl border border-border bg-surface p-4 transition hover:shadow-sm"
+                  className="flex items-center gap-3 px-4 py-3 transition hover:bg-canvas"
                 >
-                  <Avatar name={task.posterName} src={task.posterAvatarUrl} size={38} />
+                  <Avatar name={task.posterName} src={task.posterAvatarUrl} size={32} />
                   <div className="min-w-0 flex-1">
                     <div className="truncate font-semibold">{task.title}</div>
                     <div className="text-xs text-muted">
@@ -168,7 +168,7 @@ export default function MarketplacePage() {
                   </div>
                   <span className="flex-none font-bold">${task.budget}</span>
                   {task.paymentStatus === 'Paid' && (
-                    <span className="flex-none rounded-full bg-green-100 px-2 py-0.5 text-[11px] font-semibold text-green-700 dark:bg-green-900/40 dark:text-green-300">
+                    <span className="flex-none rounded-full bg-emerald-500/10 px-2 py-0.5 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
                       {t('market.paid')}
                     </span>
                   )}

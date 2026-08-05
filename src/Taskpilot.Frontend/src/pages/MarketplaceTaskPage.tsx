@@ -12,9 +12,9 @@ import { useAppSelector } from '../store/hooks'
 import type { MarketTaskDetail, Review } from '../types/marketplace'
 
 const appStatusColor: Record<string, string> = {
-  Pending: 'bg-amber-100 text-amber-700',
-  Accepted: 'bg-green-100 text-green-700',
-  Rejected: 'bg-red-100 text-red-700',
+  Pending: 'bg-amber-500/10 text-amber-600 dark:text-amber-400',
+  Accepted: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400',
+  Rejected: 'bg-red-500/10 text-red-600 dark:text-red-400',
 }
 
 /**
@@ -130,7 +130,7 @@ export default function MarketplaceTaskPage() {
         </Link>
 
         {/* Task header */}
-        <div className="mt-3 rounded-xl border border-border bg-surface p-6">
+        <div className="mt-3 rounded-[var(--radius-card)] border border-border bg-surface p-6">
           <div className="flex items-start gap-3">
             <h1 className="flex-1 text-xl font-bold">{task.title}</h1>
             <span className="text-lg font-bold">${task.budget}</span>
@@ -156,11 +156,11 @@ export default function MarketplaceTaskPage() {
         {task.status === 'Completed' && (
           <>
             {task.paymentStatus === 'Paid' ? (
-              <div className="mt-6 flex items-center gap-2 rounded-xl border border-green-300 bg-green-50 p-4 text-sm font-semibold text-green-700 dark:border-green-700 dark:bg-green-950/30 dark:text-green-300">
+              <div className="mt-6 flex items-center gap-2 rounded-[var(--radius-card)] border border-emerald-500/30 bg-emerald-500/5 p-4 text-sm font-semibold text-emerald-600 dark:text-emerald-400">
                 ✓ {t('marketTask.paid', { amount: task.budget })}
               </div>
             ) : isPoster ? (
-              <div className="mt-6 flex items-center gap-3 rounded-xl border border-border bg-surface p-4">
+              <div className="mt-6 flex items-center gap-3 rounded-[var(--radius-card)] border border-border bg-surface p-4">
                 <span className="text-sm">{t('marketTask.payPrompt', { name: task.assigneeName ?? '' })}</span>
                 <button
                   onClick={payTask}
@@ -177,7 +177,7 @@ export default function MarketplaceTaskPage() {
         {isPoster ? (
           <>
             {task.status === 'Submitted' && (
-              <div className="mt-6 flex items-center gap-3 rounded-xl border border-amber-300 bg-amber-50 p-4 dark:border-amber-700 dark:bg-amber-950/30">
+              <div className="mt-6 flex items-center gap-3 rounded-[var(--radius-card)] border border-amber-500/30 bg-amber-500/5 p-4">
                 <span className="text-sm">{t('market.status.Submitted')}</span>
                 <button
                   onClick={approveWork}
@@ -190,7 +190,7 @@ export default function MarketplaceTaskPage() {
             <h2 className="mb-3 mt-6 font-bold">{t('market.applications', { count: task.applications.length })}</h2>
             <div className="space-y-3">
               {task.applications.map((a) => (
-                <div key={a.id} className="rounded-xl border border-border bg-surface p-4">
+                <div key={a.id} className="rounded-[var(--radius-card)] border border-border bg-surface p-4">
                   <div className="flex items-center gap-2">
                     <Avatar name={a.applicantName} src={a.applicantAvatarUrl} size={28} />
                     <Link to={`/users/${a.applicantId}`} className="font-semibold hover:underline">{a.applicantName}</Link>
@@ -216,7 +216,7 @@ export default function MarketplaceTaskPage() {
             </div>
           </>
         ) : myApplication ? (
-          <div className="mt-6 rounded-xl border border-border bg-surface p-5">
+          <div className="mt-6 rounded-[var(--radius-card)] border border-border bg-surface p-5">
             {t('marketTask.youApplied')}{' '}
             <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${appStatusColor[myApplication.status]}`}>
               {t(`marketTask.appStatus.${myApplication.status}`, myApplication.status)}
@@ -234,7 +234,7 @@ export default function MarketplaceTaskPage() {
             )}
           </div>
         ) : task.status === 'Open' ? (
-          <div className="mt-6 rounded-xl border border-border bg-surface p-5">
+          <div className="mt-6 rounded-[var(--radius-card)] border border-border bg-surface p-5">
             <h2 className="mb-3 font-bold">{t('marketTask.applyHeading')}</h2>
             <textarea
               value={coverLetter}
@@ -262,7 +262,7 @@ export default function MarketplaceTaskPage() {
 
         {/* Two-way rating — only on completed tasks */}
         {task.status === 'Completed' && (
-          <div className="mt-6 rounded-xl border border-border bg-surface p-5">
+          <div className="mt-6 rounded-[var(--radius-card)] border border-border bg-surface p-5">
             {/* Rating form: poster or assignee, if they haven't rated yet */}
             {(isPoster || task.assigneeId === currentUserId) &&
               !reviews.some((r) => r.raterId === currentUserId) && (

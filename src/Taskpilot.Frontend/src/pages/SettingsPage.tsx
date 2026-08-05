@@ -500,7 +500,7 @@ export default function SettingsPage() {
 
         {/* Moderation warnings */}
         {warnings.length > 0 && (
-          <section className="mb-8 rounded-xl border border-amber-300 bg-amber-50 p-6 dark:border-amber-700 dark:bg-amber-950/30">
+          <section className="mb-8 rounded-[var(--radius-card)] border border-amber-300 bg-amber-50 p-6 dark:border-amber-700 dark:bg-amber-950/30">
             <h2 className="mb-3 font-bold text-amber-800 dark:text-amber-200">
               ⚠️ {t('warn.myTitle', { count: warnings.length })}
             </h2>
@@ -533,7 +533,7 @@ export default function SettingsPage() {
 
         {/* My appeals */}
         {appeals.length > 0 && (
-          <section className="mb-8 rounded-xl border border-border bg-surface p-6">
+          <section className="mb-8 rounded-[var(--radius-card)] border border-border bg-surface p-6">
             <h2 className="mb-3 font-bold">{t('appeal.myTitle')}</h2>
             <ul className="space-y-3">
               {appeals.map((a) => (
@@ -542,9 +542,9 @@ export default function SettingsPage() {
                     <span
                       className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${
                         a.status === 'Approved'
-                          ? 'bg-green-100 text-green-700'
+                          ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
                           : a.status === 'Rejected'
-                            ? 'bg-red-100 text-red-700'
+                            ? 'bg-red-500/10 text-red-600 dark:text-red-400'
                             : 'bg-border text-foreground'
                       }`}
                     >
@@ -565,7 +565,7 @@ export default function SettingsPage() {
         )}
 
         {/* Appearance — accent colour picker */}
-        <section className="mb-8 rounded-xl border border-border bg-surface p-6">
+        <section className="mb-8 rounded-[var(--radius-card)] border border-border bg-surface p-6">
           <h2 className="mb-1 font-bold">{t('settings.appearance')}</h2>
           <p className="mb-4 text-sm text-muted">{t('settings.accentHint')}</p>
           <div className="flex flex-wrap gap-3">
@@ -590,7 +590,7 @@ export default function SettingsPage() {
         </section>
 
         {/* Profile */}
-        <section className="mb-8 rounded-xl border border-border bg-surface p-6">
+        <section className="mb-8 rounded-[var(--radius-card)] border border-border bg-surface p-6">
           <h2 className="mb-4 font-bold">{t('settings.profile')}</h2>
 
           {/* Avatar */}
@@ -663,7 +663,7 @@ export default function SettingsPage() {
         </section>
 
         {/* Change password */}
-        <section className="rounded-xl border border-border bg-surface p-6">
+        <section className="rounded-[var(--radius-card)] border border-border bg-surface p-6">
           <h2 className="mb-4 font-bold">{t('settings.changePassword')}</h2>
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label={t('settings.currentPassword')} type="password" value={current} onChange={setCurrent} />
@@ -681,7 +681,7 @@ export default function SettingsPage() {
         </section>
 
         {/* Active sessions */}
-        <section className="mt-8 rounded-xl border border-border bg-surface p-6">
+        <section className="mt-8 rounded-[var(--radius-card)] border border-border bg-surface p-6">
           <div className="mb-3 flex items-center justify-between">
             <h2 className="font-bold">{t('sessions.title')}</h2>
             {sessions.length > 1 && (
@@ -697,7 +697,7 @@ export default function SettingsPage() {
                   <div className="font-medium">
                     {deviceLabel(s.userAgent)}
                     {s.isCurrent && (
-                      <span className="ml-2 rounded-full bg-green-100 px-2 py-0.5 text-[11px] font-semibold text-green-700 dark:bg-green-900/40 dark:text-green-300">
+                      <span className="ml-2 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
                         {t('sessions.current')}
                       </span>
                     )}
@@ -717,13 +717,13 @@ export default function SettingsPage() {
         </section>
 
         {/* Two-factor authentication */}
-        <section className="mt-8 rounded-xl border border-border bg-surface p-6">
+        <section className="mt-8 rounded-[var(--radius-card)] border border-border bg-surface p-6">
           <h2 className="mb-1 font-bold">{t('twoFa.title')}</h2>
           <p className="mb-4 text-sm text-muted">{t('twoFa.desc')}</p>
 
           {user?.twoFactorEnabled ? (
             <div className="space-y-3">
-              <div className="inline-flex items-center gap-2 rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-700 dark:bg-green-900/40 dark:text-green-300">
+              <div className="inline-flex items-center gap-2 rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
                 ✓ {t('twoFa.enabled')}
               </div>
               <div className="flex items-center justify-between text-sm">
@@ -806,7 +806,7 @@ export default function SettingsPage() {
         </section>
 
         {/* Data & privacy */}
-        <section className="mt-8 rounded-xl border border-border bg-surface p-6">
+        <section className="mt-8 rounded-[var(--radius-card)] border border-border bg-surface p-6">
           <h2 className="mb-1 font-bold">{t('privacy.title')}</h2>
           <p className="mb-4 text-sm text-muted">{t('privacy.exportDesc')}</p>
           <div className="flex flex-wrap gap-2">
@@ -832,7 +832,7 @@ export default function SettingsPage() {
         </section>
 
         {/* Notification preferences */}
-        <section className="mt-8 rounded-xl border border-border bg-surface p-6">
+        <section className="mt-8 rounded-[var(--radius-card)] border border-border bg-surface p-6">
           <h2 className="mb-1 font-bold">{t('notifPrefs.title')}</h2>
           <p className="mb-4 text-sm text-muted">{t('notifPrefs.desc')}</p>
 
@@ -927,12 +927,12 @@ export default function SettingsPage() {
 
         {/* Browser push notifications */}
         {pushSupported() && (
-          <section className="mt-8 rounded-xl border border-border bg-surface p-6">
+          <section className="mt-8 rounded-[var(--radius-card)] border border-border bg-surface p-6">
             <h2 className="mb-1 font-bold">{t('push.title')}</h2>
             <p className="mb-4 text-sm text-muted">{t('push.desc')}</p>
             <div className="flex items-center gap-3 text-sm">
               {pushEnabled && (
-                <span className="rounded-full bg-green-100 px-2 py-0.5 font-semibold text-green-700 dark:bg-green-900/40 dark:text-green-300">
+                <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 font-semibold text-emerald-600 dark:text-emerald-400">
                   ✓ {t('push.on')}
                 </span>
               )}
@@ -952,13 +952,13 @@ export default function SettingsPage() {
         )}
 
         {/* Telegram */}
-        <section className="mt-8 rounded-xl border border-border bg-surface p-6">
+        <section className="mt-8 rounded-[var(--radius-card)] border border-border bg-surface p-6">
           <h2 className="mb-1 font-bold">{t('telegram.title')}</h2>
           <p className="mb-4 text-sm text-muted">{t('telegram.desc')}</p>
 
           {telegram.linked ? (
             <div className="flex items-center gap-3 text-sm">
-              <span className="rounded-full bg-green-100 px-2 py-0.5 font-semibold text-green-700 dark:bg-green-900/40 dark:text-green-300">
+              <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 font-semibold text-emerald-600 dark:text-emerald-400">
                 ✓ {t('telegram.linked')}
               </span>
               <button onClick={unlinkTelegram} className="font-semibold text-red-600 hover:underline">
@@ -994,13 +994,13 @@ export default function SettingsPage() {
         </section>
 
         {/* Viber */}
-        <section className="mt-8 rounded-xl border border-border bg-surface p-6">
+        <section className="mt-8 rounded-[var(--radius-card)] border border-border bg-surface p-6">
           <h2 className="mb-1 font-bold">{t('viber.title')}</h2>
           <p className="mb-4 text-sm text-muted">{t('viber.desc')}</p>
 
           {viber.linked ? (
             <div className="flex items-center gap-3 text-sm">
-              <span className="rounded-full bg-green-100 px-2 py-0.5 font-semibold text-green-700 dark:bg-green-900/40 dark:text-green-300">
+              <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 font-semibold text-emerald-600 dark:text-emerald-400">
                 ✓ {t('viber.linked')}
               </span>
               <button onClick={unlinkViber} className="font-semibold text-red-600 hover:underline">
@@ -1026,14 +1026,14 @@ export default function SettingsPage() {
         </section>
 
         {/* API keys */}
-        <section className="mt-8 rounded-xl border border-border bg-surface p-6">
+        <section className="mt-8 rounded-[var(--radius-card)] border border-border bg-surface p-6">
           <h2 className="mb-1 font-bold">{t('apiKeys.title')}</h2>
           <p className="mb-4 text-sm text-muted">{t('apiKeys.desc')}</p>
 
           {/* Freshly created key — shown once */}
           {createdKey && (
-            <div className="mb-4 rounded-lg border border-green-300 bg-green-50 p-3 text-sm dark:border-green-700 dark:bg-green-950/30">
-              <p className="mb-2 font-semibold text-green-800 dark:text-green-300">{t('apiKeys.createdOnce')}</p>
+            <div className="mb-4 rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-3 text-sm">
+              <p className="mb-2 font-semibold text-emerald-600 dark:text-emerald-400">{t('apiKeys.createdOnce')}</p>
               <div className="flex items-center gap-2">
                 <code className="flex-1 overflow-x-auto rounded bg-canvas px-2 py-1 font-mono text-xs">{createdKey}</code>
                 <button onClick={copyKey} className="rounded-lg bg-primary px-3 py-1 text-xs font-semibold text-white hover:bg-primary-hover">
@@ -1085,7 +1085,7 @@ export default function SettingsPage() {
         </section>
 
         {/* Webhooks */}
-        <section className="mt-8 rounded-xl border border-border bg-surface p-6">
+        <section className="mt-8 rounded-[var(--radius-card)] border border-border bg-surface p-6">
           <h2 className="mb-1 font-bold">{t('settings.webhooks')}</h2>
           <p className="mb-4 text-sm text-muted">
             {t('settings.webhooksDesc')}
@@ -1193,7 +1193,7 @@ export default function SettingsPage() {
         </section>
 
         {/* Danger zone */}
-        <section className="mt-8 rounded-xl border border-red-300 bg-red-50 p-6 dark:border-red-800 dark:bg-red-950/30">
+        <section className="mt-8 rounded-[var(--radius-card)] border border-red-300 bg-red-50 p-6 dark:border-red-800 dark:bg-red-950/30">
           <h2 className="mb-1 font-bold text-red-700 dark:text-red-300">{t('danger.title')}</h2>
           <p className="mb-4 text-sm text-red-700/80 dark:text-red-300/80">{t('danger.deleteDesc')}</p>
           <button
@@ -1215,7 +1215,7 @@ export default function SettingsPage() {
 
       {deleteOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setDeleteOpen(false)}>
-          <div className="w-full max-w-md rounded-xl bg-surface p-6 shadow-elevated" onClick={(e) => e.stopPropagation()}>
+          <div className="w-full max-w-md rounded-[var(--radius-card)] border border-border bg-surface p-6 shadow-elevated" onClick={(e) => e.stopPropagation()}>
             <h2 className="mb-2 text-lg font-bold text-red-700 dark:text-red-300">{t('danger.confirmTitle')}</h2>
             <p className="mb-4 text-sm text-foreground">{t('danger.confirmDesc')}</p>
             <input

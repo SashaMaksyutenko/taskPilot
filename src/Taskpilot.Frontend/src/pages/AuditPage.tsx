@@ -108,7 +108,7 @@ export default function AuditPage() {
           )}
         </div>
 
-        <div className="overflow-hidden rounded-xl border border-border bg-surface">
+        <div className="overflow-hidden rounded-[var(--radius-card)] border border-border bg-surface">
           <table className="w-full text-sm">
             <thead className="bg-canvas text-left text-xs uppercase text-muted">
               <tr>

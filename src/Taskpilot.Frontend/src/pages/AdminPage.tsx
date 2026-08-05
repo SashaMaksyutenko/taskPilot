@@ -239,7 +239,7 @@ export default function AdminPage() {
               { label: t('admin.totalFiles'), value: stats.totalFiles },
               { label: t('admin.storageUsed'), value: `${(stats.storageUsedBytes / 1024 / 1024).toFixed(1)} MB` },
             ].map((c) => (
-              <div key={c.label} className="rounded-xl border border-border bg-surface p-4">
+              <div key={c.label} className="rounded-[var(--radius-card)] border border-border bg-surface p-4">
                 <div className="text-2xl font-bold tabular-nums text-foreground">{c.value}</div>
                 <div className="text-xs font-medium uppercase tracking-wide text-muted">{c.label}</div>
               </div>
@@ -284,7 +284,7 @@ export default function AdminPage() {
         <>
         {/* Pending appeals queue */}
         {appeals.length > 0 && (
-          <section className="mb-6 rounded-xl border border-amber-300 bg-amber-50 p-5 dark:border-amber-700 dark:bg-amber-950/30">
+          <section className="mb-6 rounded-[var(--radius-card)] border border-amber-300 bg-amber-50 p-5 dark:border-amber-700 dark:bg-amber-950/30">
             <h2 className="mb-3 font-bold text-amber-800 dark:text-amber-200">
               {t('appeal.queueTitle', { count: appeals.length })}
             </h2>
@@ -323,7 +323,7 @@ export default function AdminPage() {
 
         {/* Pending forum reports queue */}
         {reports.length > 0 && (
-          <section className="mb-6 rounded-xl border border-red-300 bg-red-50 p-5 dark:border-red-800 dark:bg-red-950/30">
+          <section className="mb-6 rounded-[var(--radius-card)] border border-red-300 bg-red-50 p-5 dark:border-red-800 dark:bg-red-950/30">
             <h2 className="mb-3 font-bold text-red-800 dark:text-red-200">
               {t('report.queueTitle', { count: reports.length })}
             </h2>
@@ -406,7 +406,7 @@ export default function AdminPage() {
           </select>
         </div>
 
-        <div className="overflow-hidden rounded-xl border border-border bg-surface">
+        <div className="overflow-hidden rounded-[var(--radius-card)] border border-border bg-surface">
           <table className="w-full text-sm">
             <thead className="bg-canvas text-left text-xs uppercase text-muted">
               <tr>
@@ -456,7 +456,7 @@ export default function AdminPage() {
                   <td className="px-4 py-3">
                     <span
                       className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${
-                        u.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                        u.isActive ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' : 'bg-red-500/10 text-red-600 dark:text-red-400'
                       }`}
                     >
                       {u.isActive ? t('admin.active') : t('admin.banned')}

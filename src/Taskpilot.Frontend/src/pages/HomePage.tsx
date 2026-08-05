@@ -80,47 +80,53 @@ export default function HomePage() {
   }
 
   const stats = [
-    { label: t('dashboard.projects'), value: projectCount, icon: FolderKanban, tone: 'from-indigo-500/10 to-indigo-600/5 text-indigo-600' },
-    { label: t('dashboard.unread'), value: unread, icon: Bell, tone: 'from-sky-500/10 to-sky-600/5 text-sky-600' },
-    { label: t('dashboard.deadlines'), value: upcoming, icon: Calendar, tone: 'from-amber-500/10 to-amber-600/5 text-amber-600' },
-    { label: t('dashboard.overdue'), value: overdue.length, icon: AlertTriangle, tone: 'from-red-500/10 to-red-600/5 text-red-600' },
+    { label: t('dashboard.projects'), value: projectCount, icon: FolderKanban, tile: 'bg-primary-muted text-primary' },
+    { label: t('dashboard.unread'), value: unread, icon: Bell, tile: 'bg-canvas text-muted' },
+    { label: t('dashboard.deadlines'), value: upcoming, icon: Calendar, tile: 'bg-amber-500/10 text-amber-600 dark:text-amber-400' },
+    {
+      label: t('dashboard.overdue'),
+      value: overdue.length,
+      icon: AlertTriangle,
+      tile: overdue.length > 0 ? 'bg-red-500/10 text-red-500' : 'bg-canvas text-muted',
+    },
   ]
 
   return (
     <div className="mx-auto max-w-5xl">
       <FadeIn>
-        {/* Hero: greeting + KPIs on a soft brand-gradient band */}
-        <div className="gradient-hero rounded-2xl border border-border p-6 shadow-card sm:p-8">
-          <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
+        {/* Greeting */}
+        <div className="mb-5">
+          <h1 className="text-2xl font-bold tracking-tight sm:text-[26px]">
             {t('dashboard.welcome')}
             {user ? (
               <>
-                , <span className="text-grad">{user.name}</span>
+                , <span className="text-primary">{user.name}</span>
               </>
             ) : (
               ''
             )}{' '}
             👋
           </h1>
-          <p className="page-subtitle mt-1.5">{t('dashboard.subtitle')}</p>
+          <p className="page-subtitle mt-1">{t('dashboard.subtitle')}</p>
+        </div>
 
-          <div className="mt-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
-            {stats.map((s, i) => (
-              <FadeIn key={s.label} delay={i * 0.05}>
-                <div className="rounded-xl border border-border bg-surface/80 p-4 shadow-soft backdrop-blur-sm transition hover:shadow-card">
-                  <div className={cn('mb-3 inline-flex rounded-xl bg-gradient-to-br p-2.5', s.tone)}>
-                    <s.icon className="h-5 w-5" strokeWidth={2} />
-                  </div>
-                  {loading ? (
-                    <div className="h-8 w-12 animate-pulse rounded bg-canvas" />
-                  ) : (
-                    <div className="text-3xl font-bold tabular-nums">{s.value}</div>
-                  )}
-                  <div className="mt-1 text-sm text-muted">{s.label}</div>
-                </div>
-              </FadeIn>
-            ))}
-          </div>
+        {/* KPIs — flat, hairline stat cards */}
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          {stats.map((s, i) => (
+            <FadeIn key={s.label} delay={i * 0.05}>
+              <div className="rounded-[var(--radius-card)] border border-border bg-surface p-4 transition hover:border-muted/40">
+                <span className={cn('inline-flex rounded-lg p-2', s.tile)}>
+                  <s.icon className="h-[18px] w-[18px]" strokeWidth={2} />
+                </span>
+                {loading ? (
+                  <div className="mt-3 h-7 w-12 animate-pulse rounded bg-canvas" />
+                ) : (
+                  <div className="mt-3 text-2xl font-bold tabular-nums">{s.value}</div>
+                )}
+                <div className="mt-0.5 text-[13px] text-muted">{s.label}</div>
+              </div>
+            </FadeIn>
+          ))}
         </div>
 
         <WeeklyDigest aiEnabled={aiEnabled} />
@@ -128,12 +134,12 @@ export default function HomePage() {
         {aiEnabled && <AssistantCard onAsk={(prompt) => navigate('/assistant', { state: { prompt } })} />}
 
         {overdue.length > 0 && (
-          <Card className="mt-6 border-red-200 bg-red-50/50 p-5 dark:border-red-900/40 dark:bg-red-950/20">
-            <h2 className="mb-3 flex items-center gap-2 font-bold text-red-700 dark:text-red-400">
+          <Card className="mt-6 border-red-500/30 bg-red-500/5 p-5">
+            <h2 className="mb-3 flex items-center gap-2 font-bold text-red-600 dark:text-red-400">
               <AlertTriangle className="h-5 w-5" />
               {t('dashboard.overdueTasks')}
             </h2>
-            <ul className="divide-y divide-red-100 dark:divide-red-900/40">
+            <ul className="divide-y divide-red-500/15">
               {overdue.map((task) => (
                 <li key={task.id}>
                   <Link to={`/projects/${task.projectId}`} className="flex items-center gap-3 py-2.5 text-sm hover:opacity-80">
@@ -262,9 +268,9 @@ function AssistantCard({ onAsk }: { onAsk: (prompt: string) => void }) {
   const examples = [t('dashboard.aiExample1'), t('dashboard.aiExample2'), t('dashboard.aiExample3')]
 
   return (
-    <Card className="mt-6 overflow-hidden border-primary/20 bg-gradient-to-br from-primary/10 via-surface to-surface p-5">
+    <Card className="mt-6 overflow-hidden border-primary/25 p-5">
       <div className="flex flex-wrap items-start gap-4">
-        <div className="inline-flex flex-none rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 p-2.5 text-primary">
+        <div className="inline-flex flex-none rounded-lg bg-primary-muted p-2.5 text-primary">
           <Sparkles className="h-5 w-5" strokeWidth={2} />
         </div>
         <div className="min-w-0 flex-1">

@@ -488,7 +488,7 @@ export default function ChatPage() {
 
   return (
     <div className="-mx-4 -my-6 flex h-[calc(100dvh-4rem)] flex-col sm:-mx-6 lg:-mx-8">
-      <div className="flex min-h-0 flex-1 overflow-hidden rounded-xl border border-border bg-surface shadow-soft">
+      <div className="flex min-h-0 flex-1 overflow-hidden rounded-[var(--radius-card)] border border-border bg-surface">
         {/* Sidebar: conversations */}
         {/* Conversation list — full width on mobile; hidden once a chat is open (single-pane). */}
         <aside
@@ -630,7 +630,7 @@ export default function ChatPage() {
               )}
 
               {messages.some((m) => m.isPinned && !m.isDeleted) && (
-                <div className="border-b border-border bg-amber-50 px-4 py-2 dark:bg-amber-950/20">
+                <div className="border-b border-border bg-amber-500/5 px-4 py-2">
                   {messages
                     .filter((m) => m.isPinned && !m.isDeleted)
                     .map((m) => (
@@ -709,8 +709,8 @@ export default function ChatPage() {
                             'max-w-md rounded-2xl px-4 py-2 transition-shadow',
                             highlightId === m.id && 'ring-2 ring-accent ring-offset-2 ring-offset-canvas',
                             mine
-                              ? 'gradient-primary text-white shadow-sm shadow-primary/20'
-                              : 'border border-border bg-surface text-foreground shadow-soft',
+                              ? 'gradient-primary text-white'
+                              : 'border border-border bg-surface text-foreground',
                           )}
                         >
                           {m.isPinned && (
@@ -869,7 +869,7 @@ export default function ChatPage() {
               )}
 
               {sendError && (
-                <div className="border-t border-red-200 bg-red-50 px-4 py-2 text-sm font-medium text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-300">
+                <div className="border-t border-red-500/30 bg-red-500/5 px-4 py-2 text-sm font-medium text-red-600 dark:text-red-400">
                   {sendError}
                 </div>
               )}

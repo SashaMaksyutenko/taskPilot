@@ -503,27 +503,14 @@ export default function BoardPage() {
     <div className="-mx-4 sm:-mx-6 lg:-mx-8">
         {showConfetti && <Confetti onDone={() => setShowConfetti(false)} />}
         {dnd.overlay}
-        <div className="mb-5 flex flex-wrap items-center gap-3">
+        <div className="mb-4 flex items-center gap-3">
           <Link to="/projects" className="text-sm text-muted hover:text-foreground hover:underline">
             {t('board.backToProjects')}
           </Link>
-          <h1 className="text-xl font-bold">{project?.name ?? t('board.title')}</h1>
+          <h1 className="min-w-0 truncate text-xl font-bold">{project?.name ?? t('board.title')}</h1>
 
-          {/* Board / timeline switcher — scrolls horizontally on narrow screens instead of clipping. */}
-          <div className="ml-auto flex max-w-full shrink overflow-x-auto rounded-lg border border-border">
-            {(['board', 'gantt', 'team', 'analytics', 'sprints', 'activity'] as const).map((v) => (
-              <button
-                key={v}
-                onClick={() => setView(v)}
-                className={`shrink-0 whitespace-nowrap px-2.5 py-1.5 text-sm font-medium transition sm:px-3 ${
-                  view === v ? 'gradient-primary text-white shadow-sm shadow-primary/20' : 'text-foreground hover:bg-canvas'
-                }`}
-              >
-                {t(`board.view.${v}`)}
-              </button>
-            ))}
-          </div>
-
+          {/* Object-level actions live on the title row; the view switcher is the tab strip below. */}
+          <div className="ml-auto flex items-center gap-2">
           {/* Hidden CSV import picker, triggered from the "More" menu. */}
           {canWrite && (
             <input
@@ -553,7 +540,7 @@ export default function BoardPage() {
           />
           {/* Reports menu (project health + team performance, PDF/Excel each) */}
           <div className="relative">
-            <Button variant="accent" size="sm" onClick={() => setReportsOpen((o) => !o)}>
+            <Button variant="secondary" size="sm" onClick={() => setReportsOpen((o) => !o)}>
               {t('board.reports')} ▾
             </Button>
             {reportsOpen && (
@@ -642,6 +629,22 @@ export default function BoardPage() {
               </>
             )}
           </div>
+          </div>
+        </div>
+
+        {/* Board / timeline switcher — underline tab strip below the title. */}
+        <div className="mb-5 flex gap-1 overflow-x-auto border-b border-border">
+          {(['board', 'gantt', 'team', 'analytics', 'sprints', 'activity'] as const).map((v) => (
+            <button
+              key={v}
+              onClick={() => setView(v)}
+              className={`-mb-px shrink-0 whitespace-nowrap border-b-2 px-3 py-2 text-[13px] font-medium transition ${
+                view === v ? 'border-primary text-primary' : 'border-transparent text-muted hover:text-foreground'
+              }`}
+            >
+              {t(`board.view.${v}`)}
+            </button>
+          ))}
         </div>
 
         {/* Add task (Editors and the owner only) */}

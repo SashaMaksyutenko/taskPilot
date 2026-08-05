@@ -112,13 +112,13 @@ export default function UserProfilePage() {
         ) : (
           <>
             {/* Header */}
-            <div className="rounded-xl border border-border bg-surface p-6">
+            <div className="rounded-[var(--radius-card)] border border-border bg-surface p-6">
               <div className="flex items-center gap-4">
                 <Avatar name={profile.name} src={profile.avatarUrl} size={64} />
                 <div className="min-w-0">
                   <h1 className="truncate text-2xl font-bold">{profile.name}</h1>
                   <div className="mt-1 flex items-center gap-2 text-sm text-muted">
-                    <span className="rounded-full bg-canvas px-2 py-0.5 text-[11px] font-semibold">
+                    <span className="rounded-full border border-border px-2 py-0.5 text-[11px] font-semibold text-muted">
                       {t(`admin.roles.${profile.role}`, profile.role)}
                     </span>
                     {profile.title && <span>{profile.title}</span>}
@@ -142,7 +142,7 @@ export default function UserProfilePage() {
                       <span
                         key={b}
                         title={t(`reputation.badge.${b}`, b)}
-                        className="rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-800 dark:bg-amber-900/40 dark:text-amber-200"
+                        className="rounded-full bg-amber-500/10 px-2.5 py-0.5 text-xs font-semibold text-amber-600 dark:text-amber-400"
                       >
                         {BADGE_ICON[b] ?? '🏅'} {t(`reputation.badge.${b}`, b)}
                       </span>
@@ -158,7 +158,7 @@ export default function UserProfilePage() {
 
             {/* Bio */}
             {profile.bio && (
-              <div className="mt-6 rounded-xl border border-border bg-surface p-6">
+              <div className="mt-6 rounded-[var(--radius-card)] border border-border bg-surface p-6">
                 <h2 className="mb-2 font-bold">{t('settings.bio')}</h2>
                 <p className="whitespace-pre-wrap text-sm">{profile.bio}</p>
               </div>
@@ -166,7 +166,7 @@ export default function UserProfilePage() {
 
             {/* Skills (with peer endorsements) */}
             {profile.skills.length > 0 && (
-              <div className="mt-6 rounded-xl border border-border bg-surface p-6">
+              <div className="mt-6 rounded-[var(--radius-card)] border border-border bg-surface p-6">
                 <h2 className="mb-3 font-bold">{t('settings.skills')}</h2>
                 <div className="flex flex-wrap gap-2">
                   {profile.skills.map((skill) => {
@@ -220,7 +220,7 @@ export default function UserProfilePage() {
 
             {/* Shared projects (only those the viewer also takes part in) */}
             {sharedProjects.length > 0 && (
-              <div className="mt-6 rounded-xl border border-border bg-surface p-6">
+              <div className="mt-6 rounded-[var(--radius-card)] border border-border bg-surface p-6">
                 <h2 className="mb-3 font-bold">
                   {isOwnProfile ? t('profile.myProjects') : t('profile.sharedProjects')}
                 </h2>
@@ -241,7 +241,7 @@ export default function UserProfilePage() {
 
             {/* Contacts */}
             {(profile.email || profile.website || profile.linkedIn || profile.github || profile.phone) && (
-              <div className="mt-6 rounded-xl border border-border bg-surface p-6">
+              <div className="mt-6 rounded-[var(--radius-card)] border border-border bg-surface p-6">
                 <h2 className="mb-3 font-bold">{t('profile.contacts')}</h2>
                 <div className="space-y-2">
                   <Contact label={t('admin.email')} value={profile.email} href={profile.email ? `mailto:${profile.email}` : undefined} />
@@ -255,7 +255,7 @@ export default function UserProfilePage() {
 
             {/* Achievement badges */}
             {achievements.length > 0 && (
-              <div className="mt-6 rounded-xl border border-border bg-surface p-6">
+              <div className="mt-6 rounded-[var(--radius-card)] border border-border bg-surface p-6">
                 <h2 className="mb-3 font-bold">{t('achievements.title')}</h2>
                 <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                   {achievements.map((a) => (
@@ -284,7 +284,7 @@ export default function UserProfilePage() {
 
             {/* Reputation history (ledger) */}
             {reputation.length > 0 && (
-              <div className="mt-6 rounded-xl border border-border bg-surface p-6">
+              <div className="mt-6 rounded-[var(--radius-card)] border border-border bg-surface p-6">
                 <h2 className="mb-3 font-bold">{t('reputation.history')}</h2>
                 <ul className="space-y-1">
                   {reputation.map((e) => (
@@ -313,7 +313,7 @@ export default function UserProfilePage() {
             )}
 
             {/* Forum topics by this user */}
-            <div className="mt-6 rounded-xl border border-border bg-surface p-6">
+            <div className="mt-6 rounded-[var(--radius-card)] border border-border bg-surface p-6">
               <h2 className="mb-3 font-bold">{t('profile.topics')}</h2>
               {topics.length === 0 ? (
                 <p className="text-sm text-muted">{t('profile.noTopics')}</p>

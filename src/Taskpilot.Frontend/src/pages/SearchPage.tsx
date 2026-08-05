@@ -27,7 +27,7 @@ function Group({
 }) {
   if (items.length === 0) return null
   return (
-    <div className="rounded-xl border border-border bg-surface p-4">
+    <div className="rounded-[var(--radius-card)] border border-border bg-surface p-4">
       <h2 className="mb-2 text-sm font-bold uppercase tracking-wide text-muted">{title}</h2>
       <ul className="divide-y divide-border">
         {items.map((i) => (
@@ -48,7 +48,7 @@ function Group({
 function SemanticRow({ r }: { r: SemanticResult }) {
   const { t } = useTranslation()
   return (
-    <Link to={r.url} className="block rounded-xl border border-border bg-surface p-3 transition hover:bg-canvas">
+    <Link to={r.url} className="block rounded-[var(--radius-card)] border border-border bg-surface p-3 transition hover:bg-canvas">
       <div className="flex items-center gap-2">
         <span className="flex-none rounded-full bg-primary-muted px-2 py-0.5 text-[10px] font-semibold text-primary">
           {t(`search.source.${r.sourceType}`, r.sourceType)}
@@ -212,7 +212,7 @@ export default function SearchPage() {
         )
       ) : sem && !sem.enabled ? (
         // Embeddings not configured — explain how to turn it on.
-        <div className="rounded-xl border border-border bg-surface p-5 text-sm">
+        <div className="rounded-[var(--radius-card)] border border-border bg-surface p-5 text-sm">
           <p className="mb-1 font-semibold">{t('search.semantic.disabledTitle')}</p>
           <p className="text-muted">{t('search.semantic.disabledHint')}</p>
         </div>

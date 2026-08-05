@@ -129,7 +129,7 @@ export default function NotesPage() {
         <h1 className="mb-6 text-2xl font-bold">{t('notes.title')}</h1>
 
         {/* Create / edit form */}
-        <div className="mb-8 rounded-xl border border-border bg-surface p-5">
+        <div className="mb-8 rounded-[var(--radius-card)] border border-border bg-surface p-5">
           <input
             value={title}
             onChange={(e) => setTitle(e.target.value)}
@@ -261,7 +261,7 @@ export default function NotesPage() {
                 onDelete={() => setDeletingNote(note)}
               >
               <div
-                className="flex flex-col rounded-xl border border-border p-4 shadow-sm"
+                className="flex flex-col rounded-[var(--radius-card)] border border-border p-4"
                 style={{ background: note.color ?? undefined }}
               >
                 <div className="mb-1 flex items-start gap-2">

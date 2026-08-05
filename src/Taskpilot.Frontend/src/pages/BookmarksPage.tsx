@@ -3,7 +3,6 @@ import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 import { Bookmark as BookmarkIcon, FolderKanban, MessagesSquare, MessageSquare, Paperclip, X } from 'lucide-react'
 import EmptyState from '../components/feedback/EmptyState'
-import Card from '../components/ui/Card'
 import { SkeletonCard } from '../components/ui/Skeleton'
 import { bookmarkService, type Bookmark, type BookmarkType } from '../services/bookmarkService'
 import { fileService } from '../services/fileService'
@@ -65,12 +64,12 @@ export default function BookmarksPage() {
       ) : items.length === 0 ? (
         <EmptyState message={t('bookmarks.empty')} />
       ) : (
-        <ul className="space-y-2">
+        <ul className="divide-y divide-border overflow-hidden rounded-[var(--radius-card)] border border-border bg-surface">
           {items.map((b) => {
             const Icon = TYPE_ICON[b.type] ?? BookmarkIcon
             return (
               <li key={b.id}>
-                <Card hover className="flex items-center gap-3 p-4">
+                <div className="flex items-center gap-3 px-4 py-3 transition hover:bg-canvas">
                   <span className="flex-none rounded-lg bg-primary/10 p-2 text-primary">
                     <Icon className="h-5 w-5" />
                   </span>
@@ -97,7 +96,7 @@ export default function BookmarksPage() {
                   >
                     <X className="h-4 w-4" />
                   </button>
-                </Card>
+                </div>
               </li>
             )
           })}

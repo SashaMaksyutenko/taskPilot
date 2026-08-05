@@ -45,7 +45,7 @@ export default function DocsPage() {
           </nav>
 
           {/* Article */}
-          <article className="min-w-0 rounded-2xl border border-border bg-surface p-6 text-sm leading-relaxed sm:p-8">
+          <article className="min-w-0 rounded-[var(--radius-card)] border border-border bg-surface p-6 text-sm leading-relaxed sm:p-8">
             <Markdown>{article.body[lang]}</Markdown>
           </article>
         </div>

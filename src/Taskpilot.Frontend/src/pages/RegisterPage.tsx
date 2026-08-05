@@ -75,7 +75,7 @@ export default function RegisterPage() {
           <h1 className="mt-4 text-center text-2xl font-bold">{t('auth.createAccount')}</h1>
 
           {serverError && (
-            <div className="mt-4 rounded-lg bg-red-50 px-4 py-2 text-sm text-red-700 dark:bg-red-950/40 dark:text-red-300">
+            <div className="mt-4 rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-2 text-sm text-red-600 dark:text-red-400">
               {serverError}
             </div>
           )}

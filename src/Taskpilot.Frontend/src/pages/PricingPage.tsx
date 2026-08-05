@@ -52,7 +52,7 @@ export default function PricingPage() {
           {TIERS.map((tier) => (
             <div
               key={tier.key}
-              className={`relative flex flex-col rounded-2xl border bg-surface p-6 shadow-soft ${
+              className={`relative flex flex-col rounded-[var(--radius-card)] border bg-surface p-6 shadow-soft ${
                 tier.highlighted ? 'border-primary shadow-elevated ring-1 ring-primary/30' : 'border-border'
               }`}
             >

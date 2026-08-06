@@ -48,13 +48,14 @@
   },
   "gcal": {
     "title": "Google Calendar",
-    "desc": "Push your deadline tasks to your Google Calendar as events.",
+    "desc": "Two-way sync between your tasks' deadlines and your Google Calendar.",
     "connect": "Connect",
     "connected": "Google Calendar connected.",
-    "connectedHint": "Connected — sync to push your tasks.",
+    "connectedHint": "Connected — sync to push tasks and pull moved events.",
     "lastSynced": "Last synced {{date}}.",
     "syncNow": "Sync now",
     "synced": "Synced {{count}} task(s) to Google Calendar.",
+    "pulled": "Rescheduled {{count}} task(s) from moved calendar events.",
     "disconnect": "Disconnect",
     "disconnected": "Google Calendar disconnected."
   },

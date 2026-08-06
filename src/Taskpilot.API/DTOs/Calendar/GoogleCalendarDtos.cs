@@ -21,6 +21,13 @@ public class GoogleCalendarSyncResultDto
     public int Total { get; set; }
 }
 
+/// <summary>Outcome of a pull sync (Google → TaskPilot): tasks rescheduled from moved events.</summary>
+public class GoogleCalendarPullResultDto
+{
+    public int Rescheduled { get; set; }
+    public int Checked { get; set; }
+}
+
 /// <summary>Body for completing the Google consent flow.</summary>
 public class GoogleCalendarConnectDto
 {

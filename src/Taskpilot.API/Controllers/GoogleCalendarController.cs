@@ -70,6 +70,18 @@ public class GoogleCalendarController : BaseApiController
         return Ok(result.Value);
     }
 
+    /// <summary>Pulls moved events back: reschedules tasks whose Google event start changed.</summary>
+    [HttpPost("pull")]
+    public async Task<IActionResult> Pull()
+    {
+        var userId = CurrentUserId();
+        if (userId is null) return Unauthorized();
+
+        var result = await _sync.PullAsync(userId.Value);
+        if (!result.Succeeded) return BadRequest(new { error = result.Error });
+        return Ok(result.Value);
+    }
+
     /// <summary>Disconnects the user's Google Calendar and forgets the task↔event links.</summary>
     [HttpDelete]
     public async Task<IActionResult> Disconnect()

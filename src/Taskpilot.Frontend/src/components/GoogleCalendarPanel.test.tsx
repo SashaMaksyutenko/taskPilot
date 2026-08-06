@@ -3,10 +3,11 @@ import { render, screen, waitFor, fireEvent } from '@testing-library/react'
 import GoogleCalendarPanel from './GoogleCalendarPanel'
 
 // Hoisted mocks for the service + router so the panel can be tested in isolation.
-const { status, connect, sync, disconnect, connectUrl, setParams } = vi.hoisted(() => ({
+const { status, connect, sync, pull, disconnect, connectUrl, setParams } = vi.hoisted(() => ({
   status: vi.fn(),
   connect: vi.fn(),
   sync: vi.fn(),
+  pull: vi.fn(),
   disconnect: vi.fn(),
   connectUrl: vi.fn(),
   setParams: vi.fn(),
@@ -14,7 +15,7 @@ const { status, connect, sync, disconnect, connectUrl, setParams } = vi.hoisted(
 
 vi.mock('react-router-dom', () => ({ useSearchParams: () => [new URLSearchParams(), setParams] }))
 vi.mock('../services/googleCalendarService', () => ({
-  googleCalendarService: { status, connect, sync, disconnect, connectUrl },
+  googleCalendarService: { status, connect, sync, pull, disconnect, connectUrl },
 }))
 vi.mock('../lib/toast', () => ({ notify: { success: vi.fn(), error: vi.fn() } }))
 vi.mock('../lib/apiError', () => ({ apiErrorMessage: () => 'err' }))
@@ -25,6 +26,7 @@ describe('GoogleCalendarPanel', () => {
     status.mockReset()
     connect.mockReset()
     sync.mockReset()
+    pull.mockReset()
     disconnect.mockReset()
     connectUrl.mockReset()
   })
@@ -46,6 +48,7 @@ describe('GoogleCalendarPanel', () => {
   it('syncs, then disconnects, when connected', async () => {
     status.mockResolvedValue({ configured: true, connected: true, lastSyncedUtc: null })
     sync.mockResolvedValue({ created: 2, updated: 1, total: 3 })
+    pull.mockResolvedValue({ rescheduled: 0, checked: 0 })
     disconnect.mockResolvedValue(undefined)
     render(<GoogleCalendarPanel />)
 

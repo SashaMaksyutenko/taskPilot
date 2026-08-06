@@ -14,6 +14,12 @@ export interface GoogleCalendarSyncResult {
   total: number
 }
 
+/** Outcome of a pull sync (Google → TaskPilot): tasks rescheduled from moved events. */
+export interface GoogleCalendarPullResult {
+  rescheduled: number
+  checked: number
+}
+
 /** Google Calendar sync (push phase): connect via OAuth, disconnect, status and on-demand sync. */
 export const googleCalendarService = {
   status(): Promise<GoogleCalendarStatus> {
@@ -37,6 +43,11 @@ export const googleCalendarService = {
   /** Pushes the user's deadline tasks to their Google Calendar. */
   sync(): Promise<GoogleCalendarSyncResult> {
     return api.post<GoogleCalendarSyncResult>('/api/calendar/google/sync').then((r) => r.data)
+  },
+
+  /** Pulls moved events back: reschedules tasks whose Google event start changed. */
+  pull(): Promise<GoogleCalendarPullResult> {
+    return api.post<GoogleCalendarPullResult>('/api/calendar/google/pull').then((r) => r.data)
   },
 
   /** Disconnects Google Calendar and forgets the task↔event links. */

@@ -129,6 +129,59 @@ public class GoogleCalendarClient : IGoogleCalendarClient
         }
     }
 
+    public async Task<Result<List<GoogleEventSnapshot>>> ListEventsAsync(string accessToken, DateTime fromUtc, DateTime toUtc)
+    {
+        if (!IsEnabled) return Result<List<GoogleEventSnapshot>>.Fail("Google Calendar sync is not configured.");
+        try
+        {
+            var q = $"?singleEvents=true&maxResults=2500" +
+                    $"&timeMin={Uri.EscapeDataString(fromUtc.ToString("yyyy-MM-ddTHH:mm:ssZ"))}" +
+                    $"&timeMax={Uri.EscapeDataString(toUtc.ToString("yyyy-MM-ddTHH:mm:ssZ"))}";
+            using var req = new HttpRequestMessage(HttpMethod.Get, EventsEndpoint + q);
+            req.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessToken);
+
+            var resp = await _http.SendAsync(req);
+            if (!resp.IsSuccessStatusCode)
+            {
+                _logger.LogWarning("Google event list failed. Status: {Status}", resp.StatusCode);
+                return Result<List<GoogleEventSnapshot>>.Fail("Could not read events from Google Calendar.");
+            }
+
+            using var doc = JsonDocument.Parse(await resp.Content.ReadAsStringAsync());
+            var list = new List<GoogleEventSnapshot>();
+            if (doc.RootElement.TryGetProperty("items", out var items) && items.ValueKind == JsonValueKind.Array)
+            {
+                foreach (var item in items.EnumerateArray())
+                {
+                    var id = item.TryGetProperty("id", out var idEl) ? idEl.GetString() : null;
+                    if (string.IsNullOrEmpty(id)) continue;
+
+                    // Only events we created carry taskpilotTaskId in extendedProperties.private.
+                    if (!item.TryGetProperty("extendedProperties", out var ext)
+                        || !ext.TryGetProperty("private", out var priv)
+                        || !priv.TryGetProperty("taskpilotTaskId", out var tid)
+                        || !Guid.TryParse(tid.GetString(), out var taskId))
+                        continue;
+
+                    // Timed events only (ignore all-day 'date' entries — tasks are timed).
+                    if (!item.TryGetProperty("start", out var start)
+                        || !start.TryGetProperty("dateTime", out var dtEl)
+                        || dtEl.GetString() is not string dt
+                        || !DateTimeOffset.TryParse(dt, out var when))
+                        continue;
+
+                    list.Add(new GoogleEventSnapshot(id, taskId, when.UtcDateTime));
+                }
+            }
+            return Result<List<GoogleEventSnapshot>>.Ok(list);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Unexpected error listing Google Calendar events.");
+            return Result<List<GoogleEventSnapshot>>.Fail("An unexpected error occurred talking to Google.");
+        }
+    }
+
     public async Task<Result> DeleteEventAsync(string accessToken, string eventId)
     {
         if (!IsEnabled) return Result.Fail("Google Calendar sync is not configured.");

@@ -68,8 +68,10 @@ export default function GoogleCalendarPanel() {
   const sync = async () => {
     setBusy(true)
     try {
-      const res = await googleCalendarService.sync()
-      notify.success(t('gcal.synced', { count: res.created + res.updated }))
+      const pushed = await googleCalendarService.sync() // TaskPilot → Google
+      const pulled = await googleCalendarService.pull() // Google → TaskPilot (moved events)
+      notify.success(t('gcal.synced', { count: pushed.created + pushed.updated }))
+      if (pulled.rescheduled > 0) notify.success(t('gcal.pulled', { count: pulled.rescheduled }))
       setStatus((s) => (s ? { ...s, lastSyncedUtc: new Date().toISOString() } : s))
     } catch (e) {
       notify.error(apiErrorMessage(e))

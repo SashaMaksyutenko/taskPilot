@@ -8,6 +8,9 @@ public record GoogleTokenResult(string AccessToken, string? RefreshToken, int Ex
 /// <summary>The data needed to create/update one Google Calendar event for a task.</summary>
 public record GoogleCalendarEventData(Guid TaskId, string Title, string Description, DateTime StartUtc, DateTime EndUtc);
 
+/// <summary>A minimal read view of one of our events (carries the task id we tagged it with).</summary>
+public record GoogleEventSnapshot(string EventId, Guid? TaskId, DateTime StartUtc);
+
 /// <summary>
 /// Thin client over the Google Calendar API (and its OAuth token endpoint). Config-gated:
 /// <see cref="IsEnabled"/> is false unless Google OAuth credentials are configured, so callers
@@ -26,6 +29,9 @@ public interface IGoogleCalendarClient
 
     /// <summary>Creates (eventId null) or updates an event on the user's primary calendar; returns its id.</summary>
     Task<Result<string>> UpsertEventAsync(string accessToken, string? eventId, GoogleCalendarEventData ev);
+
+    /// <summary>Lists the user's primary-calendar events in [fromUtc, toUtc] that carry our task marker (for pull sync).</summary>
+    Task<Result<List<GoogleEventSnapshot>>> ListEventsAsync(string accessToken, DateTime fromUtc, DateTime toUtc);
 
     /// <summary>Deletes an event from the user's primary calendar (idempotent — an already-gone event is a success).</summary>
     Task<Result> DeleteEventAsync(string accessToken, string eventId);

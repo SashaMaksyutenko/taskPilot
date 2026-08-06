@@ -176,6 +176,55 @@ public class GoogleCalendarSyncService : IGoogleCalendarSyncService
         });
     }
 
+    /// <inheritdoc />
+    public async Task<Result<GoogleCalendarPullResultDto>> PullAsync(Guid userId)
+    {
+        if (!_client.IsEnabled) return Result<GoogleCalendarPullResultDto>.Fail("Google Calendar sync is not configured.");
+        var conn = await _context.GoogleCalendarConnections.FirstOrDefaultAsync(c => c.UserId == userId);
+        if (conn is null) return Result<GoogleCalendarPullResultDto>.Fail("Google Calendar is not connected.");
+
+        var tokenResult = await EnsureAccessTokenAsync(conn);
+        if (!tokenResult.Succeeded) return Result<GoogleCalendarPullResultDto>.Fail(tokenResult.Error!);
+
+        var from = DateTime.UtcNow.AddYears(-1);
+        var to = DateTime.UtcNow.AddYears(1);
+        var eventsResult = await _client.ListEventsAsync(tokenResult.Value!, from, to);
+        if (!eventsResult.Succeeded) return Result<GoogleCalendarPullResultDto>.Fail(eventsResult.Error!);
+
+        // Only act on events linked to one of THIS user's tasks (i.e. events we pushed).
+        var linkedTaskIds = (await _context.GoogleCalendarEventLinks
+            .Where(l => l.UserId == userId).Select(l => l.TaskId).ToListAsync()).ToHashSet();
+
+        int rescheduled = 0, checkedCount = 0;
+        foreach (var ev in eventsResult.Value!)
+        {
+            if (ev.TaskId is null || !linkedTaskIds.Contains(ev.TaskId.Value)) continue;
+            checkedCount++;
+
+            var deadline = await _context.ProjectTasks.AsNoTracking()
+                .Where(t => t.Id == ev.TaskId.Value)
+                .Select(t => t.Deadline)
+                .FirstOrDefaultAsync();
+            if (deadline is null) continue; // task gone or has no deadline
+
+            // Skip when unchanged (within a minute) — avoids churn and a push/pull feedback loop.
+            if (Math.Abs((ev.StartUtc - deadline.Value).TotalSeconds) < 60) continue;
+
+            // Reschedule enforces the user's write access; a refusal is skipped, not fatal.
+            var res = await _tasks.RescheduleAsync(userId, ev.TaskId.Value, ev.StartUtc);
+            if (res.Succeeded) rescheduled++;
+        }
+
+        conn.LastSyncedUtc = DateTime.UtcNow;
+        await _context.SaveChangesAsync();
+
+        return Result<GoogleCalendarPullResultDto>.Ok(new GoogleCalendarPullResultDto
+        {
+            Rescheduled = rescheduled,
+            Checked = checkedCount,
+        });
+    }
+
     /// <summary>Returns a valid access token, refreshing (and caching) it when missing or near expiry.</summary>
     private async Task<Result<string>> EnsureAccessTokenAsync(GoogleCalendarConnection conn)
     {

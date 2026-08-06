@@ -24,4 +24,7 @@ public interface IGoogleCalendarSyncService
 
     /// <summary>Pushes the user's deadline tasks to their Google Calendar (create/update).</summary>
     Task<Result<GoogleCalendarSyncResultDto>> SyncAsync(Guid userId);
+
+    /// <summary>Pulls moved events back: reschedules a task whose Google event start changed (Google → TaskPilot).</summary>
+    Task<Result<GoogleCalendarPullResultDto>> PullAsync(Guid userId);
 }

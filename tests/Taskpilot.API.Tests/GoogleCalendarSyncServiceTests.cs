@@ -5,6 +5,8 @@ using Taskpilot.API.Common;
 using Taskpilot.API.Configuration;
 using Taskpilot.API.Data;
 using Taskpilot.API.DTOs.Calendar;
+using Taskpilot.API.DTOs.Projects;
+using Taskpilot.API.Models;
 using Taskpilot.API.Services;
 using Xunit;
 
@@ -25,6 +27,7 @@ public class GoogleCalendarSyncServiceTests
         public bool ReturnRefreshToken { get; set; } = true;
         public int UpsertCalls { get; private set; }
         public Dictionary<string, GoogleCalendarEventData> Events { get; } = new();
+        public List<GoogleEventSnapshot> PulledEvents { get; } = new();
         private int _seq;
 
         public Task<Result<GoogleTokenResult>> ExchangeCodeAsync(string code, string redirectUri) =>
@@ -50,6 +53,11 @@ public class GoogleCalendarSyncServiceTests
             Events.Remove(eventId);
             return Task.FromResult(Result.Ok());
         }
+
+        public Task<Result<List<GoogleEventSnapshot>>> ListEventsAsync(string accessToken, DateTime fromUtc, DateTime toUtc) =>
+            Task.FromResult(IsEnabled
+                ? Result<List<GoogleEventSnapshot>>.Ok(PulledEvents.ToList())
+                : Result<List<GoogleEventSnapshot>>.Fail("not configured"));
     }
 
     private static GoogleCalendarSyncService Make(TaskpilotDbContext ctx, IGoogleCalendarClient client, ITaskService tasks) =>
@@ -168,5 +176,62 @@ public class GoogleCalendarSyncServiceTests
 
         Assert.False((await svc.GetStatusAsync(user)).Connected);
         Assert.Empty(ctx.GoogleCalendarEventLinks.Where(l => l.UserId == user));
+    }
+
+    private static async Task SeedTaskWithLinkAsync(TaskpilotDbContext ctx, Guid userId, Guid taskId, DateTime deadline, string eventId)
+    {
+        ctx.ProjectTasks.Add(new ProjectTask { Id = taskId, ProjectId = Guid.NewGuid(), CreatorId = userId, Title = "T", Deadline = deadline });
+        ctx.GoogleCalendarEventLinks.Add(new GoogleCalendarEventLink { UserId = userId, TaskId = taskId, GoogleEventId = eventId });
+        await ctx.SaveChangesAsync();
+    }
+
+    [Fact]
+    public async Task Pull_ReschedulesTask_WhenEventMoved()
+    {
+        await using var ctx = TestDb.CreateContext();
+        var user = await TestDb.AddUserAsync(ctx, "U");
+        var taskId = Guid.NewGuid();
+        var deadline = DateTime.UtcNow.AddDays(2);
+        await SeedTaskWithLinkAsync(ctx, user, taskId, deadline, "evt-1");
+
+        var client = new FakeGoogleCalendarClient();
+        var moved = deadline.AddDays(3);
+        client.PulledEvents.Add(new GoogleEventSnapshot("evt-1", taskId, moved));
+
+        var tasks = new Mock<ITaskService>();
+        tasks.Setup(t => t.RescheduleAsync(user, taskId, It.IsAny<DateTime?>()))
+             .ReturnsAsync(Result<TaskDto>.Ok(null!));
+
+        var svc = Make(ctx, client, tasks.Object);
+        await svc.ConnectAsync(user, "code", "uri");
+
+        var pull = await svc.PullAsync(user);
+        Assert.True(pull.Succeeded);
+        Assert.Equal(1, pull.Value!.Rescheduled);
+        Assert.Equal(1, pull.Value.Checked);
+        tasks.Verify(t => t.RescheduleAsync(user, taskId, moved), Times.Once);
+    }
+
+    [Fact]
+    public async Task Pull_SkipsTask_WhenEventUnchanged()
+    {
+        await using var ctx = TestDb.CreateContext();
+        var user = await TestDb.AddUserAsync(ctx, "U");
+        var taskId = Guid.NewGuid();
+        var deadline = DateTime.UtcNow.AddDays(2);
+        await SeedTaskWithLinkAsync(ctx, user, taskId, deadline, "evt-1");
+
+        var client = new FakeGoogleCalendarClient();
+        client.PulledEvents.Add(new GoogleEventSnapshot("evt-1", taskId, deadline)); // unchanged time
+
+        var tasks = new Mock<ITaskService>();
+        var svc = Make(ctx, client, tasks.Object);
+        await svc.ConnectAsync(user, "code", "uri");
+
+        var pull = await svc.PullAsync(user);
+        Assert.True(pull.Succeeded);
+        Assert.Equal(0, pull.Value!.Rescheduled);
+        Assert.Equal(1, pull.Value.Checked);
+        tasks.Verify(t => t.RescheduleAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<DateTime?>()), Times.Never);
     }
 }

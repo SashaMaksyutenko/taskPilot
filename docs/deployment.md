@@ -137,6 +137,17 @@ frontend, e.g. `https://taskpilot.vercel.app/auth/google/callback`. The frontend
 needs the matching public client ids at build time (`VITE_GOOGLE_CLIENT_ID`,
 `VITE_GITHUB_CLIENT_ID`, `VITE_LINKEDIN_CLIENT_ID`) on Vercel.
 
+**Google Calendar 2-way sync** reuses the same Google OAuth app (no extra secrets). To turn it
+on in the Google Cloud Console:
+
+1. **Enable the Google Calendar API** for the project (APIs & Services → Library → *Google Calendar API* → Enable).
+2. Add **`https://<frontend>/calendar`** to the OAuth client's *Authorized redirect URIs* (this is where Google returns the user after consent — it is separate from the sign-in callback; the origin, without the path, must already be in *Authorized JavaScript origins*).
+3. While the OAuth app is in **Testing**, add each user's email under *Audience → Test users*.
+
+> ⚠️ In *Testing* mode Google **expires the refresh token after 7 days**, so users must reconnect
+> weekly. Publish the app (Publishing status → *Publish*) for a permanent connection — the
+> `calendar.events` scope is *sensitive*, so publishing may require Google verification.
+
 ---
 
 ## Things worth knowing

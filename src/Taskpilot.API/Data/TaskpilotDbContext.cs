@@ -168,6 +168,12 @@ public class TaskpilotDbContext : DbContext
     /// <summary>Files attached to forum topics.</summary>
     public DbSet<ForumAttachment> ForumAttachments => Set<ForumAttachment>();
 
+    /// <summary>Per-user Google Calendar connections (refresh tokens for push sync).</summary>
+    public DbSet<GoogleCalendarConnection> GoogleCalendarConnections => Set<GoogleCalendarConnection>();
+
+    /// <summary>Task ↔ Google Calendar event mappings (avoid duplicate events on re-sync).</summary>
+    public DbSet<GoogleCalendarEventLink> GoogleCalendarEventLinks => Set<GoogleCalendarEventLink>();
+
     /// <summary>
     /// Налаштування моделі (Fluent API): обмеження, індекси, перетворення типів.
     /// Викликається EF Core під час побудови моделі та генерації міграцій.
@@ -1286,6 +1292,42 @@ public class TaskpilotDbContext : DbContext
             entity.HasOne(d => d.OwnerUser)
                   .WithMany()
                   .HasForeignKey(d => d.OwnerUserId)
+                  .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // GoogleCalendarConnection entity configuration (one per user)
+        modelBuilder.Entity<GoogleCalendarConnection>(entity =>
+        {
+            entity.HasKey(c => c.Id);
+            entity.Property(c => c.RefreshToken).IsRequired();
+
+            // At most one connection per user; also the lookup key.
+            entity.HasIndex(c => c.UserId).IsUnique();
+
+            // Deleting a user removes their calendar connection.
+            entity.HasOne(c => c.User)
+                  .WithMany()
+                  .HasForeignKey(c => c.UserId)
+                  .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // GoogleCalendarEventLink entity configuration (task ↔ event, per user)
+        modelBuilder.Entity<GoogleCalendarEventLink>(entity =>
+        {
+            entity.HasKey(l => l.Id);
+            entity.Property(l => l.GoogleEventId).IsRequired().HasMaxLength(1024);
+
+            // One event per (user, task); also the per-user lookup.
+            entity.HasIndex(l => new { l.UserId, l.TaskId }).IsUnique();
+
+            // Postgres allows the two cascade paths (user + task); both clean up the link.
+            entity.HasOne(l => l.User)
+                  .WithMany()
+                  .HasForeignKey(l => l.UserId)
+                  .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(l => l.Task)
+                  .WithMany()
+                  .HasForeignKey(l => l.TaskId)
                   .OnDelete(DeleteBehavior.Cascade);
         });
 

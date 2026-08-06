@@ -18,6 +18,8 @@ vi.mock('../lib/toast', () => ({ notify: { success: vi.fn(), error: vi.fn() } })
 vi.mock('../components/menus/ActionsContextMenu', () => ({
   default: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }))
+// The Google Calendar panel is exercised by its own test; keep it out of the page's.
+vi.mock('../components/GoogleCalendarPanel', () => ({ default: () => null }))
 // t() returns the key, except the month/weekday arrays which the page indexes into.
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({

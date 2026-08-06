@@ -46,6 +46,18 @@
     "subtitle": "Every task assigned to you across your projects, soonest deadline first.",
     "empty": "You have no open tasks assigned. Enjoy the calm!"
   },
+  "gcal": {
+    "title": "Google Calendar",
+    "desc": "Push your deadline tasks to your Google Calendar as events.",
+    "connect": "Connect",
+    "connected": "Google Calendar connected.",
+    "connectedHint": "Connected — sync to push your tasks.",
+    "lastSynced": "Last synced {{date}}.",
+    "syncNow": "Sync now",
+    "synced": "Synced {{count}} task(s) to Google Calendar.",
+    "disconnect": "Disconnect",
+    "disconnected": "Google Calendar disconnected."
+  },
   "leaderboard": {
     "title": "Leaderboard",
     "subtitle": "Top contributors by reputation — earned for on-time work, accepted solutions and completed marketplace tasks.",

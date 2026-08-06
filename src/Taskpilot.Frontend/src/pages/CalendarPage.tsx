@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import ActionsContextMenu from '../components/menus/ActionsContextMenu'
+import GoogleCalendarPanel from '../components/GoogleCalendarPanel'
 import Button from '../components/ui/Button'
 import Card from '../components/ui/Card'
 import Input from '../components/ui/Input'
@@ -329,6 +330,9 @@ export default function CalendarPage() {
           </div>
         </Card>
       )}
+
+      {/* Google Calendar 2-way sync (hidden unless the server has Google OAuth configured). */}
+      <GoogleCalendarPanel />
 
       <div className="mb-4 flex flex-wrap items-center gap-3">
         <Button variant="secondary" size="sm" onClick={() => step(-1)} aria-label={t('calendar.prev')}>

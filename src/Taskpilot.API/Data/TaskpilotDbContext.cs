@@ -221,6 +221,9 @@ public class TaskpilotDbContext : DbContext
     /// <summary>Commits/PRs from a project's linked GitHub repo that reference a task.</summary>
     public DbSet<GitHubTaskLink> GitHubTaskLinks => Set<GitHubTaskLink>();
 
+    /// <summary>WebAuthn/FIDO2 passkeys registered by users for passwordless sign-in.</summary>
+    public DbSet<UserPasskey> UserPasskeys => Set<UserPasskey>();
+
     /// <summary>
     /// Налаштування моделі (Fluent API): обмеження, індекси, перетворення типів.
     /// Викликається EF Core під час побудови моделі та генерації міграцій.
@@ -1378,6 +1381,23 @@ public class TaskpilotDbContext : DbContext
             entity.HasOne(l => l.Task)
                   .WithMany()
                   .HasForeignKey(l => l.TaskId)
+                  .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // UserPasskey entity configuration (WebAuthn credential)
+        modelBuilder.Entity<UserPasskey>(entity =>
+        {
+            entity.HasKey(p => p.Id);
+            entity.Property(p => p.CredType).HasMaxLength(32);
+            entity.Property(p => p.Name).HasMaxLength(100);
+
+            // A credential id is globally unique; also the lookup on assertion.
+            entity.HasIndex(p => p.CredentialId).IsUnique();
+
+            // Deleting a user removes their passkeys.
+            entity.HasOne(p => p.User)
+                  .WithMany()
+                  .HasForeignKey(p => p.UserId)
                   .OnDelete(DeleteBehavior.Cascade);
         });
 

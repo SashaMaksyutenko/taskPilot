@@ -1,5 +1,6 @@
 using Taskpilot.API.Common;
 using Taskpilot.API.DTOs.Auth;
+using Taskpilot.API.Models;
 
 namespace Taskpilot.API.Services;
 
@@ -29,6 +30,9 @@ public interface IAuthService
     /// result with a generic message when the credentials are invalid.
     /// </returns>
     Task<Result<AuthResponseDto>> LoginAsync(LoginDto dto, string? ip = null, string? userAgent = null);
+
+    /// <summary>Issues access + refresh tokens for an already-authenticated user (e.g. after a passkey assertion).</summary>
+    Task<AuthResponseDto> CompleteLoginAsync(User user, string? ip = null, string? userAgent = null);
 
     /// <summary>Signs a user in with a Google OAuth authorization code (creates the account if new).</summary>
     Task<Result<AuthResponseDto>> GoogleLoginAsync(string code, string? ip = null, string? userAgent = null);

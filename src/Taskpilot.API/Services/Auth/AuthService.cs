@@ -587,6 +587,17 @@ public class AuthService : IAuthService
     };
 
     /// <inheritdoc />
+    public async Task<AuthResponseDto> CompleteLoginAsync(User user, string? ip = null, string? userAgent = null)
+    {
+        // Issue tokens for an already-authenticated user (e.g. after a passkey assertion).
+        var (accessToken, accessExpiresAtUtc) = _tokenService.GenerateAccessToken(user);
+        var refreshToken = CreateRefreshToken(user.Id, ip, userAgent);
+        _context.RefreshTokens.Add(refreshToken);
+        await _context.SaveChangesAsync();
+        return BuildAuthResponse(user, accessToken, accessExpiresAtUtc, refreshToken);
+    }
+
+    /// <inheritdoc />
     public async Task<Result<List<SessionDto>>> GetSessionsAsync(Guid userId, string? currentToken)
     {
         var now = DateTime.UtcNow;

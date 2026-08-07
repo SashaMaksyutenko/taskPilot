@@ -186,3 +186,4 @@ TaskPilot/
 ├─ docker-compose.yml        Full local stack (API, frontend, Postgres, Redis, RabbitMQ)
 └─ Dockerfile                Backend API image
 ```
+> Tracked in TaskPilot via the GitHub integration.

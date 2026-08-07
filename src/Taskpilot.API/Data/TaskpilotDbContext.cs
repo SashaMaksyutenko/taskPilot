@@ -174,6 +174,9 @@ public class TaskpilotDbContext : DbContext
     /// <summary>Task ↔ Google Calendar event mappings (avoid duplicate events on re-sync).</summary>
     public DbSet<GoogleCalendarEventLink> GoogleCalendarEventLinks => Set<GoogleCalendarEventLink>();
 
+    /// <summary>Commits/PRs from a project's linked GitHub repo that reference a task.</summary>
+    public DbSet<GitHubTaskLink> GitHubTaskLinks => Set<GitHubTaskLink>();
+
     /// <summary>
     /// Налаштування моделі (Fluent API): обмеження, індекси, перетворення типів.
     /// Викликається EF Core під час побудови моделі та генерації міграцій.
@@ -1325,6 +1328,24 @@ public class TaskpilotDbContext : DbContext
                   .WithMany()
                   .HasForeignKey(l => l.UserId)
                   .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(l => l.Task)
+                  .WithMany()
+                  .HasForeignKey(l => l.TaskId)
+                  .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // GitHubTaskLink entity configuration (commit/PR ↔ task)
+        modelBuilder.Entity<GitHubTaskLink>(entity =>
+        {
+            entity.HasKey(l => l.Id);
+            entity.Property(l => l.Kind).IsRequired().HasMaxLength(16);
+            entity.Property(l => l.ExternalId).IsRequired().HasMaxLength(64);
+            entity.Property(l => l.Title).HasMaxLength(200);
+
+            // One link per (task, kind, external id); also the per-task lookup.
+            entity.HasIndex(l => new { l.TaskId, l.Kind, l.ExternalId }).IsUnique();
+
+            // Deleting a task removes its GitHub links.
             entity.HasOne(l => l.Task)
                   .WithMany()
                   .HasForeignKey(l => l.TaskId)

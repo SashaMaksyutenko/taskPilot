@@ -35,6 +35,12 @@ public class Project
     /// </summary>
     public string? ShareToken { get; set; }
 
+    /// <summary>Linked GitHub repository as "owner/name"; null when not connected.</summary>
+    public string? GitHubRepo { get; set; }
+
+    /// <summary>Secret used to verify inbound GitHub webhook signatures (HMAC-SHA256). Server-only.</summary>
+    public string? GitHubWebhookSecret { get; set; }
+
     /// <summary>Tasks belonging to this project.</summary>
     public ICollection<ProjectTask> Tasks { get; set; } = new List<ProjectTask>();
 

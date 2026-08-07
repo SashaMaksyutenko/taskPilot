@@ -125,6 +125,8 @@ builder.Services.AddHttpClient<IGoogleAuthClient, GoogleAuthClient>();
 // Google Calendar sync reuses the same OAuth app (calendar scope) to push deadline tasks.
 builder.Services.AddHttpClient<IGoogleCalendarClient, GoogleCalendarClient>();
 builder.Services.AddScoped<IGoogleCalendarSyncService, GoogleCalendarSyncService>();
+// GitHub integration (inbound webhooks; no OAuth needed).
+builder.Services.AddScoped<IGitHubIntegrationService, GitHubIntegrationService>();
 
 // GitHub OAuth credentials (populated from .env: GitHubOAuth__*).
 builder.Services.Configure<GitHubOAuthOptions>(builder.Configuration.GetSection("GitHubOAuth"));

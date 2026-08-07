@@ -37,6 +37,13 @@ public class GitHubIntegrationService : IGitHubIntegrationService
         @"(?:(?<kw>close[sd]?|fix(?:e[sd])?|resolve[sd]?)\s+)?(?<id>[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})",
         RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
+    // A short task ref like "TP-142", optionally preceded by a closing keyword. The letter prefix
+    // is cosmetic — the number is resolved within the repo's project. (Bare "#142" is intentionally
+    // NOT matched, to avoid clashing with GitHub's own issue references.)
+    private static readonly Regex RefNumberRegex = new(
+        @"(?:(?<kw>close[sd]?|fix(?:e[sd])?|resolve[sd]?)\s+)?\b[A-Za-z]{2,10}-(?<num>\d{1,7})\b",
+        RegexOptions.IgnoreCase | RegexOptions.Compiled);
+
     /// <inheritdoc />
     public async Task<Result<GitHubConnectResultDto>> ConnectRepoAsync(Guid userId, Guid projectId, string repo)
     {
@@ -143,9 +150,8 @@ public class GitHubIntegrationService : IGitHubIntegrationService
             var url = GetString(commit, "url");
             if (string.IsNullOrEmpty(sha)) continue;
 
-            foreach (var (taskId, _) in ParseReferences(message))
+            foreach (var (taskId, _) in await ResolveReferencesAsync(projectId, message))
             {
-                if (!await IsTaskInProjectAsync(projectId, taskId)) continue;
                 if (await UpsertLinkAsync(taskId, "Commit", sha, FirstLine(message), url, "pushed")) result.Linked++;
             }
         }
@@ -164,9 +170,8 @@ public class GitHubIntegrationService : IGitHubIntegrationService
         var state = merged ? "merged" : action == "closed" ? "closed" : "open";
         if (string.IsNullOrEmpty(number)) return;
 
-        foreach (var (taskId, closing) in ParseReferences($"{title}\n{body}"))
+        foreach (var (taskId, closing) in await ResolveReferencesAsync(project.Id, $"{title}\n{body}"))
         {
-            if (!await IsTaskInProjectAsync(project.Id, taskId)) continue;
             if (await UpsertLinkAsync(taskId, "PullRequest", number, title, url, state)) result.Linked++;
 
             // Auto-close: a merged PR that says "closes/fixes/resolves <task>" moves it to Done,
@@ -179,9 +184,6 @@ public class GitHubIntegrationService : IGitHubIntegrationService
             }
         }
     }
-
-    private Task<bool> IsTaskInProjectAsync(Guid projectId, Guid taskId) =>
-        _context.ProjectTasks.AnyAsync(t => t.Id == taskId && t.ProjectId == projectId);
 
     /// <summary>Adds a link, or refreshes an existing one. Returns true only when a new link is created.</summary>
     private async Task<bool> UpsertLinkAsync(Guid taskId, string kind, string externalId, string title, string url, string state)
@@ -202,8 +204,44 @@ public class GitHubIntegrationService : IGitHubIntegrationService
         return false;
     }
 
-    /// <summary>Extracts task ids referenced in text, flagging those with a closing keyword.</summary>
-    private static Dictionary<Guid, bool> ParseReferences(string text)
+    /// <summary>
+    /// Resolves the tasks (of this project) referenced in text — by GUID or by short number
+    /// ("KEY-142") — flagging those that carry a closing keyword.
+    /// </summary>
+    private async Task<Dictionary<Guid, bool>> ResolveReferencesAsync(Guid projectId, string text)
+    {
+        var result = new Dictionary<Guid, bool>();
+
+        // GUID references, validated to belong to this project.
+        var guidRefs = ParseGuidReferences(text);
+        if (guidRefs.Count > 0)
+        {
+            var ids = guidRefs.Keys.ToList();
+            var valid = await _context.ProjectTasks
+                .Where(t => t.ProjectId == projectId && ids.Contains(t.Id))
+                .Select(t => t.Id).ToListAsync();
+            foreach (var id in valid) MergeRef(result, id, guidRefs[id]);
+        }
+
+        // Short-number references (KEY-142), resolved to a task in this project by its Number.
+        var numberRefs = ParseNumberReferences(text);
+        if (numberRefs.Count > 0)
+        {
+            var nums = numberRefs.Keys.ToList();
+            var matches = await _context.ProjectTasks
+                .Where(t => t.ProjectId == projectId && nums.Contains(t.Number))
+                .Select(t => new { t.Id, t.Number }).ToListAsync();
+            foreach (var m in matches) MergeRef(result, m.Id, numberRefs[m.Number]);
+        }
+
+        return result;
+    }
+
+    private static void MergeRef(Dictionary<Guid, bool> map, Guid id, bool closing) =>
+        map[id] = map.TryGetValue(id, out var existing) ? existing || closing : closing;
+
+    /// <summary>Extracts task GUIDs referenced in text, flagging those with a closing keyword.</summary>
+    private static Dictionary<Guid, bool> ParseGuidReferences(string text)
     {
         var refs = new Dictionary<Guid, bool>();
         if (string.IsNullOrEmpty(text)) return refs;
@@ -212,6 +250,20 @@ public class GitHubIntegrationService : IGitHubIntegrationService
             if (!Guid.TryParse(m.Groups["id"].Value, out var id)) continue;
             var closing = m.Groups["kw"].Success;
             refs[id] = refs.TryGetValue(id, out var existing) ? existing || closing : closing;
+        }
+        return refs;
+    }
+
+    /// <summary>Extracts short task numbers ("KEY-142") from text, flagging those with a closing keyword.</summary>
+    private static Dictionary<int, bool> ParseNumberReferences(string text)
+    {
+        var refs = new Dictionary<int, bool>();
+        if (string.IsNullOrEmpty(text)) return refs;
+        foreach (Match m in RefNumberRegex.Matches(text))
+        {
+            if (!int.TryParse(m.Groups["num"].Value, out var num) || num <= 0) continue;
+            var closing = m.Groups["kw"].Success;
+            refs[num] = refs.TryGetValue(num, out var existing) ? existing || closing : closing;
         }
         return refs;
     }

@@ -37,6 +37,9 @@ public class TaskDto
     /// <summary>Effort estimate in story points, or null when not estimated.</summary>
     public int? Estimate { get; set; }
 
+    /// <summary>Human-friendly per-project sequential number (shown as "KEY-Number").</summary>
+    public int Number { get; set; }
+
     /// <summary>"None" | "Daily" | "Weekly" | "Monthly" — how the task repeats.</summary>
     public string Recurrence { get; set; } = "None";
 

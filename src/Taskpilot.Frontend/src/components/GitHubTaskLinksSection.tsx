@@ -8,7 +8,16 @@ import { notify } from '../lib/toast'
  * Shows the commits and pull requests (from the project's linked GitHub repo) that reference this
  * task, plus a "copy reference" helper. Renders nothing unless the project is connected to GitHub.
  */
-export default function GitHubTaskLinksSection({ taskId, projectId }: { taskId: string; projectId: string }) {
+export default function GitHubTaskLinksSection({
+  taskId,
+  projectId,
+  reference,
+}: {
+  taskId: string
+  projectId: string
+  /** Human-friendly reference like "TP-142"; falls back to the task id when absent. */
+  reference?: string
+}) {
   const { t } = useTranslation()
   const [connected, setConnected] = useState(false)
   const [links, setLinks] = useState<GitHubTaskLink[]>([])
@@ -31,8 +40,9 @@ export default function GitHubTaskLinksSection({ taskId, projectId }: { taskId: 
   }, [taskId, projectId])
 
   const copyRef = () => {
-    // A merged PR whose body contains this line moves the task to Done.
-    navigator.clipboard?.writeText(`Closes ${taskId}`).catch(() => {})
+    // A merged PR whose body contains this line moves the task to Done. Prefer the short
+    // "TP-142" reference; fall back to the raw task id when the short one isn't available.
+    navigator.clipboard?.writeText(`Closes ${reference ?? taskId}`).catch(() => {})
     notify.success(t('github.refCopied'))
   }
 
@@ -42,7 +52,12 @@ export default function GitHubTaskLinksSection({ taskId, projectId }: { taskId: 
   return (
     <div>
       <div className="mb-2 flex items-center justify-between gap-2">
-        <span className="text-sm font-medium text-foreground">{t('github.linksTitle')}</span>
+        <span className="text-sm font-medium text-foreground">
+          {t('github.linksTitle')}
+          {reference && (
+            <code className="ml-2 rounded bg-canvas px-1.5 py-0.5 font-mono text-[11px] text-muted">{reference}</code>
+          )}
+        </span>
         <button
           type="button"
           onClick={copyRef}

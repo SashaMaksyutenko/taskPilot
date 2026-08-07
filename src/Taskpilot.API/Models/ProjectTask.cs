@@ -100,4 +100,7 @@ public class ProjectTask
 
     /// <summary>Optional effort estimate in story points; null when not estimated.</summary>
     public int? Estimate { get; set; }
+
+    /// <summary>Human-friendly per-project sequential number (e.g. shown as "TP-142"). Assigned on create.</summary>
+    public int Number { get; set; }
 }

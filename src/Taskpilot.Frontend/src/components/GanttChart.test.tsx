@@ -29,6 +29,7 @@ const task = (over: Partial<Task>): Task => ({
   sprintId: null,
   epicId: null,
   estimate: null,
+  number: 0,
   recurrence: 'None',
   recurrenceInterval: 1,
   ...over,

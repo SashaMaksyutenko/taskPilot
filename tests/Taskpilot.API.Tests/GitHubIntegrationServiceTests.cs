@@ -165,4 +165,26 @@ public class GitHubIntegrationServiceTests
         Assert.Equal(0, res.Value!.Linked);
         Assert.Empty(ctx.GitHubTaskLinks);
     }
+
+    [Fact]
+    public async Task PullRequest_Merged_ClosesTaskByShortNumber()
+    {
+        await using var ctx = TestDb.CreateContext();
+        var owner = await TestDb.AddUserAsync(ctx, "O");
+        var projectId = await ConnectedProjectAsync(ctx, owner);
+        var taskId = await TaskAsync(ctx, owner, projectId);
+        var number = ctx.ProjectTasks.Single(t => t.Id == taskId).Number; // auto-assigned per project
+
+        var tasks = new Mock<ITaskService>();
+        tasks.Setup(t => t.ChangeStatusAsync(owner, taskId, "Done")).ReturnsAsync(Result<TaskDto>.Ok(null!));
+        var svc = Make(ctx, tasks.Object);
+
+        var body = $"{{\"action\":\"closed\",\"pull_request\":{{\"number\":9,\"title\":\"Fix\",\"body\":\"Closes TP-{number}\",\"html_url\":\"https://x/pull/9\",\"merged\":true}}}}";
+        var res = await svc.HandleWebhookAsync(projectId, "pull_request", body, Sign(Secret, body));
+
+        Assert.True(res.Succeeded);
+        Assert.Equal(1, res.Value!.Linked);
+        Assert.Equal(1, res.Value.Closed);
+        tasks.Verify(t => t.ChangeStatusAsync(owner, taskId, "Done"), Times.Once);
+    }
 }

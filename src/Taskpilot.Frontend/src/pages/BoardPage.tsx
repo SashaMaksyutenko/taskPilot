@@ -24,6 +24,7 @@ import Confetti from '../components/feedback/Confetti'
 import ResultState from '../components/feedback/ResultState'
 import { bookmarkService } from '../services/bookmarkService'
 import { gitHubService } from '../services/gitHubService'
+import { taskRef } from '../lib/taskRef'
 import { useAppSelector } from '../store/hooks'
 import { projectService } from '../services/projectService'
 import { useDragAndDrop } from '../hooks/useDragAndDrop'
@@ -961,6 +962,11 @@ export default function BoardPage() {
                         )}
                         <div className={`pr-5 text-[13px] font-medium ${canWrite ? 'pl-5' : ''}`}>{task.title}</div>
                         <div className="mt-2 flex items-center gap-2">
+                          {project && (
+                            <span className="font-mono text-[10px] text-muted" title={t('github.taskRef')}>
+                              {taskRef(project.name, task.number)}
+                            </span>
+                          )}
                           <span
                             className={`rounded px-2 py-0.5 text-[11px] font-semibold ${
                               priorityClasses[task.priority] ?? 'bg-border text-muted'
@@ -1009,6 +1015,7 @@ export default function BoardPage() {
       {selectedTask && (
         <TaskDetailModal
           task={selectedTask}
+          taskReference={project ? taskRef(project.name, selectedTask.number) : undefined}
           showHistory={openOnHistory}
           isOwner={isOwner}
           canWrite={canWrite}

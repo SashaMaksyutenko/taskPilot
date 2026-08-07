@@ -42,6 +42,8 @@ export interface Task {
   epicId: string | null
   /** Effort estimate in story points, or null when not estimated. */
   estimate: number | null
+  /** Human-friendly per-project sequential number (shown as "KEY-Number"). */
+  number: number
   /** "None" | "Daily" | "Weekly" | "Monthly". */
   recurrence: string
   recurrenceInterval: number

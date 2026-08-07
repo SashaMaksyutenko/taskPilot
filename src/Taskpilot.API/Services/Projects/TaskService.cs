@@ -1247,6 +1247,7 @@ public class TaskService : ITaskService
         SprintId = t.SprintId,
         EpicId = t.EpicId,
         Estimate = t.Estimate,
+        Number = t.Number,
         Recurrence = t.RecurrenceType.ToString(),
         RecurrenceInterval = t.RecurrenceInterval,
     };

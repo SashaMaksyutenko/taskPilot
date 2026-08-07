@@ -20,6 +20,50 @@ public class TaskpilotDbContext : DbContext
     {
     }
 
+    // --- Per-project task numbering (drives human-friendly "KEY-Number" references) ---
+    // Assigning here (before every save) covers ALL task-insert paths — create, recurring spawn,
+    // duplicate, CSV import — plus a move to another project, without editing each call site.
+
+    public override int SaveChanges()
+    {
+        AssignTaskNumbers();
+        return base.SaveChanges();
+    }
+
+    public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    {
+        AssignTaskNumbers();
+        return await base.SaveChangesAsync(cancellationToken);
+    }
+
+    private void AssignTaskNumbers()
+    {
+        var toNumber = new List<ProjectTask>();
+        foreach (var entry in ChangeTracker.Entries<ProjectTask>())
+        {
+            if (entry.State == Microsoft.EntityFrameworkCore.EntityState.Added && entry.Entity.Number == 0)
+            {
+                toNumber.Add(entry.Entity);
+            }
+            else if (entry.State == Microsoft.EntityFrameworkCore.EntityState.Modified
+                     && entry.Property(nameof(ProjectTask.ProjectId)).IsModified)
+            {
+                // Moved to another project → give it a fresh number there.
+                entry.Entity.Number = 0;
+                toNumber.Add(entry.Entity);
+            }
+        }
+        if (toNumber.Count == 0) return;
+
+        foreach (var group in toNumber.GroupBy(t => t.ProjectId))
+        {
+            // Highest number already saved for this project (0 when none), then hand out max+1, max+2, …
+            var next = ProjectTasks.Where(t => t.ProjectId == group.Key).Select(t => (int?)t.Number).Max() ?? 0;
+            foreach (var task in group)
+                task.Number = ++next;
+        }
+    }
+
     /// <summary>Таблиця користувачів. Кожен рядок — один <see cref="User"/>.</summary>
     public DbSet<User> Users => Set<User>();
 
@@ -720,6 +764,9 @@ public class TaskpilotDbContext : DbContext
         modelBuilder.Entity<ProjectTask>(entity =>
         {
             entity.HasKey(t => t.Id);
+
+            // Per-project task number (for "KEY-Number" refs); also the GitHub number-lookup key.
+            entity.HasIndex(t => new { t.ProjectId, t.Number });
 
             entity.Property(t => t.Title).IsRequired().HasMaxLength(200);
             entity.Property(t => t.Description).HasMaxLength(10000);

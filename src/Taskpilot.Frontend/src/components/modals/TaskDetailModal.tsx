@@ -43,6 +43,7 @@ function formatDuration(totalSeconds: number): string {
  */
 export default function TaskDetailModal({
   task,
+  taskReference,
   onClose,
   onSaved,
   onDeleted,
@@ -51,6 +52,8 @@ export default function TaskDetailModal({
   canWrite = false,
 }: {
   task: Task
+  /** Human-friendly reference like "TP-142", used for the GitHub "copy reference" helper. */
+  taskReference?: string
   onClose: () => void
   onSaved: (task: Task) => void
   onDeleted: (taskId: string) => void
@@ -717,7 +720,7 @@ export default function TaskDetailModal({
 
         {/* Linked commits/PRs (only for GitHub-connected projects) */}
         <div className="mb-4 border-t border-border pt-4 empty:hidden">
-          <GitHubTaskLinksSection taskId={task.id} projectId={task.projectId} />
+          <GitHubTaskLinksSection taskId={task.id} projectId={task.projectId} reference={taskReference} />
         </div>
 
         {/* Subtasks */}

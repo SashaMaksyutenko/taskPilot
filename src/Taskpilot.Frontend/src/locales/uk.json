@@ -82,7 +82,8 @@
     "copyRefHint": "Копіює «Closes <task id>» для вставки в комміт або PR",
     "refCopied": "Референс скопійовано — вставте його в комміт або PR.",
     "noLinks": "Жоден комміт чи pull request поки не згадує цю задачу.",
-    "linkedRepo": "Під'єднаний репозиторій GitHub: {{repo}}"
+    "linkedRepo": "Під'єднаний репозиторій GitHub: {{repo}}",
+    "taskRef": "Референс задачі"
   },
   "leaderboard": {
     "title": "Рейтинг",

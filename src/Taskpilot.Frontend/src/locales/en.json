@@ -81,7 +81,8 @@
     "copyRef": "Copy reference",
     "copyRefHint": "Copies \"Closes <task id>\" to paste into a commit or PR",
     "refCopied": "Reference copied — paste it into a commit or PR.",
-    "noLinks": "No commits or pull requests reference this task yet."
+    "noLinks": "No commits or pull requests reference this task yet.",
+    "linkedRepo": "Linked GitHub repository: {{repo}}"
   },
   "leaderboard": {
     "title": "Leaderboard",

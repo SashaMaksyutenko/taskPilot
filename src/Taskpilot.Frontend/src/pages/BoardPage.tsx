@@ -23,6 +23,7 @@ import TeamWorkload from '../components/TeamWorkload'
 import Confetti from '../components/feedback/Confetti'
 import ResultState from '../components/feedback/ResultState'
 import { bookmarkService } from '../services/bookmarkService'
+import { gitHubService } from '../services/gitHubService'
 import { useAppSelector } from '../store/hooks'
 import { projectService } from '../services/projectService'
 import { useDragAndDrop } from '../hooks/useDragAndDrop'
@@ -85,6 +86,8 @@ export default function BoardPage() {
   const [epics, setEpics] = useState<Epic[]>([])
   const [shareOpen, setShareOpen] = useState(false)
   const [githubOpen, setGithubOpen] = useState(false)
+  // The connected GitHub repo ("owner/name"), shown read-only to every project member.
+  const [githubRepo, setGithubRepo] = useState<string | null>(null)
   const [criticalIds, setCriticalIds] = useState<Set<string>>(new Set())
   const [canWrite, setCanWrite] = useState(true)
   // Other projects this task can be moved to (owned/active, excluding the current one).
@@ -144,6 +147,8 @@ export default function BoardPage() {
       .catch(() => {})
     // Project epics — for the coloured chip on cards and the modal.
     epicService.list(projectId).then(setEpics).catch(() => {})
+    // Linked GitHub repo — a read-only indicator any member can see.
+    gitHubService.status(projectId).then((s) => setGithubRepo(s.connected ? s.repo : null)).catch(() => {})
   }, [projectId, currentUserId])
 
   // Quick lookup of an epic by id for the card chip.
@@ -510,6 +515,17 @@ export default function BoardPage() {
             {t('board.backToProjects')}
           </Link>
           <h1 className="min-w-0 truncate text-xl font-bold">{project?.name ?? t('board.title')}</h1>
+          {githubRepo && (
+            <a
+              href={`https://github.com/${githubRepo}`}
+              target="_blank"
+              rel="noreferrer"
+              title={t('github.linkedRepo', { repo: githubRepo })}
+              className="inline-flex flex-none items-center gap-1 rounded-full border border-border bg-surface px-2.5 py-1 text-xs font-medium text-muted transition hover:bg-canvas hover:text-foreground"
+            >
+              🔗 <span className="max-w-[12rem] truncate">{githubRepo}</span>
+            </a>
+          )}
 
           {/* Object-level actions live on the title row; the view switcher is the tab strip below. */}
           <div className="ml-auto flex items-center gap-2">

@@ -10,6 +10,7 @@ import CustomFieldsModal from '../components/modals/CustomFieldsModal'
 import EpicsModal from '../components/modals/EpicsModal'
 import BoardActionsMenu from '../components/menus/BoardActionsMenu'
 import ShareBoardModal from '../components/modals/ShareBoardModal'
+import GitHubModal from '../components/modals/GitHubModal'
 import ProjectAnalyticsPanel from '../components/ProjectAnalyticsPanel'
 import SprintsPanel from '../components/SprintsPanel'
 import ActivityPanel from '../components/ActivityPanel'
@@ -83,6 +84,7 @@ export default function BoardPage() {
   // The project's epics, for the coloured chip shown on each task card.
   const [epics, setEpics] = useState<Epic[]>([])
   const [shareOpen, setShareOpen] = useState(false)
+  const [githubOpen, setGithubOpen] = useState(false)
   const [criticalIds, setCriticalIds] = useState<Set<string>>(new Set())
   const [canWrite, setCanWrite] = useState(true)
   // Other projects this task can be moved to (owned/active, excluding the current one).
@@ -533,6 +535,7 @@ export default function BoardPage() {
             onFields={() => setCustomFieldsOpen(true)}
             onEpics={() => setEpicsOpen(true)}
             onShare={() => setShareOpen(true)}
+            onGitHub={() => setGithubOpen(true)}
             onImport={() => importInputRef.current?.click()}
             onExportCsv={exportCsv}
             onExportXlsx={exportXlsx}
@@ -1032,6 +1035,8 @@ export default function BoardPage() {
       )}
 
       {shareOpen && <ShareBoardModal projectId={projectId} onClose={() => setShareOpen(false)} />}
+
+      {githubOpen && <GitHubModal projectId={projectId} onClose={() => setGithubOpen(false)} />}
 
       {/* Task delete confirmation */}
       <ConfirmDialog

@@ -16,6 +16,7 @@ export default function BoardActionsMenu({
   onFields,
   onEpics,
   onShare,
+  onGitHub,
   onImport,
   onExportCsv,
   onExportXlsx,
@@ -28,6 +29,7 @@ export default function BoardActionsMenu({
   onFields: () => void
   onEpics: () => void
   onShare: () => void
+  onGitHub: () => void
   onImport: () => void
   onExportCsv: () => void
   onExportXlsx: () => void
@@ -68,6 +70,11 @@ export default function BoardActionsMenu({
           {isOwner && (
             <DropdownMenu.Item className={menuItemClass} onSelect={onShare}>
               {t('share.button')}
+            </DropdownMenu.Item>
+          )}
+          {isOwner && (
+            <DropdownMenu.Item className={menuItemClass} onSelect={onGitHub}>
+              {t('github.button')}
             </DropdownMenu.Item>
           )}
 

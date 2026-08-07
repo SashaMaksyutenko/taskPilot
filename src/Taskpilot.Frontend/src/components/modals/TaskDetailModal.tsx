@@ -17,6 +17,7 @@ import { RECURRENCE_OPTIONS, type Task, type TaskComment, type CommentReactionsU
 import TaskDependenciesSection from '../TaskDependenciesSection'
 import TaskWatchersSection from '../TaskWatchersSection'
 import TaskCustomFieldsSection from '../TaskCustomFieldsSection'
+import GitHubTaskLinksSection from '../GitHubTaskLinksSection'
 import { sprintService } from '../../services/sprintService'
 import { epicService } from '../../services/epicService'
 import type { Sprint, Epic } from '../../types/project'
@@ -712,6 +713,11 @@ export default function TaskDetailModal({
         {/* Custom fields (project-defined) */}
         <div className="mb-4 border-t border-border pt-4 empty:hidden">
           <TaskCustomFieldsSection taskId={task.id} canWrite={canWrite} />
+        </div>
+
+        {/* Linked commits/PRs (only for GitHub-connected projects) */}
+        <div className="mb-4 border-t border-border pt-4 empty:hidden">
+          <GitHubTaskLinksSection taskId={task.id} projectId={task.projectId} />
         </div>
 
         {/* Subtasks */}

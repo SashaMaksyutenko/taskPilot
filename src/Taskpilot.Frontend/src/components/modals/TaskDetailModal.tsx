@@ -14,6 +14,8 @@ import { projectService } from '../../services/projectService'
 import { taskService, type ExtensionRequest } from '../../services/taskService'
 import { userService, type UserSearchResult } from '../../services/userService'
 import { RECURRENCE_OPTIONS, type Task, type TaskComment, type CommentReactionsUpdate } from '../../types/project'
+import CollabEditor from '../CollabEditor'
+import { colorFromString } from '../../lib/userColor'
 import TaskDependenciesSection from '../TaskDependenciesSection'
 import TaskWatchersSection from '../TaskWatchersSection'
 import TaskCustomFieldsSection from '../TaskCustomFieldsSection'
@@ -214,6 +216,7 @@ export default function TaskDetailModal({
 
   // Comments thread.
   const currentUserId = useAppSelector((s) => s.auth.user?.id)
+  const currentUserName = useAppSelector((s) => s.auth.user?.name)
   const [comments, setComments] = useState<TaskComment[]>([])
   const [newComment, setNewComment] = useState('')
   const [posting, setPosting] = useState(false)
@@ -421,12 +424,16 @@ export default function TaskDetailModal({
         />
 
         <label className="mb-1 block text-sm font-medium text-foreground">{t('taskModal.description')}</label>
-        <textarea
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          rows={3}
-          className="mb-4 w-full rounded-lg border border-border bg-canvas px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
-        />
+        <div className="mb-4">
+          <CollabEditor
+            docId={`task:${task.id}`}
+            initialText={description}
+            user={{ name: currentUserName ?? 'You', color: colorFromString(currentUserId ?? 'me') }}
+            canEdit={canWrite}
+            onSave={setDescription}
+            rows={3}
+          />
+        </div>
 
         <div className="mb-4 grid grid-cols-2 gap-4">
           <div>

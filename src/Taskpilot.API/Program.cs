@@ -127,6 +127,8 @@ builder.Services.AddHttpClient<IGoogleCalendarClient, GoogleCalendarClient>();
 builder.Services.AddScoped<IGoogleCalendarSyncService, GoogleCalendarSyncService>();
 // GitHub integration (inbound webhooks; no OAuth needed).
 builder.Services.AddScoped<IGitHubIntegrationService, GitHubIntegrationService>();
+// Collaborative editing (CRDT relay + snapshot store behind CollabHub).
+builder.Services.AddScoped<ICollabService, CollabService>();
 
 // WebAuthn / FIDO2 passkeys (passwordless sign-in). RP config falls back to localhost dev values.
 builder.Services.AddMemoryCache();
@@ -605,6 +607,7 @@ app.MapControllers();
 app.MapHub<ChatHub>("/hubs/chat");
 app.MapHub<NotificationHub>("/hubs/notifications");
 app.MapHub<TaskHub>("/hubs/tasks");
+app.MapHub<CollabHub>("/hubs/collab");
 
 // Run the application (starts listening for HTTP requests).
 app.Run();

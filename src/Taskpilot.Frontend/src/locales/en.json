@@ -577,6 +577,10 @@
     "lastUsed": "Last used {{date}}",
     "neverUsed": "Never used"
   },
+  "collab": {
+    "live": "Live",
+    "editingNow": "{{count}} editing now"
+  },
   "forgot": {
     "title": "Forgot password",
     "subtitle": "Enter your account email and we'll send you a reset link.",

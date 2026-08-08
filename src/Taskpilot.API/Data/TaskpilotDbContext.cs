@@ -224,6 +224,9 @@ public class TaskpilotDbContext : DbContext
     /// <summary>WebAuthn/FIDO2 passkeys registered by users for passwordless sign-in.</summary>
     public DbSet<UserPasskey> UserPasskeys => Set<UserPasskey>();
 
+    /// <summary>Persisted CRDT snapshots of collaboratively-edited documents (opaque Yjs state).</summary>
+    public DbSet<CollabDocument> CollabDocuments => Set<CollabDocument>();
+
     /// <summary>
     /// Налаштування моделі (Fluent API): обмеження, індекси, перетворення типів.
     /// Викликається EF Core під час побудови моделі та генерації міграцій.
@@ -1399,6 +1402,13 @@ public class TaskpilotDbContext : DbContext
                   .WithMany()
                   .HasForeignKey(p => p.UserId)
                   .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // CollabDocument entity configuration (CRDT snapshot store)
+        modelBuilder.Entity<CollabDocument>(entity =>
+        {
+            entity.HasKey(d => d.Id);
+            entity.Property(d => d.Id).HasMaxLength(80);
         });
 
         // GitHubTaskLink entity configuration (commit/PR ↔ task)

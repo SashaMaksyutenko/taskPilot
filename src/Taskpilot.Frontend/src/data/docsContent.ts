@@ -398,6 +398,7 @@ Everything about your account lives in **Settings**:
 
 - **Profile** — name, title, bio, location, skills and contact links; choose an **accent colour** and light/dark theme.
 - **Two-factor authentication** — protect sign-in with an authenticator app and one-time **backup codes**.
+- **Passkeys** — sign in without a password using Face ID, Touch ID, Windows Hello or a security key. Add one under *Settings → Passkeys*, then use **Sign in with a passkey** on the login page (enter your email, then confirm on your device). Each device is registered separately; Apple passkeys sync across your devices via iCloud.
 - **Sessions** — see your active devices and **revoke** any of them.
 - **API keys** — create personal keys for programmatic access.
 - **Webhooks** — POST events to your own URL, with a delivery log and a test button.
@@ -410,6 +411,7 @@ TaskPilot is also a **PWA** — install it from your browser to run it like a na
 
 - **Профіль** — ім'я, посада, біо, локація, навички та контактні посилання; оберіть **колір акценту** та світлу/темну тему.
 - **Двофакторна автентифікація** — захистіть вхід застосунком-автентифікатором і одноразовими **резервними кодами**.
+- **Passkeys** — вхід без пароля через Face ID, Touch ID, Windows Hello чи апаратний ключ. Додайте його в *Налаштування → Passkeys*, а потім користуйтесь кнопкою **«Увійти через passkey»** на сторінці входу (введіть email і підтвердьте на своєму пристрої). Кожен пристрій реєструється окремо; passkeys Apple синхронізуються між вашими пристроями через iCloud.
 - **Сесії** — переглядайте активні пристрої та **відкликайте** будь-який.
 - **API-ключі** — створюйте особисті ключі для програмного доступу.
 - **Вебхуки** — надсилайте події POST-ом на власний URL, із журналом доставок і кнопкою тесту.

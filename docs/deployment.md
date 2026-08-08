@@ -128,6 +128,7 @@ Add the variables on Render to switch a feature on:
 | Stripe marketplace payments | `Stripe__SecretKey`, `Stripe__WebhookSecret` |
 | Telegram / Viber bots | `Telegram__BotToken`, `Viber__AuthToken` |
 | Web push | `Vapid__PublicKey`, `Vapid__PrivateKey`, `Vapid__Subject` |
+| Passkeys (WebAuthn) | `Fido2__ServerDomain`, `Fido2__Origins__0` |
 | Redis cache | `Redis__Connection` |
 | RabbitMQ queue | `RabbitMq__Connection` |
 | S3/R2 file storage | `Storage__Bucket`, `Storage__AccessKey`, `Storage__SecretKey`, `Storage__ServiceUrl` |
@@ -136,6 +137,15 @@ Add the variables on Render to switch a feature on:
 frontend, e.g. `https://taskpilot.vercel.app/auth/google/callback`. The frontend also
 needs the matching public client ids at build time (`VITE_GOOGLE_CLIENT_ID`,
 `VITE_GITHUB_CLIENT_ID`, `VITE_LINKEDIN_CLIENT_ID`) on Vercel.
+
+**Passkeys (WebAuthn)** run their ceremony in the browser, so the relying-party id and origin
+**must match the frontend domain** — otherwise registration and sign-in are rejected. Set on Render:
+
+- `Fido2__ServerDomain` = the bare host, e.g. `taskpilot.vercel.app` (no scheme, no path, no port).
+- `Fido2__Origins__0` = the full origin, e.g. `https://taskpilot.vercel.app` (no trailing slash).
+
+Left unset, they default to `localhost` / `http://localhost:5173` (local dev only). Add one origin
+per index (`Fido2__Origins__1`, …) if the app is served from more than one domain.
 
 **Google Calendar 2-way sync** reuses the same Google OAuth app (no extra secrets). To turn it
 on in the Google Cloud Console:

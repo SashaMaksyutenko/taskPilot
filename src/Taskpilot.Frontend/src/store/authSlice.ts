@@ -1,6 +1,7 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit'
 import { AxiosError } from 'axios'
 import { authService } from '../services/authService'
+import { passkeyService } from '../services/passkeyService'
 import { tokenStorage } from '../lib/tokenStorage'
 import type {
   AuthResponse,
@@ -86,6 +87,19 @@ export const linkedinLogin = createAsyncThunk(
     try {
       return await authService.linkedin(code)
     } catch (error) {
+      return rejectWithValue(toErrorMessage(error))
+    }
+  },
+)
+
+export const passkeyLogin = createAsyncThunk(
+  'auth/passkeyLogin',
+  async (email: string, { rejectWithValue }) => {
+    try {
+      return await passkeyService.login(email)
+    } catch (error) {
+      // A user who dismisses the browser prompt throws a DOMException, not an Axios error.
+      if (error instanceof DOMException) return rejectWithValue(error.message)
       return rejectWithValue(toErrorMessage(error))
     }
   },
@@ -203,6 +217,23 @@ const authSlice = createSlice({
       .addCase(linkedinLogin.rejected, (state, action) => {
         state.status = 'idle'
         state.error = (action.payload as string) ?? 'LinkedIn sign-in failed'
+      })
+      // Passkey login yields the same AuthResponse as a password login.
+      .addCase(passkeyLogin.pending, (state) => {
+        state.status = 'loading'
+        state.error = null
+      })
+      .addCase(passkeyLogin.fulfilled, (state, action) => {
+        const data = action.payload as AuthResponse
+        state.status = 'idle'
+        state.accessToken = data.accessToken
+        state.refreshToken = data.refreshToken
+        state.isAuthenticated = true
+        tokenStorage.save(data.accessToken, data.refreshToken, true)
+      })
+      .addCase(passkeyLogin.rejected, (state, action) => {
+        state.status = 'idle'
+        state.error = (action.payload as string) ?? 'Passkey sign-in failed'
       })
       .addCase(login.rejected, (state, action) => {
         state.status = 'idle'

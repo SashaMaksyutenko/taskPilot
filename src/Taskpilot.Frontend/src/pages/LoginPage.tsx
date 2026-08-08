@@ -1,4 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod'
+import { Fingerprint } from 'lucide-react'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
@@ -12,7 +13,8 @@ import AuthFooterLinks from '../components/AuthFooterLinks'
 import Button from '../components/ui/Button'
 import Card from '../components/ui/Card'
 import Input from '../components/ui/Input'
-import { fetchMe, login } from '../store/authSlice'
+import { passkeyService } from '../services/passkeyService'
+import { fetchMe, login, passkeyLogin } from '../store/authSlice'
 import { useAppDispatch, useAppSelector } from '../store/hooks'
 
 const schema = z.object({
@@ -33,12 +35,30 @@ export default function LoginPage() {
   const {
     register: field,
     handleSubmit,
+    getValues,
+    setError,
     formState: { errors },
   } = useForm<FormValues>({ resolver: zodResolver(schema) })
 
   const [needCode, setNeedCode] = useState(false)
   const [code, setCode] = useState('')
   const [remember, setRemember] = useState(true)
+
+  // Passkey sign-in needs to know which account to look up, so it reuses the email field.
+  const onPasskey = async () => {
+    const email = getValues('email')
+    if (!email) {
+      setError('email', { message: t('auth.passkeyNeedEmail') })
+      return
+    }
+    try {
+      await dispatch(passkeyLogin(email)).unwrap()
+      await dispatch(fetchMe())
+      navigate('/')
+    } catch {
+      /* error in store */
+    }
+  }
 
   const onSubmit = async (values: FormValues) => {
     try {
@@ -136,6 +156,19 @@ export default function LoginPage() {
               {status === 'loading' ? t('auth.loggingIn') : needCode ? t('auth.verify') : t('auth.login')}
             </Button>
           </form>
+
+          {passkeyService.supported() && (
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={onPasskey}
+              disabled={status === 'loading'}
+              className="mt-3 w-full"
+            >
+              <Fingerprint className="h-4 w-4" />
+              {t('auth.signInWithPasskey')}
+            </Button>
+          )}
 
           <SocialSignIn />
 

@@ -562,7 +562,22 @@
     "githubFailed": "Не вдалося увійти через GitHub",
     "linkedinContinue": "Продовжити через LinkedIn",
     "linkedinSigningIn": "Виконуємо вхід…",
-    "linkedinFailed": "Не вдалося увійти через LinkedIn"
+    "linkedinFailed": "Не вдалося увійти через LinkedIn",
+    "signInWithPasskey": "Увійти через passkey",
+    "passkeyNeedEmail": "Спершу введіть email"
+  },
+  "passkeys": {
+    "title": "Passkeys",
+    "desc": "Входьте без пароля за допомогою Face ID, Touch ID, Windows Hello чи апаратного ключа.",
+    "empty": "Ще немає жодного passkey.",
+    "namePlaceholder": "Назва passkey (напр. MacBook)",
+    "defaultName": "Passkey",
+    "add": "Додати passkey",
+    "adding": "Очікуємо ваш пристрій…",
+    "added": "Passkey додано",
+    "remove": "Видалити",
+    "lastUsed": "Востаннє: {{date}}",
+    "neverUsed": "Не використовувався"
   },
   "forgot": {
     "title": "Відновлення паролю",

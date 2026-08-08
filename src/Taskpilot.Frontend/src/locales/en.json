@@ -560,7 +560,22 @@
     "githubFailed": "GitHub sign-in failed",
     "linkedinContinue": "Continue with LinkedIn",
     "linkedinSigningIn": "Signing you in…",
-    "linkedinFailed": "LinkedIn sign-in failed"
+    "linkedinFailed": "LinkedIn sign-in failed",
+    "signInWithPasskey": "Sign in with a passkey",
+    "passkeyNeedEmail": "Enter your email first"
+  },
+  "passkeys": {
+    "title": "Passkeys",
+    "desc": "Sign in without a password using Face ID, Touch ID, Windows Hello or a security key.",
+    "empty": "No passkeys yet.",
+    "namePlaceholder": "Passkey name (e.g. MacBook)",
+    "defaultName": "Passkey",
+    "add": "Add a passkey",
+    "adding": "Waiting for your device…",
+    "added": "Passkey added",
+    "remove": "Remove",
+    "lastUsed": "Last used {{date}}",
+    "neverUsed": "Never used"
   },
   "forgot": {
     "title": "Forgot password",

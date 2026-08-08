@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { AxiosError } from 'axios'
+import { Fingerprint } from 'lucide-react'
 import QRCode from 'qrcode'
 import Avatar from '../components/Avatar'
 import TagInput from '../components/TagInput'
@@ -12,6 +13,7 @@ import { ACCENTS, getAccentId, setAccent } from '../lib/accent'
 import { authService } from '../services/authService'
 import { notificationService, type QuietHours } from '../services/notificationService'
 import { userService, type UpdateProfileData } from '../services/userService'
+import { passkeyService, type Passkey } from '../services/passkeyService'
 import { webhookService, type WebhookDelivery } from '../services/webhookService'
 import { apiKeyService, type ApiKey } from '../services/apiKeyService'
 import { fetchMe, logout } from '../store/authSlice'
@@ -238,6 +240,36 @@ export default function SettingsPage() {
     if (!createdKey) return
     await navigator.clipboard.writeText(createdKey).catch(() => {})
     notify.success(t('apiKeys.copied'))
+  }
+
+  // Passkeys (WebAuthn) — passwordless sign-in credentials tied to this device.
+  const [passkeys, setPasskeys] = useState<Passkey[]>([])
+  const [passkeyName, setPasskeyName] = useState('')
+  const [passkeyBusy, setPasskeyBusy] = useState(false)
+  const loadPasskeys = () => passkeyService.list().then(setPasskeys).catch(() => {})
+  useEffect(() => {
+    if (passkeyService.supported()) loadPasskeys()
+  }, [])
+
+  const addPasskey = async () => {
+    setPasskeyBusy(true)
+    try {
+      await passkeyService.register(passkeyName.trim() || t('passkeys.defaultName'))
+      setPasskeyName('')
+      loadPasskeys()
+      notify.success(t('passkeys.added'))
+    } catch (e) {
+      // A user who cancels the browser prompt throws a DOMException — stay quiet.
+      if (e instanceof DOMException) return
+      notify.error(apiErrorMessage(e))
+    } finally {
+      setPasskeyBusy(false)
+    }
+  }
+
+  const removePasskey = async (id: string) => {
+    await passkeyService.remove(id).catch(() => {})
+    loadPasskeys()
   }
 
   // channel: 'inapp' toggles the bell; 'email' toggles email delivery.
@@ -804,6 +836,51 @@ export default function SettingsPage() {
 
           {twoFaMsg && <p className="mt-2 text-sm text-red-600">{twoFaMsg}</p>}
         </section>
+
+        {/* Passkeys (WebAuthn) */}
+        {passkeyService.supported() && (
+          <section className="mt-8 rounded-[var(--radius-card)] border border-border bg-surface p-6">
+            <h2 className="mb-1 font-bold">{t('passkeys.title')}</h2>
+            <p className="mb-4 text-sm text-muted">{t('passkeys.desc')}</p>
+
+            {passkeys.length === 0 ? (
+              <p className="mb-4 text-sm text-muted">{t('passkeys.empty')}</p>
+            ) : (
+              <ul className="mb-4 space-y-2">
+                {passkeys.map((p) => (
+                  <li key={p.id} className="flex items-center gap-3 rounded-lg border border-border px-3 py-2 text-sm">
+                    <Fingerprint className="h-4 w-4 flex-none text-muted" />
+                    <span className="font-semibold">{p.name}</span>
+                    <span className="ml-auto text-xs text-muted">
+                      {p.lastUsedAt
+                        ? t('passkeys.lastUsed', { date: new Date(p.lastUsedAt).toLocaleDateString() })
+                        : t('passkeys.neverUsed')}
+                    </span>
+                    <button onClick={() => removePasskey(p.id)} className="text-xs font-semibold text-red-600 hover:underline">
+                      {t('passkeys.remove')}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <input
+                value={passkeyName}
+                onChange={(e) => setPasskeyName(e.target.value)}
+                placeholder={t('passkeys.namePlaceholder')}
+                className="min-w-0 flex-1 rounded-lg border border-border bg-canvas px-3 py-2 text-sm outline-none focus:border-primary"
+              />
+              <button
+                onClick={addPasskey}
+                disabled={passkeyBusy}
+                className="rounded-lg bg-primary px-5 py-2 text-sm font-semibold text-white hover:bg-primary-hover disabled:opacity-60"
+              >
+                {passkeyBusy ? t('passkeys.adding') : t('passkeys.add')}
+              </button>
+            </div>
+          </section>
+        )}
 
         {/* Data & privacy */}
         <section className="mt-8 rounded-[var(--radius-card)] border border-border bg-surface p-6">

@@ -169,6 +169,8 @@ builder.Services.AddScoped<Taskpilot.API.Services.Search.ISemanticSearchService,
     Taskpilot.API.Services.Search.SemanticSearchService>();
 builder.Services.AddHttpClient<IChatBotClient, OpenAiChatBotClient>();
 builder.Services.AddScoped<ITaskAiService, TaskAiService>();
+// AI "what to do next": prioritizes the user's open tasks (config-gated, deterministic fallback).
+builder.Services.AddScoped<INextActionService, NextActionService>();
 // Data-aware assistant: tool-calling OpenAI client + read/write toolboxes + agent loop.
 builder.Services.AddHttpClient<Taskpilot.API.Services.Assistant.IAssistantChatClient,
     Taskpilot.API.Services.Assistant.OpenAiAssistantClient>();

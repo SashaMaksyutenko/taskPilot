@@ -581,6 +581,12 @@
     "live": "Live",
     "editingNow": "{{count}} editing now"
   },
+  "planning": {
+    "title": "What to do next",
+    "refresh": "Refresh",
+    "blocked": "blocked",
+    "fallback": "Showing a basic order — AI ranking is unavailable right now."
+  },
   "forgot": {
     "title": "Forgot password",
     "subtitle": "Enter your account email and we'll send you a reset link.",

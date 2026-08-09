@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { Link, useNavigate } from 'react-router-dom'
 import FadeIn from '../components/feedback/FadeIn'
 import WeeklyDigest from '../components/WeeklyDigest'
+import NextActionsCard from '../components/NextActionsCard'
 import Card from '../components/ui/Card'
 import Skeleton from '../components/ui/Skeleton'
 import { calendarService } from '../services/calendarService'
@@ -130,6 +131,8 @@ export default function HomePage() {
         </div>
 
         <WeeklyDigest aiEnabled={aiEnabled} />
+
+        {aiEnabled && <NextActionsCard />}
 
         {aiEnabled && <AssistantCard onAsk={(prompt) => navigate('/assistant', { state: { prompt } })} />}
 

@@ -51,6 +51,7 @@ public partial class NextActionService : INextActionService
                 Number = t.Number,
                 Title = t.Title,
                 ProjectName = t.Project.Name,
+                ProjectColor = t.Project.Color,
                 Priority = t.Priority.ToString(),
                 Deadline = t.Deadline,
                 IsOverdue = t.Deadline != null && t.Deadline < now,

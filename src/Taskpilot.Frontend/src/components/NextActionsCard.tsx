@@ -79,7 +79,14 @@ export default function NextActionsCard() {
                         </span>
                       )}
                     </span>
-                    {item.reason && <span className="mt-0.5 block truncate text-xs text-muted">{item.reason}</span>}
+                    <span className="mt-0.5 flex items-center gap-1.5 text-xs text-muted">
+                      <span
+                        className="inline-block h-2 w-2 flex-none rounded-full"
+                        style={{ background: item.projectColor ?? '#94a3b8' }}
+                      />
+                      <span className="max-w-[8rem] flex-none truncate">{item.projectName}</span>
+                      {item.reason && <span className="truncate">· {item.reason}</span>}
+                    </span>
                   </span>
                   {due && (
                     <span className={`flex-none text-xs ${item.isOverdue ? 'font-semibold text-red-600 dark:text-red-400' : 'text-muted'}`}>

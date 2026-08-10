@@ -27,6 +27,10 @@ public class NextActionItemDto
 
     public string Title { get; set; } = string.Empty;
     public string ProjectName { get; set; } = string.Empty;
+
+    /// <summary>The project's colour (for a per-row chip); null when unset.</summary>
+    public string? ProjectColor { get; set; }
+
     public string Priority { get; set; } = string.Empty;
     public DateTime? Deadline { get; set; }
 

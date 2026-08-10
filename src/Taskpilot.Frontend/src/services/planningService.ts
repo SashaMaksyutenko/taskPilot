@@ -7,6 +7,7 @@ export interface NextActionItem {
   number: number
   title: string
   projectName: string
+  projectColor: string | null
   priority: string
   deadline: string | null
   isOverdue: boolean

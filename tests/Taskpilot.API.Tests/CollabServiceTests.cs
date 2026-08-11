@@ -84,6 +84,28 @@ public class CollabServiceTests
     }
 
     [Fact]
+    public async Task CanAccess_Board_AllowsOwnerAndEditorButNotViewerOrStranger()
+    {
+        await using var ctx = TestDb.CreateContext();
+        var owner = await TestDb.AddUserAsync(ctx, "Owner");
+        var editor = await TestDb.AddUserAsync(ctx, "Editor");
+        var viewer = await TestDb.AddUserAsync(ctx, "Viewer");
+        var stranger = await TestDb.AddUserAsync(ctx, "Stranger");
+        var projectId = await TestDb.AddProjectAsync(ctx, owner);
+        ctx.ProjectMembers.Add(new ProjectMember { Id = Guid.NewGuid(), ProjectId = projectId, UserId = editor, Role = ProjectMemberRole.Editor });
+        ctx.ProjectMembers.Add(new ProjectMember { Id = Guid.NewGuid(), ProjectId = projectId, UserId = viewer, Role = ProjectMemberRole.Viewer });
+        await ctx.SaveChangesAsync();
+        var svc = new CollabService(ctx);
+        var docId = $"board:{projectId}";
+
+        Assert.True(await svc.CanAccessAsync(docId, owner));
+        Assert.True(await svc.CanAccessAsync(docId, editor));
+        Assert.False(await svc.CanAccessAsync(docId, viewer));   // Viewers are read-only
+        Assert.False(await svc.CanAccessAsync(docId, stranger)); // not a member
+        Assert.False(await svc.CanAccessAsync("board:not-a-guid", owner));
+    }
+
+    [Fact]
     public async Task SaveState_UpsertsAndGetStateReadsItBack()
     {
         await using var ctx = TestDb.CreateContext();

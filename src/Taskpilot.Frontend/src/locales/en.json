@@ -587,6 +587,17 @@
     "blocked": "blocked",
     "fallback": "Showing a basic order — AI ranking is unavailable right now."
   },
+  "whiteboard": {
+    "button": "Whiteboard",
+    "title": "Whiteboard",
+    "back": "Back to board",
+    "addNote": "Add note",
+    "notePlaceholder": "Type…",
+    "deleteNote": "Delete note",
+    "empty": "Double-click anywhere to add a note.",
+    "loading": "Connecting…",
+    "editingNow": "{{count}} editing now"
+  },
   "forgot": {
     "title": "Forgot password",
     "subtitle": "Enter your account email and we'll send you a reset link.",

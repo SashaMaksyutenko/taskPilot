@@ -10,6 +10,7 @@ import ProtectedRoute from './components/routing/ProtectedRoute'
 import AdminPage from './pages/AdminPage'
 import AuditPage from './pages/AuditPage'
 import BoardPage from './pages/BoardPage'
+import WhiteboardPage from './pages/WhiteboardPage'
 import CalendarPage from './pages/CalendarPage'
 import ChatPage from './pages/ChatPage'
 import ForumPage from './pages/ForumPage'
@@ -89,6 +90,7 @@ function App() {
             <Route path="/projects" element={<ProjectsPage />} />
             <Route path="/my-tasks" element={<MyTasksPage />} />
             <Route path="/projects/:projectId" element={<BoardPage />} />
+            <Route path="/projects/:projectId/whiteboard" element={<WhiteboardPage />} />
             <Route path="/calendar" element={<CalendarPage />} />
             {/* Forum + Marketplace can be switched off org-wide by an admin. */}
             <Route element={<FeatureRoute feature="forum" />}>

@@ -15,6 +15,7 @@ export default function BoardActionsMenu({
   onAutomations,
   onFields,
   onEpics,
+  onWhiteboard,
   onShare,
   onGitHub,
   onImport,
@@ -28,6 +29,7 @@ export default function BoardActionsMenu({
   onAutomations: () => void
   onFields: () => void
   onEpics: () => void
+  onWhiteboard: () => void
   onShare: () => void
   onGitHub: () => void
   onImport: () => void
@@ -65,6 +67,11 @@ export default function BoardActionsMenu({
           {canWrite && (
             <DropdownMenu.Item className={menuItemClass} onSelect={onEpics}>
               {t('epics.button')}
+            </DropdownMenu.Item>
+          )}
+          {canWrite && (
+            <DropdownMenu.Item className={menuItemClass} onSelect={onWhiteboard}>
+              {t('whiteboard.button')}
             </DropdownMenu.Item>
           )}
           {isOwner && (

@@ -551,6 +551,7 @@ export default function BoardPage() {
             onAutomations={() => setAutomationsOpen(true)}
             onFields={() => setCustomFieldsOpen(true)}
             onEpics={() => setEpicsOpen(true)}
+            onWhiteboard={() => navigate(`/projects/${projectId}/whiteboard`)}
             onShare={() => setShareOpen(true)}
             onGitHub={() => setGithubOpen(true)}
             onImport={() => importInputRef.current?.click()}

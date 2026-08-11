@@ -6,12 +6,13 @@ namespace Taskpilot.API.Services;
 
 /// <summary>
 /// Resolves a document id to the underlying entity to authorize a co-editor, and stores the
-/// opaque Yjs snapshot. Only task descriptions are collaborative today; the id scheme
-/// (<c>"task:{guid}"</c>) leaves room for notes and other surfaces later.
+/// opaque Yjs snapshot. Two surfaces are collaborative today: a task's description
+/// (<c>"task:{guid}"</c>) and a project's whiteboard (<c>"board:{guid}"</c>).
 /// </summary>
 public class CollabService : ICollabService
 {
     private const string TaskPrefix = "task:";
+    private const string BoardPrefix = "board:";
 
     private readonly TaskpilotDbContext _context;
 
@@ -24,9 +25,13 @@ public class CollabService : ICollabService
     public Task<bool> CanAccessAsync(string docId, Guid userId)
     {
         // A collaborator must be able to persist the result, so require the same write
-        // permission the REST description save enforces (owner, or the assigned Editor).
-        if (TryParseTaskId(docId, out var taskId))
-            return ProjectAccess.CanModifyTaskAsync(_context, taskId, userId);
+        // permission the REST save enforces.
+        if (TryParseId(docId, TaskPrefix, out var taskId))
+            return ProjectAccess.CanModifyTaskAsync(_context, taskId, userId); // owner or the assigned Editor
+
+        // A project whiteboard: any owner or Editor member of the project may edit it.
+        if (TryParseId(docId, BoardPrefix, out var projectId))
+            return ProjectAccess.CanWriteAsync(_context, projectId, userId);
 
         return Task.FromResult(false);
     }
@@ -52,12 +57,12 @@ public class CollabService : ICollabService
         await _context.SaveChangesAsync();
     }
 
-    /// <summary>Extracts the task id from a <c>"task:{guid}"</c> document id.</summary>
-    private static bool TryParseTaskId(string docId, out Guid taskId)
+    /// <summary>Extracts the guid from a <c>"{prefix}{guid}"</c> document id.</summary>
+    private static bool TryParseId(string docId, string prefix, out Guid id)
     {
-        taskId = default;
+        id = default;
         return docId is not null
-            && docId.StartsWith(TaskPrefix, StringComparison.Ordinal)
-            && Guid.TryParse(docId.AsSpan(TaskPrefix.Length), out taskId);
+            && docId.StartsWith(prefix, StringComparison.Ordinal)
+            && Guid.TryParse(docId.AsSpan(prefix.Length), out id);
     }
 }

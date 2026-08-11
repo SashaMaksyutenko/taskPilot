@@ -594,6 +594,8 @@
     "addNote": "Add note",
     "notePlaceholder": "Type…",
     "deleteNote": "Delete note",
+    "deleteForbidden": "You can only delete your own notes.",
+    "editedBy": "edited by {{name}}",
     "empty": "Double-click anywhere to add a note.",
     "loading": "Connecting…",
     "editingNow": "{{count}} editing now"

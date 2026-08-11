@@ -1,35 +1,38 @@
 import { Plus, Trash2 } from 'lucide-react'
 import { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useWhiteboard, type Note } from '../hooks/useWhiteboard'
+import { notify } from '../lib/toast'
+import { useWhiteboard } from '../hooks/useWhiteboard'
 
 const NOTE_COLORS = ['#fde68a', '#bbf7d0', '#bfdbfe', '#fbcfe8', '#fecaca', '#ddd6fe']
 const NOTE_W = 160
 const NOTE_H = 120
 
 interface WhiteboardCanvasProps {
-  docId: string
-  user: { name: string; color: string }
+  projectId: string
+  user: { id: string; name: string; color: string }
   canEdit: boolean
+  /** The project owner may delete any note; everyone else only their own. */
+  isOwner: boolean
 }
 
 /**
- * A collaborative sticky-note whiteboard. Notes and cursors sync live over the CRDT collab hub
- * ({@link useWhiteboard}). Double-click to add a note, drag to move, click to edit, and you'll see
- * other editors' cursors move in real time.
+ * A collaborative sticky-note whiteboard. Notes are authoritative server records (see
+ * {@link useWhiteboard}); create/move/edit/delete sync live, and you'll see other editors' cursors
+ * move in real time. Deleting someone else's note is refused by the server.
  */
-export default function WhiteboardCanvas({ docId, user, canEdit }: WhiteboardCanvasProps) {
+export default function WhiteboardCanvas({ projectId, user, canEdit, isOwner }: WhiteboardCanvasProps) {
   const { t } = useTranslation()
-  const { notes, ready, peers, addNote, updateNote, removeNote, setCursor } = useWhiteboard({
-    docId,
+  const { notes, ready, peers, addNote, editText, moveNote, commitMove, removeNote, setCursor } = useWhiteboard({
+    projectId,
     user,
     enabled: true,
   })
 
   const areaRef = useRef<HTMLDivElement>(null)
   const [color, setColor] = useState(NOTE_COLORS[0])
-  // Which note is being dragged, and the grab offset within it.
-  const drag = useRef<{ id: string; dx: number; dy: number } | null>(null)
+  // The note being dragged, its grab offset, and its latest position (committed on drop).
+  const drag = useRef<{ id: string; dx: number; dy: number; x: number; y: number } | null>(null)
 
   const toCanvas = (e: { clientX: number; clientY: number }) => {
     const rect = areaRef.current?.getBoundingClientRect()
@@ -38,14 +41,7 @@ export default function WhiteboardCanvas({ docId, user, canEdit }: WhiteboardCan
 
   const createNote = (x: number, y: number) => {
     if (!canEdit) return
-    const note: Note = {
-      id: crypto.randomUUID(),
-      x: Math.max(0, x - NOTE_W / 2),
-      y: Math.max(0, y - NOTE_H / 2),
-      text: '',
-      color,
-    }
-    addNote(note)
+    addNote(Math.max(0, x - NOTE_W / 2), Math.max(0, y - NOTE_H / 2), color)
   }
 
   const onAreaDoubleClick = (e: React.MouseEvent) => {
@@ -58,21 +54,28 @@ export default function WhiteboardCanvas({ docId, user, canEdit }: WhiteboardCan
     const pos = toCanvas(e)
     setCursor(pos)
     if (drag.current) {
-      updateNote(drag.current.id, {
-        x: Math.max(0, pos.x - drag.current.dx),
-        y: Math.max(0, pos.y - drag.current.dy),
-      })
+      const x = Math.max(0, pos.x - drag.current.dx)
+      const y = Math.max(0, pos.y - drag.current.dy)
+      drag.current.x = x
+      drag.current.y = y
+      moveNote(drag.current.id, x, y)
     }
   }
 
-  const startDrag = (e: React.PointerEvent, note: Note) => {
+  const startDrag = (e: React.PointerEvent, note: { id: string; x: number; y: number }) => {
     if (!canEdit) return
     const pos = toCanvas(e)
-    drag.current = { id: note.id, dx: pos.x - note.x, dy: pos.y - note.y }
+    drag.current = { id: note.id, dx: pos.x - note.x, dy: pos.y - note.y, x: note.x, y: note.y }
     ;(e.target as HTMLElement).setPointerCapture?.(e.pointerId)
   }
   const endDrag = () => {
+    if (drag.current) commitMove(drag.current.id, drag.current.x, drag.current.y) // persist final position
     drag.current = null
+  }
+
+  const onDelete = async (id: string) => {
+    const ok = await removeNote(id)
+    if (!ok) notify.error(t('whiteboard.deleteForbidden'))
   }
 
   return (
@@ -114,7 +117,7 @@ export default function WhiteboardCanvas({ docId, user, canEdit }: WhiteboardCan
           <span className="flex -space-x-1.5">
             {peers.slice(0, 6).map((p) => (
               <span
-                key={p.clientId}
+                key={p.connectionId}
                 title={p.name}
                 className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-surface text-[10px] font-bold text-white"
                 style={{ backgroundColor: p.color }}
@@ -132,7 +135,6 @@ export default function WhiteboardCanvas({ docId, user, canEdit }: WhiteboardCan
         onDoubleClick={onAreaDoubleClick}
         onPointerMove={onPointerMove}
         onPointerUp={endDrag}
-        onPointerLeave={() => setCursor(null)}
         className="relative flex-1 overflow-hidden bg-canvas"
         style={{ touchAction: 'none' }}
       >
@@ -145,40 +147,53 @@ export default function WhiteboardCanvas({ docId, user, canEdit }: WhiteboardCan
           </div>
         )}
 
-        {notes.map((note) => (
-          <div
-            key={note.id}
-            onPointerDown={(e) => startDrag(e, note)}
-            className="group absolute flex flex-col rounded-md p-2 shadow-md"
-            style={{ left: note.x, top: note.y, width: NOTE_W, height: NOTE_H, background: note.color, touchAction: 'none' }}
-          >
-            <textarea
-              value={note.text}
-              onChange={(e) => updateNote(note.id, { text: e.target.value })}
-              onPointerDown={(e) => e.stopPropagation()} // let the caret work without starting a drag
-              readOnly={!canEdit}
-              placeholder={t('whiteboard.notePlaceholder')}
-              className="h-full w-full resize-none bg-transparent text-sm text-neutral-900 outline-none placeholder:text-neutral-500"
-            />
-            {canEdit && (
-              <button
-                onClick={() => removeNote(note.id)}
-                onPointerDown={(e) => e.stopPropagation()}
-                className="absolute -right-2 -top-2 hidden h-5 w-5 items-center justify-center rounded-full bg-neutral-800 text-white group-hover:flex"
-                aria-label={t('whiteboard.deleteNote')}
-              >
-                <Trash2 className="h-3 w-3" />
-              </button>
-            )}
-          </div>
-        ))}
+        {notes.map((note) => {
+          const editedByOther = note.editedById && note.editedById !== note.authorId
+          // The author (or, for moderation, the project owner) may delete. The server enforces this
+          // too — this just hides the button for others.
+          const canDelete = canEdit && (note.authorId === user.id || isOwner)
+          return (
+            <div
+              key={note.id}
+              onPointerDown={(e) => startDrag(e, note)}
+              className="group absolute flex flex-col rounded-md p-2 shadow-md"
+              style={{ left: note.x, top: note.y, width: NOTE_W, height: NOTE_H, background: note.color, touchAction: 'none' }}
+            >
+              <textarea
+                value={note.text}
+                onChange={(e) => editText(note.id, e.target.value)}
+                onPointerDown={(e) => e.stopPropagation()} // let the caret work without starting a drag
+                readOnly={!canEdit}
+                placeholder={t('whiteboard.notePlaceholder')}
+                className="w-full flex-1 resize-none bg-transparent text-sm text-neutral-900 outline-none placeholder:text-neutral-500"
+              />
+              {/* Attribution: author, plus who last edited when that's someone else. */}
+              {note.authorName && (
+                <div className="flex items-center justify-between text-[10px] text-neutral-600">
+                  <span className="truncate">{note.authorName}</span>
+                  {editedByOther && <span className="ml-1 truncate italic">{t('whiteboard.editedBy', { name: note.editedByName })}</span>}
+                </div>
+              )}
+              {canDelete && (
+                <button
+                  onClick={() => onDelete(note.id)}
+                  onPointerDown={(e) => e.stopPropagation()}
+                  className="absolute -right-2 -top-2 hidden h-5 w-5 items-center justify-center rounded-full bg-neutral-800 text-white group-hover:flex"
+                  aria-label={t('whiteboard.deleteNote')}
+                >
+                  <Trash2 className="h-3 w-3" />
+                </button>
+              )}
+            </div>
+          )
+        })}
 
         {/* Remote cursors */}
         {peers.map(
           (p) =>
             p.cursor && (
               <div
-                key={`cursor-${p.clientId}`}
+                key={`cursor-${p.connectionId}`}
                 className="pointer-events-none absolute z-10 -translate-x-1 -translate-y-1"
                 style={{ left: p.cursor.x, top: p.cursor.y }}
               >

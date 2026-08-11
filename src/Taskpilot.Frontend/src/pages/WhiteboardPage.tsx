@@ -15,6 +15,7 @@ export default function WhiteboardPage() {
 
   const [projectName, setProjectName] = useState('')
   const [canEdit, setCanEdit] = useState(false)
+  const [isOwner, setIsOwner] = useState(false)
 
   useEffect(() => {
     if (!projectId) return
@@ -24,6 +25,7 @@ export default function WhiteboardPage() {
       .then((ms) => {
         const me = ms.find((m) => m.userId === user?.id)
         setCanEdit(!!me && (me.isOwner || me.role === 'Editor'))
+        setIsOwner(!!me?.isOwner)
       })
       .catch(() => {})
   }, [projectId, user?.id])
@@ -42,9 +44,10 @@ export default function WhiteboardPage() {
 
       <div className="flex-1 overflow-hidden rounded-[var(--radius-card)] border border-border bg-surface">
         <WhiteboardCanvas
-          docId={`board:${projectId}`}
-          user={{ name: user?.name ?? 'You', color: colorFromString(user?.id ?? 'me') }}
+          projectId={projectId}
+          user={{ id: user?.id ?? 'me', name: user?.name ?? 'You', color: colorFromString(user?.id ?? 'me') }}
           canEdit={canEdit}
+          isOwner={isOwner}
         />
       </div>
     </div>

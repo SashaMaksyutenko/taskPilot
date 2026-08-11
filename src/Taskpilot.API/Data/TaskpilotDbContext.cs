@@ -227,6 +227,9 @@ public class TaskpilotDbContext : DbContext
     /// <summary>Persisted CRDT snapshots of collaboratively-edited documents (opaque Yjs state).</summary>
     public DbSet<CollabDocument> CollabDocuments => Set<CollabDocument>();
 
+    /// <summary>Authoritative sticky notes on project whiteboards (per-note author permissions).</summary>
+    public DbSet<WhiteboardNote> WhiteboardNotes => Set<WhiteboardNote>();
+
     /// <summary>
     /// Налаштування моделі (Fluent API): обмеження, індекси, перетворення типів.
     /// Викликається EF Core під час побудови моделі та генерації міграцій.
@@ -1409,6 +1412,23 @@ public class TaskpilotDbContext : DbContext
         {
             entity.HasKey(d => d.Id);
             entity.Property(d => d.Id).HasMaxLength(80);
+        });
+
+        // WhiteboardNote entity configuration (authoritative sticky notes)
+        modelBuilder.Entity<WhiteboardNote>(entity =>
+        {
+            entity.HasKey(n => n.Id);
+            entity.Property(n => n.Text).HasMaxLength(2000);
+            entity.Property(n => n.Color).HasMaxLength(16);
+            entity.Property(n => n.AuthorName).HasMaxLength(150);
+            entity.Property(n => n.EditedByName).HasMaxLength(150);
+            entity.HasIndex(n => n.ProjectId);
+
+            // Deleting a project removes its whiteboard notes.
+            entity.HasOne(n => n.Project)
+                  .WithMany()
+                  .HasForeignKey(n => n.ProjectId)
+                  .OnDelete(DeleteBehavior.Cascade);
         });
 
         // GitHubTaskLink entity configuration (commit/PR ↔ task)

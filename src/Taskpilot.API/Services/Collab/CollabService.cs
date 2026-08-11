@@ -6,13 +6,12 @@ namespace Taskpilot.API.Services;
 
 /// <summary>
 /// Resolves a document id to the underlying entity to authorize a co-editor, and stores the
-/// opaque Yjs snapshot. Two surfaces are collaborative today: a task's description
-/// (<c>"task:{guid}"</c>) and a project's whiteboard (<c>"board:{guid}"</c>).
+/// opaque Yjs snapshot. Task descriptions (<c>"task:{guid}"</c>) are collaborative today; the
+/// whiteboard has its own authoritative model (WhiteboardService), not this CRDT relay.
 /// </summary>
 public class CollabService : ICollabService
 {
     private const string TaskPrefix = "task:";
-    private const string BoardPrefix = "board:";
 
     private readonly TaskpilotDbContext _context;
 
@@ -25,13 +24,9 @@ public class CollabService : ICollabService
     public Task<bool> CanAccessAsync(string docId, Guid userId)
     {
         // A collaborator must be able to persist the result, so require the same write
-        // permission the REST save enforces.
+        // permission the REST description save enforces (owner, or the assigned Editor).
         if (TryParseId(docId, TaskPrefix, out var taskId))
-            return ProjectAccess.CanModifyTaskAsync(_context, taskId, userId); // owner or the assigned Editor
-
-        // A project whiteboard: any owner or Editor member of the project may edit it.
-        if (TryParseId(docId, BoardPrefix, out var projectId))
-            return ProjectAccess.CanWriteAsync(_context, projectId, userId);
+            return ProjectAccess.CanModifyTaskAsync(_context, taskId, userId);
 
         return Task.FromResult(false);
     }

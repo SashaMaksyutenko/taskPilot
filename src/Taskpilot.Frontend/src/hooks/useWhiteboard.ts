@@ -1,33 +1,21 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { HubConnection } from '@microsoft/signalr'
-import * as Y from 'yjs'
-import { Awareness, applyAwarenessUpdate, encodeAwarenessUpdate } from 'y-protocols/awareness'
-import { createCollabConnection } from '../lib/collabHub'
-import { base64ToBytes, bytesToBase64 } from '../lib/base64'
+import { createWhiteboardConnection } from '../lib/whiteboardHub'
+import { whiteboardService, type Note } from '../services/whiteboardService'
 
-/** A sticky note on the shared whiteboard. Stored as a plain object in a Yjs map. */
-export interface Note {
-  id: string
-  x: number
-  y: number
-  text: string
-  color: string
-}
+export type { Note }
 
 /** Another user present on the board, with their live cursor (canvas coordinates). */
 export interface BoardPeer {
-  clientId: number
+  connectionId: string
   name: string
   color: string
   cursor: { x: number; y: number } | null
 }
 
 export interface UseWhiteboardOptions {
-  /** Document id, e.g. `"board:{projectId}"`. Null disables the board. */
-  docId: string | null
-  /** The local user's presence identity. */
-  user: { name: string; color: string }
-  /** Turn syncing on/off. */
+  projectId: string | null
+  user: { id: string; name: string; color: string }
   enabled: boolean
 }
 
@@ -35,160 +23,167 @@ export interface UseWhiteboardResult {
   notes: Note[]
   ready: boolean
   peers: BoardPeer[]
-  addNote: (note: Note) => void
-  updateNote: (id: string, patch: Partial<Note>) => void
-  removeNote: (id: string) => void
-  /** Broadcast the local cursor position (canvas coordinates), or null to clear it. */
+  /** Create a note (POST). */
+  addNote: (x: number, y: number, color: string) => void
+  /** Optimistic text edit + debounced persist. */
+  editText: (id: string, text: string) => void
+  /** Live drag: update locally and stream the position to peers (no persist). */
+  moveNote: (id: string, x: number, y: number) => void
+  /** Persist a note's final position after a drag. */
+  commitMove: (id: string, x: number, y: number) => void
+  /** Delete a note; resolves false when the server forbids it (not yours). */
+  removeNote: (id: string) => Promise<boolean>
+  /** Broadcast the local cursor (throttled), or null to stop. */
   setCursor: (pos: { x: number; y: number } | null) => void
 }
 
-const PERSIST_DEBOUNCE_MS = 1500
+const CURSOR_THROTTLE_MS = 50
+const TEXT_SAVE_DEBOUNCE_MS = 500
 
 /**
- * A collaborative whiteboard of sticky notes over a Yjs document, synced through the SignalR
- * collab hub — the same relay + snapshot store that powers task-description editing (see
- * [[collab-crdt]]). Notes live in a Y.Map keyed by id; presence/cursors ride on Awareness.
+ * A collaborative whiteboard backed by an authoritative server: notes are REST CRUD (so per-note
+ * delete permission is enforced), and realtime create/update/delete + live cursors/drags ride on
+ * {@link createWhiteboardConnection}. See [[collab-crdt]] for why the whiteboard is authoritative
+ * rather than pure-CRDT.
  */
-export function useWhiteboard({ docId, user, enabled }: UseWhiteboardOptions): UseWhiteboardResult {
+export function useWhiteboard({ projectId, user, enabled }: UseWhiteboardOptions): UseWhiteboardResult {
   const [notes, setNotes] = useState<Note[]>([])
   const [ready, setReady] = useState(false)
   const [peers, setPeers] = useState<BoardPeer[]>([])
 
-  const docRef = useRef<Y.Doc | null>(null)
-  const mapRef = useRef<Y.Map<Note> | null>(null)
-  const awarenessRef = useRef<Awareness | null>(null)
   const connRef = useRef<HubConnection | null>(null)
-
   const userRef = useRef(user)
   useEffect(() => {
     userRef.current = user
   })
 
+  const upsert = useCallback((note: Note) => {
+    setNotes((prev) => {
+      const i = prev.findIndex((n) => n.id === note.id)
+      if (i === -1) return [...prev, note]
+      const copy = prev.slice()
+      copy[i] = note
+      return copy
+    })
+  }, [])
+
+  const patchLocal = useCallback((id: string, patch: Partial<Note>) => {
+    setNotes((prev) => prev.map((n) => (n.id === id ? { ...n, ...patch } : n)))
+  }, [])
+
   useEffect(() => {
-    if (!enabled || !docId) return
+    if (!enabled || !projectId) return
 
     let disposed = false
-    const doc = new Y.Doc()
-    const map = doc.getMap<Note>('notes')
-    const awareness = new Awareness(doc)
-    const conn = createCollabConnection()
-    docRef.current = doc
-    mapRef.current = map
-    awarenessRef.current = awareness
+    whiteboardService
+      .getNotes(projectId)
+      .then((list) => {
+        if (!disposed) {
+          setNotes(list)
+          setReady(true)
+        }
+      })
+      .catch(() => {})
+
+    const conn = createWhiteboardConnection()
     connRef.current = conn
 
-    awareness.setLocalStateField('user', { name: userRef.current.name, color: userRef.current.color })
-
-    // Doc → React: mirror the notes map into state.
-    const readAll = () => setNotes(Array.from(map.values()))
-    map.observe(readAll)
-
-    // Local edits → relay + debounced snapshot.
-    let persistTimer: ReturnType<typeof setTimeout> | null = null
-    const schedulePersist = () => {
-      if (persistTimer) clearTimeout(persistTimer)
-      persistTimer = setTimeout(() => {
-        if (disposed || conn.state !== 'Connected') return
-        conn.invoke('PersistState', docId, bytesToBase64(Y.encodeStateAsUpdate(doc))).catch(() => {})
-      }, PERSIST_DEBOUNCE_MS)
-    }
-    const onDocUpdate = (update: Uint8Array, origin: unknown) => {
-      if (origin === 'remote') return
-      if (conn.state === 'Connected') conn.invoke('SendUpdate', docId, bytesToBase64(update)).catch(() => {})
-      schedulePersist()
-    }
-    doc.on('update', onDocUpdate)
-
-    // Awareness → React (peers + cursors) and relay local awareness changes.
-    const refreshPeers = () => {
-      const list: BoardPeer[] = []
-      awareness.getStates().forEach((state, clientId) => {
-        if (clientId === awareness.clientID) return
-        const s = state as { user?: { name?: string; color?: string }; cursor?: { x: number; y: number } | null }
-        if (s.user) list.push({ clientId, name: s.user.name ?? 'Someone', color: s.user.color ?? '#888', cursor: s.cursor ?? null })
+    conn.on('NoteUpserted', (note: Note) => !disposed && upsert(note))
+    conn.on('NoteDeleted', (id: string) => !disposed && setNotes((prev) => prev.filter((n) => n.id !== id)))
+    conn.on('LiveMove', ({ noteId, x, y }: { noteId: string; x: number; y: number }) =>
+      !disposed && patchLocal(noteId, { x, y }),
+    )
+    conn.on('Cursor', (c: { connectionId: string; name: string; color: string; x: number; y: number }) => {
+      if (disposed) return
+      setPeers((prev) => {
+        const rest = prev.filter((p) => p.connectionId !== c.connectionId)
+        return [...rest, { connectionId: c.connectionId, name: c.name, color: c.color, cursor: { x: c.x, y: c.y } }]
       })
-      setPeers(list)
-    }
-    awareness.on('change', refreshPeers)
-    const onAwarenessUpdate = (
-      { added, updated, removed }: { added: number[]; updated: number[]; removed: number[] },
-      origin: unknown,
-    ) => {
-      if (origin === 'remote') return
-      const changed = [...added, ...updated, ...removed]
-      if (conn.state === 'Connected') {
-        conn.invoke('SendAwareness', docId, bytesToBase64(encodeAwarenessUpdate(awareness, changed))).catch(() => {})
-      }
-    }
-    awareness.on('update', onAwarenessUpdate)
-
-    // Server → client relays.
-    conn.on('ReceiveState', (incomingDocId: string, base64: string | null) => {
-      if (incomingDocId !== docId || disposed) return
-      if (base64) Y.applyUpdate(doc, base64ToBytes(base64), 'remote')
-      setReady(true)
     })
-    conn.on('ReceiveUpdate', (incomingDocId: string, base64: string) => {
-      if (incomingDocId === docId && !disposed) Y.applyUpdate(doc, base64ToBytes(base64), 'remote')
-    })
-    conn.on('ReceiveAwareness', (incomingDocId: string, base64: string) => {
-      if (incomingDocId === docId && !disposed) applyAwarenessUpdate(awareness, base64ToBytes(base64), 'remote')
-    })
-    conn.on('PeerJoined', (incomingDocId: string) => {
-      if (incomingDocId !== docId || conn.state !== 'Connected') return
-      conn.invoke('SendAwareness', docId, bytesToBase64(encodeAwarenessUpdate(awareness, [awareness.clientID]))).catch(() => {})
-    })
-    conn.onreconnected(() => {
-      conn.invoke('JoinDocument', docId).catch(() => {})
-    })
+    conn.on('PeerLeft', (connectionId: string) =>
+      !disposed && setPeers((prev) => prev.filter((p) => p.connectionId !== connectionId)),
+    )
+    conn.onreconnected(() => conn.invoke('JoinBoard', projectId).catch(() => {}))
 
     conn
       .start()
-      .then(() => (disposed ? undefined : conn.invoke('JoinDocument', docId)))
+      .then(() => (disposed ? undefined : conn.invoke('JoinBoard', projectId)))
       .catch(() => {})
 
     return () => {
       disposed = true
-      if (persistTimer) clearTimeout(persistTimer)
-      map.unobserve(readAll)
-      doc.off('update', onDocUpdate)
-      awareness.off('change', refreshPeers)
-      awareness.off('update', onAwarenessUpdate)
-      awareness.setLocalState(null)
-      if (conn.state === 'Connected') {
-        conn.invoke('SendAwareness', docId, bytesToBase64(encodeAwarenessUpdate(awareness, [awareness.clientID]))).catch(() => {})
-        conn.invoke('LeaveDocument', docId).catch(() => {})
-      }
+      if (conn.state === 'Connected') conn.invoke('LeaveBoard', projectId).catch(() => {})
       conn.stop().catch(() => {})
-      awareness.destroy()
-      doc.destroy()
-      docRef.current = null
-      mapRef.current = null
-      awarenessRef.current = null
       connRef.current = null
       setReady(false)
-      setPeers([])
       setNotes([])
+      setPeers([])
     }
-  }, [docId, enabled])
+  }, [projectId, enabled, upsert, patchLocal])
 
-  const addNote = useCallback((note: Note) => {
-    mapRef.current?.set(note.id, note)
+  const addNote = useCallback(
+    (x: number, y: number, color: string) => {
+      if (!projectId) return
+      whiteboardService.createNote(projectId, { x, y, color, text: '' }).then(upsert).catch(() => {})
+    },
+    [projectId, upsert],
+  )
+
+  // Debounced text persistence, keyed per note so two notes don't share a timer.
+  const textTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map())
+  const editText = useCallback(
+    (id: string, text: string) => {
+      patchLocal(id, { text }) // optimistic
+      const timers = textTimers.current
+      const existing = timers.get(id)
+      if (existing) clearTimeout(existing)
+      timers.set(
+        id,
+        setTimeout(() => {
+          timers.delete(id)
+          whiteboardService.updateNote(id, { text }).then(upsert).catch(() => {})
+        }, TEXT_SAVE_DEBOUNCE_MS),
+      )
+    },
+    [patchLocal, upsert],
+  )
+
+  const moveNote = useCallback(
+    (id: string, x: number, y: number) => {
+      patchLocal(id, { x, y })
+      const conn = connRef.current
+      if (projectId && conn?.state === 'Connected') conn.invoke('SendMove', projectId, id, x, y).catch(() => {})
+    },
+    [projectId, patchLocal],
+  )
+
+  const commitMove = useCallback(
+    (id: string, x: number, y: number) => {
+      whiteboardService.updateNote(id, { x, y }).then(upsert).catch(() => {})
+    },
+    [upsert],
+  )
+
+  const removeNote = useCallback(async (id: string) => {
+    const ok = await whiteboardService.deleteNote(id).catch(() => false)
+    if (ok) setNotes((prev) => prev.filter((n) => n.id !== id))
+    return ok
   }, [])
 
-  const updateNote = useCallback((id: string, patch: Partial<Note>) => {
-    const map = mapRef.current
-    const current = map?.get(id)
-    if (map && current) map.set(id, { ...current, ...patch })
-  }, [])
+  const lastCursor = useRef(0)
+  const setCursor = useCallback(
+    (pos: { x: number; y: number } | null) => {
+      if (!pos || !projectId) return
+      const now = Date.now()
+      if (now - lastCursor.current < CURSOR_THROTTLE_MS) return
+      lastCursor.current = now
+      const conn = connRef.current
+      if (conn?.state === 'Connected') {
+        conn.invoke('SendCursor', projectId, userRef.current.name, userRef.current.color, pos.x, pos.y).catch(() => {})
+      }
+    },
+    [projectId],
+  )
 
-  const removeNote = useCallback((id: string) => {
-    mapRef.current?.delete(id)
-  }, [])
-
-  const setCursor = useCallback((pos: { x: number; y: number } | null) => {
-    awarenessRef.current?.setLocalStateField('cursor', pos)
-  }, [])
-
-  return { notes, ready, peers, addNote, updateNote, removeNote, setCursor }
+  return { notes, ready, peers, addNote, editText, moveNote, commitMove, removeNote, setCursor }
 }

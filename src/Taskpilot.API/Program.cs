@@ -129,6 +129,8 @@ builder.Services.AddScoped<IGoogleCalendarSyncService, GoogleCalendarSyncService
 builder.Services.AddScoped<IGitHubIntegrationService, GitHubIntegrationService>();
 // Collaborative editing (CRDT relay + snapshot store behind CollabHub).
 builder.Services.AddScoped<ICollabService, CollabService>();
+// Whiteboard: authoritative sticky notes (server-enforced per-note delete) + WhiteboardHub realtime.
+builder.Services.AddScoped<IWhiteboardService, WhiteboardService>();
 
 // WebAuthn / FIDO2 passkeys (passwordless sign-in). RP config falls back to localhost dev values.
 builder.Services.AddMemoryCache();
@@ -610,6 +612,7 @@ app.MapHub<ChatHub>("/hubs/chat");
 app.MapHub<NotificationHub>("/hubs/notifications");
 app.MapHub<TaskHub>("/hubs/tasks");
 app.MapHub<CollabHub>("/hubs/collab");
+app.MapHub<WhiteboardHub>("/hubs/whiteboard");
 
 // Run the application (starts listening for HTTP requests).
 app.Run();

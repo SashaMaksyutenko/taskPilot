@@ -528,8 +528,33 @@ export default function BoardPage() {
             </a>
           )}
 
-          {/* Object-level actions live on the title row; the view switcher is the tab strip below. */}
-          <div className="ml-auto flex items-center gap-2">
+        </div>
+
+        {/* View switcher + object-level actions share one row below the title. */}
+        <div className="mb-5 flex items-center justify-between gap-3 border-b border-border">
+          <div className="flex gap-1 overflow-x-auto">
+            {(['board', 'gantt', 'team', 'analytics', 'sprints', 'activity'] as const).map((v) => (
+              <button
+                key={v}
+                onClick={() => setView(v)}
+                className={`-mb-px shrink-0 whitespace-nowrap border-b-2 px-3 py-2 text-[13px] font-medium transition ${
+                  view === v ? 'border-primary text-primary' : 'border-transparent text-muted hover:text-foreground'
+                }`}
+              >
+                {t(`board.view.${v}`)}
+              </button>
+            ))}
+            {canWrite && (
+              <button
+                onClick={() => navigate(`/projects/${projectId}/whiteboard`)}
+                className="-mb-px shrink-0 whitespace-nowrap border-b-2 border-transparent px-3 py-2 text-[13px] font-medium text-muted transition hover:text-foreground"
+              >
+                {t('whiteboard.button')}
+              </button>
+            )}
+          </div>
+
+          <div className="flex flex-none items-center gap-2 pb-1.5">
           {/* Hidden CSV import picker, triggered from the "More" menu. */}
           {canWrite && (
             <input
@@ -651,21 +676,6 @@ export default function BoardPage() {
             )}
           </div>
           </div>
-        </div>
-
-        {/* Board / timeline switcher — underline tab strip below the title. */}
-        <div className="mb-5 flex gap-1 overflow-x-auto border-b border-border">
-          {(['board', 'gantt', 'team', 'analytics', 'sprints', 'activity'] as const).map((v) => (
-            <button
-              key={v}
-              onClick={() => setView(v)}
-              className={`-mb-px shrink-0 whitespace-nowrap border-b-2 px-3 py-2 text-[13px] font-medium transition ${
-                view === v ? 'border-primary text-primary' : 'border-transparent text-muted hover:text-foreground'
-              }`}
-            >
-              {t(`board.view.${v}`)}
-            </button>
-          ))}
         </div>
 
         {/* Add task (Editors and the owner only) */}

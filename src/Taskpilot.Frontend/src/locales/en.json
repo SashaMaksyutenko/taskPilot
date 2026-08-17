@@ -587,6 +587,18 @@
     "blocked": "blocked",
     "fallback": "Showing a basic order — AI ranking is unavailable right now."
   },
+  "billing": {
+    "title": "Plan & billing",
+    "subtitle": "Your workspace subscription and its limits.",
+    "planLabel": "{{plan}} plan",
+    "renews": "renews {{date}}",
+    "projectsUsage": "Projects: {{count}} / {{limit}}",
+    "upgrade": "Upgrade to Pro",
+    "manage": "Manage billing",
+    "notConfigured": "Billing is not configured — set your Stripe keys to enable paid plans.",
+    "upgraded": "You're on Pro — thanks!",
+    "canceled": "Checkout canceled."
+  },
   "whiteboard": {
     "button": "Whiteboard",
     "title": "Whiteboard",

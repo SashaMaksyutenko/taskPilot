@@ -17,11 +17,13 @@ public class ProjectsController : BaseApiController
 {
     private readonly IProjectService _projects;
     private readonly IValidator<SaveProjectDto> _validator;
+    private readonly IBillingService _billing;
 
-    public ProjectsController(IProjectService projects, IValidator<SaveProjectDto> validator)
+    public ProjectsController(IProjectService projects, IValidator<SaveProjectDto> validator, IBillingService billing)
     {
         _projects = projects;
         _validator = validator;
+        _billing = billing;
     }
 
     /// <summary>Lists the current user's projects (use ?includeArchived=true to include archived).</summary>
@@ -99,6 +101,11 @@ public class ProjectsController : BaseApiController
         var userId = CurrentUserId();
         if (userId is null) return Unauthorized();
         if (await Invalid(dto) is { } bad) return bad;
+
+        // Free plan caps the number of projects (only when Stripe billing is configured).
+        if (!await _billing.CanCreateProjectAsync())
+            return StatusCode(StatusCodes.Status402PaymentRequired,
+                new { error = $"The Free plan is limited to {BillingService.FreeProjectLimit} projects. Upgrade to Pro for unlimited projects." });
 
         var result = await _projects.CreateProjectAsync(userId.Value, dto);
         return StatusCode(StatusCodes.Status201Created, result.Value);

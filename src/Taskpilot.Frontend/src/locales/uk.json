@@ -589,6 +589,18 @@
     "blocked": "заблоковано",
     "fallback": "Показано базовий порядок — AI-ранжування зараз недоступне."
   },
+  "billing": {
+    "title": "Тариф і оплата",
+    "subtitle": "Підписка вашого воркспейсу та її ліміти.",
+    "planLabel": "Тариф {{plan}}",
+    "renews": "поновлення {{date}}",
+    "projectsUsage": "Проєкти: {{count}} / {{limit}}",
+    "upgrade": "Перейти на Pro",
+    "manage": "Керувати оплатою",
+    "notConfigured": "Оплату не налаштовано — задайте ключі Stripe, щоб увімкнути платні тарифи.",
+    "upgraded": "Ви на Pro — дякуємо!",
+    "canceled": "Оплату скасовано."
+  },
   "whiteboard": {
     "button": "Whiteboard",
     "title": "Whiteboard",

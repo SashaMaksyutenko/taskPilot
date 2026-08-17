@@ -259,6 +259,11 @@ public class TaskpilotDbContext : DbContext
                   .HasMaxLength(100)
                   .HasDefaultValue(Models.OrganizationSettings.DefaultName);
 
+            // Billing plan + Stripe references.
+            entity.Property(s => s.Plan).IsRequired().HasMaxLength(16).HasDefaultValue("Free");
+            entity.Property(s => s.StripeCustomerId).HasMaxLength(64);
+            entity.Property(s => s.StripeSubscriptionId).HasMaxLength(64);
+
             entity.HasData(new OrganizationSettings
             {
                 Id = Models.OrganizationSettings.SingletonId,

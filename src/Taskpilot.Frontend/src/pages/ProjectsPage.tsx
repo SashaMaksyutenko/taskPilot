@@ -14,6 +14,7 @@ import { projectService } from '../services/projectService'
 import { projectTemplateService } from '../services/projectTemplateService'
 import { taskService } from '../services/taskService'
 import { notify } from '../lib/toast'
+import { apiErrorMessage } from '../lib/apiError'
 import { useAppSelector } from '../store/hooks'
 import type { Project } from '../types/project'
 
@@ -66,6 +67,9 @@ export default function ProjectsPage() {
       setName('')
       load()
       notify.success(t('toast.projectCreated'))
+    } catch (e) {
+      // 402 = the Free plan's project limit was hit; surface the upgrade hint.
+      notify.error(apiErrorMessage(e))
     } finally {
       setLoading(false)
     }

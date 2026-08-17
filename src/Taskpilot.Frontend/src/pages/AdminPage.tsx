@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import Avatar from '../components/Avatar'
 import RoleChart from '../components/charts/RoleChart'
 import StatusChart from '../components/charts/StatusChart'
@@ -12,6 +12,7 @@ import GeneralSettings from '../components/GeneralSettings'
 import StorageSettings from '../components/StorageSettings'
 import FeatureSettings from '../components/FeatureSettings'
 import RegistrationSettings from '../components/RegistrationSettings'
+import BillingSettings from '../components/BillingSettings'
 import UserContextMenu from '../components/menus/UserContextMenu'
 import WarnUserModal from '../components/modals/WarnUserModal'
 import { cn } from '../lib/cn'
@@ -31,7 +32,12 @@ export default function AdminPage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const currentUserId = useAppSelector((s) => s.auth.user?.id)
-  const [tab, setTab] = useState<'users' | 'analytics' | 'settings'>('users')
+  const [searchParams] = useSearchParams()
+  // Allow deep-linking a tab (e.g. Stripe returns to ?tab=settings after checkout).
+  const requestedTab = searchParams.get('tab')
+  const [tab, setTab] = useState<'users' | 'analytics' | 'settings'>(
+    requestedTab === 'settings' || requestedTab === 'analytics' ? requestedTab : 'users',
+  )
   const PAGE_SIZE = 20
   const [users, setUsers] = useState<AdminUser[]>([])
   const [page, setPage] = useState(1)
@@ -274,6 +280,7 @@ export default function AdminPage() {
         <>
         {/* Organization settings — each concern is its own card and its own endpoint */}
         <GeneralSettings />
+        <BillingSettings />
         <StorageSettings />
         <FeatureSettings />
         <RegistrationSettings />

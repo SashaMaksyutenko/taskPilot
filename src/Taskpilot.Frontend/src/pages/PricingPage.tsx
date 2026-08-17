@@ -2,6 +2,7 @@ import { Check, Sparkles } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 import PublicPageHeader from '../components/PublicPageHeader'
+import { useAppSelector } from '../store/hooks'
 
 /**
  * Public marketing pricing page. The tiers are presentational — they organise TaskPilot's real
@@ -33,6 +34,9 @@ const TIERS = [
 
 export default function PricingPage() {
   const { t } = useTranslation()
+  const user = useAppSelector((s) => s.auth.user)
+  // A signed-in admin manages the plan in the admin panel; everyone else registers.
+  const isAdmin = user?.role === 'Admin'
 
   return (
     <div className="min-h-screen gradient-hero text-foreground">
@@ -73,7 +77,7 @@ export default function PricingPage() {
               </div>
 
               <Link
-                to="/register"
+                to={tier.key === 'pro' && isAdmin ? '/admin?tab=settings' : '/register'}
                 className={`mt-6 rounded-lg px-4 py-2.5 text-center text-sm font-semibold transition ${
                   tier.highlighted
                     ? 'bg-primary text-white hover:bg-primary-hover'

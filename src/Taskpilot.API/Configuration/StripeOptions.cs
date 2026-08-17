@@ -16,6 +16,15 @@ public class StripeOptions
     /// <summary>Webhook signing secret (whsec_…) for verifying Stripe callbacks. Empty = webhook disabled.</summary>
     public string WebhookSecret { get; set; } = string.Empty;
 
+    /// <summary>
+    /// Stripe recurring Price id (price_…) for the Pro subscription. Required to start a Pro
+    /// checkout; when empty the upgrade flow reports that subscriptions aren't set up.
+    /// </summary>
+    public string ProPriceId { get; set; } = string.Empty;
+
+    /// <summary>True when a Pro subscription price is configured (in addition to the secret key).</summary>
+    public bool SubscriptionsConfigured => IsConfigured && !string.IsNullOrWhiteSpace(ProPriceId);
+
     /// <summary>True only when a secret key is configured.</summary>
     public bool IsConfigured => !string.IsNullOrWhiteSpace(SecretKey);
 

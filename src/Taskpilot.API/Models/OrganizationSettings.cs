@@ -86,4 +86,19 @@ public class OrganizationSettings
 
     /// <summary>UTC time the settings were last changed (null until first edited).</summary>
     public DateTime? UpdatedAt { get; set; }
+
+    /// <summary>
+    /// Billing plan: "Free" or "Pro". Only enforces limits when Stripe billing is configured —
+    /// with no payment provider there is no way to upgrade, so the app stays unlimited.
+    /// </summary>
+    public string Plan { get; set; } = "Free";
+
+    /// <summary>Stripe customer id for this workspace's subscription; null until first checkout.</summary>
+    public string? StripeCustomerId { get; set; }
+
+    /// <summary>The active Stripe subscription id; null when on Free.</summary>
+    public string? StripeSubscriptionId { get; set; }
+
+    /// <summary>When the current Pro period ends / renews (from Stripe); null on Free.</summary>
+    public DateTime? PlanRenewsAt { get; set; }
 }

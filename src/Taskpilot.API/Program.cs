@@ -154,6 +154,9 @@ builder.Services.AddHttpClient<ILinkedInAuthClient, LinkedInAuthClient>();
 // Stripe payments (populated from .env: Stripe__*). Disabled until a secret key is set.
 builder.Services.Configure<StripeOptions>(builder.Configuration.GetSection("Stripe"));
 builder.Services.AddHttpClient<IPaymentClient, StripePaymentClient>();
+// Subscription billing: Stripe subscription/portal client + plan service (Free/Pro, project gating).
+builder.Services.AddHttpClient<IStripeBillingClient, StripeBillingClient>();
+builder.Services.AddScoped<IBillingService, BillingService>();
 
 // Security hardening (populated from .env: Security__*). The admin IP allowlist is off
 // until Security__AdminIpAllowlist lists at least one IP/CIDR.

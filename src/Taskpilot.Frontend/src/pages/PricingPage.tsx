@@ -32,6 +32,10 @@ const TIERS = [
   },
 ] as const
 
+// Enterprise is sales-led (custom pricing/contract/SSO), not a self-serve Stripe plan — its CTA
+// opens a contact email. Swap this for your real sales address.
+const SALES_EMAIL = 'sales@taskpilot.app'
+
 export default function PricingPage() {
   const { t } = useTranslation()
   const user = useAppSelector((s) => s.auth.user)
@@ -76,16 +80,27 @@ export default function PricingPage() {
                 )}
               </div>
 
-              <Link
-                to={tier.key === 'pro' && isAdmin ? '/admin?tab=settings' : '/register'}
-                className={`mt-6 rounded-lg px-4 py-2.5 text-center text-sm font-semibold transition ${
+              {(() => {
+                const ctaClass = `mt-6 rounded-lg px-4 py-2.5 text-center text-sm font-semibold transition ${
                   tier.highlighted
                     ? 'bg-primary text-white hover:bg-primary-hover'
                     : 'border border-border text-foreground hover:bg-canvas'
-                }`}
-              >
-                {t(`pricing.${tier.cta}`)}
-              </Link>
+                }`
+                // Enterprise → contact sales; Pro (for a signed-in admin) → the admin billing card;
+                // everything else → register.
+                return tier.key === 'enterprise' ? (
+                  <a
+                    href={`mailto:${SALES_EMAIL}?subject=${encodeURIComponent('Enterprise plan enquiry')}`}
+                    className={ctaClass}
+                  >
+                    {t(`pricing.${tier.cta}`)}
+                  </a>
+                ) : (
+                  <Link to={tier.key === 'pro' && isAdmin ? '/admin?tab=settings' : '/register'} className={ctaClass}>
+                    {t(`pricing.${tier.cta}`)}
+                  </Link>
+                )
+              })()}
 
               <ul className="mt-6 space-y-2.5">
                 {tier.features.map((f) => (

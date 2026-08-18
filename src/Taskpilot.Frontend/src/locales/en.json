@@ -234,6 +234,8 @@
     "ctaFree": "Get started free",
     "ctaPro": "Start free trial",
     "ctaEnterprise": "Contact sales",
+    "copyEmail": "Click to copy",
+    "emailCopied": "Email copied to clipboard",
     "tier": {
       "free": "Free",
       "pro": "Pro",

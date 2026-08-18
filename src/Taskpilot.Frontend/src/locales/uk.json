@@ -236,6 +236,8 @@
     "ctaFree": "Почати безкоштовно",
     "ctaPro": "Пробний період",
     "ctaEnterprise": "Зв'язатися з нами",
+    "copyEmail": "Натисніть, щоб скопіювати",
+    "emailCopied": "Email скопійовано",
     "tier": {
       "free": "Free",
       "pro": "Pro",

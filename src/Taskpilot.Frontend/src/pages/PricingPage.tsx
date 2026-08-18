@@ -1,7 +1,8 @@
-import { Check, Sparkles } from 'lucide-react'
+import { Check, Copy, Sparkles } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 import PublicPageHeader from '../components/PublicPageHeader'
+import { notify } from '../lib/toast'
 import { useAppSelector } from '../store/hooks'
 
 /**
@@ -41,6 +42,14 @@ export default function PricingPage() {
   const user = useAppSelector((s) => s.auth.user)
   // A signed-in admin manages the plan in the admin panel; everyone else registers.
   const isAdmin = user?.role === 'Admin'
+
+  // Copy the sales address to the clipboard — reliable feedback even without a mail client.
+  const copyEmail = () => {
+    navigator.clipboard
+      ?.writeText(SALES_EMAIL)
+      .then(() => notify.success(t('pricing.emailCopied')))
+      .catch(() => {})
+  }
 
   return (
     <div className="min-h-screen gradient-hero text-foreground">
@@ -89,12 +98,23 @@ export default function PricingPage() {
                 // Enterprise → contact sales; Pro (for a signed-in admin) → the admin billing card;
                 // everything else → register.
                 return tier.key === 'enterprise' ? (
-                  <a
-                    href={`mailto:${SALES_EMAIL}?subject=${encodeURIComponent('Enterprise plan enquiry')}`}
-                    className={ctaClass}
-                  >
-                    {t(`pricing.${tier.cta}`)}
-                  </a>
+                  <div className="mt-6 flex flex-col gap-2">
+                    <a
+                      href={`mailto:${SALES_EMAIL}?subject=${encodeURIComponent('Enterprise plan enquiry')}`}
+                      className={ctaClass.replace('mt-6 ', '')}
+                    >
+                      {t(`pricing.${tier.cta}`)}
+                    </a>
+                    {/* Visible, copyable address — works even without a configured mail client. */}
+                    <button
+                      onClick={copyEmail}
+                      title={t('pricing.copyEmail')}
+                      className="inline-flex items-center justify-center gap-1.5 text-xs text-muted transition hover:text-foreground"
+                    >
+                      <Copy className="h-3 w-3" />
+                      {SALES_EMAIL}
+                    </button>
+                  </div>
                 ) : (
                   <Link to={tier.key === 'pro' && isAdmin ? '/admin?tab=settings' : '/register'} className={ctaClass}>
                     {t(`pricing.${tier.cta}`)}

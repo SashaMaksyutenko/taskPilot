@@ -25,7 +25,7 @@ describe('useFeatures / FeaturesProvider', () => {
   beforeEach(() => vi.clearAllMocks())
 
   it('exposes the fetched flags', async () => {
-    getFeatures.mockResolvedValue({ marketplaceEnabled: false, forumEnabled: true })
+    getFeatures.mockResolvedValue({ marketplaceEnabled: false, forumEnabled: true, ai: true, automations: true, whiteboard: true })
     render(
       <FeaturesProvider>
         <Probe />
@@ -36,7 +36,7 @@ describe('useFeatures / FeaturesProvider', () => {
   })
 
   it('fetches exactly once under StrictMode', async () => {
-    getFeatures.mockResolvedValue({ marketplaceEnabled: true, forumEnabled: true })
+    getFeatures.mockResolvedValue({ marketplaceEnabled: true, forumEnabled: true, ai: true, automations: true, whiteboard: true })
     render(
       <StrictMode>
         <FeaturesProvider>

@@ -11,10 +11,12 @@ namespace Taskpilot.API.Controllers;
 public class AutomationsController : BaseApiController
 {
     private readonly IAutomationService _automations;
+    private readonly IBillingService _billing;
 
-    public AutomationsController(IAutomationService automations)
+    public AutomationsController(IAutomationService automations, IBillingService billing)
     {
         _automations = automations;
+        _billing = billing;
     }
 
     /// <summary>Lists a project's automation rules.</summary>
@@ -34,6 +36,8 @@ public class AutomationsController : BaseApiController
     {
         var userId = CurrentUserId();
         if (userId is null) return Unauthorized();
+        if (!await _billing.IsProAsync())
+            return StatusCode(StatusCodes.Status402PaymentRequired, new { error = "Automations are a Pro feature. Upgrade to Pro to use them." });
 
         var result = await _automations.CreateRuleAsync(userId.Value, projectId, dto);
         return result.Succeeded ? Ok(result.Value) : BadRequest(new { error = result.Error });

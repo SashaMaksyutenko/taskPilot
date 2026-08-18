@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Taskpilot.API.DTOs.ChatBot;
+using Taskpilot.API.Services;
 using Taskpilot.API.Services.Assistant;
 
 namespace Taskpilot.API.Controllers;
@@ -12,15 +13,18 @@ namespace Taskpilot.API.Controllers;
 public class ChatBotController : BaseApiController
 {
     private readonly IAssistantAgent _assistant;
+    private readonly IBillingService _billing;
 
-    public ChatBotController(IAssistantAgent assistant)
+    public ChatBotController(IAssistantAgent assistant, IBillingService billing)
     {
         _assistant = assistant;
+        _billing = billing;
     }
 
-    /// <summary>Whether the assistant is configured and available.</summary>
+    /// <summary>Whether the assistant is configured, available, and unlocked by the plan (Pro).</summary>
     [HttpGet("status")]
-    public IActionResult Status() => Ok(new { enabled = _assistant.IsEnabled });
+    public async Task<IActionResult> Status() =>
+        Ok(new { enabled = _assistant.IsEnabled && await _billing.IsProAsync() });
 
     /// <summary>
     /// Answers the user's latest message. The assistant can look up the caller's own
@@ -31,6 +35,8 @@ public class ChatBotController : BaseApiController
     {
         var userId = CurrentUserId();
         if (userId is null) return Unauthorized();
+        if (!await _billing.IsProAsync())
+            return StatusCode(StatusCodes.Status402PaymentRequired, new { error = "The AI assistant is a Pro feature. Upgrade to Pro to use it." });
 
         var result = await _assistant.AskAsync(userId.Value, dto.Messages);
         return result.Succeeded

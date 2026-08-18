@@ -597,7 +597,9 @@
     "manage": "Manage billing",
     "notConfigured": "Billing is not configured — set your Stripe keys to enable paid plans.",
     "upgraded": "You're on Pro — thanks!",
-    "canceled": "Checkout canceled."
+    "canceled": "Checkout canceled.",
+    "proFeature": "A Pro feature",
+    "proFeatureHint": "This feature is included in the Pro plan. Ask an admin to upgrade the workspace to unlock it."
   },
   "whiteboard": {
     "button": "Whiteboard",

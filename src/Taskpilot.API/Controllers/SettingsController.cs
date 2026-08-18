@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Taskpilot.API.Services;
+using Taskpilot.API.Services.Assistant;
 
 namespace Taskpilot.API.Controllers;
 
@@ -15,17 +16,28 @@ namespace Taskpilot.API.Controllers;
 public class SettingsController : BaseApiController
 {
     private readonly IOrganizationSettingsService _settings;
+    private readonly IBillingService _billing;
+    private readonly IAssistantAgent _assistant;
 
-    public SettingsController(IOrganizationSettingsService settings)
+    public SettingsController(IOrganizationSettingsService settings, IBillingService billing, IAssistantAgent assistant)
     {
         _settings = settings;
+        _billing = billing;
+        _assistant = assistant;
     }
 
-    /// <summary>Returns which optional features (Marketplace, Forum) are enabled.</summary>
+    /// <summary>
+    /// Returns which features are available: the org toggles (Marketplace, Forum) plus the
+    /// plan-gated Pro features (AI, Automations, Whiteboard). The client uses these to hide UI.
+    /// </summary>
     [HttpGet("features")]
     public async Task<IActionResult> GetFeatures()
     {
         var flags = await _settings.GetFeatureFlagsAsync();
+        var pro = await _billing.IsProAsync();
+        flags.Ai = _assistant.IsEnabled && pro;
+        flags.Automations = pro;
+        flags.Whiteboard = pro;
         return Ok(flags);
     }
 

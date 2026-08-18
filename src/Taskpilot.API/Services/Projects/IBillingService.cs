@@ -16,6 +16,12 @@ public interface IBillingService
     /// <summary>True if another project may be created under the current plan.</summary>
     Task<bool> CanCreateProjectAsync();
 
+    /// <summary>
+    /// True when the workspace has Pro features — either it's on the Pro plan, or billing isn't
+    /// configured at all (nothing to upgrade to, so everything stays unlocked).
+    /// </summary>
+    Task<bool> IsProAsync();
+
     /// <summary>Starts a Pro subscription checkout; returns the hosted Stripe URL.</summary>
     Task<Result<string>> CreateCheckoutAsync(string userEmail, string successUrl, string cancelUrl);
 

@@ -24,13 +24,13 @@ function renderAt(feature: 'marketplace' | 'forum') {
 
 describe('FeatureRoute', () => {
   it('renders the page when the feature is enabled', () => {
-    mockFeatures.mockReturnValue({ marketplaceEnabled: true, forumEnabled: true, loaded: true })
+    mockFeatures.mockReturnValue({ marketplaceEnabled: true, forumEnabled: true, ai: true, automations: true, whiteboard: true, loaded: true })
     renderAt('marketplace')
     expect(screen.getByText('Feature page')).toBeTruthy()
   })
 
   it('redirects home when the feature is disabled', () => {
-    mockFeatures.mockReturnValue({ marketplaceEnabled: false, forumEnabled: true, loaded: true })
+    mockFeatures.mockReturnValue({ marketplaceEnabled: false, forumEnabled: true, ai: true, automations: true, whiteboard: true, loaded: true })
     renderAt('marketplace')
     expect(screen.getByText('Home')).toBeTruthy()
     expect(screen.queryByText('Feature page')).toBeNull()
@@ -38,7 +38,7 @@ describe('FeatureRoute', () => {
 
   it('waits (no redirect) until the flags have loaded', () => {
     // Before loading, the disabled-looking default must not redirect an enabled page.
-    mockFeatures.mockReturnValue({ marketplaceEnabled: false, forumEnabled: true, loaded: false })
+    mockFeatures.mockReturnValue({ marketplaceEnabled: false, forumEnabled: true, ai: true, automations: true, whiteboard: true, loaded: false })
     renderAt('marketplace')
     expect(screen.queryByText('Home')).toBeNull()
     expect(screen.queryByText('Feature page')).toBeNull()
@@ -46,7 +46,7 @@ describe('FeatureRoute', () => {
 
   it('gates each feature independently', () => {
     // Marketplace off must not affect a forum-gated route.
-    mockFeatures.mockReturnValue({ marketplaceEnabled: false, forumEnabled: true, loaded: true })
+    mockFeatures.mockReturnValue({ marketplaceEnabled: false, forumEnabled: true, ai: true, automations: true, whiteboard: true, loaded: true })
     renderAt('forum')
     expect(screen.getByText('Feature page')).toBeTruthy()
   })

@@ -14,10 +14,12 @@ namespace Taskpilot.API.Controllers;
 public class WhiteboardController : BaseApiController
 {
     private readonly IWhiteboardService _whiteboard;
+    private readonly IBillingService _billing;
 
-    public WhiteboardController(IWhiteboardService whiteboard)
+    public WhiteboardController(IWhiteboardService whiteboard, IBillingService billing)
     {
         _whiteboard = whiteboard;
+        _billing = billing;
     }
 
     /// <summary>All notes on a project's whiteboard.</summary>
@@ -37,6 +39,8 @@ public class WhiteboardController : BaseApiController
     {
         var userId = CurrentUserId();
         if (userId is null) return Unauthorized();
+        if (!await _billing.IsProAsync())
+            return StatusCode(StatusCodes.Status402PaymentRequired, new { error = "The whiteboard is a Pro feature. Upgrade to Pro to use it." });
 
         var result = await _whiteboard.CreateAsync(userId.Value, projectId, dto);
         return result.Succeeded ? Ok(result.Value) : Forbid();

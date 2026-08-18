@@ -46,7 +46,7 @@ describe('FeatureSettings', () => {
   beforeEach(() => vi.clearAllMocks())
 
   it('loads and reflects the current flags in the checkboxes', async () => {
-    getFeatures.mockResolvedValue({ marketplaceEnabled: true, forumEnabled: false })
+    getFeatures.mockResolvedValue({ marketplaceEnabled: true, forumEnabled: false, ai: true, automations: true, whiteboard: true })
     render(<FeatureSettings />)
 
     const forum = (await screen.findByLabelText('features.forum')) as HTMLInputElement
@@ -56,7 +56,7 @@ describe('FeatureSettings', () => {
   })
 
   it('applies a toggle immediately and updates the shared nav (no Save button)', async () => {
-    getFeatures.mockResolvedValue({ marketplaceEnabled: true, forumEnabled: true })
+    getFeatures.mockResolvedValue({ marketplaceEnabled: true, forumEnabled: true, ai: true, automations: true, whiteboard: true })
     updateFeatures.mockResolvedValue(org({ forumEnabled: false }))
 
     render(
@@ -76,7 +76,7 @@ describe('FeatureSettings', () => {
   })
 
   it('rolls the toggle back if the save fails', async () => {
-    getFeatures.mockResolvedValue({ marketplaceEnabled: true, forumEnabled: true })
+    getFeatures.mockResolvedValue({ marketplaceEnabled: true, forumEnabled: true, ai: true, automations: true, whiteboard: true })
     updateFeatures.mockRejectedValue(new Error('backend down'))
 
     render(
@@ -95,7 +95,7 @@ describe('FeatureSettings', () => {
   })
 
   it('fetches the flags exactly once (StrictMode-safe ref guard)', async () => {
-    getFeatures.mockResolvedValue({ marketplaceEnabled: true, forumEnabled: true })
+    getFeatures.mockResolvedValue({ marketplaceEnabled: true, forumEnabled: true, ai: true, automations: true, whiteboard: true })
     render(<FeatureSettings />)
     await waitFor(() => expect(getFeatures).toHaveBeenCalled())
     expect(getFeatures).toHaveBeenCalledTimes(1)

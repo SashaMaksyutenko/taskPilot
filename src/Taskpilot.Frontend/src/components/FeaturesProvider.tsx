@@ -27,7 +27,8 @@ export function FeaturesProvider({ children }: { children: ReactNode }) {
     loaded.current = true
     settingsService
       .getFeatures()
-      .then((f) => setState({ ...f, loaded: true }))
+      // Merge onto the defaults so any flag the server omits stays fail-open (true).
+      .then((f) => setState((s) => ({ ...s, ...f, loaded: true })))
       // On failure keep the defaults (features on) but mark loaded so guards stop waiting.
       .catch(() => setState((s) => ({ ...s, loaded: true })))
   }, [])

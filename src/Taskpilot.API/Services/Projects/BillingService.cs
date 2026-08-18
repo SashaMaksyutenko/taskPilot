@@ -59,6 +59,14 @@ public class BillingService : IBillingService
     }
 
     /// <inheritdoc />
+    public async Task<bool> IsProAsync()
+    {
+        if (!_stripe.IsEnabled) return true; // no billing ⇒ everything unlocked
+        var plan = await _context.OrganizationSettings.Select(s => s.Plan).FirstOrDefaultAsync() ?? PlanFree;
+        return plan == PlanPro;
+    }
+
+    /// <inheritdoc />
     public async Task<Result<string>> CreateCheckoutAsync(string userEmail, string successUrl, string cancelUrl)
     {
         if (!_stripe.IsEnabled)

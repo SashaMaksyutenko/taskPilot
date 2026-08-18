@@ -28,6 +28,7 @@ import { taskRef } from '../lib/taskRef'
 import { useAppSelector } from '../store/hooks'
 import { projectService } from '../services/projectService'
 import { useDragAndDrop } from '../hooks/useDragAndDrop'
+import { useFeatures } from '../hooks/useFeatures'
 import { apiErrorMessage } from '../lib/apiError'
 import { taskService, type ReportSchedule } from '../services/taskService'
 import { epicService } from '../services/epicService'
@@ -64,6 +65,7 @@ export default function BoardPage() {
   const { projectId = '' } = useParams()
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
+  const features = useFeatures()
   const currentUserId = useAppSelector((s) => s.auth.user?.id)
   const [project, setProject] = useState<Project | null>(null)
   const [notFound, setNotFound] = useState(false)
@@ -544,7 +546,7 @@ export default function BoardPage() {
                 {t(`board.view.${v}`)}
               </button>
             ))}
-            {canWrite && (
+            {canWrite && features.whiteboard && (
               <button
                 onClick={() => navigate(`/projects/${projectId}/whiteboard`)}
                 className="-mb-px shrink-0 whitespace-nowrap border-b-2 border-transparent px-3 py-2 text-[13px] font-medium text-muted transition hover:text-foreground"

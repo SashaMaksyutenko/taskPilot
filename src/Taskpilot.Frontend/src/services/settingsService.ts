@@ -4,6 +4,10 @@ import api from '../lib/api'
 export interface FeatureFlags {
   marketplaceEnabled: boolean
   forumEnabled: boolean
+  /** Plan-gated (Pro) features — true on Pro, or when billing isn't configured. */
+  ai: boolean
+  automations: boolean
+  whiteboard: boolean
 }
 
 /** The organization's public branding (mirrors the backend OrganizationBrandingDto). */

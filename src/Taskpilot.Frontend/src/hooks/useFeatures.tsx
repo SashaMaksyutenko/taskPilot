@@ -4,6 +4,10 @@ import { createContext, useContext } from 'react'
 export interface FeatureState {
   marketplaceEnabled: boolean
   forumEnabled: boolean
+  // Plan-gated (Pro) features — true on Pro, or whenever billing isn't configured.
+  ai: boolean
+  automations: boolean
+  whiteboard: boolean
   /** False until the first fetch settles; guards against flashing/hiding before we know. */
   loaded: boolean
 }
@@ -13,6 +17,9 @@ export interface FeatureState {
 export const defaultFeatureState: FeatureState = {
   marketplaceEnabled: true,
   forumEnabled: true,
+  ai: true,
+  automations: true,
+  whiteboard: true,
   loaded: false,
 }
 

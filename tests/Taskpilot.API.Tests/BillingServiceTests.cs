@@ -65,6 +65,24 @@ public class BillingServiceTests
     }
 
     [Fact]
+    public async Task IsPro_TrueWhenBillingOff_OrPro_FalseOnFree()
+    {
+        await using var ctx = TestDb.CreateContext();
+
+        // Billing off ⇒ everything unlocked.
+        Assert.True(await Make(ctx, billingEnabled: false).IsProAsync());
+
+        // Billing on + Free ⇒ not Pro.
+        var svc = Make(ctx, billingEnabled: true);
+        Assert.False(await svc.IsProAsync());
+
+        // Upgrade to Pro.
+        ctx.OrganizationSettings.Add(new OrganizationSettings { Id = OrganizationSettings.SingletonId, Plan = "Pro" });
+        await ctx.SaveChangesAsync();
+        Assert.True(await svc.IsProAsync());
+    }
+
+    [Fact]
     public async Task Status_ReportsFreeLimit_WhenEnabledAndFree()
     {
         await using var ctx = TestDb.CreateContext();

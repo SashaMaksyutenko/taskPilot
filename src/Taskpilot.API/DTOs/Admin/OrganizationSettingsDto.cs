@@ -110,4 +110,9 @@ public class FeatureFlagsDto
 {
     public bool MarketplaceEnabled { get; set; }
     public bool ForumEnabled { get; set; }
+
+    // Plan-gated (Pro) features. True on Pro, or whenever billing isn't configured.
+    public bool Ai { get; set; } = true;
+    public bool Automations { get; set; } = true;
+    public bool Whiteboard { get; set; } = true;
 }

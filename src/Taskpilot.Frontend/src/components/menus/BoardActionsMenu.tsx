@@ -1,6 +1,7 @@
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
 import { MoreHorizontal } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
+import { useFeatures } from '../../hooks/useFeatures'
 import { menuContentClass, menuItemClass, menuSeparatorClass } from '../contextMenuStyles'
 
 /**
@@ -38,6 +39,7 @@ export default function BoardActionsMenu({
   onExportPdf: () => void
 }) {
   const { t } = useTranslation()
+  const features = useFeatures()
 
   return (
     <DropdownMenu.Root>
@@ -54,7 +56,7 @@ export default function BoardActionsMenu({
           <DropdownMenu.Item className={menuItemClass} onSelect={onMembers}>
             {t('members.button')}
           </DropdownMenu.Item>
-          {isOwner && (
+          {isOwner && features.automations && (
             <DropdownMenu.Item className={menuItemClass} onSelect={onAutomations}>
               {t('automation.button')}
             </DropdownMenu.Item>
@@ -69,7 +71,7 @@ export default function BoardActionsMenu({
               {t('epics.button')}
             </DropdownMenu.Item>
           )}
-          {canWrite && (
+          {canWrite && features.whiteboard && (
             <DropdownMenu.Item className={menuItemClass} onSelect={onWhiteboard}>
               {t('whiteboard.button')}
             </DropdownMenu.Item>

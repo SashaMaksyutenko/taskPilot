@@ -431,7 +431,8 @@ Admins get an **Admin** section with extra controls:
 - **Users** — search members, change **roles** (User / Manager / Admin) and **ban** or **mute** accounts.
 - **Moderation** — issue **warnings**, review **appeals**, and resolve **reported** forum replies; repeated warnings can auto-ban.
 - **Analytics** — organisation-wide charts (sign-ups, activity, tasks by status) and an **audit log** of recorded actions.
-- **Organisation settings** — set the workspace **name & logo** (branding), toggle **features** on/off, and configure **registration** rules.`,
+- **Organisation settings** — set the workspace **name & logo** (branding), toggle **features** on/off, and configure **registration** rules.
+- **Plans & billing** — the workspace runs on a **Free** or **Pro** plan. From *Admin → Settings → Plan & billing* an admin can **Upgrade to Pro** (Stripe Checkout) or open the billing portal to manage/cancel. **Free** caps the number of projects and keeps the AI assistant, automations and the whiteboard locked; **Pro** unlocks them all and removes the limit. **Enterprise** is custom — contact sales from the Pricing page. (When no payment provider is configured, everything stays unlocked.)`,
       uk: `## Адміністрування та модерація
 
 Адміни отримують розділ **«Admin»** з додатковими можливостями:
@@ -439,7 +440,8 @@ Admins get an **Admin** section with extra controls:
 - **Користувачі** — шукайте учасників, змінюйте **ролі** (User / Manager / Admin) та **банте** чи **заглушуйте** акаунти.
 - **Модерація** — видавайте **попередження**, розглядайте **апеляції** й вирішуйте **скарги** на відповіді форуму; повторні попередження можуть автоматично забанити.
 - **Аналітика** — графіки по всій організації (реєстрації, активність, задачі за статусом) та **журнал дій** (audit log).
-- **Налаштування організації** — задайте **назву й логотип** простору (брендинг), вмикайте/вимикайте **функції** та налаштовуйте правила **реєстрації**.`,
+- **Налаштування організації** — задайте **назву й логотип** простору (брендинг), вмикайте/вимикайте **функції** та налаштовуйте правила **реєстрації**.
+- **Тариф і оплата** — воркспейс працює на тарифі **Free** або **Pro**. У *Admin → Налаштування → Тариф і оплата* адмін може **Перейти на Pro** (Stripe Checkout) або відкрити портал оплати для керування/скасування. **Free** обмежує кількість проєктів і тримає AI-асистента, автоматизації та whiteboard закритими; **Pro** їх розблоковує й знімає ліміт. **Enterprise** — індивідуально, звертайтесь через сторінку Тарифів. (Якщо платіжний провайдер не налаштований — усе лишається відкритим.)`,
     },
   },
 ]

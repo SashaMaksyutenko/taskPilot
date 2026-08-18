@@ -126,6 +126,7 @@ Add the variables on Render to switch a feature on:
 | Google / GitHub / LinkedIn sign-in | `GoogleOAuth__ClientId` + `ClientSecret`, `GitHubOAuth__*`, `LinkedInOAuth__*` |
 | AI assistant & subtasks | `OpenAi__ApiKey` |
 | Stripe marketplace payments | `Stripe__SecretKey`, `Stripe__WebhookSecret` |
+| Stripe subscriptions (Free/Pro plan) | `Stripe__SecretKey`, `Stripe__ProPriceId`, `Stripe__WebhookSecret` |
 | Telegram / Viber bots | `Telegram__BotToken`, `Viber__AuthToken` |
 | Web push | `Vapid__PublicKey`, `Vapid__PrivateKey`, `Vapid__Subject` |
 | Passkeys (WebAuthn) | `Fido2__ServerDomain`, `Fido2__Origins__0` |
@@ -146,6 +147,15 @@ needs the matching public client ids at build time (`VITE_GOOGLE_CLIENT_ID`,
 
 Left unset, they default to `localhost` / `http://localhost:5173` (local dev only). Add one origin
 per index (`Fido2__Origins__1`, …) if the app is served from more than one domain.
+
+**Stripe subscriptions (Free/Pro plan)** power the workspace plan and its limits. Enabling them:
+
+1. In the Stripe Dashboard **stay in one mode** — use **Test mode** (or a *Sandbox*) with test keys for demos; no account activation is needed. Live mode requires activating the account.
+2. Create a **Product** (e.g. "Pro") with a **recurring** Price, and copy its **Price id** (`price_…`, *not* the product id `prod_…`).
+3. Add a **webhook endpoint** at `https://<api>/api/billing/webhook` subscribed to `checkout.session.completed`, `customer.subscription.updated` and `customer.subscription.deleted`; copy its **signing secret** (`whsec_…`).
+4. Set on Render: `Stripe__SecretKey` (`sk_…`), `Stripe__ProPriceId` (`price_…`), `Stripe__WebhookSecret` (`whsec_…`).
+
+The keys, product/price and webhook must **all be from the same Stripe account and the same mode** (mixing test/live gives "No such price"). Checkout is server-side, so the **publishable key is not used**. **Until this is configured the plan gate is off** — everything (projects, AI, automations, whiteboard) stays unlocked, so it never blocks a workspace with no payment provider. Once on, **Free** caps projects (3) and locks AI/automations/whiteboard; **Pro** unlocks them. Test upgrades with card `4242 4242 4242 4242`.
 
 **Google Calendar 2-way sync** reuses the same Google OAuth app (no extra secrets). To turn it
 on in the Google Cloud Console:

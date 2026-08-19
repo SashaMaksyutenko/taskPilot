@@ -1,30 +1,119 @@
 # TaskPilot
 
-> **Your co-pilot for team productivity.**
+> **Your co-pilot for team productivity** — a full-stack project-management SaaS with real-time
+> collaboration, an AI assistant, and real Stripe subscriptions.
 
-TaskPilot is a full-stack team-collaboration platform: projects & tasks, a
-Kanban board, real-time chat and notifications, a task marketplace, a forum,
-a calendar, analytics, and an admin/moderation area.
+<p>
+  <img alt=".NET 8" src="https://img.shields.io/badge/.NET-8-512BD4?logo=dotnet&logoColor=white">
+  <img alt="C#" src="https://img.shields.io/badge/C%23-239120?logo=csharp&logoColor=white">
+  <img alt="React 19" src="https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black">
+  <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white">
+  <img alt="PostgreSQL" src="https://img.shields.io/badge/PostgreSQL-4169E1?logo=postgresql&logoColor=white">
+  <img alt="SignalR" src="https://img.shields.io/badge/SignalR-realtime-512BD4">
+  <img alt="Tests" src="https://img.shields.io/badge/tests-670%2B-brightgreen">
+</p>
 
-- **Backend** — ASP.NET Core (.NET 8) Web API, EF Core 8, PostgreSQL, SignalR, JWT auth
-- **Frontend** — React 19 + TypeScript + Vite, Redux Toolkit, Tailwind CSS, react-i18next (EN/UK)
-- **Infrastructure** — PostgreSQL, optional Redis cache, optional RabbitMQ
+TaskPilot is a team-collaboration platform built end-to-end as a portfolio project: projects & a
+Kanban board, real-time chat, a task marketplace, a forum, calendar sync, analytics, an
+AI assistant, subscription billing, and an admin/moderation area — **~30 feature modules plus a
+large set of beyond-spec engineering showcases**, deployed live and backed by 670+ tests.
 
-The full feature specification (30 modules) lives in [docs/requirements.md](docs/requirements.md).
+**→ Live demo: [task-pilot-bice.vercel.app](https://task-pilot-bice.vercel.app)** &nbsp;·&nbsp; sign up with any email, no confirmation needed.
+
+> First load can take up to a minute — the API runs on a free instance that sleeps when idle; it's instant after it wakes.
 
 ---
 
-## Live demo
+## Highlights
 
-**→ [task-pilot-bice.vercel.app](https://task-pilot-bice.vercel.app)**
+The parts that go beyond a typical CRUD task manager:
 
-Sign up with any email — no confirmation required — and the app is yours to explore:
-create a project, drag tasks across the board, chat, post to the forum.
+- **⚡ Real-time collaboration (CRDT).** Two people edit a task description at the same time with
+  conflict-free merging (Yjs over SignalR), plus a collaborative **sticky-note whiteboard** with
+  live cursors. Text uses a pure CRDT relay; the whiteboard is an authoritative server model so
+  per-note permissions (only the author/owner can delete) are actually enforced — a deliberate
+  architectural split, the way Figma/Trello do it.
+- **🤖 AI assistant with tool-calling.** A data-aware LLM agent that answers questions about your
+  data *and takes actions* through 40+ permission-scoped tools ("create a task in Website and move
+  it to In Progress"). Plus AI **"what to do next"** prioritization, **meeting-notes → tasks**
+  extraction, an AI weekly digest, and subtask suggestions. Runs on a free Groq key; fully
+  config-gated.
+- **💳 Real Stripe subscriptions.** Self-serve Free/Pro plans via Stripe Checkout + Customer
+  Portal, with the **webhook as the source of truth** (not the redirect), a failed-payment grace
+  window with admin dunning alerts, monthly/annual pricing, and plan-gated features. Enterprise is
+  a sales-led "Contact us" tier.
+- **🔐 Passwordless sign-in (WebAuthn/passkeys)** with Face ID / Touch ID / Windows Hello, on top
+  of JWT + refresh tokens, TOTP 2FA with backup codes, OAuth (Google/GitHub/LinkedIn), session
+  management, API keys, an admin IP allowlist, and AES-256-GCM file encryption at rest.
+- **🧩 Deep integrations.** Two-way **Google Calendar** sync, **GitHub** webhooks that link
+  commits/PRs to tasks and auto-close them on merge, Telegram/Viber bots, outbound webhooks, and
+  Web Push — all config-gated.
+- **✅ Engineered like production.** 670+ backend unit tests, a frontend test suite, CI, Docker, a
+  config-gated everything-off-by-default design, and a live free-tier deployment (Vercel + Render +
+  Neon).
 
-> **First load can take up to a minute.** The API runs on a free instance that sleeps when
-> idle; the first request wakes it. Everything is instant after that.
+---
 
-Hosting: frontend on Vercel, API on Render, PostgreSQL on Neon — all free tier.
+## Features
+
+<table>
+<tr><td valign="top" width="50%">
+
+**Projects & tasks**
+- Kanban board with WIP limits, filters, bulk actions
+- Timeline (Gantt) with critical-path highlighting
+- Sprints + story points + velocity, epics, custom fields
+- Task dependencies, subtasks, recurring tasks, watchers
+- Comments (reactions, editing, @mentions), attachments + version history
+- Time tracking, deadline-extension requests, activity feed
+- Project analytics, CSV import/export, public read-only share links
+
+**Real-time (SignalR)**
+- Chat (reactions, typing, read receipts, pin/edit, GIFs)
+- Live notifications, live task comments
+- Collaborative description editing (CRDT) + whiteboard + cursors
+
+**AI (config-gated, works on free Groq)**
+- Data-aware assistant with 40+ tool-calling actions
+- "What to do next" prioritization, meeting notes → tasks
+- Weekly digest, subtask suggestions, semantic search
+
+</td><td valign="top" width="50%">
+
+**Billing & plans**
+- Stripe Free/Pro subscriptions (Checkout + Portal + webhooks)
+- Plan gating, grace period + dunning, monthly/annual, Enterprise CTA
+- Marketplace payments via Stripe
+
+**Security & auth**
+- Passkeys (WebAuthn), JWT + refresh, TOTP 2FA + backup codes
+- OAuth (Google/GitHub/LinkedIn), sessions, API keys
+- File encryption at rest, admin IP allowlist, rate limiting, HSTS
+
+**Community**
+- Forum (votes, accepted solution, moderation)
+- Task marketplace (apply → accept → deliver → pay → review)
+- Reputation, leaderboard, achievements, skill endorsements
+
+**Platform & admin**
+- PWA (installable, offline), i18n (EN/UK), dark/light + accent themes
+- Command palette (⌘/Ctrl+K), in-app docs/help
+- Admin: users/roles, moderation, org branding, analytics + audit log
+- Notifications: email digests, quiet hours, per-project mute, Telegram/Viber/push
+
+</td></tr>
+</table>
+
+The full 30-module specification lives in [docs/requirements.md](docs/requirements.md).
+
+---
+
+## Tech stack
+
+- **Backend** — ASP.NET Core (.NET 8) Web API, EF Core 8, PostgreSQL, SignalR, JWT auth, xUnit
+- **Frontend** — React 19 + TypeScript + Vite, Redux Toolkit, Tailwind CSS, Yjs (CRDT), react-i18next (EN/UK), Vitest
+- **Integrations** — Stripe, Fido2NetLib (WebAuthn), OpenAI/Groq, Google Calendar, GitHub, Telegram/Viber, Web Push
+- **Infrastructure** — Docker, optional Redis cache, optional RabbitMQ (notification microservice); deployed on Vercel + Render + Neon
 
 ---
 
@@ -120,11 +209,14 @@ is simply disabled (the app still runs). Enable it by filling in the values.
 
 | Feature | Keys (API `.env`) | Notes |
 | --- | --- | --- |
-| **Google sign-in** | `GoogleOAuth__ClientId` / `ClientSecret` / `RedirectUri` + frontend `VITE_GOOGLE_CLIENT_ID` | From Google Cloud Console |
-| **GitHub sign-in** | `GitHubOAuth__ClientId` / `ClientSecret` / `RedirectUri` + frontend `VITE_GITHUB_CLIENT_ID` | From GitHub Developer settings |
-| **Email** | `Email__SmtpHost` / `SmtpPort` / `SmtpUser` / `SmtpPassword` (or `Email__ApiKey` for SendGrid) | SMTP is used when `SmtpHost` is set; SendGrid API is the fallback |
+| **AI assistant** | `OpenAi__ApiKey` | An OpenAI-compatible key (a free Groq key works) |
+| **Stripe subscriptions** | `Stripe__SecretKey` / `ProPriceId` / `WebhookSecret` (+ optional `ProAnnualPriceId`) | See [docs/deployment.md](docs/deployment.md) |
+| **Passkeys (WebAuthn)** | `Fido2__ServerDomain` / `Origins__0` | Must match the frontend domain |
+| **Google sign-in / Calendar** | `GoogleOAuth__ClientId` / `ClientSecret` / `RedirectUri` + frontend `VITE_GOOGLE_CLIENT_ID` | From Google Cloud Console |
+| **GitHub sign-in / integration** | `GitHubOAuth__ClientId` / `ClientSecret` + frontend `VITE_GITHUB_CLIENT_ID` | From GitHub Developer settings |
+| **Email** | `Email__SmtpHost` / `SmtpPort` / `SmtpUser` / `SmtpPassword` (or `Email__ApiKey` for SendGrid) | SMTP when `SmtpHost` is set; SendGrid is the fallback |
 | **Telegram bot** | `Telegram__BotToken` / `BotUsername` | Token from @BotFather |
-| **Web push** | `Vapid__Subject` / `PublicKey` / `PrivateKey` | The API logs a fresh VAPID key pair at startup when these are empty |
+| **Web push** | `Vapid__Subject` / `PublicKey` / `PrivateKey` | The API logs a fresh VAPID key pair at startup when empty |
 | **Redis cache** | `Redis__Connection` (e.g. `localhost:6379`) | Empty = in-memory cache |
 
 See [src/Taskpilot.API/.env.example](src/Taskpilot.API/.env.example) and
@@ -134,10 +226,8 @@ full list with inline notes.
 ### Calendar subscription
 
 Each user gets a private, auto-updating iCal feed (Calendar → **Subscribe**). Add the
-URL to Google/Apple/Outlook Calendar to keep deadlines in sync. The feed URL is built
-from the API's public host, so an external calendar service can only reach it once the
-API is deployed to a public domain — on `localhost` use **Export .ics** for a one-time
-import instead.
+URL to Google/Apple/Outlook Calendar to keep deadlines in sync. On `localhost` use
+**Export .ics** for a one-time import instead.
 
 ---
 
@@ -146,9 +236,7 @@ import instead.
 Free-tier hosting: PostgreSQL on **Neon**, backend on **Render**, frontend on **Vercel**
 ($0/month). Nothing is host-specific — Fly.io, Koyeb, Railway or a VPS work the same way.
 
-See **[docs/deployment.md](docs/deployment.md)** for the step-by-step guide.
-
-The essentials:
+See **[docs/deployment.md](docs/deployment.md)** for the step-by-step guide. The essentials:
 
 - The root `Dockerfile` builds the API and honours the `PORT` a managed host injects.
 - The database can be configured with a single `DATABASE_URL` (`postgresql://…`) — the app
@@ -162,12 +250,13 @@ The essentials:
 ## Testing
 
 ```bash
-# Backend unit tests
+# Backend unit tests (670+)
 dotnet test
 
-# Frontend type-check and production build
+# Frontend type-check, tests and production build
 cd src/Taskpilot.Frontend
 npx tsc --noEmit
+npx vitest run
 npm run build
 ```
 
@@ -178,12 +267,16 @@ npm run build
 ```
 TaskPilot/
 ├─ src/
-│  ├─ Taskpilot.API/         ASP.NET Core Web API (controllers, services, EF Core, SignalR hubs)
-│  └─ Taskpilot.Frontend/    React + TypeScript + Vite SPA
+│  ├─ Taskpilot.API/            ASP.NET Core Web API (controllers, services, EF Core, SignalR hubs)
+│  ├─ Taskpilot.Frontend/       React + TypeScript + Vite SPA
+│  ├─ Taskpilot.Contracts/      Shared DTOs/messages (dependency-free)
+│  ├─ Taskpilot.Integrations/   DB-free senders (email, Telegram, Viber)
+│  └─ Taskpilot.NotificationService/  Worker consuming the notification queue
 ├─ tests/
-│  └─ Taskpilot.API.Tests/   xUnit backend tests
-├─ docs/                     Requirements spec and screenshots
-├─ docker-compose.yml        Full local stack (API, frontend, Postgres, Redis, RabbitMQ)
-└─ Dockerfile                Backend API image
+│  └─ Taskpilot.API.Tests/      xUnit backend tests
+├─ docs/                        Requirements spec, deployment guide, screenshots
+├─ docker-compose.yml           Full local stack (API, frontend, Postgres, Redis, RabbitMQ)
+└─ Dockerfile                   Backend API image
 ```
-> Tracked in TaskPilot via the GitHub integration.
+
+> Built and tracked in TaskPilot itself, via its GitHub integration.

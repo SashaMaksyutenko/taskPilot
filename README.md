@@ -119,13 +119,17 @@ The full 30-module specification lives in [docs/requirements.md](docs/requiremen
 
 ## Screenshots
 
-| Dashboard | Kanban board |
+| Dashboard (with AI cards) | Kanban board |
 | --- | --- |
 | ![Dashboard](docs/dashboard-live.png) | ![Kanban board](docs/kanban-preview.png) |
 
-| Calendar | Marketplace |
+| Collaborative whiteboard | AI assistant |
 | --- | --- |
-| ![Calendar](docs/calendar-preview.png) | ![Task marketplace](docs/marketplace.png) |
+| ![Collaborative whiteboard](docs/whiteboard.png) | ![AI assistant](docs/assistant.png) |
+
+| Plans & billing | Task marketplace |
+| --- | --- |
+| ![Plans and billing](docs/billing.png) | ![Task marketplace](docs/marketplace.png) |
 
 | Admin panel | Dark theme |
 | --- | --- |

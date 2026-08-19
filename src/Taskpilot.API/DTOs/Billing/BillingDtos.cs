@@ -20,6 +20,12 @@ public class BillingStatusDto
 
     /// <summary>True when a Stripe customer exists, so the billing portal can be opened.</summary>
     public bool CanManage { get; set; }
+
+    /// <summary>True while a renewal payment failed and Stripe is retrying (grace window — still Pro).</summary>
+    public bool PastDue { get; set; }
+
+    /// <summary>True when a yearly Pro price is configured, so checkout can offer annual billing.</summary>
+    public bool AnnualAvailable { get; set; }
 }
 
 /// <summary>A hosted Stripe URL for the client to redirect to.</summary>

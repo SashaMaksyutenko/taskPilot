@@ -35,7 +35,7 @@ public class BillingController : BaseApiController
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Checkout([FromBody] BillingRedirectDto dto)
     {
-        var result = await _billing.CreateCheckoutAsync(CurrentUserEmail() ?? string.Empty, dto.SuccessUrl, dto.CancelUrl);
+        var result = await _billing.CreateCheckoutAsync(CurrentUserEmail() ?? string.Empty, dto.SuccessUrl, dto.CancelUrl, dto.Annual);
         return result.Succeeded ? Ok(new BillingUrlDto { Url = result.Value! }) : BadRequest(new { error = result.Error });
     }
 
@@ -74,4 +74,7 @@ public class BillingRedirectDto
     public string SuccessUrl { get; set; } = string.Empty;
     public string CancelUrl { get; set; } = string.Empty;
     public string? ReturnUrl { get; set; }
+
+    /// <summary>Bill yearly instead of monthly (only if an annual price is configured).</summary>
+    public bool Annual { get; set; }
 }

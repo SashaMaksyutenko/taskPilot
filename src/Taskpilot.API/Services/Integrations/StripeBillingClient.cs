@@ -30,9 +30,9 @@ public class StripeBillingClient : IStripeBillingClient
     public bool IsEnabled => _options.SubscriptionsConfigured;
 
     /// <inheritdoc />
-    public async Task<Result<string>> CreateSubscriptionCheckoutAsync(string? customerId, string? customerEmail, string successUrl, string cancelUrl)
+    public async Task<Result<string>> CreateSubscriptionCheckoutAsync(string priceId, string? customerId, string? customerEmail, string successUrl, string cancelUrl)
     {
-        if (!_options.SubscriptionsConfigured)
+        if (!_options.IsConfigured || string.IsNullOrWhiteSpace(priceId))
             return Result<string>.Fail("Subscriptions are not configured.");
 
         var form = new Dictionary<string, string>
@@ -40,7 +40,7 @@ public class StripeBillingClient : IStripeBillingClient
             ["mode"] = "subscription",
             ["success_url"] = successUrl,
             ["cancel_url"] = cancelUrl,
-            ["line_items[0][price]"] = _options.ProPriceId,
+            ["line_items[0][price]"] = priceId,
             ["line_items[0][quantity]"] = "1",
         };
         // Reuse an existing customer if we have one, else let Stripe create one from the email.

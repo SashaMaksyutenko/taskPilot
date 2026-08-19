@@ -101,4 +101,11 @@ public class OrganizationSettings
 
     /// <summary>When the current Pro period ends / renews (from Stripe); null on Free.</summary>
     public DateTime? PlanRenewsAt { get; set; }
+
+    /// <summary>
+    /// True while a renewal payment has failed and Stripe is retrying (subscription "past_due").
+    /// Pro features stay unlocked during this grace window; the plan only drops to Free once the
+    /// subscription is actually canceled/unpaid.
+    /// </summary>
+    public bool PlanPastDue { get; set; }
 }

@@ -22,8 +22,14 @@ public class StripeOptions
     /// </summary>
     public string ProPriceId { get; set; } = string.Empty;
 
+    /// <summary>Optional annual Pro Price id (price_…). When set, checkout can offer yearly billing.</summary>
+    public string ProAnnualPriceId { get; set; } = string.Empty;
+
     /// <summary>True when a Pro subscription price is configured (in addition to the secret key).</summary>
     public bool SubscriptionsConfigured => IsConfigured && !string.IsNullOrWhiteSpace(ProPriceId);
+
+    /// <summary>True when an annual Pro price is also configured.</summary>
+    public bool AnnualConfigured => SubscriptionsConfigured && !string.IsNullOrWhiteSpace(ProAnnualPriceId);
 
     /// <summary>True only when a secret key is configured.</summary>
     public bool IsConfigured => !string.IsNullOrWhiteSpace(SecretKey);

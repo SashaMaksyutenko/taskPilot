@@ -1,7 +1,9 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Options;
 using Moq;
 using Taskpilot.API.Common;
+using Taskpilot.API.Configuration;
 using Taskpilot.API.Data;
 using Taskpilot.API.Models;
 using Taskpilot.API.Services;
@@ -10,18 +12,22 @@ using Xunit;
 namespace Taskpilot.API.Tests;
 
 /// <summary>
-/// Tests for workspace billing: the Free-plan project gate (active only when Stripe is configured)
-/// and the Stripe webhook → plan transitions.
+/// Tests for workspace billing: the Free-plan project gate (active only when Stripe is configured),
+/// the Stripe webhook → plan transitions, and the failed-payment grace window + admin alert.
 /// </summary>
 public class BillingServiceTests
 {
-    private static BillingService Make(TaskpilotDbContext ctx, bool billingEnabled)
+    private static BillingService Make(TaskpilotDbContext ctx, bool billingEnabled) => MakeWith(ctx, billingEnabled).svc;
+
+    private static (BillingService svc, Mock<INotificationService> notify) MakeWith(TaskpilotDbContext ctx, bool billingEnabled)
     {
         var stripe = new Mock<IStripeBillingClient>();
         stripe.SetupGet(s => s.IsEnabled).Returns(billingEnabled);
         stripe.Setup(s => s.GetSubscriptionAsync(It.IsAny<string>()))
               .ReturnsAsync(Result<(bool, DateTime?)>.Ok((true, DateTime.UtcNow.AddDays(30))));
-        return new BillingService(ctx, stripe.Object, NullLogger<BillingService>.Instance);
+        var options = Options.Create(new StripeOptions { SecretKey = "sk_test", ProPriceId = "price_m" });
+        var notify = new Mock<INotificationService>();
+        return (new BillingService(ctx, stripe.Object, options, notify.Object, NullLogger<BillingService>.Instance), notify);
     }
 
     private static async Task AddProjectsAsync(TaskpilotDbContext ctx, Guid owner, int count)
@@ -143,5 +149,49 @@ public class BillingServiceTests
         await svc.ProcessWebhookAsync(
             """{"type":"customer.subscription.updated","data":{"object":{"id":"sub_1","status":"canceled"}}}""");
         Assert.Equal("Free", (await ctx.OrganizationSettings.FirstAsync()).Plan);
+    }
+
+    [Fact]
+    public async Task Webhook_PastDue_KeepsProDuringGrace()
+    {
+        await using var ctx = TestDb.CreateContext();
+        var svc = Make(ctx, billingEnabled: true);
+
+        await svc.ProcessWebhookAsync(
+            """{"type":"customer.subscription.updated","data":{"object":{"id":"sub_1","status":"past_due"}}}""");
+
+        var s = await ctx.OrganizationSettings.FirstAsync();
+        Assert.Equal("Pro", s.Plan);   // still Pro during the grace window
+        Assert.True(s.PlanPastDue);
+        Assert.True(await svc.IsProAsync()); // features stay unlocked
+        Assert.True((await svc.GetStatusAsync()).PastDue);
+    }
+
+    [Fact]
+    public async Task Webhook_PaymentFailed_FlagsAndNotifiesAdmins()
+    {
+        await using var ctx = TestDb.CreateContext();
+        var admin = await TestDb.AddUserAsync(ctx, "Admin");
+        (await ctx.Users.FindAsync(admin))!.Role = Role.Admin;
+        await ctx.SaveChangesAsync();
+        var (svc, notify) = MakeWith(ctx, billingEnabled: true);
+
+        await svc.ProcessWebhookAsync("""{"type":"invoice.payment_failed","data":{"object":{"id":"in_1"}}}""");
+
+        Assert.True((await ctx.OrganizationSettings.FirstAsync()).PlanPastDue);
+        notify.Verify(n => n.CreateAsync(admin, NotificationType.General, It.IsAny<string>(), It.IsAny<string>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task Webhook_InvoicePaid_ClearsPastDue()
+    {
+        await using var ctx = TestDb.CreateContext();
+        ctx.OrganizationSettings.Add(new OrganizationSettings { Id = OrganizationSettings.SingletonId, Plan = "Pro", PlanPastDue = true });
+        await ctx.SaveChangesAsync();
+        var svc = Make(ctx, billingEnabled: true);
+
+        await svc.ProcessWebhookAsync("""{"type":"invoice.paid","data":{"object":{"id":"in_1"}}}""");
+
+        Assert.False((await ctx.OrganizationSettings.FirstAsync()).PlanPastDue);
     }
 }

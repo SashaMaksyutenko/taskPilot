@@ -8,6 +8,10 @@ export interface BillingStatus {
   projectCount: number
   renewsAt: string | null
   canManage: boolean
+  /** A renewal payment failed and Stripe is retrying — still Pro during the grace window. */
+  pastDue: boolean
+  /** A yearly price is configured, so checkout can offer annual billing. */
+  annualAvailable: boolean
 }
 
 export const billingService = {
@@ -16,8 +20,8 @@ export const billingService = {
   },
 
   /** Starts a Pro checkout (admin); returns the hosted Stripe URL to redirect to. */
-  checkout(successUrl: string, cancelUrl: string): Promise<string> {
-    return api.post<{ url: string }>('/api/billing/checkout', { successUrl, cancelUrl }).then((r) => r.data.url)
+  checkout(successUrl: string, cancelUrl: string, annual = false): Promise<string> {
+    return api.post<{ url: string }>('/api/billing/checkout', { successUrl, cancelUrl, annual }).then((r) => r.data.url)
   },
 
   /** Opens the billing portal (admin); returns the hosted Stripe URL. */

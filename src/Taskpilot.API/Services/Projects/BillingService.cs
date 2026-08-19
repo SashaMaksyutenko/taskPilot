@@ -1,6 +1,8 @@
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Taskpilot.API.Common;
+using Taskpilot.API.Configuration;
 using Taskpilot.API.Data;
 using Taskpilot.API.DTOs.Billing;
 using Taskpilot.API.Models;
@@ -18,12 +20,21 @@ public class BillingService : IBillingService
 
     private readonly TaskpilotDbContext _context;
     private readonly IStripeBillingClient _stripe;
+    private readonly StripeOptions _options;
+    private readonly INotificationService _notifications;
     private readonly ILogger<BillingService> _logger;
 
-    public BillingService(TaskpilotDbContext context, IStripeBillingClient stripe, ILogger<BillingService> logger)
+    public BillingService(
+        TaskpilotDbContext context,
+        IStripeBillingClient stripe,
+        IOptions<StripeOptions> options,
+        INotificationService notifications,
+        ILogger<BillingService> logger)
     {
         _context = context;
         _stripe = stripe;
+        _options = options.Value;
+        _notifications = notifications;
         _logger = logger;
     }
 
@@ -43,6 +54,8 @@ public class BillingService : IBillingService
             ProjectCount = projectCount,
             RenewsAt = settings.PlanRenewsAt,
             CanManage = !string.IsNullOrEmpty(settings.StripeCustomerId),
+            PastDue = settings.PlanPastDue,
+            AnnualAvailable = _options.AnnualConfigured,
         };
     }
 
@@ -67,13 +80,15 @@ public class BillingService : IBillingService
     }
 
     /// <inheritdoc />
-    public async Task<Result<string>> CreateCheckoutAsync(string userEmail, string successUrl, string cancelUrl)
+    public async Task<Result<string>> CreateCheckoutAsync(string userEmail, string successUrl, string cancelUrl, bool annual)
     {
         if (!_stripe.IsEnabled)
             return Result<string>.Fail("Subscriptions are not configured.");
 
+        // Fall back to monthly if a yearly price isn't configured.
+        var priceId = annual && _options.AnnualConfigured ? _options.ProAnnualPriceId : _options.ProPriceId;
         var settings = await GetOrCreateAsync();
-        return await _stripe.CreateSubscriptionCheckoutAsync(settings.StripeCustomerId, userEmail, successUrl, cancelUrl);
+        return await _stripe.CreateSubscriptionCheckoutAsync(priceId, settings.StripeCustomerId, userEmail, successUrl, cancelUrl);
     }
 
     /// <inheritdoc />
@@ -113,18 +128,50 @@ public class BillingService : IBillingService
                 settings.StripeCustomerId = Str(obj, "customer") ?? settings.StripeCustomerId;
                 settings.StripeSubscriptionId = Str(obj, "subscription") ?? settings.StripeSubscriptionId;
                 settings.Plan = PlanPro;
+                settings.PlanPastDue = false;
                 await SyncRenewalAsync(settings);
                 break;
 
             case "customer.subscription.updated":
-                var active = Str(obj, "status") is "active" or "trialing";
-                settings.Plan = active ? PlanPro : PlanFree;
-                settings.PlanRenewsAt = active ? UnixToUtc(obj, "current_period_end") : null;
-                if (!active) settings.StripeSubscriptionId = null;
+                var status = Str(obj, "status");
+                if (status is "active" or "trialing")
+                {
+                    // Healthy: on Pro, payment current.
+                    settings.Plan = PlanPro;
+                    settings.PlanPastDue = false;
+                    settings.PlanRenewsAt = UnixToUtc(obj, "current_period_end");
+                }
+                else if (status == "past_due")
+                {
+                    // Renewal failed but Stripe is retrying — keep Pro during the grace window.
+                    settings.Plan = PlanPro;
+                    settings.PlanPastDue = true;
+                }
+                else
+                {
+                    // canceled / unpaid / incomplete_expired — grace exhausted.
+                    settings.Plan = PlanFree;
+                    settings.PlanPastDue = false;
+                    settings.PlanRenewsAt = null;
+                    settings.StripeSubscriptionId = null;
+                }
+                break;
+
+            case "invoice.payment_failed":
+                // A renewal charge failed — flag it and tell the admins to fix their card.
+                settings.PlanPastDue = true;
+                await NotifyAdminsAsync("A subscription payment failed. Update your card in Plan & billing to keep Pro.");
+                break;
+
+            case "invoice.paid":
+            case "invoice.payment_succeeded":
+                // Payment recovered.
+                settings.PlanPastDue = false;
                 break;
 
             case "customer.subscription.deleted":
                 settings.Plan = PlanFree;
+                settings.PlanPastDue = false;
                 settings.StripeSubscriptionId = null;
                 settings.PlanRenewsAt = null;
                 break;
@@ -135,7 +182,18 @@ public class BillingService : IBillingService
 
         settings.UpdatedAt = DateTime.UtcNow;
         await _context.SaveChangesAsync();
-        _logger.LogInformation("Billing webhook applied: {Type} → plan {Plan}", type, settings.Plan);
+        _logger.LogInformation("Billing webhook applied: {Type} → plan {Plan} (pastDue={PastDue})", type, settings.Plan, settings.PlanPastDue);
+    }
+
+    /// <summary>Sends an in-app notification to every admin (dunning / billing alerts).</summary>
+    private async Task NotifyAdminsAsync(string message)
+    {
+        var adminIds = await _context.Users
+            .Where(u => u.Role == Role.Admin && u.IsActive)
+            .Select(u => u.Id)
+            .ToListAsync();
+        foreach (var id in adminIds)
+            await _notifications.CreateAsync(id, NotificationType.General, message, "/admin?tab=settings");
     }
 
     private async Task SyncRenewalAsync(OrganizationSettings settings)

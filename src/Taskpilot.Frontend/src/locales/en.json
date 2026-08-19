@@ -597,6 +597,8 @@
     "projectsUsage": "Projects: {{count}} / {{limit}}",
     "upgrade": "Upgrade to Pro",
     "manage": "Manage billing",
+    "annual": "Bill yearly",
+    "pastDue": "A payment failed. Update your card via Manage billing to keep Pro — access continues while Stripe retries.",
     "notConfigured": "Billing is not configured — set your Stripe keys to enable paid plans.",
     "upgraded": "You're on Pro — thanks!",
     "canceled": "Checkout canceled.",

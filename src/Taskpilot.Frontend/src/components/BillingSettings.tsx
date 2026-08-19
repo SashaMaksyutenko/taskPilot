@@ -13,6 +13,7 @@ export default function BillingSettings() {
   const { t } = useTranslation()
   const [status, setStatus] = useState<BillingStatus | null>(null)
   const [busy, setBusy] = useState(false)
+  const [annual, setAnnual] = useState(false)
 
   const loaded = useRef(false)
   useEffect(() => {
@@ -49,7 +50,7 @@ export default function BillingSettings() {
   }
 
   const base = `${window.location.origin}/admin?tab=settings&billing=`
-  const upgrade = () => redirect(() => billingService.checkout(`${base}success`, `${base}cancel`))
+  const upgrade = () => redirect(() => billingService.checkout(`${base}success`, `${base}cancel`, annual))
   const manage = () => redirect(() => billingService.portal(`${window.location.origin}/admin?tab=settings`))
 
   if (!status) return null
@@ -80,10 +81,23 @@ export default function BillingSettings() {
         </span>
       </div>
 
+      {/* Failed-payment warning (grace window): still Pro, but the card needs fixing. */}
+      {status.pastDue && (
+        <div className="mt-3 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:border-amber-700 dark:bg-amber-950/30 dark:text-amber-200">
+          ⚠️ {t('billing.pastDue')}
+        </div>
+      )}
+
       {!status.billingEnabled ? (
         <p className="mt-3 text-xs text-muted">{t('billing.notConfigured')}</p>
       ) : (
-        <div className="mt-4 flex flex-wrap gap-2">
+        <div className="mt-4 flex flex-wrap items-center gap-2">
+          {!isPro && status.annualAvailable && (
+            <label className="mr-1 inline-flex items-center gap-1.5 text-xs text-muted select-none">
+              <input type="checkbox" checked={annual} onChange={(e) => setAnnual(e.target.checked)} className="h-3.5 w-3.5 accent-primary" />
+              {t('billing.annual')}
+            </label>
+          )}
           {!isPro && (
             <button
               onClick={upgrade}

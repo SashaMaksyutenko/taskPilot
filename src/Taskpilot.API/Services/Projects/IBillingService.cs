@@ -22,8 +22,8 @@ public interface IBillingService
     /// </summary>
     Task<bool> IsProAsync();
 
-    /// <summary>Starts a Pro subscription checkout; returns the hosted Stripe URL.</summary>
-    Task<Result<string>> CreateCheckoutAsync(string userEmail, string successUrl, string cancelUrl);
+    /// <summary>Starts a Pro subscription checkout (monthly, or yearly when <paramref name="annual"/>); returns the hosted Stripe URL.</summary>
+    Task<Result<string>> CreateCheckoutAsync(string userEmail, string successUrl, string cancelUrl, bool annual);
 
     /// <summary>Opens the Stripe billing portal to manage/cancel; returns the hosted URL.</summary>
     Task<Result<string>> CreatePortalAsync(string returnUrl);

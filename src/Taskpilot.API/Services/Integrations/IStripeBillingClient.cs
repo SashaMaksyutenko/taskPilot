@@ -11,8 +11,8 @@ public interface IStripeBillingClient
     /// <summary>True when a secret key and a Pro price id are configured.</summary>
     bool IsEnabled { get; }
 
-    /// <summary>Creates a subscription Checkout session for the Pro price; returns its hosted URL.</summary>
-    Task<Result<string>> CreateSubscriptionCheckoutAsync(string? customerId, string? customerEmail, string successUrl, string cancelUrl);
+    /// <summary>Creates a subscription Checkout session for the given price; returns its hosted URL.</summary>
+    Task<Result<string>> CreateSubscriptionCheckoutAsync(string priceId, string? customerId, string? customerEmail, string successUrl, string cancelUrl);
 
     /// <summary>Creates a billing-portal session so the customer can manage or cancel; returns its URL.</summary>
     Task<Result<string>> CreatePortalSessionAsync(string customerId, string returnUrl);

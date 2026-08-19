@@ -13,4 +13,10 @@ public interface ITaskAiService
     /// Returns the parsed suggestions (the user chooses which to actually create).
     /// </summary>
     Task<Result<List<string>>> SuggestSubtasksAsync(Guid userId, Guid taskId);
+
+    /// <summary>
+    /// Extracts concrete action-item task titles from free-form meeting notes for a project the
+    /// user can access. Returns the parsed titles (the user picks which to actually create).
+    /// </summary>
+    Task<Result<List<string>>> ExtractTasksFromNotesAsync(Guid userId, Guid projectId, string notes);
 }

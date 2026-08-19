@@ -17,6 +17,7 @@ export default function BoardActionsMenu({
   onFields,
   onEpics,
   onWhiteboard,
+  onNotesToTasks,
   onShare,
   onGitHub,
   onImport,
@@ -31,6 +32,7 @@ export default function BoardActionsMenu({
   onFields: () => void
   onEpics: () => void
   onWhiteboard: () => void
+  onNotesToTasks: () => void
   onShare: () => void
   onGitHub: () => void
   onImport: () => void
@@ -74,6 +76,11 @@ export default function BoardActionsMenu({
           {canWrite && features.whiteboard && (
             <DropdownMenu.Item className={menuItemClass} onSelect={onWhiteboard}>
               {t('whiteboard.button')}
+            </DropdownMenu.Item>
+          )}
+          {canWrite && features.ai && (
+            <DropdownMenu.Item className={menuItemClass} onSelect={onNotesToTasks}>
+              {t('notesToTasks.button')}
             </DropdownMenu.Item>
           )}
           {isOwner && (

@@ -132,4 +132,50 @@ public class TaskAiServiceTests
         Assert.Equal("system", captured![0].Role);
         Assert.Contains("Ship beta", captured[^1].Content);
     }
+
+    // --- Meeting notes → tasks ---
+
+    [Fact]
+    public async Task ExtractTasks_ParsesActionItems_FromNotes()
+    {
+        await using var ctx = TestDb.CreateContext();
+        var owner = await TestDb.AddUserAsync(ctx, "Owner");
+        var projectId = await TestDb.AddProjectAsync(ctx, owner);
+        var (svc, client) = Create(ctx);
+        IReadOnlyList<ChatBotMessage>? captured = null;
+        client.Setup(c => c.CompleteAsync(It.IsAny<IReadOnlyList<ChatBotMessage>>()))
+            .Callback<IReadOnlyList<ChatBotMessage>>(m => captured = m)
+            .ReturnsAsync(Result<string>.Ok("- Ship the report\n1. Email Bob\nEmail Bob\n"));
+
+        var result = await svc.ExtractTasksFromNotesAsync(owner, projectId, "Bob will email; we ship the report Friday.");
+
+        Assert.True(result.Succeeded);
+        Assert.Equal(new[] { "Ship the report", "Email Bob" }, result.Value); // cleaned + de-duped
+        Assert.Contains("we ship the report", captured![^1].Content); // the notes reach the model
+    }
+
+    [Fact]
+    public async Task ExtractTasks_EmptyNotes_FailsWithoutCallingModel()
+    {
+        await using var ctx = TestDb.CreateContext();
+        var owner = await TestDb.AddUserAsync(ctx, "Owner");
+        var projectId = await TestDb.AddProjectAsync(ctx, owner);
+        var (svc, client) = Create(ctx);
+
+        Assert.False((await svc.ExtractTasksFromNotesAsync(owner, projectId, "   ")).Succeeded);
+        client.Verify(c => c.CompleteAsync(It.IsAny<IReadOnlyList<ChatBotMessage>>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task ExtractTasks_NonMember_Fails()
+    {
+        await using var ctx = TestDb.CreateContext();
+        var owner = await TestDb.AddUserAsync(ctx, "Owner");
+        var outsider = await TestDb.AddUserAsync(ctx, "Outsider");
+        var projectId = await TestDb.AddProjectAsync(ctx, owner);
+        var (svc, client) = Create(ctx);
+
+        Assert.False((await svc.ExtractTasksFromNotesAsync(outsider, projectId, "do a thing")).Succeeded);
+        client.Verify(c => c.CompleteAsync(It.IsAny<IReadOnlyList<ChatBotMessage>>()), Times.Never);
+    }
 }

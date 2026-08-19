@@ -251,6 +251,13 @@ export const taskService = {
       .then((r) => r.data.suggestions)
   },
 
+  /** Extracts action-item task titles from pasted meeting notes (Pro feature). */
+  extractTasksFromNotes(projectId: string, notes: string): Promise<string[]> {
+    return api
+      .post<{ tasks: string[] }>(`/api/projects/${projectId}/ai/extract-tasks`, { notes })
+      .then((r) => r.data.tasks)
+  },
+
   /** Lists a task's deadline-extension requests (newest first). */
   getExtensionRequests(taskId: string): Promise<ExtensionRequest[]> {
     return api.get<ExtensionRequest[]>(`/api/tasks/${taskId}/extension-requests`).then((r) => r.data)

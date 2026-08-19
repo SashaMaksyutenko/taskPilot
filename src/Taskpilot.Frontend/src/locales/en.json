@@ -605,6 +605,20 @@
     "proFeature": "A Pro feature",
     "proFeatureHint": "This feature is included in the Pro plan. Ask an admin to upgrade the workspace to unlock it."
   },
+  "notesToTasks": {
+    "button": "Notes → tasks (AI)",
+    "title": "Meeting notes → tasks",
+    "close": "Close",
+    "hint": "Paste your meeting notes and the AI pulls out the action items. Review, then create them as tasks in the Backlog.",
+    "placeholder": "Paste meeting notes…",
+    "extract": "Extract tasks",
+    "extracting": "Extracting…",
+    "review": "Review & pick",
+    "none": "No action items were found.",
+    "cancel": "Cancel",
+    "create": "Create {{count}} tasks",
+    "created": "Created {{count}} tasks"
+  },
   "whiteboard": {
     "button": "Whiteboard",
     "title": "Whiteboard",

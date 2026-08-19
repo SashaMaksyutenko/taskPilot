@@ -8,6 +8,7 @@ import ProjectMembersModal from '../components/modals/ProjectMembersModal'
 import AutomationsModal from '../components/modals/AutomationsModal'
 import CustomFieldsModal from '../components/modals/CustomFieldsModal'
 import EpicsModal from '../components/modals/EpicsModal'
+import NotesToTasksModal from '../components/modals/NotesToTasksModal'
 import BoardActionsMenu from '../components/menus/BoardActionsMenu'
 import ShareBoardModal from '../components/modals/ShareBoardModal'
 import GitHubModal from '../components/modals/GitHubModal'
@@ -85,6 +86,7 @@ export default function BoardPage() {
   const [automationsOpen, setAutomationsOpen] = useState(false)
   const [customFieldsOpen, setCustomFieldsOpen] = useState(false)
   const [epicsOpen, setEpicsOpen] = useState(false)
+  const [notesToTasksOpen, setNotesToTasksOpen] = useState(false)
   // The project's epics, for the coloured chip shown on each task card.
   const [epics, setEpics] = useState<Epic[]>([])
   const [shareOpen, setShareOpen] = useState(false)
@@ -579,6 +581,7 @@ export default function BoardPage() {
             onFields={() => setCustomFieldsOpen(true)}
             onEpics={() => setEpicsOpen(true)}
             onWhiteboard={() => navigate(`/projects/${projectId}/whiteboard`)}
+            onNotesToTasks={() => setNotesToTasksOpen(true)}
             onShare={() => setShareOpen(true)}
             onGitHub={() => setGithubOpen(true)}
             onImport={() => importInputRef.current?.click()}
@@ -1071,6 +1074,14 @@ export default function BoardPage() {
       )}
 
       {shareOpen && <ShareBoardModal projectId={projectId} onClose={() => setShareOpen(false)} />}
+
+      {notesToTasksOpen && (
+        <NotesToTasksModal
+          projectId={projectId}
+          onClose={() => setNotesToTasksOpen(false)}
+          onCreated={() => taskService.getTasks(projectId).then(setTasks).catch(() => {})}
+        />
+      )}
 
       {githubOpen && <GitHubModal projectId={projectId} onClose={() => setGithubOpen(false)} />}
 

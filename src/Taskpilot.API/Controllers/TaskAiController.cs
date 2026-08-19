@@ -10,10 +10,12 @@ namespace Taskpilot.API.Controllers;
 public class TaskAiController : BaseApiController
 {
     private readonly ITaskAiService _taskAi;
+    private readonly IBillingService _billing;
 
-    public TaskAiController(ITaskAiService taskAi)
+    public TaskAiController(ITaskAiService taskAi, IBillingService billing)
     {
         _taskAi = taskAi;
+        _billing = billing;
     }
 
     /// <summary>Whether AI features are configured and available.</summary>
@@ -32,4 +34,25 @@ public class TaskAiController : BaseApiController
             ? Ok(new { suggestions = result.Value })
             : BadRequest(new { error = result.Error });
     }
+
+    /// <summary>Extracts action-item task titles from pasted meeting notes (Pro feature).</summary>
+    [HttpPost("api/projects/{projectId:guid}/ai/extract-tasks")]
+    public async Task<IActionResult> ExtractTasks(Guid projectId, [FromBody] ExtractTasksDto dto)
+    {
+        var userId = CurrentUserId();
+        if (userId is null) return Unauthorized();
+        if (!await _billing.IsProAsync())
+            return StatusCode(StatusCodes.Status402PaymentRequired, new { error = "AI features are on the Pro plan. Upgrade to use them." });
+
+        var result = await _taskAi.ExtractTasksFromNotesAsync(userId.Value, projectId, dto.Notes ?? string.Empty);
+        return result.Succeeded
+            ? Ok(new { tasks = result.Value })
+            : BadRequest(new { error = result.Error });
+    }
+}
+
+/// <summary>Free-form meeting notes to extract tasks from.</summary>
+public class ExtractTasksDto
+{
+    public string? Notes { get; set; }
 }

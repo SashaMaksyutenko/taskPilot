@@ -72,6 +72,47 @@ public partial class TaskAiService : ITaskAiService
         return Result<List<string>>.Ok(suggestions);
     }
 
+    private const int MaxNotesLength = 6000;
+
+    private const string ExtractPrompt =
+        "You turn meeting notes into a task list. Extract only concrete, actionable to-dos. " +
+        "Reply with ONLY a plain list — one task per line, imperative voice, no numbering, no bullets, " +
+        "no headings, no commentary. Skip discussion, context and decisions that are not action items. " +
+        "Keep each under 100 characters. If there are no action items, reply with nothing. " +
+        "Reply in the same language as the notes.";
+
+    /// <inheritdoc />
+    public async Task<Result<List<string>>> ExtractTasksFromNotesAsync(Guid userId, Guid projectId, string notes)
+    {
+        if (!_client.IsEnabled)
+            return Result<List<string>>.Fail("The AI assistant is not configured.");
+
+        notes = notes?.Trim() ?? string.Empty;
+        if (notes.Length == 0)
+            return Result<List<string>>.Fail("Paste some notes first.");
+        if (notes.Length > MaxNotesLength)
+            notes = notes[..MaxNotesLength];
+
+        // Any member of the project can extract tasks into it.
+        if (!await ProjectAccess.CanAccessAsync(_context, projectId, userId))
+            return Result<List<string>>.Fail("Project not found.");
+
+        var reply = await _client.CompleteAsync(new List<ChatBotMessage>
+        {
+            new("system", ExtractPrompt),
+            new("user", notes),
+        });
+        if (!reply.Succeeded)
+            return Result<List<string>>.Fail(reply.Error!);
+
+        var tasks = ParseList(reply.Value!);
+        if (tasks.Count == 0)
+            return Result<List<string>>.Fail("No action items were found in the notes.");
+
+        _logger.LogInformation("AI extracted {Count} tasks from notes. ProjectId: {ProjectId}", tasks.Count, projectId);
+        return Result<List<string>>.Ok(tasks);
+    }
+
     /// <summary>Turns the model's free-text list into clean, deduplicated subtask titles.</summary>
     private static List<string> ParseList(string text)
     {

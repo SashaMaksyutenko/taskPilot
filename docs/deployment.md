@@ -170,16 +170,26 @@ on in the Google Cloud Console:
 > `calendar.events` scope is *sensitive*, so publishing may require Google verification.
 
 **GitHub account link (per-user repos)** lets each user connect *their own* GitHub account and
-browse their repositories from **Settings** — separate from the project webhook integration. It
-needs a **dedicated OAuth app** (not the sign-in one, which has a different callback):
+browse their repositories from **Settings** — separate from the project webhook integration. Its
+callback is `https://<frontend>/settings`.
 
-1. GitHub → *Settings → Developer settings → OAuth Apps → New OAuth App*.
-2. Set the **Authorization callback URL** to `https://<frontend>/settings` (the app requests the
-   `repo` scope so it can list private repos).
-3. Set on Render: `GitHubIntegration__ClientId` and `GitHubIntegration__ClientSecret`.
+You can **reuse the GitHub sign-in OAuth app** — modern OAuth apps allow up to 10 redirect URIs, so
+one app serves both:
 
+1. Open the OAuth app (GitHub → *Settings → Developer settings → OAuth Apps*).
+2. Under **Redirect URIs**, **Add redirect URI** = `https://<frontend>/settings` (keep the existing
+   sign-in callback `.../auth/github/callback`), then **Update application**. A wildcard on the
+   sign-in URI does *not* cover `/settings`, so add it explicitly.
+3. Set on Render: `GitHubIntegration__ClientId` and `GitHubIntegration__ClientSecret` — the **same
+   values** as `GitHubOAuth__ClientId` / `GitHubOAuth__ClientSecret` (no new secret needed).
+
+*(Prefer isolation? Create a separate OAuth App instead, with callback `https://<frontend>/settings`,
+and use its own client id/secret.)*
+
+The `repo` scope is requested by the app at connect time (nothing to configure on the OAuth app).
 Left unset, the GitHub section on Settings is hidden. The access token is stored server-side and
-used only to list the user's repositories on their behalf.
+used only to list the user's repositories on their behalf. For local testing, also add
+`http://localhost:5173/settings` as a redirect URI.
 
 ---
 

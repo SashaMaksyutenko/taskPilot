@@ -371,6 +371,7 @@ Stay in the loop across channels:
 - **Telegram / Viber** — link your account in Settings to receive notifications (and chat with the AI assistant over Telegram).
 - **Browser push** — enable it to get alerts even when the tab is closed.
 - **Google Calendar** — on the *Calendar* page press *Connect* for two-way sync of your task deadlines (moving an event in Google reschedules the task), or *Subscribe* for a read-only iCal feed.
+- **GitHub** — the project owner can link a repository (board **GitHub** button) so commits and pull requests that mention a task connect to it; when a PR that closes a task is merged, the task moves to **Review** by default so a person still confirms it — or straight to *Done*, or nowhere (the owner picks). Separately, connect **your own** GitHub account in *Settings* to browse your repositories.
 - **Quiet hours** — silence email/push during a nightly window; in-app notifications still arrive.
 
 You can also mute a whole project or specific notification types.`,
@@ -383,6 +384,7 @@ You can also mute a whole project or specific notification types.`,
 - **Telegram / Viber** — залінкуйте акаунт у Налаштуваннях, щоб отримувати сповіщення (і спілкуватися з AI-асистентом через Telegram).
 - **Push у браузері** — увімкніть, щоб отримувати сповіщення навіть із закритою вкладкою.
 - **Google Календар** — на сторінці *Календар* натисніть *Підключити* для двосторонньої синхронізації дедлайнів (переміщення події в Google переносить задачу), або *Підписатися* для read-only iCal-фіду.
+- **GitHub** — власник проєкту може під'єднати репозиторій (кнопка **GitHub** на дошці), щоб комміти та pull request-и, які згадують задачу, лінкувались до неї; коли merged-PR закриває задачу, вона за замовчуванням переходить у **Review**, щоб людина її ще підтвердила — або одразу в *Done*, або нікуди (обирає власник). Окремо в *Налаштуваннях* можна під'єднати **свій** GitHub і переглядати власні репозиторії.
 - **Тихі години** — вимикають email/push у нічному вікні; сповіщення в застосунку все одно надходять.
 
 Також можна заглушити цілий проєкт або окремі типи сповіщень.`,

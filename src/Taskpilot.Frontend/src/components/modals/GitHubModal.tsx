@@ -5,12 +5,14 @@ import Button from '../ui/Button'
 import Input from '../ui/Input'
 import { apiErrorMessage } from '../../lib/apiError'
 import { notify } from '../../lib/toast'
-import { gitHubService, type GitHubConnectResult, type GitHubStatus } from '../../services/gitHubService'
+import { gitHubService, type GitHubConnectResult, type GitHubMergeAction, type GitHubStatus } from '../../services/gitHubService'
+
+const MERGE_ACTIONS: GitHubMergeAction[] = ['None', 'Review', 'Done']
 
 /**
  * Board owner tool: link a GitHub repo to the project and show the webhook URL + secret to
  * configure in the repo's settings. Commits/PRs that mention a task id then link to it, and a
- * merged PR that "closes" a task moves it to Done.
+ * merged PR that "closes" a task moves it per the project's chosen action (Review by default).
  */
 export default function GitHubModal({ projectId, onClose }: { projectId: string; onClose: () => void }) {
   const { t } = useTranslation()
@@ -26,7 +28,7 @@ export default function GitHubModal({ projectId, onClose }: { projectId: string;
         setStatus(s)
         setRepo(s.repo ?? '')
       })
-      .catch(() => setStatus({ connected: false, repo: null, webhookUrl: null }))
+      .catch(() => setStatus({ connected: false, repo: null, webhookUrl: null, mergeAction: 'Review' }))
   }, [projectId])
 
   const connect = async () => {
@@ -34,7 +36,7 @@ export default function GitHubModal({ projectId, onClose }: { projectId: string;
     try {
       const res = await gitHubService.connect(projectId, repo.trim())
       setResult(res)
-      setStatus({ connected: true, repo: res.repo, webhookUrl: res.webhookUrl })
+      setStatus((s) => ({ connected: true, repo: res.repo, webhookUrl: res.webhookUrl, mergeAction: s?.mergeAction ?? 'Review' }))
     } catch (e) {
       notify.error(apiErrorMessage(e))
     } finally {
@@ -46,7 +48,7 @@ export default function GitHubModal({ projectId, onClose }: { projectId: string;
     setBusy(true)
     try {
       await gitHubService.disconnect(projectId)
-      setStatus({ connected: false, repo: null, webhookUrl: null })
+      setStatus({ connected: false, repo: null, webhookUrl: null, mergeAction: 'Review' })
       setResult(null)
       setRepo('')
       notify.success(t('github.disconnected'))
@@ -54,6 +56,17 @@ export default function GitHubModal({ projectId, onClose }: { projectId: string;
       notify.error(apiErrorMessage(e))
     } finally {
       setBusy(false)
+    }
+  }
+
+  const changeMergeAction = async (action: GitHubMergeAction) => {
+    const prev = status
+    setStatus((s) => (s ? { ...s, mergeAction: action } : s)) // optimistic
+    try {
+      setStatus(await gitHubService.setMergeAction(projectId, action))
+    } catch (e) {
+      setStatus(prev) // rollback
+      notify.error(apiErrorMessage(e))
     }
   }
 
@@ -92,6 +105,25 @@ export default function GitHubModal({ projectId, onClose }: { projectId: string;
             <Button onClick={connect} disabled={busy || !repo.trim()}>
               {t('github.connect')}
             </Button>
+          </div>
+        )}
+
+        {status?.connected && (
+          <div className="mb-4 rounded-lg border border-border p-4 text-sm">
+            <label htmlFor="gh-merge-action" className="block font-semibold">{t('github.mergeActionTitle')}</label>
+            <p className="mb-2 mt-0.5 text-xs text-muted">{t('github.mergeActionDesc')}</p>
+            <select
+              id="gh-merge-action"
+              value={status.mergeAction}
+              onChange={(e) => changeMergeAction(e.target.value as GitHubMergeAction)}
+              className="w-full rounded-lg border border-border bg-canvas px-3 py-2 text-sm outline-none focus:border-primary"
+            >
+              {MERGE_ACTIONS.map((a) => (
+                <option key={a} value={a}>
+                  {t(`github.mergeAction.${a}`)}
+                </option>
+              ))}
+            </select>
           </div>
         )}
 

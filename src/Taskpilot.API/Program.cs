@@ -127,6 +127,11 @@ builder.Services.AddHttpClient<IGoogleCalendarClient, GoogleCalendarClient>();
 builder.Services.AddScoped<IGoogleCalendarSyncService, GoogleCalendarSyncService>();
 // GitHub integration (inbound webhooks; no OAuth needed).
 builder.Services.AddScoped<IGitHubIntegrationService, GitHubIntegrationService>();
+// GitHub per-user account link (outbound OAuth: connect a GitHub account, list its repos).
+// A dedicated OAuth app (repo scope) populated from .env: GitHubIntegration__*.
+builder.Services.Configure<GitHubIntegrationOptions>(builder.Configuration.GetSection("GitHubIntegration"));
+builder.Services.AddHttpClient<IGitHubConnectClient, GitHubConnectClient>();
+builder.Services.AddScoped<IGitHubConnectionService, GitHubConnectionService>();
 // Collaborative editing (CRDT relay + snapshot store behind CollabHub).
 builder.Services.AddScoped<ICollabService, CollabService>();
 // Whiteboard: authoritative sticky notes (server-enforced per-note delete) + WhiteboardHub realtime.

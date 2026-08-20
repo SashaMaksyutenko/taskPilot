@@ -19,13 +19,17 @@ public interface IGitHubIntegrationService
     /// <summary>Reports whether the project is linked and to which repo (any member).</summary>
     Task<Result<GitHubStatusDto>> GetStatusAsync(Guid userId, Guid projectId);
 
+    /// <summary>Sets what a merged PR does to a closed task — "None"/"Review"/"Done" (owner only).</summary>
+    Task<Result> SetMergeActionAsync(Guid userId, Guid projectId, string mergeAction);
+
     /// <summary>Commits/PRs that reference the given task (any member of its project).</summary>
     Task<Result<List<GitHubTaskLinkDto>>> GetTaskLinksAsync(Guid userId, Guid taskId);
 
     /// <summary>
     /// Verifies the HMAC signature, then processes a push/pull_request delivery: links commits/PRs
     /// to referenced tasks and, when a PR is merged, moves tasks referenced with a closing keyword
-    /// to Done. <paramref name="rawBody"/> must be the exact bytes GitHub signed.
+    /// per the project's merge action (Review by default). <paramref name="rawBody"/> must be the
+    /// exact bytes GitHub signed.
     /// </summary>
     Task<Result<GitHubWebhookResultDto>> HandleWebhookAsync(Guid projectId, string eventType, string rawBody, string? signature);
 }

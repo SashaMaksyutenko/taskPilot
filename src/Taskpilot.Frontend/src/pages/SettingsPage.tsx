@@ -22,6 +22,7 @@ import { WEBHOOK_EVENTS, type Webhook } from '../types/webhook'
 import type { Appeal, Warning } from '../types/admin'
 import type { Session } from '../types/auth'
 import AppealModal from '../components/modals/AppealModal'
+import GitHubConnectPanel from '../components/GitHubConnectPanel'
 
 // Notification types the user can toggle (mirror the backend NotificationType enum).
 const NOTIF_TYPES = ['Task', 'Chat', 'Forum', 'Marketplace', 'Moderation', 'General'] as const
@@ -1101,6 +1102,9 @@ export default function SettingsPage() {
             </button>
           )}
         </section>
+
+        {/* GitHub account link (per-user OAuth) — hidden unless the server has it configured */}
+        <GitHubConnectPanel />
 
         {/* API keys */}
         <section className="mt-8 rounded-[var(--radius-card)] border border-border bg-surface p-6">

@@ -124,6 +124,7 @@ Add the variables on Render to switch a feature on:
 | --- | --- |
 | Email (password reset, digests) | `Email__SmtpHost`, `Email__SmtpPort`, `Email__SmtpUser`, `Email__SmtpPassword`, `Email__FromAddress` — or `Email__ApiKey` for SendGrid |
 | Google / GitHub / LinkedIn sign-in | `GoogleOAuth__ClientId` + `ClientSecret`, `GitHubOAuth__*`, `LinkedInOAuth__*` |
+| GitHub account link (per-user repos) | `GitHubIntegration__ClientId`, `GitHubIntegration__ClientSecret` |
 | AI assistant & subtasks | `OpenAi__ApiKey` |
 | Stripe marketplace payments | `Stripe__SecretKey`, `Stripe__WebhookSecret` |
 | Stripe subscriptions (Free/Pro plan) | `Stripe__SecretKey`, `Stripe__ProPriceId`, `Stripe__WebhookSecret` |
@@ -167,6 +168,18 @@ on in the Google Cloud Console:
 > ⚠️ In *Testing* mode Google **expires the refresh token after 7 days**, so users must reconnect
 > weekly. Publish the app (Publishing status → *Publish*) for a permanent connection — the
 > `calendar.events` scope is *sensitive*, so publishing may require Google verification.
+
+**GitHub account link (per-user repos)** lets each user connect *their own* GitHub account and
+browse their repositories from **Settings** — separate from the project webhook integration. It
+needs a **dedicated OAuth app** (not the sign-in one, which has a different callback):
+
+1. GitHub → *Settings → Developer settings → OAuth Apps → New OAuth App*.
+2. Set the **Authorization callback URL** to `https://<frontend>/settings` (the app requests the
+   `repo` scope so it can list private repos).
+3. Set on Render: `GitHubIntegration__ClientId` and `GitHubIntegration__ClientSecret`.
+
+Left unset, the GitHub section on Settings is hidden. The access token is stored server-side and
+used only to list the user's repositories on their behalf.
 
 ---
 

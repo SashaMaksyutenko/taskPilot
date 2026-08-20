@@ -49,6 +49,21 @@ public class GitHubController : BaseApiController
         return Ok(result.Value);
     }
 
+    /// <summary>Sets what a merged PR does to a closed task ("None"/"Review"/"Done", owner only).</summary>
+    [HttpPut("projects/{projectId:guid}/github/merge-action")]
+    public async Task<IActionResult> SetMergeAction(Guid projectId, [FromBody] SetGitHubMergeActionDto dto)
+    {
+        var userId = CurrentUserId();
+        if (userId is null) return Unauthorized();
+
+        var result = await _github.SetMergeActionAsync(userId.Value, projectId, dto.MergeAction);
+        if (!result.Succeeded) return BadRequest(new { error = result.Error });
+
+        var status = await _github.GetStatusAsync(userId.Value, projectId);
+        if (status.Value!.Connected) status.Value.WebhookUrl = WebhookUrl(projectId);
+        return Ok(status.Value);
+    }
+
     /// <summary>Unlinks the repository (owner only).</summary>
     [HttpDelete("projects/{projectId:guid}/github")]
     public async Task<IActionResult> Disconnect(Guid projectId)

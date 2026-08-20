@@ -46,8 +46,9 @@ The parts that go beyond a typical CRUD task manager:
   of JWT + refresh tokens, TOTP 2FA with backup codes, OAuth (Google/GitHub/LinkedIn), session
   management, API keys, an admin IP allowlist, and AES-256-GCM file encryption at rest.
 - **🧩 Deep integrations.** Two-way **Google Calendar** sync, **GitHub** webhooks that link
-  commits/PRs to tasks and auto-close them on merge, Telegram/Viber bots, outbound webhooks, and
-  Web Push — all config-gated.
+  commits/PRs to tasks and, on merge, move them along the board per a **per-project rule** (to
+  Review by default, so a human still signs off), a per-user **GitHub account link** (OAuth) to
+  browse your repos, Telegram/Viber bots, outbound webhooks, and Web Push — all config-gated.
 - **✅ Engineered like production.** 670+ backend unit tests, a frontend test suite, CI, Docker, a
   config-gated everything-off-by-default design, and a live free-tier deployment (Vercel + Render +
   Neon).
@@ -218,6 +219,7 @@ is simply disabled (the app still runs). Enable it by filling in the values.
 | **Passkeys (WebAuthn)** | `Fido2__ServerDomain` / `Origins__0` | Must match the frontend domain |
 | **Google sign-in / Calendar** | `GoogleOAuth__ClientId` / `ClientSecret` / `RedirectUri` + frontend `VITE_GOOGLE_CLIENT_ID` | From Google Cloud Console |
 | **GitHub sign-in / integration** | `GitHubOAuth__ClientId` / `ClientSecret` + frontend `VITE_GITHUB_CLIENT_ID` | From GitHub Developer settings |
+| **GitHub account link** | `GitHubIntegration__ClientId` / `ClientSecret` | Separate OAuth app (`repo` scope); users link their own account to browse repos |
 | **Email** | `Email__SmtpHost` / `SmtpPort` / `SmtpUser` / `SmtpPassword` (or `Email__ApiKey` for SendGrid) | SMTP when `SmtpHost` is set; SendGrid is the fallback |
 | **Telegram bot** | `Telegram__BotToken` / `BotUsername` | Token from @BotFather |
 | **Web push** | `Vapid__Subject` / `PublicKey` / `PrivateKey` | The API logs a fresh VAPID key pair at startup when empty |

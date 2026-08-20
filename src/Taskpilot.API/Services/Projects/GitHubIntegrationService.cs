@@ -86,8 +86,29 @@ public class GitHubIntegrationService : IGitHubIntegrationService
         if (!await ProjectAccess.CanAccessAsync(_context, projectId, userId))
             return Result<GitHubStatusDto>.Fail("You do not have access to this project.");
 
-        var repo = await _context.Projects.Where(p => p.Id == projectId).Select(p => p.GitHubRepo).FirstOrDefaultAsync();
-        return Result<GitHubStatusDto>.Ok(new GitHubStatusDto { Connected = !string.IsNullOrEmpty(repo), Repo = repo });
+        var p = await _context.Projects.Where(x => x.Id == projectId)
+            .Select(x => new { x.GitHubRepo, x.GitHubMergeAction }).FirstOrDefaultAsync();
+        return Result<GitHubStatusDto>.Ok(new GitHubStatusDto
+        {
+            Connected = !string.IsNullOrEmpty(p?.GitHubRepo),
+            Repo = p?.GitHubRepo,
+            MergeAction = (p?.GitHubMergeAction ?? GitHubMergeAction.Review).ToString(),
+        });
+    }
+
+    /// <inheritdoc />
+    public async Task<Result> SetMergeActionAsync(Guid userId, Guid projectId, string mergeAction)
+    {
+        if (!Enum.TryParse<GitHubMergeAction>(mergeAction, ignoreCase: true, out var action))
+            return Result.Fail("Choose None, Review or Done.");
+
+        var project = await _context.Projects.FirstOrDefaultAsync(p => p.Id == projectId);
+        if (project is null) return Result.Fail("Project not found.");
+        if (project.OwnerId != userId) return Result.Fail("Only the project owner can change this.");
+
+        project.GitHubMergeAction = action;
+        await _context.SaveChangesAsync();
+        return Result.Ok();
     }
 
     /// <inheritdoc />
@@ -174,13 +195,15 @@ public class GitHubIntegrationService : IGitHubIntegrationService
         {
             if (await UpsertLinkAsync(taskId, "PullRequest", number, title, url, state)) result.Linked++;
 
-            // Auto-close: a merged PR that says "closes/fixes/resolves <task>" moves it to Done,
-            // acting as the project owner so all the usual status-change side effects run.
-            if (merged && closing)
+            // A merged PR that says "closes/fixes/resolves <task>" moves the task per the project's
+            // configured action — to Review (default, keeps the human sign-off), straight to Done, or
+            // nothing at all. Acts as the project owner so the usual status-change side effects run.
+            if (merged && closing && project.GitHubMergeAction != GitHubMergeAction.None)
             {
-                var moved = await _tasks.ChangeStatusAsync(project.OwnerId, taskId, "Done");
+                var target = project.GitHubMergeAction == GitHubMergeAction.Done ? "Done" : "Review";
+                var moved = await _tasks.ChangeStatusAsync(project.OwnerId, taskId, target);
                 if (moved.Succeeded) result.Closed++;
-                else _logger.LogInformation("GitHub auto-close skipped for task {TaskId}: {Error}", taskId, moved.Error);
+                else _logger.LogInformation("GitHub merge action skipped for task {TaskId}: {Error}", taskId, moved.Error);
             }
         }
     }

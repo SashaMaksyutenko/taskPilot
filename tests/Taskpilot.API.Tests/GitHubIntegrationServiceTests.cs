@@ -29,12 +29,13 @@ public class GitHubIntegrationServiceTests
         return "sha256=" + Convert.ToHexString(hmac.ComputeHash(Encoding.UTF8.GetBytes(body))).ToLowerInvariant();
     }
 
-    private static async Task<Guid> ConnectedProjectAsync(TaskpilotDbContext ctx, Guid owner)
+    private static async Task<Guid> ConnectedProjectAsync(TaskpilotDbContext ctx, Guid owner, GitHubMergeAction mergeAction = GitHubMergeAction.Review)
     {
         var projectId = await TestDb.AddProjectAsync(ctx, owner, "P");
         var project = await ctx.Projects.FirstAsync(p => p.Id == projectId);
         project.GitHubRepo = "owner/name";
         project.GitHubWebhookSecret = Secret;
+        project.GitHubMergeAction = mergeAction;
         await ctx.SaveChangesAsync();
         return projectId;
     }
@@ -108,11 +109,11 @@ public class GitHubIntegrationServiceTests
     }
 
     [Fact]
-    public async Task PullRequest_Merged_ClosesReferencedTask()
+    public async Task PullRequest_Merged_ClosesToDone_WhenConfigured()
     {
         await using var ctx = TestDb.CreateContext();
         var owner = await TestDb.AddUserAsync(ctx, "O");
-        var projectId = await ConnectedProjectAsync(ctx, owner);
+        var projectId = await ConnectedProjectAsync(ctx, owner, GitHubMergeAction.Done);
         var taskId = await TaskAsync(ctx, owner, projectId);
 
         var tasks = new Mock<ITaskService>();
@@ -126,6 +127,67 @@ public class GitHubIntegrationServiceTests
         Assert.Equal(1, res.Value!.Linked);
         Assert.Equal(1, res.Value.Closed);
         tasks.Verify(t => t.ChangeStatusAsync(owner, taskId, "Done"), Times.Once);
+    }
+
+    [Fact]
+    public async Task PullRequest_Merged_MovesToReview_ByDefault()
+    {
+        await using var ctx = TestDb.CreateContext();
+        var owner = await TestDb.AddUserAsync(ctx, "O");
+        var projectId = await ConnectedProjectAsync(ctx, owner); // default = Review
+        var taskId = await TaskAsync(ctx, owner, projectId);
+
+        var tasks = new Mock<ITaskService>();
+        tasks.Setup(t => t.ChangeStatusAsync(owner, taskId, "Review")).ReturnsAsync(Result<TaskDto>.Ok(null!));
+        var svc = Make(ctx, tasks.Object);
+
+        var body = $"{{\"action\":\"closed\",\"pull_request\":{{\"number\":7,\"title\":\"Fix\",\"body\":\"Closes {taskId}\",\"html_url\":\"https://x/pull/7\",\"merged\":true}}}}";
+        var res = await svc.HandleWebhookAsync(projectId, "pull_request", body, Sign(Secret, body));
+
+        Assert.True(res.Succeeded);
+        Assert.Equal(1, res.Value!.Closed);
+        // The review gate is preserved: it goes to Review, never straight to Done.
+        tasks.Verify(t => t.ChangeStatusAsync(owner, taskId, "Review"), Times.Once);
+        tasks.Verify(t => t.ChangeStatusAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), "Done"), Times.Never);
+    }
+
+    [Fact]
+    public async Task PullRequest_Merged_None_LinksButNeverChangesStatus()
+    {
+        await using var ctx = TestDb.CreateContext();
+        var owner = await TestDb.AddUserAsync(ctx, "O");
+        var projectId = await ConnectedProjectAsync(ctx, owner, GitHubMergeAction.None);
+        var taskId = await TaskAsync(ctx, owner, projectId);
+
+        var tasks = new Mock<ITaskService>();
+        var svc = Make(ctx, tasks.Object);
+
+        var body = $"{{\"action\":\"closed\",\"pull_request\":{{\"number\":7,\"title\":\"Fix\",\"body\":\"Closes {taskId}\",\"html_url\":\"https://x/pull/7\",\"merged\":true}}}}";
+        var res = await svc.HandleWebhookAsync(projectId, "pull_request", body, Sign(Secret, body));
+
+        Assert.True(res.Succeeded);
+        Assert.Equal(1, res.Value!.Linked);   // the PR is still linked
+        Assert.Equal(0, res.Value.Closed);    // but the status is untouched
+        tasks.Verify(t => t.ChangeStatusAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<string>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task SetMergeAction_PersistsForOwner_RefusesOthers_AndValidates()
+    {
+        await using var ctx = TestDb.CreateContext();
+        var owner = await TestDb.AddUserAsync(ctx, "O");
+        var other = await TestDb.AddUserAsync(ctx, "X");
+        var projectId = await ConnectedProjectAsync(ctx, owner);
+        var svc = Make(ctx, new Mock<ITaskService>().Object);
+
+        Assert.Equal("Review", (await svc.GetStatusAsync(owner, projectId)).Value!.MergeAction); // default
+
+        Assert.True((await svc.SetMergeActionAsync(owner, projectId, "Done")).Succeeded);
+        Assert.Equal("Done", (await svc.GetStatusAsync(owner, projectId)).Value!.MergeAction);
+
+        Assert.False((await svc.SetMergeActionAsync(other, projectId, "None")).Succeeded);   // not the owner
+        Assert.False((await svc.SetMergeActionAsync(owner, projectId, "Nonsense")).Succeeded); // invalid value
+        Assert.Equal("Done", (await svc.GetStatusAsync(owner, projectId)).Value!.MergeAction); // unchanged
     }
 
     [Fact]
@@ -171,7 +233,7 @@ public class GitHubIntegrationServiceTests
     {
         await using var ctx = TestDb.CreateContext();
         var owner = await TestDb.AddUserAsync(ctx, "O");
-        var projectId = await ConnectedProjectAsync(ctx, owner);
+        var projectId = await ConnectedProjectAsync(ctx, owner, GitHubMergeAction.Done);
         var taskId = await TaskAsync(ctx, owner, projectId);
         var number = ctx.ProjectTasks.Single(t => t.Id == taskId).Number; // auto-assigned per project
 

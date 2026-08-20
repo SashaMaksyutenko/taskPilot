@@ -41,6 +41,9 @@ public class Project
     /// <summary>Secret used to verify inbound GitHub webhook signatures (HMAC-SHA256). Server-only.</summary>
     public string? GitHubWebhookSecret { get; set; }
 
+    /// <summary>What a merged PR that closes a task does to it (respect the review gate by default).</summary>
+    public GitHubMergeAction GitHubMergeAction { get; set; } = GitHubMergeAction.Review;
+
     /// <summary>Tasks belonging to this project.</summary>
     public ICollection<ProjectTask> Tasks { get; set; } = new List<ProjectTask>();
 

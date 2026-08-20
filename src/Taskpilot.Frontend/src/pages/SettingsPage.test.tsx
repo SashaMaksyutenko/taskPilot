@@ -41,6 +41,7 @@ vi.mock('react-router-dom', () => ({ useNavigate: () => vi.fn() }))
 vi.mock('qrcode', () => ({ default: { toDataURL: vi.fn().mockResolvedValue('data:,') } }))
 vi.mock('../components/Avatar', () => ({ default: () => null }))
 vi.mock('../components/modals/AppealModal', () => ({ default: () => null }))
+vi.mock('../components/GitHubConnectPanel', () => ({ default: () => null }))
 vi.mock('../lib/toast', () => ({ notify: { error: m.notifyError, success: m.notifySuccess } }))
 vi.mock('../lib/apiError', () => ({ apiErrorMessage: () => 'boom' }))
 vi.mock('../lib/push', () => ({

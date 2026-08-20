@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Taskpilot.API.Data;
@@ -12,9 +13,11 @@ using Taskpilot.API.Data;
 namespace Taskpilot.API.Data.Migrations
 {
     [DbContext(typeof(TaskpilotDbContext))]
-    partial class TaskpilotDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260819235757_AddUserGitHubConnection")]
+    partial class AddUserGitHubConnection
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1212,13 +1215,6 @@ namespace Taskpilot.API.Data.Migrations
                     b.Property<string>("Description")
                         .HasMaxLength(5000)
                         .HasColumnType("character varying(5000)");
-
-                    b.Property<string>("GitHubMergeAction")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasMaxLength(16)
-                        .HasColumnType("character varying(16)")
-                        .HasDefaultValue("Review");
 
                     b.Property<string>("GitHubRepo")
                         .HasColumnType("text");

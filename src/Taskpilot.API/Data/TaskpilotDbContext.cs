@@ -221,6 +221,9 @@ public class TaskpilotDbContext : DbContext
     /// <summary>Commits/PRs from a project's linked GitHub repo that reference a task.</summary>
     public DbSet<GitHubTaskLink> GitHubTaskLinks => Set<GitHubTaskLink>();
 
+    /// <summary>Per-user GitHub account links (encrypted OAuth token for the outbound integration).</summary>
+    public DbSet<UserGitHubConnection> UserGitHubConnections => Set<UserGitHubConnection>();
+
     /// <summary>WebAuthn/FIDO2 passkeys registered by users for passwordless sign-in.</summary>
     public DbSet<UserPasskey> UserPasskeys => Set<UserPasskey>();
 
@@ -748,6 +751,15 @@ public class TaskpilotDbContext : DbContext
             entity.Property(p => p.Description).HasMaxLength(5000);
             entity.Property(p => p.Color).HasMaxLength(20);
             entity.Property(p => p.ShareToken).HasMaxLength(64);
+
+            // Merge-action stored as a readable string; existing rows default to Review. Sentinel =
+            // Review so the DB default is used only for a genuinely-unset value (new projects start
+            // at Review) — an explicit None is still written, not swallowed as the CLR default.
+            entity.Property(p => p.GitHubMergeAction)
+                  .HasConversion<string>()
+                  .HasMaxLength(16)
+                  .HasDefaultValue(Models.GitHubMergeAction.Review)
+                  .HasSentinel(Models.GitHubMergeAction.Review);
 
             entity.HasIndex(p => p.OwnerId);
             // Public board tokens resolve one project; unique (Postgres treats NULLs as distinct).
@@ -1451,6 +1463,21 @@ public class TaskpilotDbContext : DbContext
             entity.HasOne(l => l.Task)
                   .WithMany()
                   .HasForeignKey(l => l.TaskId)
+                  .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // UserGitHubConnection entity configuration (per-user GitHub integration link)
+        modelBuilder.Entity<UserGitHubConnection>(entity =>
+        {
+            // The user id is both PK and FK — one linked account per user.
+            entity.HasKey(c => c.UserId);
+            entity.Property(c => c.Login).IsRequired().HasMaxLength(100);
+            entity.Property(c => c.Scope).HasMaxLength(200);
+
+            // Deleting a user removes their GitHub link.
+            entity.HasOne(c => c.User)
+                  .WithMany()
+                  .HasForeignKey(c => c.UserId)
                   .OnDelete(DeleteBehavior.Cascade);
         });
 

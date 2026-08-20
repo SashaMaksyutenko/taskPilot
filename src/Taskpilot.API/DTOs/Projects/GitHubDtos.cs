@@ -12,6 +12,15 @@ public class GitHubStatusDto
     public bool Connected { get; set; }
     public string? Repo { get; set; }
     public string? WebhookUrl { get; set; }
+
+    /// <summary>What a merged PR that closes a task does to it: "None" | "Review" | "Done".</summary>
+    public string MergeAction { get; set; } = "Review";
+}
+
+/// <summary>Body to change what a merged PR does to a closed task ("None" | "Review" | "Done").</summary>
+public class SetGitHubMergeActionDto
+{
+    public string MergeAction { get; set; } = string.Empty;
 }
 
 /// <summary>Returned once on connect — includes the secret to paste into the GitHub webhook.</summary>

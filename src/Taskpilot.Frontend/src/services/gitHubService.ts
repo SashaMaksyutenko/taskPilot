@@ -1,10 +1,14 @@
 import api from '../lib/api'
 
+/** What a merged PR that closes a task does to it. */
+export type GitHubMergeAction = 'None' | 'Review' | 'Done'
+
 /** Whether a project is linked to a GitHub repo (secret is never returned here). */
 export interface GitHubStatus {
   connected: boolean
   repo: string | null
   webhookUrl: string | null
+  mergeAction: GitHubMergeAction
 }
 
 /** Returned once on connect — includes the secret to paste into the GitHub webhook. */
@@ -34,6 +38,11 @@ export const gitHubService = {
   },
   disconnect(projectId: string): Promise<void> {
     return api.delete(`/api/projects/${projectId}/github`).then(() => undefined)
+  },
+  setMergeAction(projectId: string, mergeAction: GitHubMergeAction): Promise<GitHubStatus> {
+    return api
+      .put<GitHubStatus>(`/api/projects/${projectId}/github/merge-action`, { mergeAction })
+      .then((r) => r.data)
   },
   getTaskLinks(taskId: string): Promise<GitHubTaskLink[]> {
     return api.get<GitHubTaskLink[]>(`/api/tasks/${taskId}/github`).then((r) => r.data)

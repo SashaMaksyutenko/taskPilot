@@ -158,6 +158,23 @@ public class TelegramUpdateServiceTests
     }
 
     [Fact]
+    public async Task FreeText_FromBannedUser_IsBlocked_NeverReachesAssistant()
+    {
+        await using var ctx = TestDb.CreateContext();
+        var userId = await AddLinkedUserAsync(ctx, "555");
+        var user = (await ctx.Users.FindAsync(userId))!;
+        user.IsActive = false; // banned or account-closed
+        await ctx.SaveChangesAsync();
+        _assistant.SetupGet(a => a.IsEnabled).Returns(true);
+
+        await Make(ctx).HandleUpdateAsync(Update(555, "create a task"));
+
+        // The web ban revokes sessions; the Telegram channel must not stay an open back door.
+        _assistant.Verify(a => a.AskAsync(It.IsAny<Guid>(), It.IsAny<IReadOnlyList<ChatBotMessageDto>>()), Times.Never);
+        _sender.Verify(s => s.SendMessageAsync("555", It.Is<string>(t => t.Contains("no longer active"))), Times.Once);
+    }
+
+    [Fact]
     public async Task NonTextMessage_IsIgnored()
     {
         await using var ctx = TestDb.CreateContext();

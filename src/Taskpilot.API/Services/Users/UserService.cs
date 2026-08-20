@@ -562,6 +562,9 @@ public class UserService : IUserService
         user.AvatarFileId = null;
         user.TwoFactorEnabled = false;
         user.TwoFactorSecret = null;
+        // Unlink outbound bot channels so a closed account can't be reached (or reach the bot).
+        user.TelegramChatId = null;
+        user.ViberId = null;
         user.IsActive = false;
         user.UpdatedAt = DateTime.UtcNow;
 
@@ -579,6 +582,21 @@ public class UserService : IUserService
         // Direct-message blocks the user created or is the target of.
         _context.UserBlocks.RemoveRange(
             _context.UserBlocks.Where(b => b.BlockerId == userId || b.BlockedId == userId));
+
+        // Third-party OAuth connections hold LIVE credentials (a Google refresh token, a GitHub
+        // repo-scoped access token) — erasing the account must revoke them, not leave them behind.
+        _context.GoogleCalendarConnections.RemoveRange(
+            _context.GoogleCalendarConnections.Where(c => c.UserId == userId));
+        _context.GoogleCalendarEventLinks.RemoveRange(
+            _context.GoogleCalendarEventLinks.Where(l => l.UserId == userId));
+        _context.UserGitHubConnections.RemoveRange(
+            _context.UserGitHubConnections.Where(c => c.UserId == userId));
+        // Other personal records tied only to this account.
+        _context.PushSubscriptions.RemoveRange(_context.PushSubscriptions.Where(s => s.UserId == userId));
+        _context.UserPasskeys.RemoveRange(_context.UserPasskeys.Where(p => p.UserId == userId));
+        _context.ApiKeys.RemoveRange(_context.ApiKeys.Where(k => k.UserId == userId));
+        _context.SavedSearches.RemoveRange(_context.SavedSearches.Where(s => s.UserId == userId));
+        _context.Bookmarks.RemoveRange(_context.Bookmarks.Where(b => b.UserId == userId));
 
         await _context.SaveChangesAsync();
 

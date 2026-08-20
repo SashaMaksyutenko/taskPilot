@@ -200,8 +200,17 @@ public class GitHubIntegrationService : IGitHubIntegrationService
             // nothing at all. Acts as the project owner so the usual status-change side effects run.
             if (merged && closing && project.GitHubMergeAction != GitHubMergeAction.None)
             {
-                var target = project.GitHubMergeAction == GitHubMergeAction.Done ? "Done" : "Review";
-                var moved = await _tasks.ChangeStatusAsync(project.OwnerId, taskId, target);
+                var target = project.GitHubMergeAction == GitHubMergeAction.Done
+                    ? ProjectTaskStatus.Done
+                    : ProjectTaskStatus.Review;
+
+                // Never regress: a webhook redelivery must not pull a task the owner already
+                // completed back to Review, and a no-op re-move to the same status is skipped.
+                var current = await _context.ProjectTasks
+                    .Where(t => t.Id == taskId).Select(t => (ProjectTaskStatus?)t.Status).FirstOrDefaultAsync();
+                if (current == ProjectTaskStatus.Done || current == target) continue;
+
+                var moved = await _tasks.ChangeStatusAsync(project.OwnerId, taskId, target.ToString());
                 if (moved.Succeeded) result.Closed++;
                 else _logger.LogInformation("GitHub merge action skipped for task {TaskId}: {Error}", taskId, moved.Error);
             }

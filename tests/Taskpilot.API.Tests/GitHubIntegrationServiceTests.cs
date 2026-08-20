@@ -152,6 +152,28 @@ public class GitHubIntegrationServiceTests
     }
 
     [Fact]
+    public async Task PullRequest_Merged_DoesNotRegress_AnAlreadyDoneTask()
+    {
+        await using var ctx = TestDb.CreateContext();
+        var owner = await TestDb.AddUserAsync(ctx, "O");
+        var projectId = await ConnectedProjectAsync(ctx, owner); // default = Review
+        var taskId = await TaskAsync(ctx, owner, projectId);
+        // The owner already completed it; a webhook redelivery must not pull it back to Review.
+        ctx.ProjectTasks.Single(t => t.Id == taskId).Status = ProjectTaskStatus.Done;
+        await ctx.SaveChangesAsync();
+
+        var tasks = new Mock<ITaskService>();
+        var svc = Make(ctx, tasks.Object);
+
+        var body = $"{{\"action\":\"closed\",\"pull_request\":{{\"number\":7,\"title\":\"Fix\",\"body\":\"Closes {taskId}\",\"html_url\":\"https://x/pull/7\",\"merged\":true}}}}";
+        var res = await svc.HandleWebhookAsync(projectId, "pull_request", body, Sign(Secret, body));
+
+        Assert.True(res.Succeeded);
+        Assert.Equal(0, res.Value!.Closed);
+        tasks.Verify(t => t.ChangeStatusAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<string>()), Times.Never);
+    }
+
+    [Fact]
     public async Task PullRequest_Merged_None_LinksButNeverChangesStatus()
     {
         await using var ctx = TestDb.CreateContext();

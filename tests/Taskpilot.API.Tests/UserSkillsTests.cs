@@ -85,4 +85,31 @@ public class UserSkillsTests
         var scrubbed = await ctx.Users.AsNoTracking().FirstAsync(u => u.Id == id);
         Assert.Empty(scrubbed.Skills);
     }
+
+    [Fact]
+    public async Task DeleteAccount_RemovesThirdPartyTokens_AndUnlinksBots()
+    {
+        await using var ctx = TestDb.CreateContext();
+        var id = Guid.NewGuid();
+        ctx.Users.Add(new User
+        {
+            Id = id, Name = "Dev", Email = "dev@test.local", Role = Role.Developer, IsActive = true,
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword("Passw0rd!23"),
+            TelegramChatId = "555", ViberId = "viber-1",
+        });
+        // Live third-party credentials that must be revoked on erasure.
+        ctx.GoogleCalendarConnections.Add(new GoogleCalendarConnection { UserId = id, RefreshToken = "google-refresh" });
+        ctx.UserGitHubConnections.Add(new UserGitHubConnection { UserId = id, AccessToken = "gh-token", Login = "octocat" });
+        await ctx.SaveChangesAsync();
+        var svc = Create(ctx);
+
+        var result = await svc.DeleteAccountAsync(id, "Passw0rd!23");
+
+        Assert.True(result.Succeeded);
+        Assert.Empty(ctx.GoogleCalendarConnections.Where(c => c.UserId == id));
+        Assert.Empty(ctx.UserGitHubConnections.Where(c => c.UserId == id));
+        var scrubbed = await ctx.Users.AsNoTracking().FirstAsync(u => u.Id == id);
+        Assert.Null(scrubbed.TelegramChatId);
+        Assert.Null(scrubbed.ViberId);
+    }
 }

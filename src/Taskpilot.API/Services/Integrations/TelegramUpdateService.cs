@@ -96,6 +96,14 @@ public class TelegramUpdateService : ITelegramUpdateService
             return;
         }
 
+        // A banned or closed account must lose bot access too — the web ban revokes sessions,
+        // so the Telegram channel can't stay an open back door into the write-capable assistant.
+        if (!user.IsActive)
+        {
+            await _sender.SendMessageAsync(chatId, "This account is no longer active.");
+            return;
+        }
+
         // Mirror the web app, where view-only accounts cannot use the assistant at all.
         if (user.Role == Role.Viewer)
         {
@@ -140,8 +148,8 @@ public class TelegramUpdateService : ITelegramUpdateService
     private async Task<LinkedUser?> ResolveUserAsync(string chatId) =>
         await _context.Users
             .Where(u => u.TelegramChatId == chatId)
-            .Select(u => new LinkedUser(u.Id, u.Role))
+            .Select(u => new LinkedUser(u.Id, u.Role, u.IsActive))
             .FirstOrDefaultAsync();
 
-    private record LinkedUser(Guid Id, Role Role);
+    private record LinkedUser(Guid Id, Role Role, bool IsActive);
 }

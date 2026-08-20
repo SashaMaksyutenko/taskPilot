@@ -71,6 +71,24 @@ public class BillingServiceTests
     }
 
     [Fact]
+    public async Task CanCreateProject_ArchivedProjects_DoNotCountAgainstFreeLimit()
+    {
+        await using var ctx = TestDb.CreateContext();
+        var owner = await TestDb.AddUserAsync(ctx, "Owner");
+        await AddProjectsAsync(ctx, owner, BillingService.FreeProjectLimit); // at the cap
+        var svc = Make(ctx, billingEnabled: true);
+        Assert.False(await svc.CanCreateProjectAsync()); // full while all are live
+
+        // Archiving one frees a slot — archived projects are "put away", not active.
+        var one = await ctx.Projects.FirstAsync();
+        one.ArchivedAt = DateTime.UtcNow;
+        await ctx.SaveChangesAsync();
+
+        Assert.True(await svc.CanCreateProjectAsync());
+        Assert.Equal(BillingService.FreeProjectLimit - 1, (await svc.GetStatusAsync()).ProjectCount);
+    }
+
+    [Fact]
     public async Task IsPro_TrueWhenBillingOff_OrPro_FalseOnFree()
     {
         await using var ctx = TestDb.CreateContext();

@@ -133,6 +133,52 @@ public class FileDeleteTests
     }
 
     [Fact]
+    public async Task Delete_OfAFileAttachedToATask_IsRefused_NotThrown()
+    {
+        await using var ctx = TestDb.CreateContext();
+        var uploader = await TestDb.AddUserAsync(ctx, "Uploader");
+        var svc = Create(ctx);
+        var fileId = await SeedFileAsync(ctx, uploader);
+
+        // TaskAttachment.FileAttachmentId is a Restrict FK — deleting the file directly would
+        // otherwise throw a DbUpdateException (→ 500) instead of a clean refusal.
+        ctx.TaskAttachments.Add(new TaskAttachment
+        {
+            Id = Guid.NewGuid(), TaskId = Guid.NewGuid(), FileAttachmentId = fileId, UploadedById = uploader,
+        });
+        await ctx.SaveChangesAsync();
+
+        var result = await svc.DeleteAsync(fileId, uploader);
+
+        Assert.False(result.Succeeded);
+        Assert.Contains("attached to a task", result.Error!);
+        Assert.True(await ctx.FileAttachments.AnyAsync(f => f.Id == fileId));
+    }
+
+    [Fact]
+    public async Task Delete_OfAnEarlierVersion_IsRefused_NotThrown()
+    {
+        await using var ctx = TestDb.CreateContext();
+        var uploader = await TestDb.AddUserAsync(ctx, "Uploader");
+        var svc = Create(ctx);
+        var oldId = await SeedFileAsync(ctx, uploader);
+
+        // A newer version points back at this one (PreviousVersionId is a Restrict FK).
+        ctx.FileAttachments.Add(new FileAttachment
+        {
+            Id = Guid.NewGuid(), FileName = "notes.txt", StoredName = "new.txt", ContentType = "text/plain",
+            SizeBytes = 6, UploaderId = uploader, PreviousVersionId = oldId,
+        });
+        await ctx.SaveChangesAsync();
+
+        var result = await svc.DeleteAsync(oldId, uploader);
+
+        Assert.False(result.Succeeded);
+        Assert.Contains("earlier version", result.Error!);
+        Assert.True(await ctx.FileAttachments.AnyAsync(f => f.Id == oldId));
+    }
+
+    [Fact]
     public async Task Delete_OfAnAvatar_ClearsThePointerSoTheProfileDoesNotBreak()
     {
         await using var ctx = TestDb.CreateContext();

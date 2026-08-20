@@ -303,6 +303,16 @@ public class FileService : IFileService
             return Result.Fail("This file is attached to a chat message and cannot be deleted.");
         }
 
+        // Task/forum attachments and version history are Restrict FKs too — deleting a still-linked
+        // file here would throw a DbUpdateException (→ 500). Refuse cleanly and point to the owner
+        // flow (detach from the task/post, or delete the newest version first).
+        if (await _context.TaskAttachments.AnyAsync(a => a.FileAttachmentId == fileId))
+            return Result.Fail("This file is attached to a task — remove it from the task instead.");
+        if (await _context.ForumAttachments.AnyAsync(a => a.FileAttachmentId == fileId))
+            return Result.Fail("This file is attached to a forum post — remove it from the post instead.");
+        if (await _context.FileAttachments.AnyAsync(f => f.PreviousVersionId == fileId))
+            return Result.Fail("This file is an earlier version of another file and cannot be deleted directly.");
+
         // User.AvatarFileId is a bare Guid with no foreign key, so nothing stops the
         // row from going: clear the pointer by hand or the profile renders a broken image.
         var avatarOwners = await _context.Users.Where(u => u.AvatarFileId == fileId).ToListAsync();

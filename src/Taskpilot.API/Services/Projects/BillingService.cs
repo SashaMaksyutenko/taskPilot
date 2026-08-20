@@ -43,7 +43,8 @@ public class BillingService : IBillingService
     {
         var settings = await GetOrCreateAsync();
         var billingEnabled = _stripe.IsEnabled;
-        var projectCount = await _context.Projects.CountAsync();
+        // Archived projects are "put away" — they must not occupy a Free-plan slot.
+        var projectCount = await _context.Projects.CountAsync(p => p.ArchivedAt == null);
         var limit = billingEnabled && settings.Plan == PlanFree ? FreeProjectLimit : -1;
 
         return new BillingStatusDto
@@ -68,7 +69,8 @@ public class BillingService : IBillingService
         var plan = await _context.OrganizationSettings.Select(s => s.Plan).FirstOrDefaultAsync() ?? PlanFree;
         if (plan == PlanPro) return true;
 
-        return await _context.Projects.CountAsync() < FreeProjectLimit;
+        // Count only live projects — an archived one shouldn't block creating a new one.
+        return await _context.Projects.CountAsync(p => p.ArchivedAt == null) < FreeProjectLimit;
     }
 
     /// <inheritdoc />

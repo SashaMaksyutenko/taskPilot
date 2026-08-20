@@ -121,6 +121,22 @@ public class NextActionServiceTests
     }
 
     [Fact]
+    public async Task AiRanking_SurvivesAnOutOfRangeNumber_FromTheModel()
+    {
+        await using var ctx = TestDb.CreateContext();
+        var user = await TestDb.AddUserAsync(ctx, "U");
+        var project = await TestDb.AddProjectAsync(ctx, user);
+        var overdue = await AddTaskAsync(ctx, project, user, "Overdue", TaskPriority.Low, DateTime.UtcNow.AddDays(-1)); // pool #1
+        var noDate = await AddTaskAsync(ctx, project, user, "No deadline", TaskPriority.High, null);                   // pool #2
+
+        // A hallucinated line with a number too large for int must be skipped, not crash the parse.
+        var plan = await Make(ctx, Llm(enabled: true, reply: "99999999999: bogus\n2: quick win\n1: overdue")).GetPlanAsync(user);
+
+        Assert.True(plan.RankedByAi);
+        Assert.Equal(new[] { noDate, overdue }, plan.Items.Select(i => i.TaskId).ToArray());
+    }
+
+    [Fact]
     public async Task AiFailure_FallsBackToDeterministic_ButStaysEnabled()
     {
         await using var ctx = TestDb.CreateContext();

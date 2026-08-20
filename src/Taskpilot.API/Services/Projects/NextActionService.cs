@@ -144,7 +144,8 @@ public partial class NextActionService : INextActionService
         {
             var m = RankLine().Match(rawLine.Trim());
             if (!m.Success) continue;
-            var n = int.Parse(m.Groups["n"].Value);
+            // TryParse: the model can emit a number too large for int — never let that crash ranking.
+            if (!int.TryParse(m.Groups["n"].Value, out var n)) continue;
             if (n < 1 || n > pool.Count || !used.Add(n)) continue;
 
             var item = pool[n - 1];

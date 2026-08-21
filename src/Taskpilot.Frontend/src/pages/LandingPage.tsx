@@ -5,6 +5,7 @@ import {
   MessageSquare,
   MessagesSquare,
   NotebookPen,
+  Play,
   ShoppingBag,
   Sparkles,
 } from 'lucide-react'
@@ -16,7 +17,9 @@ import LangSwitch from '../components/LangSwitch'
 import StatsPanel from '../components/charts/StatsPanel'
 import Button from '../components/ui/Button'
 import Card from '../components/ui/Card'
+import { useDemo } from '../hooks/useDemo'
 import { statsService } from '../services/statsService'
+import { useAppSelector } from '../store/hooks'
 import type { PublicStats } from '../types/stats'
 
 const FEATURES = [
@@ -33,6 +36,8 @@ const FEATURES = [
  */
 export default function LandingPage() {
   const { t } = useTranslation()
+  const demo = useDemo()
+  const status = useAppSelector((s) => s.auth.status)
   const [stats, setStats] = useState<PublicStats | null>(null)
 
   useEffect(() => {
@@ -77,11 +82,18 @@ export default function LandingPage() {
                 <Link to="/register">
                   <Button size="lg">{t('landing.getStarted')}</Button>
                 </Link>
-                <Link to="/login">
-                  <Button variant="secondary" size="lg">
-                    {t('landing.login')}
+                {demo.available ? (
+                  <Button variant="secondary" size="lg" onClick={demo.start} disabled={status === 'loading'}>
+                    <Play className="h-4 w-4" />
+                    {t('auth.tryDemo')}
                   </Button>
-                </Link>
+                ) : (
+                  <Link to="/login">
+                    <Button variant="secondary" size="lg">
+                      {t('landing.login')}
+                    </Button>
+                  </Link>
+                )}
               </div>
             </div>
 

@@ -7,6 +7,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { z } from 'zod'
 import LangSwitch from '../components/LangSwitch'
 import SocialSignIn from '../components/auth/SocialSignIn'
+import DemoButton from '../components/auth/DemoButton'
 import AuthFooterLinks from '../components/AuthFooterLinks'
 import Button from '../components/ui/Button'
 import Card from '../components/ui/Card'
@@ -107,6 +108,8 @@ export default function RegisterPage() {
           </form>
 
           <SocialSignIn />
+
+          <DemoButton />
 
           <p className="mt-6 text-center text-sm text-muted">
             {t('auth.haveAccount')}{' '}

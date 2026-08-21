@@ -18,6 +18,8 @@ export const DOC_ARTICLES: DocArticle[] = [
 
 TaskPilot is an all-in-one workspace: projects, tasks, real-time chat, a task marketplace, forum, notes and an AI assistant.
 
+**Just want to look around?** If the demo is enabled, click **Try the live demo** on the landing or login page — it drops you into a ready-made workspace (a sample project, tasks and a note) with no signup. Demo accounts are temporary and are cleaned up automatically, so explore freely.
+
 **First steps**
 1. Create an account (or sign in with Google, GitHub or LinkedIn).
 2. Create your first **project** from the Projects page.
@@ -30,6 +32,8 @@ That's it — you're ready to work. The sections on the left cover each feature 
       uk: `## Ласкаво просимо в TaskPilot
 
 TaskPilot — це універсальний робочий простір: проєкти, задачі, чат у реальному часі, маркетплейс задач, форум, нотатки та AI-асистент.
+
+**Просто хочете роздивитись?** Якщо демо ввімкнене, натисніть **«Спробувати демо»** на головній або сторінці входу — і ви одразу опинитесь у готовому робочому просторі (приклад проєкту, задачі та нотатка) без реєстрації. Демо-акаунти тимчасові й прибираються автоматично, тож досліджуйте вільно.
 
 **Перші кроки**
 1. Створіть акаунт (або увійдіть через Google, GitHub чи LinkedIn).

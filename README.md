@@ -4,21 +4,26 @@
 > collaboration, an AI assistant, and real Stripe subscriptions.
 
 <p>
+  <a href="https://task-pilot-bice.vercel.app"><img alt="Live Demo" src="https://img.shields.io/badge/%E2%96%B6_Live_Demo-try_it_now-brightgreen"></a>
   <img alt=".NET 8" src="https://img.shields.io/badge/.NET-8-512BD4?logo=dotnet&logoColor=white">
   <img alt="C#" src="https://img.shields.io/badge/C%23-239120?logo=csharp&logoColor=white">
   <img alt="React 19" src="https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black">
   <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white">
   <img alt="PostgreSQL" src="https://img.shields.io/badge/PostgreSQL-4169E1?logo=postgresql&logoColor=white">
   <img alt="SignalR" src="https://img.shields.io/badge/SignalR-realtime-512BD4">
-  <img alt="Tests" src="https://img.shields.io/badge/tests-670%2B-brightgreen">
+  <img alt="Tests" src="https://img.shields.io/badge/tests-850%2B-brightgreen">
 </p>
 
 TaskPilot is a team-collaboration platform built end-to-end as a portfolio project: projects & a
 Kanban board, real-time chat, a task marketplace, a forum, calendar sync, analytics, an
 AI assistant, subscription billing, and an admin/moderation area — **~30 feature modules plus a
-large set of beyond-spec engineering showcases**, deployed live and backed by 670+ tests.
+large set of beyond-spec engineering showcases**, deployed live and backed by 850+ tests.
 
-**→ Live demo: [task-pilot-bice.vercel.app](https://task-pilot-bice.vercel.app)** &nbsp;·&nbsp; sign up with any email, no confirmation needed.
+### ▶ [Try the live demo](https://task-pilot-bice.vercel.app)
+
+No signup — open [**task-pilot-bice.vercel.app**](https://task-pilot-bice.vercel.app) and hit
+**Try the live demo** to jump straight into a pre-filled workspace (a sample project, tasks across
+the board, a note). Prefer a real account? Sign up with any email — no confirmation needed.
 
 > First load can take up to a minute — the API runs on a free instance that sleeps when idle; it's instant after it wakes.
 
@@ -49,7 +54,7 @@ The parts that go beyond a typical CRUD task manager:
   commits/PRs to tasks and, on merge, move them along the board per a **per-project rule** (to
   Review by default, so a human still signs off), a per-user **GitHub account link** (OAuth) to
   browse your repos, Telegram/Viber bots, outbound webhooks, and Web Push — all config-gated.
-- **✅ Engineered like production.** 670+ backend unit tests, a frontend test suite, CI, Docker, a
+- **✅ Engineered like production.** 690+ backend unit tests, a frontend test suite, CI, Docker, a
   config-gated everything-off-by-default design, and a live free-tier deployment (Vercel + Render +
   Neon).
 
@@ -256,7 +261,7 @@ See **[docs/deployment.md](docs/deployment.md)** for the step-by-step guide. The
 ## Testing
 
 ```bash
-# Backend unit tests (670+)
+# Backend unit tests (690+)
 dotnet test
 
 # Frontend type-check, tests and production build

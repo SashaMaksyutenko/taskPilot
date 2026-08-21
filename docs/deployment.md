@@ -131,6 +131,7 @@ Add the variables on Render to switch a feature on:
 | Telegram / Viber bots | `Telegram__BotToken`, `Viber__AuthToken` |
 | Web push | `Vapid__PublicKey`, `Vapid__PrivateKey`, `Vapid__Subject` |
 | Passkeys (WebAuthn) | `Fido2__ServerDomain`, `Fido2__Origins__0` |
+| No-signup demo | `Demo__Enabled=true` (optional `Demo__RetentionHours`) |
 | Redis cache | `Redis__Connection` |
 | RabbitMQ queue | `RabbitMq__Connection` |
 | S3/R2 file storage | `Storage__Bucket`, `Storage__AccessKey`, `Storage__SecretKey`, `Storage__ServiceUrl` |
@@ -190,6 +191,12 @@ The `repo` scope is requested by the app at connect time (nothing to configure o
 Left unset, the GitHub section on Settings is hidden. The access token is stored server-side and
 used only to list the user's repositories on their behalf. For local testing, also add
 `http://localhost:5173/settings` as a redirect URI.
+
+**No-signup demo** lets a visitor click **Try the live demo** on the login page and land in a fresh,
+isolated, pre-seeded workspace — great for a portfolio. Set `Demo__Enabled=true` on Render (and
+optionally `Demo__RetentionHours`, default 24). Each click creates a throwaway account seeded with a
+sample project + tasks + a note; a background job reclaims accounts older than the retention window.
+Left off, the demo endpoints 404 and the button is hidden.
 
 ---
 

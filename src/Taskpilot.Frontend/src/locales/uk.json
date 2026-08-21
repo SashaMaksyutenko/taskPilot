@@ -586,7 +586,10 @@
     "linkedinSigningIn": "Виконуємо вхід…",
     "linkedinFailed": "Не вдалося увійти через LinkedIn",
     "signInWithPasskey": "Увійти через passkey",
-    "passkeyNeedEmail": "Спершу введіть email"
+    "passkeyNeedEmail": "Спершу введіть email",
+    "demoOr": "або",
+    "tryDemo": "Спробувати демо",
+    "demoHint": "Без реєстрації — одразу відкрийте готовий робочий простір."
   },
   "passkeys": {
     "title": "Passkeys",

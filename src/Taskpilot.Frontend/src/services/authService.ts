@@ -44,6 +44,16 @@ export const authService = {
     return api.post<AuthResponse>('/api/auth/linkedin', { code }).then((r) => r.data)
   },
 
+  /** GET /api/auth/demo — whether the no-signup demo is available. */
+  demoEnabled(): Promise<boolean> {
+    return api.get<{ enabled: boolean }>('/api/auth/demo').then((r) => r.data.enabled)
+  },
+
+  /** POST /api/auth/demo — creates a seeded throwaway account and signs straight in. */
+  demo(): Promise<AuthResponse> {
+    return api.post<AuthResponse>('/api/auth/demo').then((r) => r.data)
+  },
+
   /** POST /api/auth/forgot-password — emails a reset link (always resolves). */
   forgotPassword(email: string): Promise<void> {
     return api.post('/api/auth/forgot-password', { email }).then(() => undefined)

@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Fingerprint } from 'lucide-react'
-import { useState } from 'react'
+import { Fingerprint, Play } from 'lucide-react'
+import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
 import BrandLogo from '../components/BrandLogo'
@@ -13,8 +13,9 @@ import AuthFooterLinks from '../components/AuthFooterLinks'
 import Button from '../components/ui/Button'
 import Card from '../components/ui/Card'
 import Input from '../components/ui/Input'
+import { authService } from '../services/authService'
 import { passkeyService } from '../services/passkeyService'
-import { fetchMe, login, passkeyLogin } from '../store/authSlice'
+import { demoLogin, fetchMe, login, passkeyLogin } from '../store/authSlice'
 import { useAppDispatch, useAppSelector } from '../store/hooks'
 
 const schema = z.object({
@@ -43,6 +44,22 @@ export default function LoginPage() {
   const [needCode, setNeedCode] = useState(false)
   const [code, setCode] = useState('')
   const [remember, setRemember] = useState(true)
+
+  // Show the "Try the demo" button only when the server has the demo turned on.
+  const [demoAvailable, setDemoAvailable] = useState(false)
+  useEffect(() => {
+    authService.demoEnabled().then(setDemoAvailable).catch(() => setDemoAvailable(false))
+  }, [])
+
+  const onDemo = async () => {
+    try {
+      await dispatch(demoLogin()).unwrap()
+      await dispatch(fetchMe())
+      navigate('/')
+    } catch {
+      /* error in store */
+    }
+  }
 
   // Passkey sign-in needs to know which account to look up, so it reuses the email field.
   const onPasskey = async () => {
@@ -171,6 +188,27 @@ export default function LoginPage() {
           )}
 
           <SocialSignIn />
+
+          {demoAvailable && (
+            <>
+              <div className="my-4 flex items-center gap-3 text-xs text-muted">
+                <span className="h-px flex-1 bg-border" />
+                {t('auth.demoOr')}
+                <span className="h-px flex-1 bg-border" />
+              </div>
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={onDemo}
+                disabled={status === 'loading'}
+                className="w-full"
+              >
+                <Play className="h-4 w-4" />
+                {t('auth.tryDemo')}
+              </Button>
+              <p className="mt-1.5 text-center text-xs text-muted">{t('auth.demoHint')}</p>
+            </>
+          )}
 
           <p className="mt-6 text-center text-sm text-muted">
             {t('auth.needAccount')}{' '}

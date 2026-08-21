@@ -360,6 +360,10 @@ builder.Services.AddScoped<IVisitorService, VisitorService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IOnboardingService, OnboardingService>();
 builder.Services.AddScoped<IPasswordResetService, PasswordResetService>();
+// No-signup demo: seeded throwaway accounts + hourly cleanup (populated from .env: Demo__*).
+builder.Services.Configure<DemoOptions>(builder.Configuration.GetSection("Demo"));
+builder.Services.AddScoped<IDemoService, DemoService>();
+builder.Services.AddHostedService<DemoCleanupService>();
 builder.Services.AddScoped<IChatService, ChatService>();
 // File storage: an S3-compatible bucket when configured, the local disk otherwise.
 // This is what makes the app deployable — hosting platforms wipe the disk on restart.

@@ -20,6 +20,7 @@ public class AuthController : BaseApiController
     private readonly IValidator<RegisterDto> _registerValidator;
     private readonly IValidator<LoginDto> _loginValidator;
     private readonly IPasswordResetService _passwordReset;
+    private readonly IDemoService _demo;
     private readonly IAuditService _audit;
     private readonly ILogger<AuthController> _logger;
 
@@ -31,6 +32,7 @@ public class AuthController : BaseApiController
         IValidator<RegisterDto> registerValidator,
         IValidator<LoginDto> loginValidator,
         IPasswordResetService passwordReset,
+        IDemoService demo,
         IAuditService audit,
         ILogger<AuthController> logger)
     {
@@ -38,8 +40,33 @@ public class AuthController : BaseApiController
         _registerValidator = registerValidator;
         _loginValidator = loginValidator;
         _passwordReset = passwordReset;
+        _demo = demo;
         _audit = audit;
         _logger = logger;
+    }
+
+    /// <summary>Whether the no-signup demo is available (so the frontend can show the button).</summary>
+    [AllowAnonymous]
+    [HttpGet("demo")]
+    public IActionResult DemoStatus() => Ok(new { enabled = _demo.IsEnabled });
+
+    /// <summary>
+    /// Creates a throwaway, pre-seeded demo account and signs the visitor straight in. Rate-limited
+    /// like the other auth endpoints; 404 when the demo is turned off.
+    /// </summary>
+    [AllowAnonymous]
+    [EnableRateLimiting("auth")]
+    [HttpPost("demo")]
+    public async Task<IActionResult> Demo()
+    {
+        if (!_demo.IsEnabled) return NotFound();
+
+        var result = await _demo.CreateDemoAsync(ClientIp(), UserAgent());
+        if (!result.Succeeded) return BadRequest(new { error = result.Error });
+
+        await _audit.LogAsync("auth.demo.created", actorId: result.Value!.UserId, actorEmail: result.Value.Email,
+            entityType: "User", entityId: result.Value.UserId.ToString(), ipAddress: ClientIp());
+        return Ok(result.Value);
     }
 
     /// <summary>

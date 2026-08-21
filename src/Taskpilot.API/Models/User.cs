@@ -70,6 +70,12 @@ public class User
     /// <summary>True once the user has confirmed and enabled two-factor authentication.</summary>
     public bool TwoFactorEnabled { get; set; }
 
+    /// <summary>
+    /// True for a throwaway no-signup demo account: it is auto-seeded with sample data on creation
+    /// and reclaimed by the background cleanup once it expires.
+    /// </summary>
+    public bool IsDemo { get; set; }
+
     /// <summary>Дата та час створення акаунта (UTC).</summary>
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 

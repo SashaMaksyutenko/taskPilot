@@ -105,6 +105,17 @@ export const passkeyLogin = createAsyncThunk(
   },
 )
 
+export const demoLogin = createAsyncThunk(
+  'auth/demoLogin',
+  async (_, { rejectWithValue }) => {
+    try {
+      return await authService.demo()
+    } catch (error) {
+      return rejectWithValue(toErrorMessage(error))
+    }
+  },
+)
+
 export const register = createAsyncThunk(
   'auth/register',
   async (data: RegisterRequest, { rejectWithValue }) => {
@@ -238,6 +249,23 @@ const authSlice = createSlice({
       .addCase(login.rejected, (state, action) => {
         state.status = 'idle'
         state.error = (action.payload as string) ?? 'Login failed'
+      })
+      // Demo login yields the same AuthResponse and token-storing behaviour.
+      .addCase(demoLogin.pending, (state) => {
+        state.status = 'loading'
+        state.error = null
+      })
+      .addCase(demoLogin.fulfilled, (state, action) => {
+        const data = action.payload as AuthResponse
+        state.status = 'idle'
+        state.accessToken = data.accessToken
+        state.refreshToken = data.refreshToken
+        state.isAuthenticated = true
+        tokenStorage.save(data.accessToken, data.refreshToken, true)
+      })
+      .addCase(demoLogin.rejected, (state, action) => {
+        state.status = 'idle'
+        state.error = (action.payload as string) ?? 'Could not start the demo'
       })
       // Register
       .addCase(register.pending, (state) => {

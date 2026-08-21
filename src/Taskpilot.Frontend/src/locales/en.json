@@ -584,7 +584,10 @@
     "linkedinSigningIn": "Signing you in…",
     "linkedinFailed": "LinkedIn sign-in failed",
     "signInWithPasskey": "Sign in with a passkey",
-    "passkeyNeedEmail": "Enter your email first"
+    "passkeyNeedEmail": "Enter your email first",
+    "demoOr": "or",
+    "tryDemo": "Try the live demo",
+    "demoHint": "No sign-up — explore a pre-filled workspace instantly."
   },
   "passkeys": {
     "title": "Passkeys",
